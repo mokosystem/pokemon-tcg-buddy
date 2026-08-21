@@ -40,3 +40,7 @@ https://www.pokemon-card.com/deck/
 ## 開発の進め方
 
 開発の計画と進捗は [Issues](https://github.com/mokosystem/pokemon-tcg-buddy/issues) で管理する。
+
+## ライセンス
+
+[GNU AGPL-3.0](LICENSE) で公開する。
