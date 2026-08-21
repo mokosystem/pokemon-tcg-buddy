@@ -38,7 +38,7 @@ ln -s ../.claude/skills .agents/skills
 
 実体を `.claude/skills/` 側に置くのは、Claude Code にシンボリックリンクされたスキルを一覧に出せない不具合があるため([anthropics/claude-code#14836](https://github.com/anthropics/claude-code/issues/14836)。2026-08-21 時点で未解決)。リンクを辿る側を Cursor などに寄せ、Claude Code には実ファイルを読ませる。この不具合が解決したら構成を見直してよい。
 
-この構成は最初のスキルを追加するとき([Issue #4](https://github.com/mokosystem/pokemon-tcg-buddy/issues/4))に作る。
+Git コミット、GitHub Issue、Pull Request の規約は、`.claude/skills/` の `create-git-commit`、`create-github-issue`、`create-github-pull-request` にある。該当する作業ではそのスキルに従う。
 
 ## 文章の言語
 
