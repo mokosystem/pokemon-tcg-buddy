@@ -17,7 +17,7 @@ robots.txt(https://www.pokemon-card.com/robots.txt)は HTTP 404 で存在しな�
 
 ## このリポジトリでの振る舞い
 
-上記の利用条件と [README の情報源の方針](../README.md)に基づき、次のように振る舞う。
+上記の利用条件と [README の情報源の方針](../../README.md)に基づき、次のように振る舞う。
 
 ### 転載しない
 
