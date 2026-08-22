@@ -13,7 +13,7 @@
 
 ## ポケモンカードの情報の扱い
 
-カード、ルール、レギュレーションについて書くときは、README の「情報源の方針」に従う。具体的な確認手順は docs/ の手順書にある。公式サイトを参照する前に [docs/site-usage-notes.md](docs/site-usage-notes.md) を読み、カードの確認は [docs/card-lookup.md](docs/card-lookup.md)、対戦の基本ルールは [docs/basic-rules.md](docs/basic-rules.md) に従う。エージェントとしての要点は次の通り。
+カード、ルール、レギュレーションについて書くときは、README の「情報源の方針」に従う。具体的な確認手順は docs/ の手順書にある。公式サイトを参照する前に [docs/site-usage-notes.md](docs/site-usage-notes.md) を読み、カードの確認は [docs/card-lookup.md](docs/card-lookup.md)、対戦の基本ルールは [docs/basic-rules.md](docs/basic-rules.md)、デッキコードの読み取りとデッキ登録は [docs/deck-tool.md](docs/deck-tool.md) に従う。エージェントとしての要点は次の通り。
 
 - カードの効果、数値、使用可否を記憶で断定しない。公式カード検索の詳細ページを開いて確認してから書く
 - 現行レギュレーションの内容(使用できるレギュレーションマークなど)をドキュメントやコードに固定値として書かない。公式レギュレーションページを都度参照する
