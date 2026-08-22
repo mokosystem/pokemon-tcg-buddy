@@ -13,7 +13,7 @@
 
 ## ポケモンカードの情報の扱い
 
-カード、ルール、レギュレーションについて書くときは、README の「情報源の方針」に従う。具体的な確認手順は docs/pokemon-tcg/ の手順書にある。公式サイトを参照する前に [docs/pokemon-tcg/site-usage-notes.md](docs/pokemon-tcg/site-usage-notes.md) を読み、カードの確認は [docs/pokemon-tcg/card-lookup.md](docs/pokemon-tcg/card-lookup.md)、対戦の基本ルールは [docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md)、デッキコードの読み取りとデッキ登録は [docs/pokemon-tcg/deck-tool.md](docs/pokemon-tcg/deck-tool.md) に従う。エージェントとしての要点は次の通り。
+カード、ルール、レギュレーションについて書くときは、README の「情報源の方針」に従う。具体的な確認手順は docs/pokemon-tcg/ の手順書にある。公式サイトを参照する前に [docs/pokemon-tcg/site-usage-notes.md](docs/pokemon-tcg/site-usage-notes.md) を読み、カードの確認は [docs/pokemon-tcg/card-lookup.md](docs/pokemon-tcg/card-lookup.md)、対戦の基本ルールは [docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md)、公式 Q&A の検索は [docs/pokemon-tcg/faq-lookup.md](docs/pokemon-tcg/faq-lookup.md)、デッキコードの読み取りとデッキ登録は [docs/pokemon-tcg/deck-tool.md](docs/pokemon-tcg/deck-tool.md) に従う。エージェントとしての要点は次の通り。
 
 - カードの効果、数値、使用可否を記憶で断定しない。公式カード検索の詳細ページを開いて確認してから書く
 - 現行レギュレーションの内容(使用できるレギュレーションマークなど)をドキュメントやコードに固定値として書かない。公式レギュレーションページを都度参照する
@@ -40,7 +40,7 @@ ln -s ../.claude/skills .agents/skills
 
 スキルの名前には規約がある。ポケモンカードのドメイン知識を扱うスキルには接頭辞 `pokemon-tcg-` を必ず付け、開発作業の規約スキル(`create-git-commit` など)と名前だけで区別できるようにする。文書がディレクトリ(`docs/pokemon-tcg/`)で区別するのと方式が違うのは、スキルが名前だけの一覧に並ぶフラットな名前空間で、名前以外に区別の手段が無いためである。
 
-Git コミット、GitHub Issue、Pull Request の規約は、`.claude/skills/` の `create-git-commit`、`create-github-issue`、`create-github-pull-request` にある。該当する作業ではそのスキルに従う。
+Git コミット、GitHub Issue、Pull Request の規約は、`.claude/skills/` の `create-git-commit`、`create-github-issue`、`create-github-pull-request` に、ルールや裁定の質問に答える手順は `pokemon-tcg-answer-rules-question` にある。該当する作業ではそのスキルに従う。
 
 ## 文章の言語
 
