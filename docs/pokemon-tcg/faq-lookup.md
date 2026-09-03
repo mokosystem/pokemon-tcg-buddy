@@ -46,7 +46,7 @@ https://www.pokemon-card.com/rules/faq/search.php?freeword={検索語}&regulatio
 - 件数は「検索結果 N件」と表示される。1 ページに 10 件で、`page={ページ番号}` パラメータで送る
 - 各項目は `li.FAQResultList_item` で、質問が `.QuestionArea` 内、回答が `.AnswerArea` 内にある
 - 検索語は `<em class="search-word">` で強調され、テキストがタグで分断される。HTML の文字列一致で質問文を探すと見つからないことがあるため、表示テキストを読む
-- 項目には「関連カード」として、カード詳細ページ(`/card-search/details.php/card/{カードID}/regu/all`)へのリンクが付くことがある
+- 項目には「関連カード」として、カード詳細ページ(`/card-search/details.php/card/{カード ID}/regu/all`)へのリンクが付くことがある
 - 0 件のときは「検索結果 0件」と、条件にあてはまる Q&A が無かった旨のメッセージが表示される(2026-08-22 確認)
 
 ## 4. 出典の書き方
