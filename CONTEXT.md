@@ -9,7 +9,7 @@
 
 公式が名称を予告したが内容をまだ公開していない用語は、公式用語として載せ、見出しに「(続報待ち)」と付ける。定義には公式が公開した範囲だけを書き、内容が未公開であることを明記する。エージェントは、続報待ちの用語について「存在しない」と答えてはならない。内容が公開されたら定義を書き直し、「(続報待ち)」を外す。
 
-この文書は用語の意味だけを書く。ルールの内容や確認手順は書かない。対戦のルールは [docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md)、カードの確認手順は [docs/pokemon-tcg/card-lookup.md](docs/pokemon-tcg/card-lookup.md) にある。プレイヤーの俗語(逃げエネ、手張りなど)は、この文書の用語へ対応付ける用語集を別に作る([Issue 12](https://github.com/mokosystem/pokemon-tcg-buddy/issues/12))。俗語は _Avoid_ に挙げるにとどめ、意味の説明はその用語集に置く。
+この文書は用語の意味だけを書く。ルールの内容や確認手順は書かない。対戦のルールは [docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md)、カードの確認手順は [docs/pokemon-tcg/card-lookup.md](docs/pokemon-tcg/card-lookup.md) にある。プレイヤーの俗語(逃げエネ、手張りなど)は、[docs/pokemon-tcg/glossary.md](docs/pokemon-tcg/glossary.md) でこの文書の用語へ対応付ける。俗語は _Avoid_ に挙げるにとどめ、意味の説明はその用語集に置く。
 
 ## Language
 
@@ -245,7 +245,7 @@ _Avoid_: 状態異常、ステータス異常
 
 **エネルギーをつける**:
 手札のエネルギーをポケモンにつける動作。手札からは 1 回の番に 1 枚だけつけられる。カードの効果でつける分はこの 1 枚に含まれない。
-_Avoid_: 手張り、エネ加速、エネルギー加速、アタッチ、貼る
+_Avoid_: 手張り、手貼り、エネ加速、エネルギー加速、アタッチ、貼る
 
 **進化させる**:
 場のポケモンに、手札の進化ポケモンを重ねて置く動作。
