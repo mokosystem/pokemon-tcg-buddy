@@ -18,11 +18,12 @@
 
 ## ポケモンカードの情報の扱い
 
-カード、ルール、レギュレーションについて書くときは、README の「情報源の方針」に従う。具体的な確認手順は docs/pokemon-tcg/ の手順書にある。公式サイトを参照する前に [docs/pokemon-tcg/site-usage-notes.md](docs/pokemon-tcg/site-usage-notes.md) を読み、カードの確認は [docs/pokemon-tcg/card-lookup.md](docs/pokemon-tcg/card-lookup.md)、対戦の基本ルールは [docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md)、公式 Q&A の検索は [docs/pokemon-tcg/faq-lookup.md](docs/pokemon-tcg/faq-lookup.md)、デッキコードの読み取りとデッキ登録は [docs/pokemon-tcg/deck-tool.md](docs/pokemon-tcg/deck-tool.md) に従う。エージェントとしての要点は次の通り。
+カード、ルール、レギュレーションについて書くときは、README の「情報源の方針」に従う。具体的な確認手順は docs/pokemon-tcg/ の手順書にある。公式サイトを参照する前に [docs/pokemon-tcg/site-usage-notes.md](docs/pokemon-tcg/site-usage-notes.md) を読み、カードの確認は [docs/pokemon-tcg/card-lookup.md](docs/pokemon-tcg/card-lookup.md)、対戦の基本ルールは [docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md)、公式 Q&A の検索は [docs/pokemon-tcg/faq-lookup.md](docs/pokemon-tcg/faq-lookup.md)、デッキコードの読み取りとデッキ登録は [docs/pokemon-tcg/deck-tool.md](docs/pokemon-tcg/deck-tool.md)、環境(どの環境デッキが使われているか)の確認と通称の解決は [docs/pokemon-tcg/metagame-lookup.md](docs/pokemon-tcg/metagame-lookup.md) に従う。エージェントとしての要点は次の通り。
 
 - カードの効果、数値、使用可否を記憶で断定しない。公式カード検索の詳細ページを開いて確認してから書く
 - 現行レギュレーションの内容(使用できるレギュレーションマークなど)をドキュメントやコードに固定値として書かない。公式レギュレーションページを都度参照する
 - 公式サイトのページ内容やカード画像をリポジトリに転載しない
+- 環境に関する言及は、[docs/pokemon-tcg/metagame-snapshot.md](docs/pokemon-tcg/metagame-snapshot.md) と環境情報サイトで確認できる範囲に限る。Tier 表や順位表の内容を転載せず、デッキの内容はデッキコード経由で都度読む
 - 確認した事実には、確認日と参照 URL を残す
 
 ## 作業を終える条件
