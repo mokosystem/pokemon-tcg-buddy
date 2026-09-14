@@ -36,6 +36,10 @@ https://www.pokemon-card.com/deck/
    https://www.pokemon-card.com/howtoplay/
 4. カードの効果や数値をモデルの記憶だけで断定しない。不確かなことは不確かだと明示する。
 5. 公式サイトは無断転載を禁じているため、カード画像やページの内容をリポジトリに転載保存しない。参照手順とリンクを整備する。
+6. 現在の環境(どのデッキが使われ、勝っているか)は、公式のイベント結果(プレイヤーズクラブ)に載るデッキコードと、環境情報サイトのポケカブック、ポケカ飯で確認する。環境情報サイトは傾向の把握だけに使い、要約とリンクにとどめて内容を転載しない。デッキの内容はデッキコード経由で公式デッキ構築ツールから読む。参照方針と手順は [docs/pokemon-tcg/metagame-lookup.md](docs/pokemon-tcg/metagame-lookup.md) にある。
+   https://players.pokemon-card.com/event/result/list
+   https://pokecabook.com/
+   https://pokekameshi.com/
 
 ## 開発の進め方
 
