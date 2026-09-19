@@ -1,0 +1,9 @@
+[project]
+name = "pokemon-tcg-buddy"
+version = "0.1.0"
+description = "デッキの主軸の成立率を乱数試行で求める計算の骨組み"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+package = false
