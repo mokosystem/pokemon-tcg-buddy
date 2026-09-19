@@ -11,6 +11,7 @@
 - **README.md** — 人間が読むためのドキュメント。プロジェクトの目的と情報源の方針はここが正。
 - **CONTEXT.md** — 文書で使う用語の定義(ユビキタス言語)。用語の正はここ。手順と知識は docs/pokemon-tcg/ に置き、CONTEXT.md には書かない。
 - **docs/** — 手順書などの作業文書。ポケモンカードのドメイン文書は `docs/pokemon-tcg/` に置き、開発に関する文書と区別する。
+- **setup_rate/** — 主軸の成立率を計算する骨組み(Python、依存パッケージ無し、環境管理は uv)。デッキごとの規則ファイルは `setup_rate/decks/`、テストは `tests/`。実行方法は `pokemon-tcg-estimate-setup-rate` スキルにある。Issue 22 で作った試作で、Issue 27 で TypeScript の `packages/` に置き換える(README「提供形態」)。
 
 ## 文書の用語
 
@@ -46,7 +47,7 @@ ln -s ../.claude/skills .agents/skills
 
 スキルの名前には規約がある。ポケモンカードのドメイン知識を扱うスキルには接頭辞 `pokemon-tcg-` を必ず付け、開発作業の規約スキル(`create-git-commit` など)と名前だけで区別できるようにする。文書がディレクトリ(`docs/pokemon-tcg/`)で区別するのと方式が違うのは、スキルが名前だけの一覧に並ぶフラットな名前空間で、名前以外に区別の手段が無いためである。
 
-Git コミット、GitHub Issue、Pull Request の規約は、`.claude/skills/` の `create-git-commit`、`create-github-issue`、`create-github-pull-request` に、ルールや裁定の質問に答える手順は `pokemon-tcg-answer-rules-question`、デッキを新しく組む相談は `pokemon-tcg-build-deck`、既存デッキの診断と改良の相談は `pokemon-tcg-diagnose-deck` にある(設計の理由は [docs/deck-diagnosis-design.md](docs/deck-diagnosis-design.md))。該当する作業ではそのスキルに従う。
+Git コミット、GitHub Issue、Pull Request の規約は、`.claude/skills/` の `create-git-commit`、`create-github-issue`、`create-github-pull-request` に、ルールや裁定の質問に答える手順は `pokemon-tcg-answer-rules-question`、デッキを新しく組む相談は `pokemon-tcg-build-deck`、既存デッキの診断と改良の相談は `pokemon-tcg-diagnose-deck`(設計の理由は [docs/deck-diagnosis-design.md](docs/deck-diagnosis-design.md))、主軸の成立率を数字で示す計算は `pokemon-tcg-estimate-setup-rate`(設計の理由は [docs/setup-rate-design.md](docs/setup-rate-design.md)。計算の骨組みは `setup_rate/`、デッキごとの規則ファイルは `setup_rate/decks/`)にある。該当する作業ではそのスキルに従う。
 
 ## 文章の言語
 
