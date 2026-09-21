@@ -5,6 +5,9 @@
   "type": "module",
   "exports": {
     "./cards": "./src/cards.ts",
+    "./engine": "./src/engine.ts",
+    "./random": "./src/random.ts",
+    "./simulate": "./src/simulate.ts",
     "./state": "./src/state.ts"
   }
 }

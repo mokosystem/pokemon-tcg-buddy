@@ -20,10 +20,7 @@ export const HAND_SIZE_AT_SETUP = 7;
 export const PRIZE_COUNT = 6;
 export const COLORLESS = "colorless";
 
-/**
- * 山札を切るための乱数の源。0 以上 1 未満の値を返す。
- * 種を指定できる生成器は乱数試行(Issue 27 の順 2 の 2 セッション目)で足す。
- */
+/** 山札を切るための乱数の源。0 以上 1 未満の値を返す。種を指定できる生成器は random.ts にある。 */
 export interface RandomSource {
   nextFloat: () => number;
 }
@@ -317,6 +314,28 @@ export class GameState {
     this.deck.push(...this.hand);
     this.hand = [];
     this.shuffleDeck();
+  }
+
+  // ---- 対戦の準備 ----
+
+  /** 手札のたねポケモンをバトル場に出す。対戦の準備(番 0)でだけ使う。 */
+  placeActiveFromHand(card: Card): PokemonInPlay {
+    if (!isBasicPokemon(card)) {
+      throw new IllegalMove(`${card.name} はたねポケモンではない`);
+    }
+    if (this.active !== null) {
+      throw new IllegalMove("バトル場にはもうポケモンがいる");
+    }
+    removeCard(this.hand, card, "手札");
+    const pokemon = new PokemonInPlay(card, this.turn);
+    this.active = pokemon;
+    this.record(`バトル場 ${card.name}`);
+    return pokemon;
+  }
+
+  /** 山札の上から 6 枚をサイドに置く。 */
+  placePrizesFromDeck(): void {
+    this.prizes.push(...this.deck.splice(0, PRIZE_COUNT));
   }
 
   // ---- 手札からの操作 ----
