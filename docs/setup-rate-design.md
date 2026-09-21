@@ -79,14 +79,15 @@ README は「コーディングエージェント上で動くスキルとして�
 | パッケージ管理 | Bun の workspaces(`packages/*`)。最上位の `package.json` は `private` で、`bun.lock` を 1 つだけ持つ |
 | 計算の骨組みの置き場所 | `packages/solo-play-simulator`(パッケージ名 `@pokemon-tcg-buddy/solo-play-simulator`)。「一人回し」(相手なしでデッキを回すこと)を模擬する道具であることが名前から読めるようにした。当初の `setup-rate` は「成立率」の直訳で、準備の速さや割合と読めてしまい、デッキの計算だと分からないため改名した。この設計文書のファイル名と `pokemon-tcg-estimate-setup-rate` スキルの名前は、Issue 27 の順 9 の書き直しで合わせる |
 | Linter と Formatter | Ultracite 7.12.0(Biome 2.5.12)。`biome.jsonc` は `ultracite/biome/core` だけを継承する |
-| 静的解析 | fallow 3.27.0。`.fallowrc.json` は workspaces `packages/*` だけを書く。入口は各パッケージの `package.json` の `exports` から fallow が自動で検出する(順 2 で `src/index.*` の入口設定を外した。理由は下の「順 2 で決めたこと」) |
-| 最上位の scripts | `bun run test`(`bun test`)、`bun run lint`(`ultracite check`)、`bun run lint:fix`(`ultracite fix`)、`bun run analyze`(`fallow`)。名前は何をするかで付け、道具が生成した `check` は使わない |
-| 検査の自動実行 | `.github/workflows/ci.yml`。PR と main への push で、`test-packages`、`lint-packages`、`analyze-packages` の 3 つのジョブが並行して走る。各ジョブは jdx/mise-action が `mise.toml` から Bun を入れ、`bun install --frozen-lockfile` の後に `packages/` を対象に実行する。main への PR は、3 つのジョブの合格をルールセットで必須にする |
+| 静的解析 | fallow 3.27.0。`.fallowrc.json` は workspaces `packages/*` と、既定から変えた規則 3 つ(`unused-dev-dependencies`、`unused-optional-dependencies`、`private-type-leaks` を error)を書く。入口は各パッケージの `package.json` の `exports` から fallow が自動で検出する(順 2 で `src/index.*` の入口設定を外した。理由は下の「順 2 で決めたこと」) |
+| 型検査 | TypeScript 7.0.2(devDependencies)。`bun test` は型を検査しないため、`tsc --noEmit -p tsconfig.json` を別に走らせる |
+| 最上位の scripts | `bun run test`(`bun test`)、`bun run typecheck`(`tsc --noEmit`)、`bun run lint`(`ultracite check`)、`bun run lint:fix`(`ultracite fix`)、`bun run analyze`(`fallow`)。名前は何をするかで付け、道具が生成した `check` は使わない |
+| 検査の自動実行 | `.github/workflows/ci.yml`。PR と main への push で、`test-packages`、`typecheck-packages`、`lint-packages`、`analyze-packages` の 4 つのジョブが並行して走る。各ジョブは jdx/mise-action が `mise.toml` から Bun を入れ、`bun install --frozen-lockfile` の後に `packages/` を対象に実行する。main への PR は、4 つのジョブの合格をルールセットで必須にする |
 
 ### 導入時に確かめたこと
 
 - `npx ultracite init --quiet --linter biome --pm bun` の生成物は `biome.jsonc` と、`package.json` の devDependencies(ultracite、@biomejs/biome)と scripts(check、fix)だけだった。AGENTS.md、CLAUDE.md、`.vscode/` は書き換えられなかった。生成直後の `biome.jsonc` は Ultracite 自身の整形規則(配列を 1 行に畳む)に合わず `ultracite check` が落ちたため、`ultracite fix` で整えた
-- fallow は `bunx fallow@latest --version` と `bunx fallow@latest recommend` の両方が Bun 1.4.2 で動いた(署名の検証も通った)。`recommend` が利用者に委ねる 2 つの選択(warn が既定の規則を CI で落とすか、同じファイルの非公開の型を公開した関数の型に使っている箇所を検査するか)は、いずれも既定(落とさない、検査しない)のままにした。必要になったときに `.fallowrc.json` で変える
+- fallow は `bunx fallow@latest --version` と `bunx fallow@latest recommend` の両方が Bun 1.4.2 で動いた(署名の検証も通った)。`recommend` が利用者に委ねる 2 つの選択(warn が既定の規則を CI で落とすか、同じファイルの非公開の型を公開した関数の型に使っている箇所を検査するか)は、順 1 では既定(落とさない、検査しない)のままにし、順 2 の 2 セッション目で決めた(下の「順 2 で決めたこと(2 セッション目)」)
 - `tsconfig.json` は Bun の推奨設定(https://bun.com/docs/typescript 、確認日 2026-09-21)から、Web 向けの項目(`jsx`、`allowJs`)を除いたもの。`types` に `bun` を指定するため `@types/bun` を devDependencies に入れた
 - Bun 1.4(2026-08-20 公開)の公開記事(https://bun.com/blog/bun-v1.4 、確認日 2026-09-21)には破壊的変更の節は無く、挙動が変わった点のうちこの使い方に関わるものも無かった。`trustedDependencies` が npm レジストリのパッケージにしか自動で効かなくなった点は、git や file 参照の依存を使わないため影響しない。`bun test --parallel` が `--isolate` を含むようになった点は、`--parallel` を使わないため影響しない。HTML ルートのソースマップ、HTTP/3、`--asset` はこのリポジトリの範囲外
 
@@ -94,7 +95,20 @@ README は「コーディングエージェント上で動くスキルとして�
 
 - **パッケージの公開の仕方は `package.json` の `exports` の下位パス(`./cards`、`./state`)にし、`src/index.ts` の再公開は置かない。** Ultracite の core プリセットは再公開だけのファイルを `noBarrelFile` で禁止している(束ねたファイルは、使わない部品まで読み込ませて起動を遅くするため)。プリセットの規則を上書きする案もあったが、この骨組みは Web(Next.js)と API(Elysia.js)から取り込まれる共有部品で、使う部品だけを読み込ませる利点がそのまま当てはまるため、規則に従った。使う側は `@pokemon-tcg-buddy/solo-play-simulator/state` のように部品ごとに取り込む。fallow は `exports` を入口として自動で検出し(`fallow list` で確認、2026-09-21)、入口のファイルから公開したクラスの部品は公開 API とみなして未使用の判定から外す
 - **クラスの真偽値の欄は宣言で初期化せず constructor で代入する。** Biome は `hasUsedSupporter = false` を `false` 型と推論し、その欄を条件に使う箇所を `noUnnecessaryConditions` で「常に偽」と誤検出する(Biome 2.5.12、2026-09-21 に観測)。`hasUsedSupporter: boolean` と宣言して constructor で代入すれば、`noInferrableTypes` にも触れずに済む
-- **型検査は CI に入れていない。** Bun のテスト実行は型を検査しないため、`tsconfig.json` の `strict` は CI では効いていない。順 2 の 1 セッション目では `bunx --bun tsc --noEmit -p tsconfig.json`(TypeScript 7.0.2)を手元で実行して通ることを確かめた。CI のジョブに足すかは順 2 の 2 セッション目で決める(足すなら main のルールセットの必須ジョブも更新する)
+- **型検査は CI に入れていない。** Bun のテスト実行は型を検査しないため、`tsconfig.json` の `strict` は CI では効いていない。順 2 の 1 セッション目では `bunx --bun tsc --noEmit -p tsconfig.json`(TypeScript 7.0.2)を手元で実行して通ることを確かめた。CI のジョブに足すかは順 2 の 2 セッション目で決める(足すなら main のルールセットの必須ジョブも更新する)。2 セッション目で足した(下の「順 2 で決めたこと(2 セッション目)」)
+
+### 順 2 で決めたこと(2 セッション目)
+
+2026-09-21。`engine.py` の準備部分と `simulate.py` を `engine.ts`・`simulate.ts` に移し、種を指定できる乱数の生成器を `random.ts` に足した。公開は `exports` の `./engine`、`./simulate`、`./random`。テストは `tests/test_state.py` の残り 4 件と `tests/test_deck_rules.py` の 6 件相当を含めて 54 件(Python は 25 件)。
+
+- **行動を選ぶ部分は `PlayingPolicy`(対戦の準備の 2 つの選択、番の中の行動、ワザの選択、番の終わりの効果)として `runGame` に渡す。** Python の `DeckRules` は、カード表・60 枚の内容・行動の優先順位の並び・狙い・締め切り・変更案・前提を 1 つにまとめていたが、TypeScript では狙い(`Goal`)、締め切り(`Deadline`)、変更案(`DeckVariant`)、60 枚の内容(`Decklist`)を別の型にし、`DeckRules` と `run_actions`(優先順位の並びを上から試す繰り返し)は移さなかった。順 7 で探索が `PlayingPolicy` を実装する形に置き換えるため、優先順位の並びの仕組みを移しても捨てることになる。テストと答え合わせは、固定の手順を書いた小さな `PlayingPolicy` で回す
+- **乱数は splitmix32(`createSeededRandom`)。** 出典は https://github.com/bryc/code/blob/master/jshash/PRNGs.md (確認日 2026-09-21)。同じ出典の mulberry32 は「32 ビットの値の 3 分の 1 を出さない」と記され、代わりに splitmix32 が勧められているため採らなかった。Python の `random.Random`(メルセンヌ・ツイスタ)の乱数列は再現しない(Issue 27 の決定事項「答え合わせの基準」)。Biome の `noBitwiseOperators` はこの関数の範囲だけ `biome-ignore-start`/`biome-ignore-end` で抑止した。`biome-ignore-all` はファイルの先頭にしか置けず、ファイルの説明コメントの後ろに置くと「先頭ではない」として無視される(Biome 2.5.12、2026-09-21 に観測)
+- **枚数を変えたときの比較は、計算(`compareVariants`)と表の整形(`formatVariantComparison`)を分けた。** Python の `compare_variants` は計算しながら Markdown を組み立てていた。共有ライブラリでは、スキルは Markdown を、将来の API は数字をそのまま使うため、計算の結果を型(`VariantComparison`)で返し、整形を別の関数にした。`formatSummary` と `formatAssumptions` も同じ理由で、集計の型を受け取って文字列を返す純粋な関数にした
+- **対戦の準備で使う 2 つの操作(`placeActiveFromHand`、`placePrizesFromDeck`)は `GameState` に足した。** Python の `setup_game` は `state.active` と `state.hand` を直接書き換えていた。山札と手札の書き換えを `GameState` の外に置くと、基本ルールの検査(たねポケモンだけをバトル場に出せる)がすり抜けるため
+- **テスト用のカード表は `sample-cards.ts` に 1 つ置き、3 つのテストが共有する。** テストごとにカード表を書くと、fallow の重複検出(既定の mild、50 トークン以上が 2 回)に掛かる
+- **型検査を CI に足した。** ジョブは `typecheck-packages`、script は `typecheck`、`typescript` 7.0.2 を devDependencies に入れた。`bun test` は型を検査しないため、`strict` と `noUncheckedIndexedAccess` の違反が手元の `tsc` でしか見つからず、CI を通った変更が使う側(Web、API)のビルドで初めて落ちる。main のルールセット(id 23753240)の必須ジョブにも足した
+- **fallow の保留 2 点を決めた。** (1) 既定で warn の規則のうち、このリポジトリに関係する `unused-dev-dependencies` と `unused-optional-dependencies` を error にした。UI フレームワークや CSS が無いため、部品(component)や CSS の規則は対象にならない。使われない開発用の依存は `bun install` の時間と取り込む供給網の面積を増やすだけで、残す理由が無い。(2) `private-type-leaks` を error で有効にした。共有ライブラリで、公開した関数の型に同じファイルの非公開の型が漏れると、使う側がその型を書けない。fallow の提案は warn だが、warn は CI を止めないので気づく機会が無い。有効にして指摘は 0 件だった。規則名は fallow の設定スキーマ(`node_modules/fallow/schema.json` の `rules.default`、fallow 3.27.0)と公式文書(https://docs.fallow.tools/configuration/overview 、確認日 2026-09-21)で確認した
+- **ライブラリは実行環境に依存しない。** `src/` のテスト以外のファイルの import は同じディレクトリのモジュールだけで、`node:`、`bun:`、`process`、`Bun`、ファイルの読み書きを使っていない(`grep` で確認、2026-09-21)。`bun:test` はテストだけが使う
 
 ### 採らなかった案
 

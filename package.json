@@ -8,12 +8,14 @@
     "analyze": "fallow",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
     "@types/bun": "^1.4.2",
     "fallow": "3.27.0",
+    "typescript": "^7.0.2",
     "ultracite": "7.12.0"
   }
 }

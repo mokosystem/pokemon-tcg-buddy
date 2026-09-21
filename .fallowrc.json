@@ -2,5 +2,10 @@
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "workspaces": {
     "patterns": ["packages/*"]
+  },
+  "rules": {
+    "unused-dev-dependencies": "error",
+    "unused-optional-dependencies": "error",
+    "private-type-leaks": "error"
   }
 }
