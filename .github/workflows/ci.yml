@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# ジョブ名は「何をするか-どの範囲か」で付ける。範囲は packages/(Bun の workspaces の共有ライブラリ)。
+# Web や API のパッケージを足すときは、その範囲のジョブを別に足す。
+jobs:
+  test-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bun install --frozen-lockfile
+      - name: packages/ のテストを実行する
+        run: bun test packages
+
+  lint-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bun install --frozen-lockfile
+      - name: packages/ を Ultracite(Biome)で検査する(整形と lint)
+        run: bun run ultracite check packages
+
+  analyze-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bun install --frozen-lockfile
+      - name: packages/ を fallow で解析する(未使用のコード、循環参照、重複、複雑さ)
+        run: bun run fallow
