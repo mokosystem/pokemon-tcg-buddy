@@ -1,13 +1,15 @@
 import { describe, expect, test } from "bun:test";
+import type { Card } from "./cards.ts";
 import {
-  type Card,
-  defineBasicEnergyCard,
-  defineGoodsCard,
-  definePokemonCard,
-  defineStadiumCard,
-  defineSupporterCard,
-  EvolutionStage,
-} from "./cards.ts";
+  BASIC,
+  ENERGY,
+  GOODS,
+  neverShuffled,
+  STADIUM,
+  STAGE1,
+  STAGE2,
+  SUPPORTER,
+} from "./sample-cards.ts";
 import {
   BENCH_LIMIT,
   COLORLESS,
@@ -15,41 +17,7 @@ import {
   GameState,
   IllegalMove,
   PokemonInPlay,
-  type RandomSource,
 } from "./state.ts";
-
-const BASIC = definePokemonCard({
-  cardId: "1",
-  hp: 60,
-  name: "たね",
-  pokemonType: "psychic",
-  retreatCost: 1,
-  stage: EvolutionStage.Basic,
-});
-const STAGE1 = definePokemonCard({
-  cardId: "2",
-  evolvesFrom: "たね",
-  hp: 90,
-  name: "1進化",
-  pokemonType: "psychic",
-  stage: EvolutionStage.Stage1,
-});
-const STAGE2 = definePokemonCard({
-  cardId: "3",
-  evolvesFrom: "1進化",
-  hasRuleBox: true,
-  hp: 300,
-  name: "2進化",
-  pokemonType: "psychic",
-  stage: EvolutionStage.Stage2,
-});
-const ENERGY = defineBasicEnergyCard("基本超エネルギー", "4", "psychic");
-const SUPPORTER = defineSupporterCard("サポート", "5");
-const GOODS = defineGoodsCard("グッズ", "6");
-const STADIUM = defineStadiumCard("スタジアム", "7");
-
-// 山札を切らないテストなので、乱数の値は使われない。
-const neverShuffled: RandomSource = { nextFloat: () => 0 };
 
 function stateWith(
   hand: readonly Card[],
@@ -301,6 +269,30 @@ describe("山札の操作", () => {
     state.returnHandToDeck();
     expect(state.hand).toEqual([]);
     expect(state.deck).toHaveLength(3);
+  });
+});
+
+describe("対戦の準備", () => {
+  test("手札のたねポケモンをバトル場に出し、バトル場が埋まっていれば出せない", () => {
+    const state = new GameState(neverShuffled, [], false);
+    state.hand = [BASIC, BASIC, STAGE1];
+    const active = state.placeActiveFromHand(BASIC);
+    expect(state.active).toBe(active);
+    expect(active.turnEntered).toBe(0);
+    expect(state.hand).toEqual([BASIC, STAGE1]);
+    expect(() => state.placeActiveFromHand(BASIC)).toThrow(IllegalMove);
+    state.active = null;
+    expect(() => state.placeActiveFromHand(STAGE1)).toThrow(IllegalMove);
+  });
+
+  test("山札の上から 6 枚をサイドに置く", () => {
+    const state = stateWith(
+      [],
+      Array.from({ length: 8 }, () => ENERGY)
+    );
+    state.placePrizesFromDeck();
+    expect(state.prizes).toHaveLength(6);
+    expect(state.deck).toHaveLength(2);
   });
 });
 
