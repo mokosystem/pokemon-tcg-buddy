@@ -79,7 +79,7 @@ README は「コーディングエージェント上で動くスキルとして�
 | パッケージ管理 | Bun の workspaces(`packages/*`)。最上位の `package.json` は `private` で、`bun.lock` を 1 つだけ持つ |
 | 計算の骨組みの置き場所 | `packages/solo-play-simulator`(パッケージ名 `@pokemon-tcg-buddy/solo-play-simulator`)。「一人回し」(相手なしでデッキを回すこと)を模擬する道具であることが名前から読めるようにした。当初の `setup-rate` は「成立率」の直訳で、準備の速さや割合と読めてしまい、デッキの計算だと分からないため改名した。この設計文書のファイル名と `pokemon-tcg-estimate-setup-rate` スキルの名前は、Issue 27 の順 9 の書き直しで合わせる |
 | Linter と Formatter | Ultracite 7.12.0(Biome 2.5.12)。`biome.jsonc` は `ultracite/biome/core` だけを継承する |
-| 静的解析 | fallow 3.27.0。`.fallowrc.json` は `fallow recommend` の提案(入口 `src/index.*`、workspaces `packages/*`)をそのまま使う |
+| 静的解析 | fallow 3.27.0。`.fallowrc.json` は workspaces `packages/*` だけを書く。入口は各パッケージの `package.json` の `exports` から fallow が自動で検出する(順 2 で `src/index.*` の入口設定を外した。理由は下の「順 2 で決めたこと」) |
 | 最上位の scripts | `bun run test`(`bun test`)、`bun run lint`(`ultracite check`)、`bun run lint:fix`(`ultracite fix`)、`bun run analyze`(`fallow`)。名前は何をするかで付け、道具が生成した `check` は使わない |
 | 検査の自動実行 | `.github/workflows/ci.yml`。PR と main への push で、`test-packages`、`lint-packages`、`analyze-packages` の 3 つのジョブが並行して走る。各ジョブは jdx/mise-action が `mise.toml` から Bun を入れ、`bun install --frozen-lockfile` の後に `packages/` を対象に実行する。main への PR は、3 つのジョブの合格をルールセットで必須にする |
 
@@ -89,6 +89,12 @@ README は「コーディングエージェント上で動くスキルとして�
 - fallow は `bunx fallow@latest --version` と `bunx fallow@latest recommend` の両方が Bun 1.4.2 で動いた(署名の検証も通った)。`recommend` が利用者に委ねる 2 つの選択(warn が既定の規則を CI で落とすか、同じファイルの非公開の型を公開した関数の型に使っている箇所を検査するか)は、いずれも既定(落とさない、検査しない)のままにした。必要になったときに `.fallowrc.json` で変える
 - `tsconfig.json` は Bun の推奨設定(https://bun.com/docs/typescript 、確認日 2026-09-21)から、Web 向けの項目(`jsx`、`allowJs`)を除いたもの。`types` に `bun` を指定するため `@types/bun` を devDependencies に入れた
 - Bun 1.4(2026-08-20 公開)の公開記事(https://bun.com/blog/bun-v1.4 、確認日 2026-09-21)には破壊的変更の節は無く、挙動が変わった点のうちこの使い方に関わるものも無かった。`trustedDependencies` が npm レジストリのパッケージにしか自動で効かなくなった点は、git や file 参照の依存を使わないため影響しない。`bun test --parallel` が `--isolate` を含むようになった点は、`--parallel` を使わないため影響しない。HTML ルートのソースマップ、HTTP/3、`--asset` はこのリポジトリの範囲外
+
+### 順 2 で決めたこと(1 セッション目)
+
+- **パッケージの公開の仕方は `package.json` の `exports` の下位パス(`./cards`、`./state`)にし、`src/index.ts` の再公開は置かない。** Ultracite の core プリセットは再公開だけのファイルを `noBarrelFile` で禁止している(束ねたファイルは、使わない部品まで読み込ませて起動を遅くするため)。プリセットの規則を上書きする案もあったが、この骨組みは Web(Next.js)と API(Elysia.js)から取り込まれる共有部品で、使う部品だけを読み込ませる利点がそのまま当てはまるため、規則に従った。使う側は `@pokemon-tcg-buddy/solo-play-simulator/state` のように部品ごとに取り込む。fallow は `exports` を入口として自動で検出し(`fallow list` で確認、2026-09-21)、入口のファイルから公開したクラスの部品は公開 API とみなして未使用の判定から外す
+- **クラスの真偽値の欄は宣言で初期化せず constructor で代入する。** Biome は `hasUsedSupporter = false` を `false` 型と推論し、その欄を条件に使う箇所を `noUnnecessaryConditions` で「常に偽」と誤検出する(Biome 2.5.12、2026-09-21 に観測)。`hasUsedSupporter: boolean` と宣言して constructor で代入すれば、`noInferrableTypes` にも触れずに済む
+- **型検査は CI に入れていない。** Bun のテスト実行は型を検査しないため、`tsconfig.json` の `strict` は CI では効いていない。順 2 の 1 セッション目では `bunx --bun tsc --noEmit -p tsconfig.json`(TypeScript 7.0.2)を手元で実行して通ることを確かめた。CI のジョブに足すかは順 2 の 2 セッション目で決める(足すなら main のルールセットの必須ジョブも更新する)
 
 ### 採らなかった案
 

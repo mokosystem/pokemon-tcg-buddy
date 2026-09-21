@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    "./cards": "./src/cards.ts",
+    "./state": "./src/state.ts"
   }
 }
