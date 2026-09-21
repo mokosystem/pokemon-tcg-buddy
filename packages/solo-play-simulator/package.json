@@ -1,5 +1,5 @@
 {
-  "name": "@pokemon-tcg-buddy/setup-rate",
+  "name": "@pokemon-tcg-buddy/solo-play-simulator",
   "version": "0.0.0",
   "private": true,
   "type": "module",

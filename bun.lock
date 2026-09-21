@@ -11,8 +11,8 @@
         "ultracite": "7.12.0",
       },
     },
-    "packages/setup-rate": {
-      "name": "@pokemon-tcg-buddy/setup-rate",
+    "packages/solo-play-simulator": {
+      "name": "@pokemon-tcg-buddy/solo-play-simulator",
       "version": "0.0.0",
     },
   },
@@ -69,7 +69,7 @@
 
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
 
-    "@pokemon-tcg-buddy/setup-rate": ["@pokemon-tcg-buddy/setup-rate@workspace:packages/setup-rate"],
+    "@pokemon-tcg-buddy/solo-play-simulator": ["@pokemon-tcg-buddy/solo-play-simulator@workspace:packages/solo-play-simulator"],
 
     "@sec-ant/readable-stream": ["@sec-ant/readable-stream@0.4.1", "", {}, "sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg=="],
 

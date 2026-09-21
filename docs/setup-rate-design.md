@@ -77,7 +77,7 @@ README は「コーディングエージェント上で動くスキルとして�
 | --- | --- |
 | 実行環境 | Bun 1.4.2。`mise.toml` の `[tools]` で固定し、`mise install` で入る |
 | パッケージ管理 | Bun の workspaces(`packages/*`)。最上位の `package.json` は `private` で、`bun.lock` を 1 つだけ持つ |
-| 計算の骨組みの置き場所 | `packages/setup-rate`(パッケージ名 `@pokemon-tcg-buddy/setup-rate`) |
+| 計算の骨組みの置き場所 | `packages/solo-play-simulator`(パッケージ名 `@pokemon-tcg-buddy/solo-play-simulator`)。「一人回し」(相手なしでデッキを回すこと)を模擬する道具であることが名前から読めるようにした。当初の `setup-rate` は「成立率」の直訳で、準備の速さや割合と読めてしまい、デッキの計算だと分からないため改名した。この設計文書のファイル名と `pokemon-tcg-estimate-setup-rate` スキルの名前は、Issue 27 の順 9 の書き直しで合わせる |
 | Linter と Formatter | Ultracite 7.12.0(Biome 2.5.12)。`biome.jsonc` は `ultracite/biome/core` だけを継承する |
 | 静的解析 | fallow 3.27.0。`.fallowrc.json` は `fallow recommend` の提案(入口 `src/index.*`、workspaces `packages/*`)をそのまま使う |
 | 最上位の scripts | `bun run test`(`bun test`)、`bun run lint`(`ultracite check`)、`bun run lint:fix`(`ultracite fix`)、`bun run analyze`(`fallow`)。名前は何をするかで付け、道具が生成した `check` は使わない |
