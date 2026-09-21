@@ -1,0 +1,22 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - name: 依存パッケージを入れる
+        run: bun install --frozen-lockfile
+      - name: テスト
+        run: bun run test
+      - name: Ultracite(Biome)の検査
+        run: bun run ultracite check
+      - name: fallow の検査
+        run: bun run fallow

@@ -69,6 +69,32 @@ README は「コーディングエージェント上で動くスキルとして�
 
 2026-09-18 に、このリポジトリを Web(Next.js)、API(Bun と Elysia.js)、Terraform、AI エージェントのモノレポにする想定が README に書かれた。計算の骨組みはスキル、将来の API、模擬対戦(Issue 26)から使われる共有の部品にあたるため、Python のまま最上位に置く形は想定に合わない。Issue 27 で TypeScript の共有ライブラリとして `packages/` に作り直し、`setup_rate/` はそれまでの試作として残す。
 
+## TypeScript の環境(Issue 27 の順 1)
+
+2026-09-21 に整えた。以後の骨組みの移植(順 2)はこの環境の上で行う。
+
+| 項目 | 内容 |
+| --- | --- |
+| 実行環境 | Bun 1.4.2。`mise.toml` の `[tools]` で固定し、`mise install` で入る |
+| パッケージ管理 | Bun の workspaces(`packages/*`)。最上位の `package.json` は `private` で、`bun.lock` を 1 つだけ持つ |
+| 計算の骨組みの置き場所 | `packages/setup-rate`(パッケージ名 `@pokemon-tcg-buddy/setup-rate`) |
+| Linter と Formatter | Ultracite 7.12.0(Biome 2.5.12)。`biome.jsonc` は `ultracite/biome/core` だけを継承する |
+| 静的解析 | fallow 3.27.0。`.fallowrc.json` は `fallow recommend` の提案(入口 `src/index.*`、workspaces `packages/*`)をそのまま使う |
+| 最上位の scripts | `bun run check`(`ultracite check && fallow`)、`bun run fix`(`ultracite fix`)、`bun run test`(`bun test`) |
+| 検査の自動実行 | `.github/workflows/check.yml`。PR と main への push で、jdx/mise-action が `mise.toml` から Bun を入れ、`bun install --frozen-lockfile` → テスト → Ultracite → fallow の順に走る。main への PR は、この workflow の合格をルールセットで必須にする |
+
+### 導入時に確かめたこと
+
+- `npx ultracite init --quiet --linter biome --pm bun` の生成物は `biome.jsonc` と、`package.json` の devDependencies(ultracite、@biomejs/biome)と scripts(check、fix)だけだった。AGENTS.md、CLAUDE.md、`.vscode/` は書き換えられなかった。生成直後の `biome.jsonc` は Ultracite 自身の整形規則(配列を 1 行に畳む)に合わず `ultracite check` が落ちたため、`ultracite fix` で整えた
+- fallow は `bunx fallow@latest --version` と `bunx fallow@latest recommend` の両方が Bun 1.4.2 で動いた(署名の検証も通った)。`recommend` が利用者に委ねる 2 つの選択(warn が既定の規則を CI で落とすか、同じファイルの非公開の型を公開した関数の型に使っている箇所を検査するか)は、いずれも既定(落とさない、検査しない)のままにした。必要になったときに `.fallowrc.json` で変える
+- `tsconfig.json` は Bun の推奨設定(https://bun.com/docs/typescript 、確認日 2026-09-21)から、Web 向けの項目(`jsx`、`allowJs`)を除いたもの。`types` に `bun` を指定するため `@types/bun` を devDependencies に入れた
+- Bun 1.4(2026-08-20 公開)の公開記事(https://bun.com/blog/bun-v1.4 、確認日 2026-09-21)には破壊的変更の節は無く、挙動が変わった点のうちこの使い方に関わるものも無かった。`trustedDependencies` が npm レジストリのパッケージにしか自動で効かなくなった点は、git や file 参照の依存を使わないため影響しない。`bun test --parallel` が `--isolate` を含むようになった点は、`--parallel` を使わないため影響しない。HTML ルートのソースマップ、HTTP/3、`--asset` はこのリポジトリの範囲外
+
+### 採らなかった案
+
+- **oven-sh/setup-bun で Bun を入れる案。** `bun-version-file` が読めるのは `package.json`、`.bun-version`、`.tool-versions` で、`mise.toml` は読めない(https://github.com/oven-sh/setup-bun 、確認日 2026-09-21)。Bun の版を `mise.toml` と別の場所にも書くと二重管理になるため、`mise.toml` を読む jdx/mise-action を使う
+- **テスト、Ultracite、fallow を別のジョブにする案。** ジョブごとに依存パッケージの取得が走り、必須にする検査も 3 つになる。1 つのジョブに 3 つのステップを並べ、落ちたステップの名前で原因を見分ける形にした
+
 ## 検証の記録
 
 Issue 22 の完了の定義に対応する記録。いずれも 2026-09-17 に、乱数の種 20260917、試行 20000 回で実行した。枚数を変えたときの比較は同じ種で回すので、差は試行の揺れではなく変更の効果として読める。20000 回のときの割合の揺れはおよそ ±0.7 ポイント(95 % の範囲)。
