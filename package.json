@@ -5,8 +5,9 @@
     "packages/*"
   ],
   "scripts": {
-    "check": "ultracite check && fallow",
-    "fix": "ultracite fix",
+    "analyze": "fallow",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
     "test": "bun test"
   },
   "devDependencies": {

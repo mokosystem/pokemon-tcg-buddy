@@ -12,7 +12,7 @@
 - **CONTEXT.md** — 文書で使う用語の定義(ユビキタス言語)。用語の正はここ。手順と知識は docs/pokemon-tcg/ に置き、CONTEXT.md には書かない。
 - **docs/** — 手順書などの作業文書。ポケモンカードのドメイン文書は `docs/pokemon-tcg/` に置き、開発に関する文書と区別する。
 - **setup_rate/** — 主軸の成立率を計算する骨組み(Python、依存パッケージ無し、環境管理は uv)。デッキごとの規則ファイルは `setup_rate/decks/`、テストは `tests/`。実行方法は `pokemon-tcg-estimate-setup-rate` スキルにある。Issue 22 で作った試作で、Issue 27 で TypeScript の `packages/` に置き換える(README「提供形態」)。
-- **packages/** — 複数の場所から使う TypeScript の共有ライブラリ(Bun の workspaces)。`packages/setup-rate` は成立率の計算の骨組みの移植先(Issue 27)。Bun の版は `mise.toml` で固定する。検査は最上位で `bun run check`(Ultracite と fallow)、修正は `bun run fix`、テストは `bun run test`。Pull Request では GitHub Actions(`.github/workflows/check.yml`)で同じ検査が走り、合格しないとマージできない。環境の詳しい内容は [docs/setup-rate-design.md](docs/setup-rate-design.md)「TypeScript の環境」にある。
+- **packages/** — 複数の場所から使う TypeScript の共有ライブラリ(Bun の workspaces)。`packages/setup-rate` は成立率の計算の骨組みの移植先(Issue 27)。Bun の版は `mise.toml` で固定する。テストは最上位で `bun run test`、整形と lint の検査は `bun run lint`(修正は `bun run lint:fix`)、未使用のコードなどの解析は `bun run analyze`。Pull Request では GitHub Actions(`.github/workflows/ci.yml`)で同じ検査が `packages/` を対象に走り、合格しないとマージできない。ファイル名、ジョブ名、scripts の名前は「何をするか」と「どの範囲か」が読めるように付け、`check` のような何をするか曖昧な名前は使わない。環境の詳しい内容は [docs/setup-rate-design.md](docs/setup-rate-design.md)「TypeScript の環境」にある。
 
 ## 文書の用語
 

@@ -80,8 +80,8 @@ README は「コーディングエージェント上で動くスキルとして�
 | 計算の骨組みの置き場所 | `packages/setup-rate`(パッケージ名 `@pokemon-tcg-buddy/setup-rate`) |
 | Linter と Formatter | Ultracite 7.12.0(Biome 2.5.12)。`biome.jsonc` は `ultracite/biome/core` だけを継承する |
 | 静的解析 | fallow 3.27.0。`.fallowrc.json` は `fallow recommend` の提案(入口 `src/index.*`、workspaces `packages/*`)をそのまま使う |
-| 最上位の scripts | `bun run check`(`ultracite check && fallow`)、`bun run fix`(`ultracite fix`)、`bun run test`(`bun test`) |
-| 検査の自動実行 | `.github/workflows/check.yml`。PR と main への push で、jdx/mise-action が `mise.toml` から Bun を入れ、`bun install --frozen-lockfile` → テスト → Ultracite → fallow の順に走る。main への PR は、この workflow の合格をルールセットで必須にする |
+| 最上位の scripts | `bun run test`(`bun test`)、`bun run lint`(`ultracite check`)、`bun run lint:fix`(`ultracite fix`)、`bun run analyze`(`fallow`)。名前は何をするかで付け、道具が生成した `check` は使わない |
+| 検査の自動実行 | `.github/workflows/ci.yml`。PR と main への push で、`test-packages`、`lint-packages`、`analyze-packages` の 3 つのジョブが並行して走る。各ジョブは jdx/mise-action が `mise.toml` から Bun を入れ、`bun install --frozen-lockfile` の後に `packages/` を対象に実行する。main への PR は、3 つのジョブの合格をルールセットで必須にする |
 
 ### 導入時に確かめたこと
 
@@ -93,7 +93,7 @@ README は「コーディングエージェント上で動くスキルとして�
 ### 採らなかった案
 
 - **oven-sh/setup-bun で Bun を入れる案。** `bun-version-file` が読めるのは `package.json`、`.bun-version`、`.tool-versions` で、`mise.toml` は読めない(https://github.com/oven-sh/setup-bun 、確認日 2026-09-21)。Bun の版を `mise.toml` と別の場所にも書くと二重管理になるため、`mise.toml` を読む jdx/mise-action を使う
-- **テスト、Ultracite、fallow を別のジョブにする案。** ジョブごとに依存パッケージの取得が走り、必須にする検査も 3 つになる。1 つのジョブに 3 つのステップを並べ、落ちたステップの名前で原因を見分ける形にした
+- **テスト、Ultracite、fallow を 1 つのジョブ `check` にまとめる案。** 依存パッケージの取得が 1 回で済むが、`check` は何をするか、リポジトリ全体か `packages/` 配下かが名前から読めない(モノレポでは範囲の区別が要る)。ジョブを「何をするか-どの範囲か」(`test-packages` など)の 3 つに分け、名前だけで内容と範囲が分かる形にした。取得は Bun のキャッシュで数秒なので、3 回になっても支障は無い
 
 ## 検証の記録
 
