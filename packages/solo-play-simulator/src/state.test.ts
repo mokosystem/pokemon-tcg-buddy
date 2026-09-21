@@ -265,6 +265,16 @@ describe("山札の操作", () => {
     expect(state.deck).toEqual([STADIUM, ENERGY, SUPPORTER]);
   });
 
+  test("山札の上から見て加えるとき、同じカードが複数枚あっても選んだ 1 枚だけが手札に移る", () => {
+    const state = stateWith([], [STAGE1, STAGE1, ENERGY]);
+    const taken = state.lookAtTopAndTakeOne(2, (card) =>
+      card.name === "1進化" ? 0 : 1
+    );
+    expect(taken).toBe(STAGE1);
+    expect(state.hand).toEqual([STAGE1]);
+    expect(state.deck).toEqual([ENERGY, STAGE1]);
+  });
+
   test("バトル場のポケモンを山札に戻すと、ついているカードごと戻りバトル場が空になる", () => {
     const state = stateWith([ENERGY, STAGE1], []);
     const active = activeOf(state);

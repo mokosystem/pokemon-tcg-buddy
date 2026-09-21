@@ -281,16 +281,20 @@ export class GameState {
   ): Card | null {
     const top = this.deck.splice(0, count);
     let taken: Card | null = null;
-    for (const card of top) {
+    let takenIndex = 0;
+    for (const [index, card] of top.entries()) {
       if (taken === null || rank(card) < rank(taken)) {
         taken = card;
+        takenIndex = index;
       }
     }
     if (taken === null) {
       return null;
     }
     this.hand.push(taken);
-    this.deck.push(...top.filter((card) => card !== taken));
+    // 同じカードは同じ参照を枚数分並べているため、参照で除くと選ばなかった同名のカードまで消える。位置で 1 枚だけ除く
+    top.splice(takenIndex, 1);
+    this.deck.push(...top);
     return taken;
   }
 
