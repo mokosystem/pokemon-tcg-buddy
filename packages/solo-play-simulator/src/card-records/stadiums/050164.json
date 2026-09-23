@@ -1,0 +1,33 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "maxCount": 2,
+            "minCount": 2,
+            "operation": "discardFromHand"
+          },
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "activatedOncePerTurn"
+    }
+  ],
+  "cardIds": ["050164", "050212"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "プリズムタワー",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

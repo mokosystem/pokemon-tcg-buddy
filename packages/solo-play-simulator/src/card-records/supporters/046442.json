@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["ポケモン"],
+                  "exRules": ["pokemonEx", "megaEvolutionEx"]
+                },
+                "maxCount": 3
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["046442"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "シアノ",
+  "rulings": [
+    {
+      "interpretation": "選べる",
+      "question": "メガシンカex を「ポケモンex」として選べるか",
+      "reflectedIn": "探す条件の exRules に pokemonEx と megaEvolutionEx の両方を書いた",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "「シアノ」でメガシンカex を選んで手札に加えられるか、という質問に、メガシンカex はポケモンex としても扱うため選べると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B7%E3%82%A2%E3%83%8E&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

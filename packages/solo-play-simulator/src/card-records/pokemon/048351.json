@@ -1,0 +1,51 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "みがる",
+      "translation": {
+        "continuousEffect": {
+          "change": {
+            "change": "setRetreatCostToZero"
+          },
+          "conditions": [
+            {
+              "condition": "selfHasNoEnergyAttached"
+            }
+          ],
+          "scope": {
+            "scope": "self"
+          }
+        },
+        "kind": "continuous"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fire"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "ひだね"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["048351"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "ヒトカゲ",
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

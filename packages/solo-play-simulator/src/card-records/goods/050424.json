@@ -1,0 +1,43 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["ポケモン"],
+                  "excludesPokemonWithRuleBox": true
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": [
+    "050424",
+    "050743",
+    "049703",
+    "049601",
+    "049378",
+    "050070",
+    "049573",
+    "050463",
+    "050598"
+  ],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "ポケパッド",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

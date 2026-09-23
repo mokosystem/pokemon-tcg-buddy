@@ -1,0 +1,83 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "にげあしドロー",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "count": {
+                "kind": "fixed",
+                "value": 3
+              },
+              "operation": "drawCards"
+            },
+            {
+              "operation": "returnSelfToDeck"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "ランドクラッシュ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["045203", "046791", "048483"],
+  "category": "ポケモン",
+  "evolvesFrom": "ノコッチ",
+  "excludedEffects": [],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 140,
+  "isTerastal": false,
+  "name": "ノココッチ",
+  "pokemonType": "colorless",
+  "retreatCost": 3,
+  "rulings": [
+    {
+      "interpretation": "使えない",
+      "question": "山札が 0 枚のとき、特性「にげあしドロー」を使えるか",
+      "reflectedIn": "効果の最初の操作(引く)に対象が無いときは使えない(card-effects.ts の hasTargetForFirstStep)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "山札が 0 枚のとき「にげあしドロー」を使えるか、という質問に、使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%AB%E3%81%92%E3%81%82%E3%81%97%E3%83%89%E3%83%AD%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使えないものとする。ベンチにポケモンがいれば使え、バトル場のノココッチを戻した後はベンチのポケモンをバトル場に出す",
+      "question": "場のポケモンがバトル場のノココッチだけのときに、特性「にげあしドロー」を使えるか(山札に戻すと場が空になる)",
+      "reflectedIn": "効果が場のポケモンをいなくならせるときは使えない(card-effects.ts の wouldLeaveFieldEmpty)。バトル場が空になったらベンチから出す(promoteIfActiveIsEmpty)",
+      "source": {
+        "basis": "基本ルール(あそびかたページ「ポケモンの『きぜつ』と対戦の勝敗」、docs/pokemon-tcg/basic-rules.md「きぜつと勝敗」): 場にポケモンが 1 匹もいなくなったプレイヤーの負け。公式 Q&A「ワナイダー」(検索語「場にポケモンがいなくなる」)でも、効果で場からポケモンがいなくなったプレイヤーは負けになると回答されている。相手のいない乱数試行では負けを扱えないため、場が空になる使い方は選ばせない",
+        "checkedOn": "2026-09-23",
+        "kind": "noMatchingQa",
+        "searchTerms": [
+          "にげあしドロー",
+          "ノココッチ",
+          "場にポケモンがいなくなる",
+          "バトルポケモン 山札にもどす ベンチポケモンがいない"
+        ]
+      }
+    }
+  ],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

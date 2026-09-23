@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["048419"],
+  "category": "スタジアム",
+  "excludedEffects": [
+    {
+      "description": "おたがいのベンチポケモンに、相手のワザや特性の効果でダメカンがのらなくなる",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "バトルコロシアム",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

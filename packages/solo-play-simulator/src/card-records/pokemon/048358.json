@@ -1,0 +1,64 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "エキサイトターボ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["fire"]
+              },
+              "operation": "attachEnergyFromHand",
+              "targetFilter": {
+                "pokemonTypes": ["fire"],
+                "positions": ["bench"]
+              }
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "exRules": ["megaEvolutionEx"],
+                "pokemonTypes": ["fire"]
+              }
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "unlimited"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fire", "fire", "colorless"],
+      "damage": {
+        "amount": 110,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "ほのおのつばさ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["048358"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [],
+  "exRule": "pokemonEx",
+  "hasRuleBox": true,
+  "hp": 190,
+  "isTerastal": false,
+  "name": "オドリドリex",
+  "pokemonType": "fire",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

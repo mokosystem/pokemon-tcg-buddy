@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["050083"],
+  "category": "サポート",
+  "excludedEffects": [
+    {
+      "description": "自分の超ポケモン 1 匹の HP を 150 回復する",
+      "reason": "healing"
+    }
+  ],
+  "name": "ユカリ",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

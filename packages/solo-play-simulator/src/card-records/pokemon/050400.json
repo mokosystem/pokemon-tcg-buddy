@@ -1,0 +1,81 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "エキサイトダイブ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "placeSelfOnBenchFromHand"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "exRules": ["megaEvolutionEx"],
+                "pokemonTypes": ["colorless"]
+              }
+            }
+          ]
+        },
+        "kind": "activatedFromHand"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 150,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": true,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {},
+                "maxCount": 2
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "かぎづめハント"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ヤヤコマ",
+  "cardIds": ["050400"],
+  "category": "ポケモン",
+  "evolvesFrom": "ヒノヤコマ",
+  "excludedEffects": [],
+  "exRule": "pokemonEx",
+  "hasRuleBox": true,
+  "hp": 280,
+  "isTerastal": false,
+  "name": "ファイアローex",
+  "pokemonType": "colorless",
+  "retreatCost": 0,
+  "rulings": [
+    {
+      "interpretation": "2進化ポケモン(進化ポケモン)として扱う",
+      "question": "特性「エキサイトダイブ」で直接ベンチに出したファイアローex は、たねポケモンか進化ポケモンか",
+      "reflectedIn": "ベンチに出す操作(state.ts の placeOnBench、byEffect)はカードの記録の 2進化のまま場に置く",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "「エキサイトダイブ」で場に出たファイアローex は、たねポケモンではなく 2進化ポケモン(進化ポケモン)として扱うと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A8%E3%82%AD%E3%82%B5%E3%82%A4%E3%83%88%E3%83%80%E3%82%A4%E3%83%96&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "2進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

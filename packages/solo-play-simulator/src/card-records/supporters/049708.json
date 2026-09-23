@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["049708"],
+  "category": "サポート",
+  "excludedEffects": [
+    {
+      "description": "自分のサイドの残り枚数が相手より多いときにしか使えない(トラッシュから基本エネルギーを 2 進化ポケモンにつける効果も、この条件のため使えない)",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "メイのはげまし",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

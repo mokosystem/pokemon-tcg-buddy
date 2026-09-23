@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "fire"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed",
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "energyAttachedToOwnPokemon",
+            "energyType": "fire"
+          },
+          "unit": 90
+        }
+      },
+      "effect": null,
+      "name": "インフェルノX"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ヒトカゲ",
+  "cardIds": ["048353"],
+  "category": "ポケモン",
+  "evolvesFrom": "リザード",
+  "excludedEffects": [
+    {
+      "description": "ワザ「インフェルノX」は、自分の場の炎エネルギーを好きなだけトラッシュし、その枚数×90 ダメージを与える。ダメージは場の炎エネルギーを全部トラッシュしたときの値で求め、トラッシュは含めない",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "exRule": "megaEvolutionEx",
+  "hasRuleBox": true,
+  "hp": 360,
+  "isTerastal": false,
+  "name": "メガリザードンXex",
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

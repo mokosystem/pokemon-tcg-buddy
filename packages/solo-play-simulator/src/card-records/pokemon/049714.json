@@ -1,0 +1,51 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "もってくる"
+    },
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "ずつき"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["049714"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ラルトス",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

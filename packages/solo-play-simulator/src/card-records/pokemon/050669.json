@@ -1,0 +1,78 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "きおくのらせん",
+      "translation": {
+        "continuousEffect": {
+          "change": {
+            "change": "allowBenchedPokemonAttacks"
+          },
+          "conditions": [],
+          "scope": {
+            "scope": "self"
+          }
+        },
+        "kind": "continuous"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": true,
+        "steps": [
+          {
+            "operation": "switchActiveWithBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "テレポートブレイク"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["050669"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [],
+  "exRule": "pokemonEx",
+  "hasRuleBox": true,
+  "hp": 160,
+  "isTerastal": false,
+  "name": "ミュウex",
+  "pokemonType": "psychic",
+  "retreatCost": 0,
+  "rulings": [
+    {
+      "interpretation": "使えない。ベンチのポケモンが自分で持っているワザだけを使える",
+      "question": "ベンチのポケモンが効果で使えるようになったワザ(ポケモンのどうぐのワザ、進化前のワザ)も使えるか",
+      "reflectedIn": "使えるワザの一覧(continuous-effects.ts の listUsableAttacks)に、ベンチのポケモンの記録のワザだけを足す",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "特性「きおくにもぐる」で進化前のワザを使えるメガリザードンXexや、ポケモンのどうぐに書かれたワザを、「きおくのらせん」で使えるか、という質問に、効果で使えるようになったワザはそのポケモンが持っているワザとして扱わないため使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8D%E3%81%8A%E3%81%8F%E3%81%AE%E3%82%89%E3%81%9B%E3%82%93&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "ワザを使うミュウex を指す",
+      "question": "ベンチのポケモンのワザを使うとき、ワザの条件や効果の「このポケモン」はどちらを指すか",
+      "reflectedIn": "ワザの効果は、ワザを持つベンチのポケモンではなく、バトル場のミュウex を持ち主として実行する(card-effects.ts の useAttack)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "ラランテスexやシザリガーのワザを「きおくのらせん」で使うとき、HP の回復やダメカンの条件はワザを使うミュウex で判定すると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8D%E3%81%8A%E3%81%8F%E3%81%AE%E3%82%89%E3%81%9B%E3%82%93&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

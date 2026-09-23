@@ -1,0 +1,103 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "おくのてキャッチ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "searchDeckIntoHand",
+              "picks": [
+                {
+                  "filter": {
+                    "categories": ["サポート"]
+                  },
+                  "maxCount": 1
+                }
+              ]
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "noAbilityUsedThisTurnWithNameIncluding",
+              "text": "おくのて"
+            }
+          ]
+        },
+        "kind": "triggeredWhenPlacedOnBenchFromHand"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "returnPokemonToHand",
+            "target": "self"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "しっぽをまく"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["049694"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [],
+  "exRule": "pokemonEx",
+  "hasRuleBox": true,
+  "hp": 170,
+  "isTerastal": false,
+  "name": "ニャースex",
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "rulings": [
+    {
+      "interpretation": "使えない。手札からベンチに出したときだけ使える",
+      "question": "山札からベンチに出したときに、特性「おくのてキャッチ」を使えるか",
+      "reflectedIn": "特性のきっかけを triggeredWhenPlacedOnBenchFromHand にし、手札からベンチに出す操作(card-effects.ts の placeBasicPokemonOnBenchFromHand)だけが問い合わせる",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "ワザの効果で山札からベンチに出したニャースexの「おくのてキャッチ」は使えるか、という質問に、手札から出したときの特性なので使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8A%E3%81%8F%E3%81%AE%E3%81%A6%E3%82%AD%E3%83%A3%E3%83%83%E3%83%81&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使えない",
+      "question": "対戦の準備でベンチに出したニャースexの特性を、最初の自分の番に使えるか",
+      "reflectedIn": "対戦の準備(engine.ts の setupGame)は基本操作でベンチに出し、きっかけにしない",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "対戦の準備でベンチに出したニャースexの「おくのてキャッチ」を、対戦が始まった直後の自分の番に使えるか、という質問に、使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8A%E3%81%8F%E3%81%AE%E3%81%A6%E3%82%AD%E3%83%A3%E3%83%83%E3%83%81&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使えないものとする。手札に戻すと場にポケモンがいなくなり、負けになるため",
+      "question": "場のポケモンがバトル場のニャースexだけのときに、ワザ「しっぽをまく」を使えるか",
+      "reflectedIn": "ワザの効果が場のポケモンをいなくならせるときは使えない(card-effects.ts の wouldLeaveFieldEmpty)",
+      "source": {
+        "basis": "基本ルール(あそびかたページ「ポケモンの『きぜつ』と対戦の勝敗」、docs/pokemon-tcg/basic-rules.md「きぜつと勝敗」): 場にポケモンが 1 匹もいなくなったプレイヤーの負け。公式 Q&A「ワナイダー」(検索語「場にポケモンがいなくなる」)でも、効果で場からポケモンがいなくなったプレイヤーは負けになると回答されている。相手のいない乱数試行では負けを扱えないため、場が空になる使い方は選ばせない",
+        "checkedOn": "2026-09-23",
+        "kind": "noMatchingQa",
+        "searchTerms": ["しっぽをまく", "場にポケモンがいなくなる"]
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

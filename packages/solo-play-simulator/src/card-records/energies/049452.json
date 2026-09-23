@@ -1,0 +1,53 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "change": "setEnergyProvision",
+          "provision": {
+            "kind": "type",
+            "type": "colorless",
+            "units": 3
+          }
+        },
+        "conditions": [
+          {
+            "condition": "attachedPokemonMatches",
+            "filter": {
+              "stages": ["1進化", "2進化"]
+            }
+          }
+        ],
+        "scope": {
+          "scope": "self"
+        }
+      },
+      "kind": "continuous"
+    },
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "discardSelf"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "triggeredAtEndOfOwnTurn"
+    }
+  ],
+  "cardIds": ["049452"],
+  "category": "特殊エネルギー",
+  "excludedEffects": [],
+  "name": "イグニッションエネルギー",
+  "provision": {
+    "kind": "type",
+    "type": "colorless",
+    "units": 1
+  },
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

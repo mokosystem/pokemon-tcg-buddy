@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["050156", "050205"],
+  "category": "グッズ",
+  "excludedEffects": [
+    {
+      "description": "相手のサイドの残り枚数が条件で、相手の手札を山札に戻させて引かせる",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "スペシャルレッドカード",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

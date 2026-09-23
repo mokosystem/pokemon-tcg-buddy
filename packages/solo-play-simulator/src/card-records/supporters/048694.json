@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["ポケモン"],
+                  "stages": ["1進化", "2進化"]
+                },
+                "maxCount": 1
+              },
+              {
+                "filter": {
+                  "categories": ["基本エネルギー", "特殊エネルギー"]
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["048694", "049434", "048078"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "トウコ",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "returnPokemonToHand",
+            "target": "chosenOwnPokemon"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["049380", "045784"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "ポケモン回収サイクロン",
+  "rulings": [
+    {
+      "interpretation": "戻す",
+      "question": "進化ポケモンを手札に戻すとき、進化前のポケモンも戻すか",
+      "reflectedIn": "場のポケモンを手札に戻す操作(state.ts の returnPokemonToHand)は、進化前のカード、エネルギー、どうぐも手札に戻す",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "進化ポケモンを手札に戻すとき進化前のポケモンも戻すか、という質問に、戻すと回答(関連カードの印刷 045784 は詳細ページを見比べて同じカードテキスト)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E5%9B%9E%E5%8F%8E%E3%82%B5%E3%82%A4%E3%82%AF%E3%83%AD%E3%83%B3&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使えないものとする",
+      "question": "場のポケモンが 1 匹だけのときに使えるか(手札に戻すと場が空になる)",
+      "reflectedIn": "効果が場のポケモンをいなくならせるときは使えない(card-effects.ts の wouldLeaveFieldEmpty)。バトル場のポケモンを戻したらベンチから出す",
+      "source": {
+        "basis": "基本ルール(あそびかたページ「ポケモンの『きぜつ』と対戦の勝敗」、docs/pokemon-tcg/basic-rules.md「きぜつと勝敗」): 場にポケモンが 1 匹もいなくなったプレイヤーの負け。公式 Q&A「ワナイダー」(検索語「場にポケモンがいなくなる」)でも、効果で場からポケモンがいなくなったプレイヤーは負けになると回答されている。相手のいない乱数試行では負けを扱えないため、場が空になる使い方は選ばせない",
+        "checkedOn": "2026-09-23",
+        "kind": "noMatchingQa",
+        "searchTerms": ["ポケモン回収サイクロン", "場にポケモンがいなくなる"]
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

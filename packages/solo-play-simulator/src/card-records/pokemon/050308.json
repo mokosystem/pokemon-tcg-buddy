@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed",
+        "bonus": {
+          "add": 140,
+          "atLeast": 4,
+          "kind": "whenCountAtLeast",
+          "target": {
+            "abilityName": "ばけがくれ",
+            "count": "discardPokemonWithAbilityName"
+          }
+        }
+      },
+      "effect": null,
+      "name": "むねんのイカリ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["050308", "050256"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 140,
+  "isTerastal": false,
+  "name": "ダダリン",
+  "pokemonType": "psychic",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

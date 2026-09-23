@@ -1,0 +1,60 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"],
+              "excludesPokemonWithRuleBox": true
+            },
+            "maxCount": 2,
+            "minCount": 0,
+            "operation": "discardFromHand"
+          },
+          {
+            "count": {
+              "kind": "perCardDiscardedEarlierInThisEffect",
+              "multiplier": 3
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050297"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "ムク",
+  "rulings": [
+    {
+      "interpretation": "使えない",
+      "question": "手札がこのカードだけのときに使えるか",
+      "reflectedIn": "手札からトラッシュする操作に対象(ルールを持たないポケモン)が無いときは使えない(card-effects.ts の hasTargetForFirstStep)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "手札が「ムク」1 枚だけのときに使えるか、という質問に、使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%A0%E3%82%AF&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使えないものとする",
+      "question": "手札にほかのカードはあるが、ルールを持たないポケモンが 1 枚も無いときに使えるか",
+      "reflectedIn": "手札からトラッシュする操作に対象が無いときは使えない(card-effects.ts の hasTargetForFirstStep)",
+      "source": {
+        "basis": "公式 Q&A「ムク」(検索語「ムク」)の、手札がこのカードだけのときは使えないという回答を、トラッシュできるポケモンが無いとき全般に広げた。山札が 0 枚や 3 枚以下でもトラッシュして使える、という回答はあり、引く枚数が足りないことは使えない理由にならない",
+        "checkedOn": "2026-09-23",
+        "kind": "noMatchingQa",
+        "searchTerms": ["ムク"]
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

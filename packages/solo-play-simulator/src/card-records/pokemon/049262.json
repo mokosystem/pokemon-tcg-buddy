@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "ちょっとうらむ"
+    },
+    {
+      "cost": ["fire", "psychic"],
+      "damage": {
+        "amount": 40,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "かみつく"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["049262"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ドラメシヤ",
+  "pokemonType": "dragon",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

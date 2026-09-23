@@ -1,0 +1,53 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ていさつしれい",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "filter": {},
+              "lookCount": 2,
+              "maxTakeCount": 1,
+              "minTakeCount": 1,
+              "operation": "lookAtDeckTopAndTakeIntoHand",
+              "restPlacement": "bottomOfDeck"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fire", "psychic"],
+      "damage": {
+        "amount": 70,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "リューズヘッド"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["049263"],
+  "category": "ポケモン",
+  "evolvesFrom": "ドラメシヤ",
+  "excludedEffects": [],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 90,
+  "isTerastal": false,
+  "name": "ドロンチ",
+  "pokemonType": "dragon",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

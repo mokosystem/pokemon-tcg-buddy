@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "change": "negateAbilities"
+        },
+        "conditions": [],
+        "scope": {
+          "filter": {
+            "pokemonTypes": ["colorless"]
+          },
+          "scope": "ownPokemon"
+        }
+      },
+      "kind": "continuous"
+    }
+  ],
+  "cardIds": ["048711", "047489"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "ロケット団の監視塔",
+  "rulings": [
+    {
+      "interpretation": "なくならない。なくなるのは場のポケモンの特性だけ",
+      "question": "手札にある無色ポケモンの特性(ファイアローex の「エキサイトダイブ」)もなくなるか",
+      "reflectedIn": "特性を無くす効果の範囲を自分の場のポケモンにし、手札のカードの特性は判定しない(card-effects.ts の canUseAbilityFromHand)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "このスタジアムが出ているとき、手札にあるファイアローex の「エキサイトダイブ」を使えるか、という質問に、手札の無色ポケモンの特性はなくならないため使えると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E7%9B%A3%E8%A6%96%E5%A1%94&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

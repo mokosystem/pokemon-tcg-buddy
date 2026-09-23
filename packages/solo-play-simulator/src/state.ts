@@ -3,12 +3,17 @@
  *
  * 相手の行動は含めない。相手がいないため、サイドは 6 枚のまま減らず、
  * 自分のポケモンはきぜつしない。ルールの出典は docs/pokemon-tcg/basic-rules.md。
+ * カードの効果(何を探し、何を捨てるか)はここでは決めず、card-effects.ts が記録の翻訳に従って
+ * この基本操作を呼ぶ。
  */
 
 import {
-  type Card,
   CardCategory,
   EvolutionStage,
+  type PokemonType,
+} from "./card-record-schema.ts";
+import {
+  type Card,
   isBasicPokemon,
   isEnergy,
   isPokemon,
@@ -18,39 +23,47 @@ import {
 export const BENCH_LIMIT = 5;
 export const HAND_SIZE_AT_SETUP = 7;
 export const PRIZE_COUNT = 6;
-export const COLORLESS = "colorless";
+export const COLORLESS: PokemonType = "colorless";
+
+/** エネルギー 1 個ぶんのタイプ。any はすべてのタイプとして働く 1 個(レガシーエネルギーなど)。 */
+export type EnergyUnit = PokemonType | "any";
 
 /** 山札を切るための乱数の源。0 以上 1 未満の値を返す。種を指定できる生成器は random.ts にある。 */
 export interface RandomSource {
   nextFloat: () => number;
 }
 
-export type CardPredicate = (card: Card) => boolean;
-
-export type CardSource = "hand" | "deck";
+export type CardSource = "hand" | "deck" | "discard";
 
 /**
- * ワザに必要なエネルギー(タイプ名の並び。無色は colorless)を、ついているエネルギーの
- * 個数分(units)で払えるか。タイプ指定の分を先に埋め、残りを無色に充てる。
+ * ワザに必要なエネルギー(タイプの並び。無色は colorless)を、ついているエネルギーの
+ * 個数分(units)で払えるか。タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして
+ * 働く 1 個を充て、残りを無色に充てる。すべてのタイプとして働く 1 個を後に回すのは、同じタイプの
+ * 1 個で埋められる指定にそれを使うと、別のタイプの指定を埋められなくなるため。
  */
 export function canPayCost(
-  cost: readonly string[],
-  units: readonly string[]
+  cost: readonly PokemonType[],
+  units: readonly EnergyUnit[]
 ): boolean {
   const remaining = [...units];
-  for (const required of cost) {
-    if (required === COLORLESS) {
-      continue;
-    }
+  const typedCost = cost.filter((required) => required !== COLORLESS);
+  const unmatched: PokemonType[] = [];
+  for (const required of typedCost) {
     const index = remaining.indexOf(required);
+    if (index < 0) {
+      unmatched.push(required);
+    } else {
+      remaining.splice(index, 1);
+    }
+  }
+  for (const _ of unmatched) {
+    const index = remaining.indexOf("any");
     if (index < 0) {
       return false;
     }
     remaining.splice(index, 1);
   }
-  const colorlessNeeded = cost.filter(
-    (required) => required === COLORLESS
-  ).length;
+  const colorlessNeeded = cost.length - typedCost.length;
   return remaining.length >= colorlessNeeded;
 }
 
@@ -84,6 +97,9 @@ export class PokemonInPlay {
   turnEvolved = -1;
   readonly energies: Card[] = [];
   readonly underneath: Card[] = [];
+  tool: Card | null = null;
+  /** この番にこのポケモンが使った特性の名前。「番に 1 回」はポケモンごとに数える。 */
+  readonly abilitiesUsedThisTurn = new Set<string>();
 
   constructor(card: Card, turnEntered: number) {
     this.card = card;
@@ -99,10 +115,14 @@ export class PokemonInPlay {
     return this.turnEntered === turn || this.turnEvolved === turn;
   }
 
-  countEnergy(energyType: string): number {
-    return this.energies.filter((energy) =>
-      energy.provides.includes(energyType)
-    ).length;
+  /** このポケモンと、ついているカードすべて(進化前、エネルギー、どうぐ)。 */
+  listCardsIncludingAttached(): Card[] {
+    return [
+      this.card,
+      ...this.underneath,
+      ...this.energies,
+      ...(this.tool === null ? [] : [this.tool]),
+    ];
   }
 }
 
@@ -123,8 +143,10 @@ export class GameState {
   hasUsedSupporter: boolean;
   hasAttachedEnergy: boolean;
   hasPlayedStadium: boolean;
+  hasUsedStadiumEffect: boolean;
   hasRetreated: boolean;
-  readonly usedOncePerTurn = new Set<string>();
+  /** この番に使った特性の名前(場全体)。同じ名前の特性の回数の制限と、名前に文字列を含む条件に使う。 */
+  abilityNamesUsedThisTurn: string[] = [];
   readonly attacks = new Map<number, string>();
   readonly events: string[] = [];
 
@@ -139,6 +161,7 @@ export class GameState {
     this.hasUsedSupporter = false;
     this.hasAttachedEnergy = false;
     this.hasPlayedStadium = false;
+    this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
   }
 
@@ -203,17 +226,22 @@ export class GameState {
     return !(this.hasUsedSupporter || this.isFirstTurnGoingFirst());
   }
 
+  /** ワザを使える番か。ワザごとのエネルギーの判定は card-effects.ts が場の効果を集めて行う。 */
   canAttack(): boolean {
     return this.active !== null && !this.isFirstTurnGoingFirst();
   }
 
+  /** このポケモンを、この番に手札の進化ポケモンへ進化させられるか(最初の番、出したばかりの制限を含む)。 */
   canEvolve(target: PokemonInPlay, card: Card): boolean {
     return (
-      this.turn >= 2 &&
+      this.canEvolveThisTurn(target) &&
       isPokemon(card) &&
-      card.evolvesFrom === target.name &&
-      !target.isFresh(this.turn)
+      card.evolvesFrom === target.name
     );
+  }
+
+  canEvolveThisTurn(target: PokemonInPlay): boolean {
+    return this.turn >= 2 && !target.isFresh(this.turn);
   }
 
   // ---- 山札 ----
@@ -237,77 +265,55 @@ export class GameState {
     return drawn;
   }
 
-  findInDeck(predicate: CardPredicate): Card | null {
-    return this.deck.find(predicate) ?? null;
-  }
-
   takeFromDeckToHand(card: Card): void {
     removeCard(this.deck, card, "山札");
     this.hand.push(card);
   }
 
-  /** 条件ごとに 1 枚ずつ山札から手札に加え、最後に山札を切る。見つからない条件は飛ばす。 */
-  searchDeckToHand(predicates: readonly CardPredicate[]): Card[] {
-    const found: Card[] = [];
-    for (const predicate of predicates) {
-      const card = this.findInDeck(predicate);
-      if (card !== null) {
-        this.takeFromDeckToHand(card);
-        found.push(card);
-      }
+  /**
+   * 山札の上から lookCount 枚のうち chosen を手札に加え、残りを山札に戻す(切るか、下に置く)。
+   * 同じカードは同じ参照を枚数分並べているため、参照ではなく位置で 1 枚ずつ除く。
+   */
+  takeFromDeckTop(
+    lookCount: number,
+    chosen: readonly Card[],
+    restPlacement: "shuffleIntoDeck" | "bottomOfDeck"
+  ): void {
+    const looked = this.deck.splice(0, lookCount);
+    for (const card of chosen) {
+      removeCard(looked, card, "山札の上から見たカード");
+      this.hand.push(card);
     }
-    this.shuffleDeck();
-    return found;
-  }
-
-  /** 山札の上から count 枚を見て、条件に合う 1 枚を手札に加える。残りは山札に戻して切る。 */
-  revealTopAndTake(count: number, predicate: CardPredicate): Card | null {
-    const taken = this.deck.slice(0, count).find(predicate) ?? null;
-    if (taken !== null) {
-      removeCard(this.deck, taken, "山札");
-      this.hand.push(taken);
+    this.deck.push(...looked);
+    if (restPlacement === "shuffleIntoDeck") {
+      this.shuffleDeck();
     }
-    this.shuffleDeck();
-    return taken;
-  }
-
-  /** 山札の上から count 枚を見て、rank が最も小さい 1 枚を手札に加え、残りを山札の下に戻す。 */
-  lookAtTopAndTakeOne(
-    count: number,
-    rank: (card: Card) => number
-  ): Card | null {
-    const top = this.deck.splice(0, count);
-    let taken: Card | null = null;
-    let takenIndex = 0;
-    for (const [index, card] of top.entries()) {
-      if (taken === null || rank(card) < rank(taken)) {
-        taken = card;
-        takenIndex = index;
-      }
-    }
-    if (taken === null) {
-      return null;
-    }
-    this.hand.push(taken);
-    // 同じカードは同じ参照を枚数分並べているため、参照で除くと選ばなかった同名のカードまで消える。位置で 1 枚だけ除く
-    top.splice(takenIndex, 1);
-    this.deck.push(...top);
-    return taken;
   }
 
   /**
    * 場のポケモンを、ついているカードごと山札に戻して切る。バトル場のポケモンを戻したときは、
-   * 呼び出し側が次のバトルポケモンを選ぶ(相手がいないため、選ばなくてもよい)。
+   * 呼び出し側がベンチから次のバトルポケモンを出す(promoteToActive)。
    */
   returnPokemonToDeck(target: PokemonInPlay): void {
+    this.removeFromPlay(target);
+    this.deck.push(...target.listCardsIncludingAttached());
+    this.shuffleDeck();
+    this.record(`${target.name} を山札に戻す`);
+  }
+
+  /** 場のポケモンを、ついているカードごと手札に戻す。バトル場のときの扱いは returnPokemonToDeck と同じ。 */
+  returnPokemonToHand(target: PokemonInPlay): void {
+    this.removeFromPlay(target);
+    this.hand.push(...target.listCardsIncludingAttached());
+    this.record(`${target.name} を手札に戻す`);
+  }
+
+  private removeFromPlay(target: PokemonInPlay): void {
     if (target === this.active) {
       this.active = null;
     } else {
       removeFirst(this.bench, target, "ベンチ");
     }
-    this.deck.push(target.card, ...target.underneath, ...target.energies);
-    this.shuffleDeck();
-    this.record(`${target.name} を山札に戻す`);
   }
 
   returnHandToDeck(): void {
@@ -347,6 +353,16 @@ export class GameState {
     }
   }
 
+  takeFromDiscardToHand(card: Card): void {
+    removeCard(this.discard, card, "トラッシュ");
+    this.hand.push(card);
+  }
+
+  /**
+   * グッズを使う基本処理(手札からトラッシュへ)。効果の翻訳は card-effects.ts がこの後に実行する。
+   * 使っている間のカードを脇に置かずに先にトラッシュするのは、今の翻訳にトラッシュの中身を見る
+   * グッズ・サポートが無く、脇に置いても結果が同じになるため。
+   */
   useGoods(card: Card): void {
     if (card.category !== CardCategory.Goods) {
       throw new IllegalMove(`${card.name} はグッズではない`);
@@ -355,6 +371,7 @@ export class GameState {
     this.record(`グッズ ${card.name}`);
   }
 
+  /** サポートを使う基本処理。効果の扱いは useGoods と同じ。 */
   useSupporter(card: Card): void {
     if (!isSupporter(card)) {
       throw new IllegalMove(`${card.name} はサポートではない`);
@@ -386,6 +403,21 @@ export class GameState {
     this.record(`スタジアム ${card.name}`);
   }
 
+  /** ポケモンのどうぐをつける。1 匹につき 1 枚まで。 */
+  attachToolFromHand(card: Card, target: PokemonInPlay): void {
+    if (card.category !== CardCategory.Tool) {
+      throw new IllegalMove(`${card.name} はポケモンのどうぐではない`);
+    }
+    if (target.tool !== null) {
+      throw new IllegalMove(
+        `${target.name} にはもうポケモンのどうぐがついている`
+      );
+    }
+    removeCard(this.hand, card, "手札");
+    target.tool = card;
+    this.record(`どうぐ ${card.name} → ${target.name}`);
+  }
+
   /**
    * byEffect はカードの効果で進化ポケモンを直接ベンチに出すとき
    * (例: ファイアローex の特性)に真にする。
@@ -403,30 +435,36 @@ export class GameState {
     this.removeFrom(options.from, card);
     const pokemon = new PokemonInPlay(card, this.turn);
     this.bench.push(pokemon);
-    this.record(
-      `ベンチ ${card.name}${options.from === "hand" ? "" : "(山札から)"}`
-    );
+    this.record(`ベンチ ${card.name}${sourceLabel(options.from)}`);
     return pokemon;
   }
 
+  /** 手札からエネルギーをつける(1 番に 1 回)。 */
   attachEnergyFromHand(card: Card, target: PokemonInPlay): void {
-    if (!isEnergy(card)) {
-      throw new IllegalMove(`${card.name} はエネルギーではない`);
-    }
     if (this.hasAttachedEnergy) {
       throw new IllegalMove("この番はもう手札からエネルギーをつけた");
     }
-    removeCard(this.hand, card, "手札");
-    target.energies.push(card);
+    this.attachEnergyByEffect(card, target, "hand");
     this.hasAttachedEnergy = true;
-    this.record(`エネルギー ${card.name} → ${target.name}`);
   }
 
-  /** ワザや特性の効果で山札からつける。手札からつける 1 回の制限には数えない。 */
-  attachEnergyFromDeck(card: Card, target: PokemonInPlay): void {
-    removeCard(this.deck, card, "山札");
+  /** ワザや特性の効果でつける。手札からつける 1 回の制限には数えない。 */
+  attachEnergyByEffect(
+    card: Card,
+    target: PokemonInPlay,
+    from: CardSource
+  ): void {
+    if (!isEnergy(card)) {
+      throw new IllegalMove(`${card.name} はエネルギーではない`);
+    }
+    this.removeFrom(from, card);
     target.energies.push(card);
-    this.record(`エネルギー ${card.name} → ${target.name}(山札から)`);
+    this.record(`エネルギー ${card.name} → ${target.name}${sourceLabel(from)}`);
+  }
+
+  discardAttachedEnergy(target: PokemonInPlay, energy: Card): void {
+    removeCard(target.energies, energy, `${target.name} のエネルギー`);
+    this.discard.push(energy);
   }
 
   evolve(
@@ -448,27 +486,22 @@ export class GameState {
     this.replacePokemon(target, card, options.from);
   }
 
-  /** ふしぎなアメの進化。たねから 1 進化を飛ばして 2 進化にする。 */
-  evolveSkippingStage1(
-    target: PokemonInPlay,
-    stage2: Card,
-    stage1Name: string
-  ): void {
-    if (this.turn < 2) {
-      throw new IllegalMove("自分の最初の番は進化できない");
+  /** ふしぎなアメの進化。たねから 1進化を飛ばして、手札の 2進化にする。 */
+  evolveSkippingStage1(target: PokemonInPlay, stage2: Card): void {
+    if (!this.canEvolveThisTurn(target)) {
+      throw new IllegalMove(
+        `${target.name} は最初の番か、この番に場に出たため進化できない`
+      );
     }
     if (
       target.card.stage !== EvolutionStage.Basic ||
       stage2.stage !== EvolutionStage.Stage2
     ) {
-      throw new IllegalMove("たねから 2 進化への進化ではない");
+      throw new IllegalMove("たねから 2進化への進化ではない");
     }
-    if (stage2.evolvesFrom !== stage1Name) {
-      throw new IllegalMove(`${stage2.name} は ${stage1Name} から進化しない`);
-    }
-    if (target.isFresh(this.turn)) {
+    if (stage2.basicPokemonOfEvolutionLine !== target.name) {
       throw new IllegalMove(
-        `${target.name} はこの番に場に出たため進化できない`
+        `${stage2.name} は ${target.name} の進化の系統ではない`
       );
     }
     this.replacePokemon(target, stage2, "hand");
@@ -481,19 +514,14 @@ export class GameState {
   ): void {
     this.removeFrom(from, card);
     target.underneath.push(target.card);
-    this.record(
-      `進化 ${target.name} → ${card.name}${from === "hand" ? "" : "(山札から)"}`
-    );
+    this.record(`進化 ${target.name} → ${card.name}${sourceLabel(from)}`);
     target.card = card;
     target.turnEvolved = this.turn;
   }
 
   private removeFrom(source: CardSource, card: Card): void {
-    if (source === "hand") {
-      removeCard(this.hand, card, "手札");
-    } else {
-      removeCard(this.deck, card, "山札");
-    }
+    const zones = { deck: this.deck, discard: this.discard, hand: this.hand };
+    removeCard(zones[source], card, sourceZoneName[source]);
   }
 
   // ---- バトル場の入れ替え ----
@@ -508,16 +536,33 @@ export class GameState {
     this.record(`バトル場 ← ${benchPokemon.name}`);
   }
 
-  retreat(benchPokemon: PokemonInPlay, cost: number): void {
+  /** バトル場が空になったときに、ベンチのポケモンをバトル場に出す。 */
+  promoteToActive(benchPokemon: PokemonInPlay): void {
+    if (this.active !== null) {
+      throw new IllegalMove("バトル場にはもうポケモンがいる");
+    }
+    removeFirst(this.bench, benchPokemon, "ベンチ");
+    this.active = benchPokemon;
+    this.record(`バトル場に出す ${benchPokemon.name}`);
+  }
+
+  /** にげる。トラッシュするエネルギーが足りるか(にげるエネルギーの判定)は card-effects.ts が場の効果を集めて行う。 */
+  retreat(
+    benchPokemon: PokemonInPlay,
+    energiesToDiscard: readonly Card[]
+  ): void {
     if (this.hasRetreated) {
       throw new IllegalMove("この番はもうにげた");
     }
-    if (this.active === null || this.active.energies.length < cost) {
-      throw new IllegalMove("にげるためのエネルギーが足りない");
+    const { active } = this;
+    if (active === null) {
+      throw new IllegalMove("バトル場にポケモンがいない");
     }
-    this.discard.push(...this.active.energies.splice(-cost, cost));
+    for (const energy of energiesToDiscard) {
+      this.discardAttachedEnergy(active, energy);
+    }
     this.hasRetreated = true;
-    this.record(`にげる(${cost})`);
+    this.record(`にげる(${energiesToDiscard.length} 枚トラッシュ)`);
     this.switchActive(benchPokemon);
   }
 
@@ -528,14 +573,28 @@ export class GameState {
     this.hasUsedSupporter = false;
     this.hasAttachedEnergy = false;
     this.hasPlayedStadium = false;
+    this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
-    this.usedOncePerTurn.clear();
+    this.abilityNamesUsedThisTurn = [];
+    for (const pokemon of this.listPokemonInPlay()) {
+      pokemon.abilitiesUsedThisTurn.clear();
+    }
     if (this.deck.length === 0) {
       throw new IllegalMove("山札が無く引けない");
     }
     const [drawn] = this.draw(1);
     this.record(`番の最初に引く: ${drawn?.name ?? ""}`);
   }
+}
+
+const sourceZoneName: Readonly<Record<CardSource, string>> = {
+  deck: "山札",
+  discard: "トラッシュ",
+  hand: "手札",
+};
+
+function sourceLabel(source: CardSource): string {
+  return source === "hand" ? "" : `(${sourceZoneName[source]}から)`;
 }
 
 function countByName(cards: readonly Card[], name: string): number {

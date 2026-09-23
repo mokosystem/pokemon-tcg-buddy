@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "アドレナブレイン",
+      "translation": null
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["psychic", "colorless"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "サイコトリップ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["049074", "046736", "045849"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [
+    {
+      "description": "特性「アドレナブレイン」(自分のポケモンのダメカンを相手のポケモンにのせ替える)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「サイコトリップ」の、相手のバトルポケモンをこんらんにする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 110,
+  "isTerastal": false,
+  "name": "マシマシラ",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

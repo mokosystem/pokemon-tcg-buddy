@@ -1,0 +1,31 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "ヒートブラスト"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["049481", "048800"],
+  "category": "ポケモン",
+  "evolvesFrom": "ヒトカゲ",
+  "excludedEffects": [],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 100,
+  "isTerastal": false,
+  "name": "リザード",
+  "pokemonType": "fire",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

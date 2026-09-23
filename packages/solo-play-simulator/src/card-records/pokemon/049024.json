@@ -1,0 +1,51 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "names": ["ヨマワル"]
+            },
+            "maxCount": 3,
+            "operation": "placeFromDiscardOntoBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "むかえにいく"
+    },
+    {
+      "cost": ["psychic", "psychic"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "effect": null,
+      "name": "つぶやく"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["049024"],
+  "category": "ポケモン",
+  "evolvesFrom": null,
+  "excludedEffects": [],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "ヨマワル",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

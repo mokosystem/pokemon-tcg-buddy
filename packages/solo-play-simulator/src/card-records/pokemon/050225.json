@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ばけがくれ",
+      "translation": null
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": null,
+      "name": "まっちゃスピン"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": null,
+  "cardIds": ["050225"],
+  "category": "ポケモン",
+  "evolvesFrom": "チャデス",
+  "excludedEffects": [
+    {
+      "description": "特性「ばけがくれ」(相手のワザや特性の効果を受けない)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「まっちゃスピン」(トラッシュの「ばけがくれ」のポケモンの枚数を条件に、相手のポケモン全員にダメカンをのせる)",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "exRule": null,
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "ヤバソチャ",
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}
