@@ -143,6 +143,7 @@ export class GameState {
   hasUsedSupporter: boolean;
   hasAttachedEnergy: boolean;
   hasPlayedStadium: boolean;
+  /** 今場にあるスタジアムの効果を、この番に使ったか。スタジアムが入れ替わったら戻す(`playStadium`)。 */
   hasUsedStadiumEffect: boolean;
   hasRetreated: boolean;
   /** この番に使った特性の名前(場全体)。同じ名前の特性の回数の制限と、名前に文字列を含む条件に使う。 */
@@ -400,6 +401,10 @@ export class GameState {
     removeCard(this.hand, card, "手札");
     this.stadium = card;
     this.hasPlayedStadium = true;
+    // 前のスタジアムの効果を使った番でも、新しく出したスタジアムの効果は使える(公式 Q&A: ポケモンパルシティの
+    // 効果を使ったあと、トラッシュして手札から出し直したら、もう一度使えると回答。
+    // https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E3%83%91%E3%83%AB%E3%82%B7%E3%83%86%E3%82%A3&regulation_faq_main_item1=all 、2026-09-23 に確認)
+    this.hasUsedStadiumEffect = false;
     this.record(`スタジアム ${card.name}`);
   }
 

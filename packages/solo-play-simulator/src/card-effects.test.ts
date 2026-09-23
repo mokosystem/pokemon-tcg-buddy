@@ -1,7 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { listUsableAttacksOfActive, useAttack } from "./card-effects.ts";
+import {
+  canUseStadiumEffect,
+  listUsableAttacksOfActive,
+  playTrainerFromHand,
+  useAttack,
+  useStadiumEffect,
+} from "./card-effects.ts";
 import { CardCategory, type PokemonRecord } from "./card-record-schema.ts";
-import { buildContext, buildState } from "./card-test-support.ts";
+import {
+  buildContext,
+  buildRecordedCard,
+  buildState,
+} from "./card-test-support.ts";
 import { buildCardFromRecord } from "./cards.ts";
 import { BASIC, SAMPLE_RECORD_TABLE } from "./sample-cards.ts";
 
@@ -50,5 +60,29 @@ describe("ワザ", () => {
     ).toEqual(["条件つきのワザ"]);
     useAttack(context, "条件つきのワザ");
     expect(state.hand).toHaveLength(1);
+  });
+});
+
+describe("スタジアム", () => {
+  test("場のスタジアムの効果を使った番でも、手札から出した別のスタジアムの効果は使える", () => {
+    const greatTree = buildRecordedCard("046040");
+    const prismTower = buildRecordedCard("050164");
+    const lillie = buildRecordedCard("049445");
+    const psychicEnergy = buildRecordedCard("049463");
+    const state = buildState({
+      active: buildRecordedCard("049714"),
+      deck: [
+        buildRecordedCard("049715"),
+        buildRecordedCard("048464"),
+        psychicEnergy,
+      ],
+      hand: [prismTower, lillie, psychicEnergy],
+    });
+    state.stadium = greatTree;
+    const context = buildContext(state);
+    useStadiumEffect(context);
+    expect(canUseStadiumEffect(context)).toBe(false);
+    playTrainerFromHand(context, prismTower);
+    expect(canUseStadiumEffect(context)).toBe(true);
   });
 });
