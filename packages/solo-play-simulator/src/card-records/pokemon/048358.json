@@ -12,6 +12,7 @@
                 "categories": ["基本エネルギー"],
                 "providedEnergyTypes": ["fire"]
               },
+              "maxCount": 1,
               "operation": "attachEnergyFromHand",
               "targetFilter": {
                 "pokemonTypes": ["fire"],

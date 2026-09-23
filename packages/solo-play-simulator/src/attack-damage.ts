@@ -10,7 +10,7 @@ import {
   CardCategory,
   type DamageBonus,
 } from "./card-record-schema.ts";
-import { countEnergyUnitsOfType } from "./continuous-effects.ts";
+import { countEnergyUnitsOfTypes } from "./continuous-effects.ts";
 import type { GameState } from "./state.ts";
 
 function countDamageTarget(
@@ -23,7 +23,7 @@ function countDamageTarget(
         .listPokemonInPlay()
         .reduce(
           (total, pokemon) =>
-            total + countEnergyUnitsOfType(state, pokemon, target.energyType),
+            total + countEnergyUnitsOfTypes(state, pokemon, target.energyTypes),
           0
         );
     case "discardPokemonWithAbilityName":

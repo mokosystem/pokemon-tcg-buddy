@@ -1,0 +1,42 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "anyOf": [
+                    {
+                      "categories": ["ポケモン"],
+                      "pokemonTypes": ["fighting"],
+                      "stages": ["たね"]
+                    },
+                    {
+                      "categories": ["基本エネルギー"],
+                      "providedEnergyTypes": ["fighting"]
+                    }
+                  ]
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["047792", "048439", "048677"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "ファイトゴング",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

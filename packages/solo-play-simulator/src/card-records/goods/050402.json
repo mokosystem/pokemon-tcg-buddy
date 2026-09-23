@@ -1,0 +1,52 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["基本エネルギー"],
+                  "providedEnergyTypes": ["fire"]
+                },
+                "maxCount": 1
+              },
+              {
+                "filter": {
+                  "categories": ["基本エネルギー"],
+                  "providedEnergyTypes": ["electric"]
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050402"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "ぼうけんのランタン",
+  "rulings": [
+    {
+      "interpretation": "よい。どちらか 1 枚だけでも、1 枚も選ばなくてもよい",
+      "question": "基本炎エネルギーと基本雷エネルギーの片方だけを選んでよいか",
+      "reflectedIn": "探す 1 回分(picks)を 2 つに分け、それぞれ条件の付いた検索として 0 枚でもよくした",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "ぼうけんのランタンで基本炎エネルギー 1 枚だけを選べるか、という質問に、できて、基本炎エネルギーか基本雷エネルギーのどちらか 1 枚だけでもよいと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%BC%E3%81%86%E3%81%91%E3%82%93%E3%81%AE%E3%83%A9%E3%83%B3%E3%82%BF%E3%83%B3&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

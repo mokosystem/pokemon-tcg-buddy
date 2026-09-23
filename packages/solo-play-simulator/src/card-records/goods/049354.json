@@ -1,0 +1,27 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"]
+            },
+            "operation": "moveEnergyToAnotherOwnPokemon"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["049354", "044928"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "エネルギーつけかえ",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

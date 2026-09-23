@@ -4,13 +4,16 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import { calculateAttackDamage } from "./attack-damage.ts";
 import {
   attachEnergyFromHandToPokemon,
   attachToolFromHand,
+  canEvolvePokemonFromHand,
   canPlayTrainerFromHand,
   canUseAbility,
   canUseAbilityFromHand,
   canUseStadiumEffect,
+  evolvePokemonFromHand,
   listUsableAttacksOfActive,
   placeBasicPokemonOnBenchFromHand,
   playTrainerFromHand,
@@ -31,7 +34,12 @@ import {
   namesOf,
   pickCardsByName,
 } from "./card-test-support.ts";
-import { calculateRetreatCost, listEnergyUnits } from "./continuous-effects.ts";
+import {
+  calculateBenchLimit,
+  calculateRetreatCost,
+  countEmptyBenchSlots,
+  listEnergyUnits,
+} from "./continuous-effects.ts";
 import { setupGame } from "./engine.ts";
 import { IllegalMove } from "./state.ts";
 
@@ -87,6 +95,25 @@ const DARK_ENERGY = buildRecordedCard("047909");
 const TELEPATH_ENERGY = buildRecordedCard("049712");
 const IGNITION_ENERGY = buildRecordedCard("049452");
 const LEGACY_ENERGY = buildRecordedCard("049457");
+const CYNTHIAS_GARCHOMP = buildRecordedCard("047381");
+const CYNTHIAS_GABITE = buildRecordedCard("049093");
+const CYNTHIAS_GIBLE = buildRecordedCard("049092");
+const CYNTHIAS_ROSELIA = buildRecordedCard("048748");
+const AZURILL = buildRecordedCard("050392");
+const FIGHT_GONG = buildRecordedCard("048677");
+const JUDGE = buildRecordedCard("050448");
+const EEVEE_EX = buildRecordedCard("049282");
+const FLAREON_EX = buildRecordedCard("048810");
+const MEGA_RAYQUAZA = buildRecordedCard("050396");
+const ETHANS_HO_OH = buildRecordedCard("048543");
+const ENERGY_SWITCH = buildRecordedCard("049354");
+const GLASS_TRUMPET = buildRecordedCard("048671");
+const ADVENTURE_LANTERN = buildRecordedCard("050402");
+const ZERO_CAVERN = buildRecordedCard("048706");
+const FIGHTING_ENERGY = buildRecordedCard("049464");
+const ROCK_FIGHTING_ENERGY = buildRecordedCard("049713");
+const LIGHTNING_ENERGY = buildRecordedCard("050480");
+const WATER_ENERGY = buildRecordedCard("050479");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -1051,6 +1078,522 @@ describeTranslation("基本悪エネルギー", () => {
     const state = buildState({ active: FEZANDIPITI });
     activeOf(state).energies.push(DARK_ENERGY);
     expect(listEnergyUnits(state, activeOf(state))).toEqual(["dark"]);
+  });
+});
+
+describeTranslation("シロナのガブリアスex", () => {
+  test("スクリューダイブは、のぞむなら手札が 6 枚になるように引き、6 枚以上なら引かない", () => {
+    const state = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      deck: repeat(FIGHTING_ENERGY, 10),
+      hand: [FIGHT_GONG, JUDGE],
+    });
+    activeOf(state).energies.push(FIGHTING_ENERGY);
+    useAttack(buildContext(state), "スクリューダイブ");
+    expect(state.hand).toHaveLength(6);
+
+    const fullHand = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      deck: repeat(FIGHTING_ENERGY, 10),
+      hand: repeat(JUDGE, 7),
+    });
+    activeOf(fullHand).energies.push(FIGHTING_ENERGY);
+    useAttack(buildContext(fullHand), "スクリューダイブ");
+    expect(fullHand.hand).toHaveLength(7);
+  });
+
+  test("スクリューダイブの引く効果は、のぞまなければ起きない", () => {
+    const state = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      deck: repeat(FIGHTING_ENERGY, 10),
+    });
+    activeOf(state).energies.push(FIGHTING_ENERGY);
+    useAttack(
+      buildContext(state, { choosesToApplyOptionalEffect: () => false }),
+      "スクリューダイブ"
+    );
+    expect(state.hand).toEqual([]);
+  });
+});
+
+describeTranslation("シロナのガバイト", () => {
+  test("おうじゃのよびごえは、山札から「シロナのポケモン」を 1 枚手札に加え、このポケモンにつき番に 1 回", () => {
+    const state = buildState({
+      active: CYNTHIAS_GABITE,
+      bench: [CYNTHIAS_GABITE],
+      deck: [MEOWTH, FIGHTING_ENERGY, CYNTHIAS_GARCHOMP, CYNTHIAS_ROSELIA],
+    });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "おうじゃのよびごえ");
+    expect(namesOf(state.hand)).toEqual(["シロナのガブリアスex"]);
+    expect(canUseAbility(context, activeOf(state), "おうじゃのよびごえ")).toBe(
+      false
+    );
+    useAbility(context, benchAt(state, 0), "おうじゃのよびごえ");
+    expect(namesOf(state.hand)).toEqual([
+      "シロナのガブリアスex",
+      "シロナのロゼリア",
+    ]);
+  });
+
+  test("名前に「シロナの」とつかないポケモンは選べない", () => {
+    const state = buildState({
+      active: CYNTHIAS_GABITE,
+      deck: [MEOWTH, FIGHTING_ENERGY],
+    });
+    useAbility(buildContext(state), activeOf(state), "おうじゃのよびごえ");
+    expect(state.hand).toEqual([]);
+    expect(state.deck).toHaveLength(2);
+  });
+});
+
+describeTranslation("ルリリ", () => {
+  test("ぴょんぴょんチャージは、山札からエネルギー(特殊エネルギーを含む)を 1 枚ベンチポケモンにつける", () => {
+    const state = buildState({
+      active: AZURILL,
+      bench: [CYNTHIAS_GIBLE],
+      deck: [ROCK_FIGHTING_ENERGY, FIGHTING_ENERGY],
+    });
+    useAttack(buildContext(state), "ぴょんぴょんチャージ");
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["ロック闘エネルギー"]);
+    expect(activeOf(state).energies).toEqual([]);
+  });
+
+  test("ベンチにポケモンがいなければ、エネルギーはつかない", () => {
+    const state = buildState({
+      active: AZURILL,
+      deck: [FIGHTING_ENERGY],
+    });
+    useAttack(buildContext(state), "ぴょんぴょんチャージ");
+    expect(activeOf(state).energies).toEqual([]);
+    expect(state.deck).toHaveLength(1);
+  });
+});
+
+describeTranslation("ファイトゴング", () => {
+  test("山札から闘タイプのたねポケモンか基本闘エネルギーを 1 枚手札に加え、特殊エネルギーや進化ポケモンは選べない", () => {
+    const state = buildState({
+      active: AZURILL,
+      deck: [
+        CYNTHIAS_ROSELIA,
+        CYNTHIAS_GABITE,
+        ROCK_FIGHTING_ENERGY,
+        CYNTHIAS_GIBLE,
+      ],
+      hand: [FIGHT_GONG, FIGHT_GONG],
+    });
+    const context = buildContext(state);
+    playTrainerFromHand(context, FIGHT_GONG);
+    expect(namesOf(state.hand)).toEqual(["ファイトゴング", "シロナのフカマル"]);
+
+    const energyOnly = buildState({
+      active: AZURILL,
+      deck: [ROCK_FIGHTING_ENERGY, FIGHTING_ENERGY],
+      hand: [FIGHT_GONG],
+    });
+    playTrainerFromHand(buildContext(energyOnly), FIGHT_GONG);
+    expect(namesOf(energyOnly.hand)).toEqual(["基本闘エネルギー"]);
+  });
+});
+
+describeTranslation("ジャッジマン", () => {
+  test("手札を山札に戻して切り、4 枚引く", () => {
+    const state = buildState({
+      active: AZURILL,
+      deck: repeat(FIGHTING_ENERGY, 5),
+      hand: [JUDGE, FIGHT_GONG, CYNTHIAS_GIBLE],
+    });
+    playTrainerFromHand(buildContext(state), JUDGE);
+    expect(state.hand).toHaveLength(4);
+    expect(state.deck).toHaveLength(3);
+    expect(namesOf(state.discard)).toEqual(["ジャッジマン"]);
+  });
+});
+
+describeTranslation("基本闘エネルギー", () => {
+  test("闘エネルギー 1 個ぶんとして働く", () => {
+    const state = buildState({ active: CYNTHIAS_GIBLE });
+    activeOf(state).energies.push(FIGHTING_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["fighting"]);
+  });
+});
+
+describeTranslation("ロック闘エネルギー", () => {
+  test("闘エネルギー 1 個ぶんとして働く", () => {
+    const state = buildState({ active: CYNTHIAS_GIBLE });
+    activeOf(state).energies.push(ROCK_FIGHTING_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["fighting"]);
+  });
+});
+
+describeTranslation("基本雷エネルギー", () => {
+  test("雷エネルギー 1 個ぶんとして働く", () => {
+    const state = buildState({ active: MEGA_RAYQUAZA });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["electric"]);
+  });
+});
+
+describeTranslation("基本水エネルギー", () => {
+  test("水エネルギー 1 個ぶんとして働く", () => {
+    const state = buildState({ active: EEVEE_EX });
+    activeOf(state).energies.push(WATER_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["water"]);
+  });
+});
+
+describeTranslation("イーブイex", () => {
+  test("にじいろDNA で、手札の「イーブイ」から進化するポケモンex をこのポケモンにのせて進化させる", () => {
+    const state = buildState({ active: EEVEE_EX, hand: [FLAREON_EX] });
+    const context = buildContext(state);
+    expect(canEvolvePokemonFromHand(context, activeOf(state), FLAREON_EX)).toBe(
+      true
+    );
+    evolvePokemonFromHand(context, activeOf(state), FLAREON_EX);
+    expect(activeOf(state).name).toBe("ブースターex");
+    expect(namesOf(activeOf(state).underneath)).toEqual(["イーブイex"]);
+  });
+
+  test("最初の番、出したばかりの番、特性が無くなっているとき(ロケット団の監視塔)は進化できない", () => {
+    const firstTurn = buildState({
+      active: EEVEE_EX,
+      hand: [FLAREON_EX],
+      turn: 1,
+    });
+    expect(
+      canEvolvePokemonFromHand(
+        buildContext(firstTurn),
+        activeOf(firstTurn),
+        FLAREON_EX
+      )
+    ).toBe(false);
+
+    const fresh = buildState({ active: AZURILL, hand: [EEVEE_EX, FLAREON_EX] });
+    const context = buildContext(fresh);
+    const eevee = placeBasicPokemonOnBenchFromHand(context, EEVEE_EX);
+    expect(canEvolvePokemonFromHand(context, eevee, FLAREON_EX)).toBe(false);
+
+    const negated = buildState({ active: EEVEE_EX, hand: [FLAREON_EX] });
+    negated.stadium = ROCKET_WATCHTOWER;
+    expect(
+      canEvolvePokemonFromHand(
+        buildContext(negated),
+        activeOf(negated),
+        FLAREON_EX
+      )
+    ).toBe(false);
+  });
+
+  test("偉大な大樹で山札から進化させるときは働かない", () => {
+    const state = buildState({ active: EEVEE_EX, deck: [FLAREON_EX] });
+    state.stadium = GREAT_TREE;
+    useStadiumEffect(buildContext(state));
+    expect(activeOf(state).name).toBe("イーブイex");
+  });
+});
+
+describeTranslation("ブースターex", () => {
+  test("バーニングチャージは、山札から基本エネルギーを 2 枚まで自分のポケモン 1 匹につける", () => {
+    const state = buildState({
+      active: FLAREON_EX,
+      bench: [MEGA_RAYQUAZA],
+      deck: [ROCK_FIGHTING_ENERGY, FIRE_ENERGY, LIGHTNING_ENERGY, WATER_ENERGY],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY);
+    useAttack(
+      buildContext(state, {
+        choosePokemon: (_, request) =>
+          request.candidates.filter(
+            (pokemon) => pokemon.name === "メガレックウザex"
+          ),
+      }),
+      "バーニングチャージ"
+    );
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本炎エネルギー",
+      "基本雷エネルギー",
+    ]);
+    expect(state.deck).toHaveLength(2);
+  });
+
+  test("山札から 1 枚も選ばなくてよい", () => {
+    const state = buildState({
+      active: FLAREON_EX,
+      deck: [FIRE_ENERGY],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY);
+    useAttack(
+      buildContext(state, { chooseCards: () => [] }),
+      "バーニングチャージ"
+    );
+    expect(activeOf(state).energies).toHaveLength(2);
+    expect(state.deck).toHaveLength(1);
+  });
+});
+
+describeTranslation("メガレックウザex", () => {
+  test("はしゃのほうこうは、手札からベンチに出したとき山札の上から 4 枚見て基本エネルギーを 1 枚このポケモンにつけ、残りを山札の下に戻す", () => {
+    const state = buildState({
+      active: AZURILL,
+      deck: [
+        MEOWTH,
+        ROCK_FIGHTING_ENERGY,
+        LIGHTNING_ENERGY,
+        FIRE_ENERGY,
+        JUDGE,
+      ],
+      hand: [MEGA_RAYQUAZA],
+    });
+    const rayquaza = placeBasicPokemonOnBenchFromHand(
+      buildContext(state),
+      MEGA_RAYQUAZA
+    );
+    expect(namesOf(rayquaza.energies)).toEqual(["基本雷エネルギー"]);
+    expect(state.deck).toHaveLength(4);
+    expect(state.deck[0]?.name).toBe("ジャッジマン");
+    expect(namesOf(state.deck.slice(1)).sort()).toEqual(
+      ["ニャースex", "ロック闘エネルギー", "基本炎エネルギー"].sort()
+    );
+  });
+
+  test("山札が 4 枚に満たなくても、ある分だけ見て使える", () => {
+    const state = buildState({
+      active: AZURILL,
+      deck: [FIRE_ENERGY],
+      hand: [MEGA_RAYQUAZA],
+    });
+    const rayquaza = placeBasicPokemonOnBenchFromHand(
+      buildContext(state),
+      MEGA_RAYQUAZA
+    );
+    expect(namesOf(rayquaza.energies)).toEqual(["基本炎エネルギー"]);
+    expect(state.deck).toEqual([]);
+  });
+
+  test("ストームエメラルダは、自分のポケモン全員の炎と雷のエネルギーの数×50 で、すべてのタイプとして働く 1 枚は 1 つと数える", () => {
+    const state = buildState({
+      active: MEGA_RAYQUAZA,
+      bench: [FLAREON_EX],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY, LIGHTNING_ENERGY, WATER_ENERGY);
+    benchAt(state, 0).energies.push(LEGACY_ENERGY, FIRE_ENERGY);
+    const [storm] = listUsableAttacksOfActive(buildContext(state));
+    expect(storm?.attack.name).toBe("ストームエメラルダ");
+    expect(
+      storm === undefined ? null : calculateAttackDamage(state, storm.attack)
+    ).toBe(200);
+  });
+});
+
+describeTranslation("ヒビキのホウオウex", () => {
+  test("こんじきのほのおは、手札の基本炎エネルギーを 2 枚までベンチの「ヒビキのポケモン」1 匹につけ、このポケモンにつき番に 1 回", () => {
+    const state = buildState({
+      active: MEGA_RAYQUAZA,
+      bench: [ETHANS_HO_OH],
+      hand: [FIRE_ENERGY, LIGHTNING_ENERGY, FIRE_ENERGY, FIRE_ENERGY],
+    });
+    const context = buildContext(state);
+    const hoOh = benchAt(state, 0);
+    useAbility(context, hoOh, "こんじきのほのお");
+    expect(namesOf(hoOh.energies)).toEqual([
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(state.hasAttachedEnergy).toBe(false);
+    expect(canUseAbility(context, hoOh, "こんじきのほのお")).toBe(false);
+  });
+
+  test("1 枚だけつけてもよく、ベンチに「ヒビキのポケモン」がいなければ使えない", () => {
+    const state = buildState({
+      active: MEGA_RAYQUAZA,
+      bench: [ETHANS_HO_OH],
+      hand: [FIRE_ENERGY, FIRE_ENERGY],
+    });
+    const hoOh = benchAt(state, 0);
+    useAbility(
+      buildContext(state, {
+        chooseCards: (_, request) => request.candidates.slice(0, 1),
+      }),
+      hoOh,
+      "こんじきのほのお"
+    );
+    expect(namesOf(hoOh.energies)).toEqual(["基本炎エネルギー"]);
+
+    const activeHoOh = buildState({
+      active: ETHANS_HO_OH,
+      bench: [MEGA_RAYQUAZA],
+      hand: [FIRE_ENERGY],
+    });
+    expect(
+      canUseAbility(
+        buildContext(activeHoOh),
+        activeOf(activeHoOh),
+        "こんじきのほのお"
+      )
+    ).toBe(false);
+  });
+});
+
+describeTranslation("エネルギーつけかえ", () => {
+  test("自分のポケモンについている基本エネルギーを 1 個、別の自分のポケモンにつけ替える", () => {
+    const state = buildState({
+      active: MEGA_RAYQUAZA,
+      bench: [FLAREON_EX],
+      hand: [ENERGY_SWITCH],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY);
+    playTrainerFromHand(buildContext(state), ENERGY_SWITCH);
+    expect(activeOf(state).energies).toEqual([]);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本炎エネルギー"]);
+    expect(state.hasAttachedEnergy).toBe(false);
+  });
+
+  test("特殊エネルギーしかついていないときと、場のポケモンが 1 匹のときは使えない", () => {
+    const special = buildState({
+      active: CYNTHIAS_GIBLE,
+      bench: [AZURILL],
+      hand: [ENERGY_SWITCH],
+    });
+    activeOf(special).energies.push(ROCK_FIGHTING_ENERGY);
+    expect(canPlayTrainerFromHand(buildContext(special), ENERGY_SWITCH)).toBe(
+      false
+    );
+
+    const alone = buildState({
+      active: MEGA_RAYQUAZA,
+      hand: [ENERGY_SWITCH],
+    });
+    activeOf(alone).energies.push(FIRE_ENERGY);
+    expect(canPlayTrainerFromHand(buildContext(alone), ENERGY_SWITCH)).toBe(
+      false
+    );
+  });
+});
+
+describeTranslation("ガラスのラッパ", () => {
+  test("場に「テラスタル」のポケモンがいれば、ベンチの無色ポケモン 2 匹までにトラッシュの基本エネルギーを 1 枚ずつつける", () => {
+    const state = buildState({
+      active: FLAREON_EX,
+      bench: [MEGA_RAYQUAZA, MEOWTH, AZURILL],
+      discard: [ROCK_FIGHTING_ENERGY, FIRE_ENERGY, LIGHTNING_ENERGY],
+      hand: [GLASS_TRUMPET],
+    });
+    playTrainerFromHand(buildContext(state), GLASS_TRUMPET);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本炎エネルギー"]);
+    expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本雷エネルギー"]);
+    expect(benchAt(state, 2).energies).toEqual([]);
+    expect(namesOf(state.discard).sort()).toEqual(
+      ["ガラスのラッパ", "ロック闘エネルギー"].sort()
+    );
+  });
+
+  test("場に「テラスタル」のポケモンがいないときと、トラッシュに基本エネルギーが無いときは使えない", () => {
+    const noTerastal = buildState({
+      active: MEGA_RAYQUAZA,
+      bench: [MEOWTH],
+      discard: [FIRE_ENERGY],
+      hand: [GLASS_TRUMPET],
+    });
+    expect(
+      canPlayTrainerFromHand(buildContext(noTerastal), GLASS_TRUMPET)
+    ).toBe(false);
+
+    const noEnergy = buildState({
+      active: EEVEE_EX,
+      bench: [MEOWTH],
+      hand: [GLASS_TRUMPET],
+    });
+    expect(canPlayTrainerFromHand(buildContext(noEnergy), GLASS_TRUMPET)).toBe(
+      false
+    );
+  });
+});
+
+describeTranslation("ぼうけんのランタン", () => {
+  test("山札から基本炎エネルギーと基本雷エネルギーを 1 枚ずつ手札に加え、片方だけでもよい", () => {
+    const state = buildState({
+      active: MEGA_RAYQUAZA,
+      deck: [WATER_ENERGY, LIGHTNING_ENERGY, FIRE_ENERGY, FIRE_ENERGY],
+      hand: [ADVENTURE_LANTERN],
+    });
+    playTrainerFromHand(buildContext(state), ADVENTURE_LANTERN);
+    expect(namesOf(state.hand)).toEqual([
+      "基本炎エネルギー",
+      "基本雷エネルギー",
+    ]);
+
+    const fireOnly = buildState({
+      active: MEGA_RAYQUAZA,
+      deck: [WATER_ENERGY, FIRE_ENERGY],
+      hand: [ADVENTURE_LANTERN],
+    });
+    playTrainerFromHand(buildContext(fireOnly), ADVENTURE_LANTERN);
+    expect(namesOf(fireOnly.hand)).toEqual(["基本炎エネルギー"]);
+  });
+});
+
+describeTranslation("ゼロの大空洞", () => {
+  test("場に「テラスタル」のポケモンがいればベンチに 8 匹まで出せ、いなければ 5 匹のまま", () => {
+    const state = buildState({
+      active: EEVEE_EX,
+      bench: repeat(AZURILL, 5),
+      hand: [MEOWTH],
+    });
+    state.stadium = ZERO_CAVERN;
+    expect(calculateBenchLimit(state)).toBe(8);
+    placeBasicPokemonOnBenchFromHand(buildContext(state), MEOWTH);
+    expect(state.bench).toHaveLength(6);
+
+    const noTerastal = buildState({
+      active: MEGA_RAYQUAZA,
+      bench: repeat(AZURILL, 5),
+      hand: [EEVEE_EX],
+    });
+    noTerastal.stadium = ZERO_CAVERN;
+    expect(countEmptyBenchSlots(noTerastal)).toBe(0);
+    expect(() =>
+      placeBasicPokemonOnBenchFromHand(buildContext(noTerastal), EEVEE_EX)
+    ).toThrow(IllegalMove);
+  });
+
+  test("場から「テラスタル」のポケモンがいなくなったら、ベンチを 5 匹になるまでトラッシュしてから、バトル場に出す", () => {
+    const state = buildState({
+      active: EEVEE_EX,
+      bench: repeat(AZURILL, 8),
+      hand: [SCOOP_UP_CYCLONE],
+    });
+    state.stadium = ZERO_CAVERN;
+    playTrainerFromHand(
+      buildContext(state, {
+        choosePokemon: (_, request) =>
+          request.purpose.includes("手札に戻す")
+            ? request.candidates.filter(
+                (pokemon) => pokemon.name === "イーブイex"
+              )
+            : request.candidates.slice(0, request.maxCount),
+      }),
+      SCOOP_UP_CYCLONE
+    );
+    expect(namesOf(state.hand)).toEqual(["イーブイex"]);
+    expect(activeOf(state).name).toBe("ルリリ");
+    expect(state.bench).toHaveLength(4);
+    expect(state.discard.filter((card) => card.name === "ルリリ")).toHaveLength(
+      3
+    );
+  });
+
+  test("別のスタジアムを出してこのカードがトラッシュされたら、ベンチを 5 匹になるまでトラッシュする", () => {
+    const state = buildState({
+      active: EEVEE_EX,
+      bench: repeat(AZURILL, 7),
+      hand: [PRISM_TOWER],
+    });
+    state.stadium = ZERO_CAVERN;
+    playTrainerFromHand(buildContext(state), PRISM_TOWER);
+    expect(state.bench).toHaveLength(5);
+    expect(namesOf(state.discard).sort()).toEqual(
+      ["ゼロの大空洞", "ルリリ", "ルリリ"].sort()
+    );
   });
 });
 

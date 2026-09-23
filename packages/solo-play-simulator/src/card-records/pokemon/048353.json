@@ -11,7 +11,7 @@
           "kind": "perCount",
           "target": {
             "count": "energyAttachedToOwnPokemon",
-            "energyType": "fire"
+            "energyTypes": ["fire"]
           },
           "unit": 90
         }

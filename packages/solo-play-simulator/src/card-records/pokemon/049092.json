@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fighting"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "いわとばし"
+    }
+  ],
+  "cardIds": ["049092"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「いわとばし」の、相手の抵抗力を計算しない効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "シロナのフカマル",
+  "pokemonType": "fighting",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

@@ -10,7 +10,9 @@ import { CardCategory } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { areConditionsMet, type EffectSource } from "./conditions.ts";
 import {
+  calculateBenchLimit,
   calculateRetreatCost,
+  findEvolutionNameAllowedByEffect,
   isAbilityNegated,
   listEnergyUnits,
   listUsableAttacks,
@@ -24,6 +26,7 @@ import {
   findCardEffects,
   resolveAttachedFromHandTriggers,
   runEffect,
+  trimBenchToLimit,
   wouldLeaveFieldEmpty,
 } from "./effect-operations.ts";
 import {
@@ -75,6 +78,8 @@ export function playTrainerFromHand(context: EffectContext, card: Card): void {
       break;
     default:
       state.playStadium(card);
+      // 前のスタジアム(ゼロの大空洞)がトラッシュされてベンチの上限が下がったら、ベンチをトラッシュする
+      trimBenchToLimit(context);
       return;
   }
   for (const cardEffect of findCardEffects(card, "whenPlayed")) {
@@ -247,7 +252,10 @@ export function placeBasicPokemonOnBenchFromHand(
   card: Card
 ): PokemonInPlay {
   const { state } = context;
-  const pokemon = state.placeOnBench(card, { from: "hand" });
+  const pokemon = state.placeOnBench(card, {
+    benchLimit: calculateBenchLimit(state),
+    from: "hand",
+  });
   if (card.record.category !== CardCategory.Pokemon) {
     return pokemon;
   }
@@ -278,15 +286,41 @@ export function attachEnergyFromHandToPokemon(
   resolveAttachedFromHandTriggers(context, energy, target);
 }
 
+/**
+ * 手札の進化ポケモンで、場のポケモンを今進化させられるか。基本ルール(最初の番、出したばかりの番、進化前の名前)に加え、
+ * 進化前の名前が違っても進化させられる効果(イーブイex の「にじいろDNA」)を見る。
+ */
+export function canEvolvePokemonFromHand(
+  context: EffectContext,
+  target: PokemonInPlay,
+  card: Card
+): boolean {
+  const { state } = context;
+  return (
+    state.hand.includes(card) &&
+    (state.canEvolve(target, card) ||
+      (state.canEvolveThisTurn(target) &&
+        findEvolutionNameAllowedByEffect(state, target, card) !== undefined))
+  );
+}
+
 export function evolvePokemonFromHand(
   context: EffectContext,
   target: PokemonInPlay,
   card: Card
 ): void {
-  if (!context.state.canEvolve(target, card)) {
+  if (!canEvolvePokemonFromHand(context, target, card)) {
     throw new IllegalMove(`${target.name} を ${card.name} に進化させられない`);
   }
-  context.state.evolve(target, card, { from: "hand" });
+  const { state } = context;
+  const asIfNamed = state.canEvolve(target, card)
+    ? undefined
+    : findEvolutionNameAllowedByEffect(state, target, card);
+  state.evolve(
+    target,
+    card,
+    asIfNamed === undefined ? { from: "hand" } : { asIfNamed, from: "hand" }
+  );
 }
 
 function sumEnergyUnits(

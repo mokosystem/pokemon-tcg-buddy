@@ -85,17 +85,33 @@ export type ExRule = InferOutput<typeof ExRuleSchema>;
 
 // ---- 条件: カードを選ぶ条件 ----
 
-/** 1 枚のカードに対する条件。書いた欄はすべて満たす必要があり(かつ)、欄の中の並びはどれか 1 つでよい(または)。欄が無ければ好きなカード。 */
-export const CardFilterSchema = strictObject({
+const cardFilterEntries = {
   categories: optional(array(CardCategorySchema)),
   excludesPokemonWithRuleBox: optional(literal(true)),
   exRules: optional(array(ExRuleSchema)),
+  /** 「テラスタル」のポケモンだけ(ガラスのラッパ、ゼロの大空洞)。 */
+  isTerastal: optional(literal(true)),
   maxHp: optional(countFromZero),
+  /**
+   * 名前にこの文字列を含む。「シロナのポケモン」のようなトレーナーの名前のついたポケモンは「シロナの」と書く
+   * (公式 Q&A: 名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱う。カードの記録の裁定のデータ)。
+   */
+  nameIncludes: optional(nonEmptyText),
   names: optional(array(nonEmptyText)),
   pokemonTypes: optional(array(PokemonTypeSchema)),
   /** エネルギーが供給するタイプ。「基本超エネルギー」は種類の基本エネルギーとこの欄の psychic で書く。 */
   providedEnergyTypes: optional(array(PokemonTypeSchema)),
   stages: optional(array(EvolutionStageSchema)),
+};
+
+/**
+ * 1 枚のカードに対する条件。書いた欄はすべて満たす必要があり(かつ)、欄の中の並びはどれか 1 つでよい(または)。
+ * 欄をまたぐ「または」(闘タイプのたねポケモン、または基本闘エネルギー)は anyOf に並べ、1 段だけ入れ子にできる。
+ * 欄が無ければ好きなカード。
+ */
+export const CardFilterSchema = strictObject({
+  ...cardFilterEntries,
+  anyOf: optional(pipe(array(strictObject(cardFilterEntries)), minLength(2))),
 });
 export type CardFilter = InferOutput<typeof CardFilterSchema>;
 
@@ -163,6 +179,19 @@ export const DrawCountSchema = variant("kind", [
     kind: literal("perCardDiscardedEarlierInThisEffect"),
     multiplier: countFromOne,
   }),
+  /** 手札がこの枚数になるように引く。手札がすでにこの枚数以上なら引かない。 */
+  strictObject({ handSize: countFromOne, kind: literal("untilHandSize") }),
+]);
+export type DrawCount = InferOutput<typeof DrawCountSchema>;
+
+/**
+ * 山札の上から見たカードのうち、選ばなかった残りの扱い。shuffleThenBottomOfDeck は残りを切ってから
+ * 山札の下に置く(メガレックウザex の「はしゃのほうこう」)。
+ */
+const DeckTopRestPlacementSchema = picklist([
+  "shuffleIntoDeck",
+  "bottomOfDeck",
+  "shuffleThenBottomOfDeck",
 ]);
 
 /** 山札から探す 1 回分。条件に合うカードを最大 maxCount 枚選ぶ。 */
@@ -210,13 +239,29 @@ const basicOperationOptions = [
     canContinueToStage2: boolean(),
     operation: literal("evolveFromDeck"),
   }),
+  /** 山札から条件に合うエネルギーを maxCount 枚まで選び、条件に合う自分のポケモン 1 匹にまとめてつけて切る。 */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
+    operation: literal("searchDeckAndAttachEnergyToOnePokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
   strictObject({
     filter: CardFilterSchema,
     lookCount: countFromOne,
     maxTakeCount: countFromOne,
     minTakeCount: countFromZero,
     operation: literal("lookAtDeckTopAndTakeIntoHand"),
-    restPlacement: picklist(["shuffleIntoDeck", "bottomOfDeck"]),
+    restPlacement: DeckTopRestPlacementSchema,
+  }),
+  /** 山札の上から lookCount 枚を見て、条件に合うエネルギーをこのポケモン(効果の持ち主)につける。 */
+  strictObject({
+    filter: CardFilterSchema,
+    lookCount: countFromOne,
+    maxAttachCount: countFromOne,
+    minAttachCount: countFromZero,
+    operation: literal("lookAtDeckTopAndAttachEnergyToSelf"),
+    restPlacement: DeckTopRestPlacementSchema,
   }),
   strictObject({
     filter: CardFilterSchema,
@@ -229,10 +274,24 @@ const basicOperationOptions = [
     maxCount: countFromOne,
     operation: literal("placeFromDiscardOntoBench"),
   }),
+  /** 手札から条件に合うエネルギーを 1〜maxCount 枚選び、条件に合う自分のポケモン 1 匹につける。手札からつける番に 1 回には数えない。 */
   strictObject({
     energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
     operation: literal("attachEnergyFromHand"),
     targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /** 条件に合う自分のポケモンを maxPokemonCount 匹まで選び、トラッシュから条件に合うエネルギーを 1 枚ずつつける。 */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxPokemonCount: countFromOne,
+    operation: literal("attachEnergyFromDiscardToEachChosenPokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /** 自分の場のポケモンについている条件に合うエネルギーを 1 枚選び、自分の別のポケモンにつけ替える。 */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    operation: literal("moveEnergyToAnotherOwnPokemon"),
   }),
   strictObject({
     operation: literal("evolveBasicToStage2FromHand"),
@@ -304,6 +363,8 @@ export const ContinuousScopeSchema = variant("scope", [
     filter: PokemonInPlayFilterSchema,
     scope: literal("ownPokemon"),
   }),
+  /** ポケモンではなく自分(プレイヤー)の値を変える効果(ベンチの上限)。 */
+  strictObject({ scope: literal("ownPlayer") }),
 ]);
 
 export const ContinuousChangeSchema = variant("change", [
@@ -319,6 +380,20 @@ export const ContinuousChangeSchema = variant("change", [
     change: literal("setEnergyProvision"),
     provision: EnergyProvisionSchema,
   }),
+  /** ベンチに出せるポケモンの数。範囲は ownPlayer にする(card-record-validation.ts が検査する)。 */
+  strictObject({
+    change: literal("setBenchLimit"),
+    limit: countFromOne,
+  }),
+  /**
+   * 手札の進化ポケモンのうち evolutionFilter に合い、進化前の名前が name のものを、このポケモンにのせて進化させられる
+   * (イーブイex の「にじいろDNA」)。手札から進化させるときだけ働く。
+   */
+  strictObject({
+    change: literal("allowEvolutionFromHandAsIfNamed"),
+    evolutionFilter: CardFilterSchema,
+    name: nonEmptyText,
+  }),
 ]);
 
 export const ContinuousEffectSchema = strictObject({
@@ -332,9 +407,13 @@ export type ContinuousEffect = InferOutput<typeof ContinuousEffectSchema>;
 
 /** ダメージの上乗せを数える対象。 */
 export const DamageCountTargetSchema = variant("count", [
+  /**
+   * 自分のポケモン全員についている、いずれかのタイプのエネルギーの数。すべてのタイプとして働くエネルギーは
+   * 1 個ぶんを 1 つと数える(公式 Q&A「ストームエメラルダ」: プリズムエネルギー 3 枚で炎と雷の数は 3)。
+   */
   strictObject({
     count: literal("energyAttachedToOwnPokemon"),
-    energyType: PokemonTypeSchema,
+    energyTypes: pipe(array(PokemonTypeSchema), minLength(1)),
   }),
   strictObject({
     abilityName: nonEmptyText,

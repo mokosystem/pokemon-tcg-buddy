@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "レイジングカース"
+    }
+  ],
+  "cardIds": ["049968"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「レイジングカース」のダメージは、ベンチにいる「シロナのポケモン」のダメカンの合計で決まる(1 個につき 10。弱点は計算しない)。ダメカンを扱わないため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "シロナのミカルゲ",
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

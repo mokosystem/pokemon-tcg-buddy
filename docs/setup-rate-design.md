@@ -155,31 +155,31 @@ README は「コーディングエージェント上で動くスキルとして�
 
 | 元 | 操作 | 引数 | 状態 | 記法の識別子 | 必要になったカードの例 |
 | --- | --- | --- | --- | --- | --- |
-| 山札 | 引く | 枚数、または「手札が N 枚になるまで」 | 既存(手札の数で決める形は手直し) | `drawCards` | ラルトス、シロナのガブリアスex、サーファー、ジラーチex |
+| 山札 | 引く | 枚数、または「手札が N 枚になるまで」 | 既存(手札の数で決める形は順 6 の 2 セッション目に手直し) | `drawCards`(枚数は `fixed`、`perCardDiscardedEarlierInThisEffect`、`untilHandSize`) | ラルトス、シロナのガブリアスex、サーファー、ジラーチex |
 | 山札 | 探して手札に加えて切る | 条件、上限 | 既存 | `searchDeckIntoHand` | ハイパーボール、ポケパッド、トウコ |
 | 山札 | 探してベンチに出して切る | 条件、上限 | 既存 | `searchDeckOntoBench` | なかよしポフィン |
-| 山札 | 探してつけて切る | 条件、上限、つけ先の条件 | 既存 | `searchDeckAndAttachEnergyToEachPokemon`(全員に 1 枚ずつ)、`searchDeckIntoHandAndAttachRest`(アカマツ) | メガサーナイトex、アカマツ |
+| 山札 | 探してつけて切る | 条件、上限、つけ先の条件 | 既存(1 匹にまとめてつける形は順 6 の 2 セッション目に追加) | `searchDeckAndAttachEnergyToEachPokemon`(全員に 1 枚ずつ)、`searchDeckAndAttachEnergyToOnePokemon`(上限まで選び 1 匹にまとめて)、`searchDeckIntoHandAndAttachRest`(アカマツ) | メガサーナイトex、ブースターex、ルリリ、アカマツ |
 | 山札 | 探して進化させて切る | 条件 | 既存 | `evolveFromDeck` | 偉大な大樹 |
 | 山札 | 探して、残りを切ってから山札の上に置く | 条件、上限、好きな順 | 追加 | — | 暗号マニアの解読 |
-| 山札 | 上から見て取る | 見る枚数、条件、取る上限、取ったカードの先(手札、つける)、残りの扱い(切る、下に戻す) | 既存(取る上限と先を選ぶ形は手直し) | `lookAtDeckTopAndTakeIntoHand`(取ったカードの先は手札だけ) | ポケギア3.0、ドロンチ、メガレックウザex、ジャラランガ(050390)、ウエートレス、むしとりセット |
+| 山札 | 上から見て取る | 見る枚数、条件、取る上限、取ったカードの先(手札、つける)、残りの扱い(切る、下に戻す、切ってから下に戻す) | 既存(取る上限は既存。先をつける形は順 6 の 2 セッション目に別の操作として追加) | `lookAtDeckTopAndTakeIntoHand`(手札に加える)、`lookAtDeckTopAndAttachEnergyToSelf`(効果の持ち主につける)。残りの扱い `restPlacement` は `shuffleIntoDeck`、`bottomOfDeck`、`shuffleThenBottomOfDeck` | ポケギア3.0、ドロンチ、メガレックウザex、ジャラランガ(050390)、ウエートレス、むしとりセット |
 | 山札 | 上からトラッシュする | 枚数 | 追加 | — | ヤドキング、モルペコ |
 | 手札 | 山札に全部戻して切る | なし | 既存 | `shuffleHandIntoDeck` | リーリエの決心、ジャッジマン |
 | 手札 | トラッシュする | 枚数、条件 | 既存 | `discardFromHand` | ハイパーボール、タケルライコex、ルナトーン |
 | 手札 | グッズ・サポート・スタジアムを使う | なし(基本ルールの制限は骨組み) | 既存 | (基本処理。`card-effects.ts` の `playTrainerFromHand`) | |
 | 手札 | ベンチに出す | たねポケモン。効果で進化ポケモンを直接出す形は印を付ける | 既存 | `placeSelfOnBenchFromHand`(効果で進化ポケモンを出す)。たねポケモンを出す基本処理は `placeBasicPokemonOnBenchFromHand` | ファイアローex |
 | 手札 | エネルギーをつける(1 番に 1 回に数える) | つけ先 | 既存 | (基本処理。`attachEnergyFromHandToPokemon`) | |
-| 手札 | 効果でエネルギーをつける(1 番に 1 回に数えない) | 条件、上限、つけ先の条件 | 追加 | `attachEnergyFromHand` | オドリドリex、ヒビキのホウオウex、オーガポン みどりのめんex、ピカチュウex(050660) |
+| 手札 | 効果でエネルギーをつける(1 番に 1 回に数えない) | 条件、上限、つけ先の条件 | 追加 | `attachEnergyFromHand`(1〜上限の枚数を 1 匹に) | オドリドリex、ヒビキのホウオウex、オーガポン みどりのめんex、ピカチュウex(050660) |
 | 手札 | 進化させる | 1進化を飛ばす形を含む | 既存 | `evolveBasicToStage2FromHand`(1進化を飛ばす形)。手札からの進化は基本処理 `evolvePokemonFromHand` | ふしぎなアメ |
 | 手札 | 山札の上に置く | 枚数 | 追加 | — | 夜のアカデミー |
 | 手札 | ポケモンのどうぐをつける | つけ先 | 追加 | (基本処理。`attachToolFromHand`) | ふうせん |
 | トラッシュ | 手札に加える | 条件、上限 | 追加 | `addFromDiscardToHand` | 夜のタンカ、エネルギー回収、スイレンのお世話 |
 | トラッシュ | ベンチに出す | 条件、上限 | 追加 | `placeFromDiscardOntoBench` | ヨマワル、ボーマンダex |
-| トラッシュ | つける | 条件、上限、つけ先の条件 | 追加 | — | メガルカリオex、バシャーモex、ガラスのラッパ |
+| トラッシュ | つける | 条件、上限、つけ先の条件 | 追加 | `attachEnergyFromDiscardToEachChosenPokemon`(選んだポケモンに 1 枚ずつ。ほかの形はまだ無い) | メガルカリオex、バシャーモex、ガラスのラッパ |
 | トラッシュ | 山札に戻して切る | 条件、上限 | 追加 | — | せいなるはい、エネルギーリサイクル、ディアルガ |
 | 場 | ついているカードごと山札に戻して切る | 対象 | 既存 | `returnSelfToDeck`(自身だけ) | ノココッチ |
 | 場 | ついているカードごと手札に戻す | 対象 | 追加 | `returnPokemonToHand`(自身か、選んだ自分のポケモン) | ポケモン回収サイクロン |
 | 場 | ついているエネルギーを手札に戻す | 対象 | 追加 | —(ミツルの思いやりは順 6 の裁定で翻訳しないことにした。「順 6 で決めたこと」) | ミツルの思いやり |
-| 場 | ついているエネルギーを別のポケモンに移す | 個数、条件、移し先の条件 | 追加 | — | エネルギーつけかえ、Nの筋書き、テツノイサハex、ヒガナの信頼 |
+| 場 | ついているエネルギーを別のポケモンに移す | 個数、条件、移し先の条件 | 追加 | `moveEnergyToAnotherOwnPokemon`(1 個を自分の別のポケモンに。個数と移し先の条件はまだ無い) | エネルギーつけかえ、Nの筋書き、テツノイサハex、ヒガナの信頼 |
 | 場 | 山札のポケモンと置き換える(ついているカードを引き継ぐ) | 条件 | 追加 | — | メタモン |
 | 場 | バトル場を入れ替える | にげる(エネルギーをトラッシュ)、または効果で | 既存 | `switchActiveWithBench`(効果で入れ替える)。にげるは基本処理 `retreatActive` | ポケモンいれかえ、モモワロウex |
 | 場 | ワザを使う | ワザの名前 | 既存(番の終わり) | (基本処理。`useAttack`。効果はワザの一覧の effect) | |
@@ -368,6 +368,8 @@ README は「コーディングエージェント上で動くスキルとして�
 
 順 6 の 1 セッション目(2026-09-23)で、記法のスキーマと JSON Schema の生成、入口の生成スクリプト、部品を実行する部分、場にある間ずっと働く効果を集める判定、番の終わりのきっかけ、`Decklist` をカード ID で受け取る形、カードごとの前提を作る関数、ワザのダメージを求める関数、翻訳の検査、fallow と Ultracite の扱いの確認を済ませ、#22 の 4 デッキ(68 種)の記録を書いた(「順 6 で決めたこと(1 セッション目)」)。残りは、ほかのデッキの記録(棚卸しの 347 行のうち 279 行)、基本操作の表で「記法の識別子」が「—」の部品、この番に使ったサポートの記録(ロケット団のファクトリー)、基本ルールの例外の印(ゼイユ)、翻訳手順のスキル。
 
+順 6 の 2 セッション目(2026-09-23)で、翻訳手順のスキル(`pokemon-tcg-translate-card-effects`)を書き、開発責任者の残り 2 デッキ(シロナのガブリアスex、メガレックウザex)の 25 種の記録を書いた(「順 6 で決めたこと(2 セッション目)」)。残りは、環境デッキと 30th CELEBRATION の記録(棚卸しの 347 行のうち 254 行)、基本操作の表で「記法の識別子」が「—」の部品、この番に使ったサポートの記録(ロケット団のファクトリー)、基本ルールの例外の印(ゼイユ)。
+
 順 7(宣言と探索):
 
 - 宣言の「主軸のワザを打てる」は、記録のワザの一覧の名前で書けるようにする。必要なエネルギーは記録から引く。3 段目の「ワザを N 以上で打てる」は、番の終わりの場から記録のワザのダメージを求めて N と比べる
@@ -410,13 +412,13 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | 名前、カード ID、確認日 | `name`、`cardIds`、`verifiedOn` |
 | 翻訳の状態(翻訳あり、書けない、計算に関係ない、まだ書いていない) | `translationStatus`(`translated`、`notTranslatable`、`irrelevantToCalculation`、`notYetTranslated`) |
 | 属性 | `category`、`stage`、`evolvesFrom`、`basicPokemonOfEvolutionLine`、`hp`、`pokemonType`、`hasRuleBox`、`exRule`(`pokemonEx`、`megaEvolutionEx`。どちらでもないポケモンは持たない)、`isTerastal`、`retreatCost`、エネルギーは `provision`(`type` と `units`、すべてのタイプとして働くものは `anyType`) |
-| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`、`discardPokemonWithAbilityName` |
+| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName` |
 | 特性の一覧 | `abilities`(`name`、`translation`。翻訳しない特性は `translation` を持たない) |
 | トレーナーズと特殊エネルギーの効果 | `cardEffects` |
 | きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional` |
 | 効果 | `useConditions`(使える条件)と `steps`(操作の列)。条件で分かれる歩は `branchOnCondition`(1 段だけ) |
-| 条件 | カードを選ぶ条件は `categories`、`stages`、`names`、`pokemonTypes`、`providedEnergyTypes`、`maxHp`、`excludesPokemonWithRuleBox`、`exRules`。場のポケモンにはこれに `positions` を足す。効果を使える条件は `selfIsActive`、`selfHasNoEnergyAttached`、`attachedPokemonMatches`、`ownPokemonInPlayExists`、`deckHasCards`、`handHasCards`、`noAbilityUsedThisTurnWithNameIncluding`、`ownRemainingPrizesAre`、`anyOf`(または。1 段だけ) |
-| 場にある間ずっと働く効果 | 働く範囲 `scope`(`self`、`attachedPokemon`、`ownPokemon`)、変える項目 `change`(`setRetreatCostToZero`、`reduceRetreatCost`、`allowBenchedPokemonAttacks`、`negateAbilities`、`negateToolEffects`、`setEnergyProvision`)、働く条件 `conditions` |
+| 条件 | カードを選ぶ条件は `categories`、`stages`、`names`、`nameIncludes`(名前に文字列を含む)、`pokemonTypes`、`providedEnergyTypes`、`maxHp`、`excludesPokemonWithRuleBox`、`exRules`、`isTerastal`、`anyOf`(欄をまたぐ「または」。1 段だけ)。場のポケモンにはこれに `positions` を足す。効果を使える条件は `selfIsActive`、`selfHasNoEnergyAttached`、`attachedPokemonMatches`、`ownPokemonInPlayExists`、`deckHasCards`、`handHasCards`、`noAbilityUsedThisTurnWithNameIncluding`、`ownRemainingPrizesAre`、`anyOf`(または。1 段だけ) |
+| 場にある間ずっと働く効果 | 働く範囲 `scope`(`self`、`attachedPokemon`、`ownPokemon`、`ownPlayer`)、変える項目 `change`(`setRetreatCostToZero`、`reduceRetreatCost`、`allowBenchedPokemonAttacks`、`negateAbilities`、`negateToolEffects`、`setEnergyProvision`、`setBenchLimit`、`allowEvolutionFromHandAsIfNamed`)、働く条件 `conditions` |
 | 裁定のデータ | `rulings`(論点 `question`、採った解釈 `interpretation`、翻訳への反映 `reflectedIn`、出典 `source`)。出典は `officialQa`(`searchUrl`、`questionSummary`、`checkedOn`)か `noMatchingQa`(`searchTerms`、`basis`、`checkedOn`) |
 | 含めなかった効果 | `excludedEffects`(`description`、`reason`)。理由は `requiresOpponent`、`specialCondition`、`healing`、`damageOrDamageCounters`、`damageBonusNotModeled`、`ownNextTurnRestriction`、`noReasonToUseInSoloPlay` |
 
@@ -448,14 +450,15 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 4. **「手札からベンチに出したとき」の特性は、使うかを問い合わせる。** 対戦の準備でベンチに出したときはきっかけにならない(公式 Q&A「ニャースex」)
 5. **グッズとサポートは、手札からトラッシュしてから効果を実行する。** 公式の手順では使っている間のカードは脇に置くが、今の翻訳にトラッシュの中身を見るグッズ・サポートが無く、結果が同じになるため
 6. **場にある間ずっと働く効果は、特性やどうぐを無くす効果(スタジアム)を先に当ててから集める。** 特性やどうぐが特性・どうぐを無くすカードはまだ翻訳に無い。おたがいに働く効果は自分の場の分だけを書き、相手の場の分は含めなかった効果に書かない(デッキによらない前提「相手の行動を含めない」で示す)
+7. **ベンチのポケモンが上限を超えたら、上限になるまでベンチのポケモンを選んでトラッシュする。** 2 セッション目に足した(「順 6 で決めたこと(2 セッション目)」の「ベンチの上限」)
 
 #### 翻訳の検査
 
 - スキーマの検査: 読み込み時(入口)とテスト。編集時は `$schema` で編集器が検査する。生成した JSON Schema を別の検査道具(ajv-cli 5.0.0、draft-07)にかけ、68 件の記録がすべて通り、部品の名前を誤った記録が落ちることを確かめた(2026-09-23)
-- 記録をまたぐ検査(`findCardRecordProblems`): カード ID の重複(記録の中と記録の間)、置き場所(種類のディレクトリと先頭のカード ID)、翻訳の状態と翻訳した効果の有無の整合(エネルギーは供給そのものが翻訳にあたるため、効果が無くても翻訳ありにできる)、進化前の名前と進化の系統の書き方、ポケモンex がルールを持つポケモンになっているか、ワザと特性の名前の重なり、きっかけがカードの種類に合うか、使ったときの効果が 1 つまでか、公式 Q&A の出典の URL に検索語があるか。進化前の名前の記録があるかは検査しない(順 5 の決定)
+- 記録をまたぐ検査(`findCardRecordProblems`): カード ID の重複(記録の中と記録の間)、置き場所(種類のディレクトリと先頭のカード ID)、翻訳の状態と翻訳した効果の有無の整合(エネルギーは供給そのものが翻訳にあたるため、効果が無くても翻訳ありにできる)、進化前の名前と進化の系統の書き方、ポケモンex がルールを持つポケモンになっているか、ワザと特性の名前の重なり、きっかけがカードの種類に合うか、使ったときの効果が 1 つまでか、公式 Q&A の出典の URL に検索語があるか、場にある間ずっと働く効果の範囲 `ownPlayer` がベンチの上限だけに使われているか(2 セッション目に追加)。進化前の名前の記録があるかは検査しない(順 5 の決定)
 - 翻訳ごとに骨組みで実行するテスト: `src/card-records.test.ts`。翻訳した記録ごとに、小さな場を組んで効果を実行し、場の動きを確かめる。翻訳した記録にテストが無ければ落ちるテストも置いた
 - 入口と JSON Schema が最新か: `src/card-record-files.test.ts`
-- #22 の 4 デッキを記録だけで回すテスト: `src/issue22-decks.test.ts`。60 枚の内容(`src/issue22-decks.ts`。規則ファイルのカード表と 60 枚の内容から写した)を記録から組み立て、使えるカードと特性を片端から使う手順で、先攻・後攻 100 回ずつ 3 番目の番まで回す。このテストで、場がニャースex だけのときの「しっぽをまく」を使えるワザの一覧に入れていた誤り(使うと場が空になる)を見つけて直した。手元では同じ手順で各デッキ先攻・後攻 2,000 回ずつ回し、止まらないことを確かめた(2026-09-23)
+- #22 の 4 デッキを記録だけで回すテスト: `src/issue22-decks.test.ts`(2 セッション目に、開発責任者の残り 2 デッキも回す `src/recorded-decks.test.ts` に名前を変えた)。60 枚の内容(`src/issue22-decks.ts`。規則ファイルのカード表と 60 枚の内容から写した)を記録から組み立て、使えるカードと特性を片端から使う手順で、先攻・後攻 100 回ずつ 3 番目の番まで回す。このテストで、場がニャースex だけのときの「しっぽをまく」を使えるワザの一覧に入れていた誤り(使うと場が空になる)を見つけて直した。手元では同じ手順で各デッキ先攻・後攻 2,000 回ずつ回し、止まらないことを確かめた(2026-09-23)
 
 #### fallow と Ultracite の扱い(確かめた結果)
 
@@ -482,7 +485,52 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 3. **ワザのダメージの持ち方を、効果の文で与えるダメージとトラッシュで決まるダメージにも広げた(上の「4 デッキの記録で分かったこと」)。** 順 5 の「カードの記録の形」は、追加のコストで決まる上乗せを持たないとしていた。「インフェルノX」はダメージそのものがトラッシュで決まり、持たないと #22 の狙いを判定できない。代案: ダメージ無しにし、狙いの判定をデッキの宣言に任せる(決定事項「デッキごとの入力は宣言だけ」に反する)
 4. **スグリの 2 つの効果のうち、入れ替えだけを翻訳した。** もう 1 つ(相手のポケモンex・V へのダメージを増やす)は相手が要る。そのため、ベンチにポケモンがいないときはスグリを使えない扱いになる(実際は下側の効果を選んで使える)。これは含めなかった効果の文に書いた。代案: 「2 つの効果から 1 つを選ぶ」部品を足し、何も起きない効果を選べるようにする(使う理由の無い選択が増えるだけ)
 
-## 検証の記録
+### 順 6 で決めたこと(2 セッション目)
+
+2026-09-23。翻訳手順のスキルを書き、そのスキルに従って、開発責任者の残り 2 デッキ(シロナのガブリアスex `6nNQgQ-y6q3om-9HnnLL`、メガレックウザex `xcGKc8-NGuFdn-D8c88x`)のうち記録の無かった 25 種の記録を書いた。詳細ページは 25 種すべてと、棚卸しの行の先頭の印刷(8 種)、公式 Q&A の関連カードの印刷(3 種)を読み、スタンダードで使えるかは 25 種すべてを名前の完全一致で検索して確かめた(2026-09-23)。
+
+#### 翻訳手順のスキル
+
+`.claude/skills/pokemon-tcg-translate-card-effects/SKILL.md` に置いた。デッキの読み取り → 記録の無いカードの洗い出し → 棚卸しの行 → 3 点確認と印刷の見比べ → 公式 Q&A の裁定 → 記録を書く → 部品が無ければ足す → 整形と生成 → 翻訳ごとのテスト → 検査 → 記録に残す、の順。1 セッション目で分かった読み取りの注意(見出しの無い段落のルールの文、ワザの文の中のエネルギーのアイコン、ダメージが空欄でも効果の文でダメージを与えるワザ、検索一覧に出ない印刷、Q&A の関連カードの印刷、公式 Q&A に該当が無い論点の書き方)は、手順の中の該当する段に書いた。名前は、ポケモンカードのドメイン知識を扱うスキルの接頭辞 `pokemon-tcg-` に、何をするか(カードの効果を翻訳する)を続けた。
+
+#### 2 デッキの記録で分かったこと
+
+25 種は、翻訳あり 17、計算に関係ない 8、書けない 0。棚卸しの一覧の分類はすべてそのままで、分類を変えたカードは無い。裁定のデータは 8 種に 12 件(公式 Q&A に該当あり 9、該当なし 3)。公式 Q&A の関連カードの印刷(イーブイex 046787、ブースターex 046683、ヒビキのホウオウex 047315)は詳細ページを見比べて同じカードテキストだったため記録に足し、棚卸しの一覧の行にも足した。
+
+- イーブイex(049282)とブースターex(048810)は、ワザの欄の前の見出しの無い段落にテラスタルのルールの文があり、`isTerastal` を真にした(ドラパルトex と同じ読み方)
+- 「シロナのポケモン」「ヒビキのポケモン」を定める公式 Q&A は無かった。同じ書き方の「ロケット団のポケモン」は、名前に「ロケット団の」とつくポケモンとして扱うと公式 Q&A が回答しているため、それを拠り所に `nameIncludes`(名前に文字列を含む)で書き、出典を「該当なし」として裁定のデータに残した。採らなかった案: `names` に名前を並べる(同じトレーナーの名前のポケモンが新しく出るたびに記録を直すことになる)
+- 最大 HP だけを増やすどうぐ(シロナのパワーウエイト、ヒーローマント)は、含めなかった理由を `requiresOpponent` にし、相手のワザのダメージを受けないため最大 HP が成立率に影響しないことを文に書いた。採らなかった案: 理由の値を足す(相手がいないと意味を持たないという点で「相手が要る」に含められ、値を増やす利点が無い)
+- 山札の上から見て選ぶ操作の最小の枚数は、条件の付いた選び方なら 0、条件の無い「カードを選ぶ」なら 1 とした。メガレックウザex の「はしゃのほうこう」に直接の公式 Q&A は無いが、同じ書き方のデリバードの「エナジープレゼント」はエネルギーを選ばなくてよく、スマホロトムなど条件の無い選び方は 1 枚以上選ぶと回答されている(検索語「上から 見て えらばない」、2026-09-23 確認)。1 セッション目の記録(ポケギア3.0 は 0、ドロンチは 1)もこの決まりに合っている
+- 詳細ページのダメージが「10×」で、数える対象が骨組みに無いワザ(シロナのミカルゲの「レイジングカース」、ダメカンの数)は、固定のダメージを 0 にし、上乗せを含めなかった効果に書いた
+- 2 デッキの 60 枚の内容は `src/decks-without-rule-files.ts` に置き(開発責任者の許可済み)、#22 の 4 デッキと同じテストで回す。テストのファイル名を `issue22-decks.test.ts` から `recorded-decks.test.ts` に変えた。手元では同じ手順で各デッキ先攻・後攻 2,000 回ずつ回し、止まらないことと、足した部品(にじいろDNA の進化、はしゃのほうこう、こんじきのほのお、ガラスのラッパ、エネルギーつけかえ、ゼロの大空洞でのベンチ 6 匹目以降)が使われることを確かめた(2026-09-23)
+
+#### 足した部品と手直し
+
+「部品を足す手順」に従って足した。既にある部品の組み合わせで書けないことは、棚卸しの一覧の根拠で確かめた。
+
+| 部品 | 種類 | 必要になったカード | 理由と採らなかった案 |
+| --- | --- | --- | --- |
+| `drawCards` の枚数 `untilHandSize` | 基本操作の手直し | シロナのガブリアスex | 手札が N 枚になるように引く。手札がすでに N 枚以上なら引かない |
+| `searchDeckAndAttachEnergyToOnePokemon` | 基本操作の追加 | ブースターex、ルリリ | 山札からエネルギーを上限まで選び、1 匹にまとめてつける。既にある `searchDeckAndAttachEnergyToEachPokemon` は条件に合うポケモン全員に 1 枚ずつつける形で、選ぶ 1 匹に複数枚つける形を表せない(棚卸しの一覧のブースターex の行は「あふれるねがいと同じ形」としていたが、違う形だった)。1 枚も選ばなくてよいことは公式 Q&A「バーニングチャージ」で確かめた |
+| `lookAtDeckTopAndAttachEnergyToSelf` と、残りの扱い `shuffleThenBottomOfDeck` | 基本操作の追加 | メガレックウザex | 山札の上から見て、エネルギーを効果の持ち主につけ、残りを切ってから山札の下に置く。採らなかった案: `lookAtDeckTopAndTakeIntoHand` に取ったカードの先を選ぶ欄を足す(先によって、選べるカード(エネルギーだけ)と対象(持ち主がいること)の判定が変わり、1 つの部品の中で分かれる。操作の名前から先が読める形にした) |
+| `attachEnergyFromHand` の上限 `maxCount` | 基本操作の手直し | ヒビキのホウオウex | 手札のエネルギーを 1〜上限の枚数、1 匹につける。オドリドリex の記録は上限 1 にした。1 枚だけでもよいことは公式 Q&A「こんじきのほのお」で確かめた |
+| `attachEnergyFromDiscardToEachChosenPokemon` | 基本操作の追加 | ガラスのラッパ | 条件に合うポケモンを上限まで選び、トラッシュのエネルギーを 1 枚ずつつける。トラッシュからつけるほかの形(メガルカリオex、バシャーモex)は、そのカードの翻訳のときに足す |
+| `moveEnergyToAnotherOwnPokemon` | 基本操作の追加 | エネルギーつけかえ | 元のポケモン → エネルギー → 先のポケモンの順に選ぶ。同じカードは同じ参照を枚数分並べて表すため、エネルギーを先に選ぶとどのポケモンについていた 1 枚かが決まらない。個数や先の条件を持つカード(Nの筋書き、テツノイサハex、ヒガナの信頼)は、そのカードの翻訳のときに欄を足す |
+| カードを選ぶ条件の `nameIncludes`、`isTerastal`、`anyOf` | 条件の追加 | シロナのガバイト、ヒビキのホウオウex、ガラスのラッパ、ゼロの大空洞、ファイトゴング | `anyOf` は欄をまたぐ「または」(闘タイプのたねポケモン、または基本闘エネルギー)。効果を使える条件の `anyOf` と同じく 1 段だけ入れ子にできる |
+| ダメージの数える対象 `energyAttachedToOwnPokemon` のタイプを並びに(`energyTypes`) | ワザのダメージの手直し | メガレックウザex | 炎と雷のエネルギーの数を数える。すべてのタイプとして働く 1 個は、タイプをいくつ並べても 1 つと数える(公式 Q&A「ストームエメラルダ」: プリズムエネルギー 3 枚で 150)。メガサーナイトex とメガリザードンXex の記録を並びの形に直した |
+| 範囲 `ownPlayer` と変える項目 `setBenchLimit` | 場にある間ずっと働く効果の追加 | ゼロの大空洞 | 下の「ベンチの上限」 |
+| 変える項目 `allowEvolutionFromHandAsIfNamed` | 場にある間ずっと働く効果の追加 | イーブイex | 下の「進化前の名前が違う進化」 |
+
+#### ベンチの上限
+
+- **ベンチの上限は `continuous-effects.ts` の `calculateBenchLimit` で、今の場の効果から求める。** `GameState` の `countEmptyBenchSlots` を外して `continuous-effects.ts` に移し、`GameState.placeOnBench` は上限を引数で受け取る。にげるエネルギーと同じく、状態の側は場にある間ずっと働く効果を知らず、判定する側が効果を集める分け方にした。採らなかった案: `state.ts` が `continuous-effects.ts` を読み込む(状態の層が効果を集める層に依存し、型の読み込みが循環する)。`placeOnBench` の上限を省略できる引数にして既定を 5 にする(呼び出し側が渡し忘れても検査で見つからず、ゼロの大空洞が働かない)
+- **上限は出す前の場で判定する。** 場に「テラスタル」のポケモンがいないときベンチが 5 匹なら、「テラスタル」のたねポケモンを 6 匹目として出せない(公式 Q&A「ゼロの大空洞」)
+- **上限を超えたら、ベンチのポケモンを選んでついているカードごとトラッシュする(`effect-operations.ts` の `trimBenchToLimit`)。** 骨組みがこれを行うのは、スタジアムを出して前のスタジアムがトラッシュされたときと、場のポケモンを山札や手札に戻したとき。バトル場のポケモンがいなくなったときは、ベンチを減らしてからバトル場に出す(公式 Q&A「ゼロの大空洞」)。どれをトラッシュするかはプレイングの判断基準が選ぶ。「テラスタル」のポケモンが場を離れる経路は、今の記録では山札や手札に戻す効果とスタジアムの入れ替えだけで、進化で「テラスタル」でなくなる記録は無いため、進化のときには行わない
+- **範囲 `ownPlayer` はベンチの上限だけに使う。** 食い違うと骨組みが効果を集めずに何も起きないため、記録をまたぐ検査(`findContinuousScopeProblems`)で見つける
+
+#### 進化前の名前が違う進化
+
+イーブイex の「にじいろDNA」は、場にある間ずっと働く効果の `allowEvolutionFromHandAsIfNamed`(進化前の名前「イーブイ」、進化するカードの条件はポケモンex)で書いた。手札から進化させるときの判定を `card-effects.ts` の `canEvolvePokemonFromHand` に置き、`GameState.evolve` は照らし合わせる名前(`asIfNamed`)を受け取る。山札から進化させる効果(偉大な大樹)では働かない(公式 Q&A「にじいろDNA」)。特性を無くす効果(ロケット団の監視塔。イーブイex は無色ポケモン)が働いていれば、集めた効果に入らないため進化できない。
 
 Issue 22 の完了の定義に対応する記録。いずれも 2026-09-17 に、乱数の種 20260917、試行 20000 回で実行した。枚数を変えたときの比較は同じ種で回すので、差は試行の揺れではなく変更の効果として読める。20000 回のときの割合の揺れはおよそ ±0.7 ポイント(95 % の範囲)。
 

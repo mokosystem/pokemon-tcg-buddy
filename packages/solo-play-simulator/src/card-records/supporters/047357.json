@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "shuffleHandIntoDeck"
+          },
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 4
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["047357", "049608", "050448", "045128", "039824", "050604"],
+  "category": "サポート",
+  "excludedEffects": [
+    {
+      "description": "相手も手札をすべて山札に戻して切り、4 枚引く",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "ジャッジマン",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

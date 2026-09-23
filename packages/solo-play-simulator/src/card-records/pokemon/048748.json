@@ -1,0 +1,27 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "トゲでさす"
+    }
+  ],
+  "cardIds": ["048748"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "シロナのロゼリア",
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

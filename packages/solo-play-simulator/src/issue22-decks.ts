@@ -6,13 +6,14 @@
 
 import type { Decklist } from "./engine.ts";
 
-export interface Issue22Deck {
+/** 記録だけで組み立てて回すデッキ。 */
+export interface RecordedDeck {
   readonly deckCode: string;
   readonly decklist: Decklist;
   readonly name: string;
 }
 
-export const ISSUE22_DECKS: readonly Issue22Deck[] = [
+export const ISSUE22_DECKS: readonly RecordedDeck[] = [
   {
     deckCode: "xG8Kax-DHob4e-84xcca",
     decklist: [

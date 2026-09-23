@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["047791", "048438", "049368"],
+  "category": "グッズ",
+  "excludedEffects": [
+    {
+      "description": "使った番だけ、闘ポケモンのワザで相手のバトルポケモンに与えるダメージが増える",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "パワープロテイン",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

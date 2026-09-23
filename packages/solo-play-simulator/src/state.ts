@@ -35,6 +35,12 @@ export interface RandomSource {
 
 export type CardSource = "hand" | "deck" | "discard";
 
+/** 山札の上から見たカードのうち、選ばなかった残りの扱い(card-record-schema.ts の restPlacement)。 */
+export type DeckTopRestPlacement =
+  | "shuffleIntoDeck"
+  | "bottomOfDeck"
+  | "shuffleThenBottomOfDeck";
+
 /**
  * ワザに必要なエネルギー(タイプの並び。無色は colorless)を、ついているエネルギーの
  * 個数分(units)で払えるか。タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして
@@ -215,10 +221,6 @@ export class GameState {
     return countByName(this.discard, name);
   }
 
-  countEmptyBenchSlots(): number {
-    return BENCH_LIMIT - this.bench.length;
-  }
-
   isFirstTurnGoingFirst(): boolean {
     return this.wentFirst && this.turn === 1;
   }
@@ -248,14 +250,18 @@ export class GameState {
   // ---- 山札 ----
 
   shuffleDeck(): void {
+    this.shuffleCards(this.deck);
+  }
+
+  private shuffleCards(cards: Card[]): void {
     // Fisher-Yates。後ろから順に、まだ決めていない範囲から 1 枚を選んで入れ替える。
-    for (let index = this.deck.length - 1; index > 0; index -= 1) {
+    for (let index = cards.length - 1; index > 0; index -= 1) {
       const other = Math.floor(this.random.nextFloat() * (index + 1));
-      const card = this.deck[index];
-      const swapped = this.deck[other];
+      const card = cards[index];
+      const swapped = cards[other];
       if (card !== undefined && swapped !== undefined) {
-        this.deck[index] = swapped;
-        this.deck[other] = card;
+        cards[index] = swapped;
+        cards[other] = card;
       }
     }
   }
@@ -271,24 +277,56 @@ export class GameState {
     this.hand.push(card);
   }
 
-  /**
-   * 山札の上から lookCount 枚のうち chosen を手札に加え、残りを山札に戻す(切るか、下に置く)。
-   * 同じカードは同じ参照を枚数分並べているため、参照ではなく位置で 1 枚ずつ除く。
-   */
+  /** 山札の上から lookCount 枚のうち chosen を手札に加え、残りを restPlacement の通りに山札に戻す。 */
   takeFromDeckTop(
     lookCount: number,
     chosen: readonly Card[],
-    restPlacement: "shuffleIntoDeck" | "bottomOfDeck"
+    restPlacement: DeckTopRestPlacement
   ): void {
+    this.hand.push(...this.removeFromDeckTop(lookCount, chosen, restPlacement));
+  }
+
+  /** 山札の上から lookCount 枚のうち chosen(エネルギー)を target につけ、残りを restPlacement の通りに山札に戻す。 */
+  attachFromDeckTop(
+    lookCount: number,
+    chosen: readonly Card[],
+    target: PokemonInPlay,
+    restPlacement: DeckTopRestPlacement
+  ): void {
+    if (!chosen.every(isEnergy)) {
+      throw new IllegalMove("エネルギーではないカードをつけようとした");
+    }
+    for (const energy of this.removeFromDeckTop(
+      lookCount,
+      chosen,
+      restPlacement
+    )) {
+      target.energies.push(energy);
+      this.record(`エネルギー ${energy.name} → ${target.name}(山札の上から)`);
+    }
+  }
+
+  /**
+   * 山札の上から lookCount 枚を見て chosen を取り出し、残りを山札に戻す(切る、下に置く、切ってから下に置く)。
+   * 同じカードは同じ参照を枚数分並べているため、参照ではなく位置で 1 枚ずつ除く。
+   */
+  private removeFromDeckTop(
+    lookCount: number,
+    chosen: readonly Card[],
+    restPlacement: DeckTopRestPlacement
+  ): Card[] {
     const looked = this.deck.splice(0, lookCount);
     for (const card of chosen) {
       removeCard(looked, card, "山札の上から見たカード");
-      this.hand.push(card);
+    }
+    if (restPlacement === "shuffleThenBottomOfDeck") {
+      this.shuffleCards(looked);
     }
     this.deck.push(...looked);
     if (restPlacement === "shuffleIntoDeck") {
       this.shuffleDeck();
     }
+    return [...chosen];
   }
 
   /**
@@ -425,16 +463,17 @@ export class GameState {
 
   /**
    * byEffect はカードの効果で進化ポケモンを直接ベンチに出すとき
-   * (例: ファイアローex の特性)に真にする。
+   * (例: ファイアローex の特性)に真にする。benchLimit はベンチに出せるポケモンの数で、
+   * 場にある間ずっと働く効果で変わる(continuous-effects.ts の calculateBenchLimit)。
    */
   placeOnBench(
     card: Card,
-    options: { from: CardSource; byEffect?: boolean }
+    options: { benchLimit: number; byEffect?: boolean; from: CardSource }
   ): PokemonInPlay {
     if (!(isPokemon(card) && (isBasicPokemon(card) || options.byEffect))) {
       throw new IllegalMove(`${card.name} はたねポケモンではない`);
     }
-    if (this.countEmptyBenchSlots() <= 0) {
+    if (this.bench.length >= options.benchLimit) {
       throw new IllegalMove("ベンチに空きがない");
     }
     this.removeFrom(options.from, card);
@@ -472,15 +511,40 @@ export class GameState {
     this.discard.push(energy);
   }
 
+  /** ポケモンについているエネルギーを、別のポケモンにつけ替える。手札からつける番に 1 回には数えない。 */
+  moveAttachedEnergy(
+    from: PokemonInPlay,
+    to: PokemonInPlay,
+    energy: Card
+  ): void {
+    if (from === to) {
+      throw new IllegalMove("同じポケモンにはつけ替えられない");
+    }
+    removeCard(from.energies, energy, `${from.name} のエネルギー`);
+    to.energies.push(energy);
+    this.record(`エネルギー ${energy.name} を ${from.name} → ${to.name}`);
+  }
+
+  /** ベンチのポケモンを、ついているカードごとトラッシュする(ベンチの上限を超えたとき。きぜつではない)。 */
+  discardBenchedPokemon(target: PokemonInPlay): void {
+    removeFirst(this.bench, target, "ベンチ");
+    this.discard.push(...target.listCardsIncludingAttached());
+    this.record(`ベンチの ${target.name} をトラッシュ`);
+  }
+
+  /**
+   * asIfNamed は、進化前の名前をこの名前として照らし合わせるとき(イーブイex の「にじいろDNA」)に渡す。
+   * 渡してよいかは呼び出し側が場にある間ずっと働く効果で確かめる(card-effects.ts の canEvolvePokemonFromHand)。
+   */
   evolve(
     target: PokemonInPlay,
     card: Card,
-    options: { from: CardSource; ignoreFreshness?: boolean }
+    options: { asIfNamed?: string; from: CardSource; ignoreFreshness?: boolean }
   ): void {
     if (this.turn < 2) {
       throw new IllegalMove("自分の最初の番は進化できない");
     }
-    if (card.evolvesFrom !== target.name) {
+    if (card.evolvesFrom !== (options.asIfNamed ?? target.name)) {
       throw new IllegalMove(`${card.name} は ${target.name} から進化しない`);
     }
     if (target.isFresh(this.turn) && !options.ignoreFreshness) {

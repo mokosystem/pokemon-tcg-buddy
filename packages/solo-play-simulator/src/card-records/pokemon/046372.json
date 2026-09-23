@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ゆきにしずめる"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["water", "water", "colorless"],
+      "damage": {
+        "amount": 120,
+        "kind": "fixed"
+      },
+      "name": "アイシクルループ"
+    }
+  ],
+  "cardIds": ["046372"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「ゆきにしずめる」(手札からベンチに出したとき、場のスタジアムをトラッシュする)。相手のスタジアムを消すための効果で、一人回しでは使っても成立率が上がらない",
+      "reason": "noReasonToUseInSoloPlay"
+    },
+    {
+      "description": "ワザ「アイシクルループ」の、自身のエネルギーを 1 個手札に戻す効果。相手にダメージを与えるためのワザで、一人回しでは使う理由が無い",
+      "reason": "noReasonToUseInSoloPlay"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "パオジアン",
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

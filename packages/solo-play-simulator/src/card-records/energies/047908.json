@@ -1,0 +1,15 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardIds": ["047908", "048337", "049464", "050750"],
+  "category": "基本エネルギー",
+  "excludedEffects": [],
+  "name": "基本闘エネルギー",
+  "provision": {
+    "kind": "type",
+    "type": "fighting",
+    "units": 1
+  },
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}
