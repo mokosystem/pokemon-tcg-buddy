@@ -334,8 +334,8 @@ export function retreatActive(
 // ---- ワザ ----
 
 /**
- * バトルポケモンが今使えるワザ(エネルギーが足り、先攻の最初の番ではないもの)。効果で自分の場のポケモンが
- * いなくなるワザ(場がニャースex だけのときの「しっぽをまく」)は含めない(wouldLeaveFieldEmpty)。
+ * バトルポケモンが今使えるワザ(エネルギーが足り、先攻の最初の番ではなく、効果の使える条件を満たすもの)。
+ * 効果で自分の場のポケモンがいなくなるワザ(場がニャースex だけのときの「しっぽをまく」)は含めない(wouldLeaveFieldEmpty)。
  */
 export function listUsableAttacksOfActive(
   context: EffectContext
@@ -346,10 +346,13 @@ export function listUsableAttacksOfActive(
     return [];
   }
   const units = listEnergyUnits(state, active);
+  const source: EffectSource = { card: active.card, pokemon: active };
   return listUsableAttacks(state, active).filter(
     ({ attack }) =>
       canPayCost(attack.cost, units) &&
-      (attack.effect === null || !wouldLeaveFieldEmpty(state, attack.effect))
+      (attack.effect === null ||
+        (areConditionsMet(state, attack.effect.useConditions, source) &&
+          !wouldLeaveFieldEmpty(state, attack.effect)))
   );
 }
 
