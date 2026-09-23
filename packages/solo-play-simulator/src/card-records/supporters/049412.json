@@ -1,0 +1,42 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["基本エネルギー"]
+            },
+            "maxCount": 2,
+            "operation": "searchDeckIntoHandAndAttachRest",
+            "requiresDistinctTypes": true,
+            "targetFilter": {}
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["049412", "046036"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "アカマツ",
+  "rulings": [
+    {
+      "interpretation": "つけられない。手札に加える",
+      "question": "基本エネルギーを 1 枚だけ選んだとき、そのエネルギーをポケモンにつけられるか",
+      "reflectedIn": "1 枚だけ選んだときは手札に加え、つけない(card-effects.ts の runSearchIntoHandAndAttachRest)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "基本エネルギーを 1 枚だけ選んだとき、ポケモンにつけられるか、という質問に、つけられず手札に加えると回答(関連カードの印刷 046036 は詳細ページを見比べて同じカードテキスト)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A2%E3%82%AB%E3%83%9E%E3%83%84&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

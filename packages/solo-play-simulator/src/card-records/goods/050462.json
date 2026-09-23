@@ -1,0 +1,24 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "evolveBasicToStage2FromHand"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050462", "050423", "049371", "044054", "047283", "045371"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "ふしぎなアメ",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

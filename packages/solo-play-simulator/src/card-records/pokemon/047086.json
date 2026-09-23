@@ -1,0 +1,43 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "switchActiveWithBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "いれかわる"
+    },
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "ぶつかる"
+    }
+  ],
+  "cardIds": ["047086", "049290"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ノコッチ",
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

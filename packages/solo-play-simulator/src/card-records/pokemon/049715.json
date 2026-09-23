@@ -1,0 +1,52 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["ポケモン"]
+                },
+                "maxCount": 3
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "コールサイン"
+    },
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "サイコショット"
+    }
+  ],
+  "cardIds": ["049715"],
+  "category": "ポケモン",
+  "evolvesFrom": "ラルトス",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 100,
+  "isTerastal": false,
+  "name": "キルリア",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

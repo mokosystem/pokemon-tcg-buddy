@@ -1,0 +1,2334 @@
+{
+  "oneOf": [
+    {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "const": "../card-record.schema.json"
+            },
+            "cardIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]{6}$"
+              },
+              "minItems": 1
+            },
+            "excludedEffects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ExcludedEffect"
+              }
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rulings": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ruling"
+              }
+            },
+            "translationStatus": {
+              "enum": [
+                "translated",
+                "notTranslatable",
+                "irrelevantToCalculation",
+                "notYetTranslated"
+              ],
+              "type": "string"
+            },
+            "verifiedOn": {
+              "type": "string",
+              "format": "date"
+            },
+            "abilities": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ability"
+              }
+            },
+            "attacks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Attack"
+              }
+            },
+            "category": {
+              "const": "ポケモン"
+            },
+            "exRule": {
+              "enum": ["pokemonEx", "megaEvolutionEx"],
+              "type": "string"
+            },
+            "hasRuleBox": {
+              "type": "boolean"
+            },
+            "hp": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "isTerastal": {
+              "type": "boolean"
+            },
+            "pokemonType": {
+              "$ref": "#/$defs/PokemonType"
+            },
+            "retreatCost": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stage": {
+              "const": "たね"
+            }
+          },
+          "required": [
+            "$schema",
+            "cardIds",
+            "excludedEffects",
+            "name",
+            "rulings",
+            "translationStatus",
+            "verifiedOn",
+            "abilities",
+            "attacks",
+            "category",
+            "hasRuleBox",
+            "hp",
+            "isTerastal",
+            "pokemonType",
+            "retreatCost",
+            "stage"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "const": "../card-record.schema.json"
+            },
+            "cardIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]{6}$"
+              },
+              "minItems": 1
+            },
+            "excludedEffects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ExcludedEffect"
+              }
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rulings": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ruling"
+              }
+            },
+            "translationStatus": {
+              "enum": [
+                "translated",
+                "notTranslatable",
+                "irrelevantToCalculation",
+                "notYetTranslated"
+              ],
+              "type": "string"
+            },
+            "verifiedOn": {
+              "type": "string",
+              "format": "date"
+            },
+            "abilities": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ability"
+              }
+            },
+            "attacks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Attack"
+              }
+            },
+            "category": {
+              "const": "ポケモン"
+            },
+            "exRule": {
+              "enum": ["pokemonEx", "megaEvolutionEx"],
+              "type": "string"
+            },
+            "hasRuleBox": {
+              "type": "boolean"
+            },
+            "hp": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "isTerastal": {
+              "type": "boolean"
+            },
+            "pokemonType": {
+              "$ref": "#/$defs/PokemonType"
+            },
+            "retreatCost": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "evolvesFrom": {
+              "type": "string",
+              "minLength": 1
+            },
+            "stage": {
+              "const": "1進化"
+            }
+          },
+          "required": [
+            "$schema",
+            "cardIds",
+            "excludedEffects",
+            "name",
+            "rulings",
+            "translationStatus",
+            "verifiedOn",
+            "abilities",
+            "attacks",
+            "category",
+            "hasRuleBox",
+            "hp",
+            "isTerastal",
+            "pokemonType",
+            "retreatCost",
+            "evolvesFrom",
+            "stage"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "const": "../card-record.schema.json"
+            },
+            "cardIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]{6}$"
+              },
+              "minItems": 1
+            },
+            "excludedEffects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ExcludedEffect"
+              }
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rulings": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ruling"
+              }
+            },
+            "translationStatus": {
+              "enum": [
+                "translated",
+                "notTranslatable",
+                "irrelevantToCalculation",
+                "notYetTranslated"
+              ],
+              "type": "string"
+            },
+            "verifiedOn": {
+              "type": "string",
+              "format": "date"
+            },
+            "abilities": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ability"
+              }
+            },
+            "attacks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Attack"
+              }
+            },
+            "category": {
+              "const": "ポケモン"
+            },
+            "exRule": {
+              "enum": ["pokemonEx", "megaEvolutionEx"],
+              "type": "string"
+            },
+            "hasRuleBox": {
+              "type": "boolean"
+            },
+            "hp": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "isTerastal": {
+              "type": "boolean"
+            },
+            "pokemonType": {
+              "$ref": "#/$defs/PokemonType"
+            },
+            "retreatCost": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "basicPokemonOfEvolutionLine": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evolvesFrom": {
+              "type": "string",
+              "minLength": 1
+            },
+            "stage": {
+              "const": "2進化"
+            }
+          },
+          "required": [
+            "$schema",
+            "cardIds",
+            "excludedEffects",
+            "name",
+            "rulings",
+            "translationStatus",
+            "verifiedOn",
+            "abilities",
+            "attacks",
+            "category",
+            "hasRuleBox",
+            "hp",
+            "isTerastal",
+            "pokemonType",
+            "retreatCost",
+            "basicPokemonOfEvolutionLine",
+            "evolvesFrom",
+            "stage"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "const": "../card-record.schema.json"
+        },
+        "cardIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          },
+          "minItems": 1
+        },
+        "excludedEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedEffect"
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rulings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ruling"
+          }
+        },
+        "translationStatus": {
+          "enum": [
+            "translated",
+            "notTranslatable",
+            "irrelevantToCalculation",
+            "notYetTranslated"
+          ],
+          "type": "string"
+        },
+        "verifiedOn": {
+          "type": "string",
+          "format": "date"
+        },
+        "cardEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CardEffect"
+          }
+        },
+        "category": {
+          "const": "グッズ"
+        }
+      },
+      "required": [
+        "$schema",
+        "cardIds",
+        "excludedEffects",
+        "name",
+        "rulings",
+        "translationStatus",
+        "verifiedOn",
+        "cardEffects",
+        "category"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "const": "../card-record.schema.json"
+        },
+        "cardIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          },
+          "minItems": 1
+        },
+        "excludedEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedEffect"
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rulings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ruling"
+          }
+        },
+        "translationStatus": {
+          "enum": [
+            "translated",
+            "notTranslatable",
+            "irrelevantToCalculation",
+            "notYetTranslated"
+          ],
+          "type": "string"
+        },
+        "verifiedOn": {
+          "type": "string",
+          "format": "date"
+        },
+        "cardEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CardEffect"
+          }
+        },
+        "category": {
+          "const": "サポート"
+        }
+      },
+      "required": [
+        "$schema",
+        "cardIds",
+        "excludedEffects",
+        "name",
+        "rulings",
+        "translationStatus",
+        "verifiedOn",
+        "cardEffects",
+        "category"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "const": "../card-record.schema.json"
+        },
+        "cardIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          },
+          "minItems": 1
+        },
+        "excludedEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedEffect"
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rulings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ruling"
+          }
+        },
+        "translationStatus": {
+          "enum": [
+            "translated",
+            "notTranslatable",
+            "irrelevantToCalculation",
+            "notYetTranslated"
+          ],
+          "type": "string"
+        },
+        "verifiedOn": {
+          "type": "string",
+          "format": "date"
+        },
+        "cardEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CardEffect"
+          }
+        },
+        "category": {
+          "const": "スタジアム"
+        }
+      },
+      "required": [
+        "$schema",
+        "cardIds",
+        "excludedEffects",
+        "name",
+        "rulings",
+        "translationStatus",
+        "verifiedOn",
+        "cardEffects",
+        "category"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "const": "../card-record.schema.json"
+        },
+        "cardIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          },
+          "minItems": 1
+        },
+        "excludedEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedEffect"
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rulings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ruling"
+          }
+        },
+        "translationStatus": {
+          "enum": [
+            "translated",
+            "notTranslatable",
+            "irrelevantToCalculation",
+            "notYetTranslated"
+          ],
+          "type": "string"
+        },
+        "verifiedOn": {
+          "type": "string",
+          "format": "date"
+        },
+        "cardEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CardEffect"
+          }
+        },
+        "category": {
+          "const": "ポケモンのどうぐ"
+        }
+      },
+      "required": [
+        "$schema",
+        "cardIds",
+        "excludedEffects",
+        "name",
+        "rulings",
+        "translationStatus",
+        "verifiedOn",
+        "cardEffects",
+        "category"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "const": "../card-record.schema.json"
+        },
+        "cardIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          },
+          "minItems": 1
+        },
+        "excludedEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedEffect"
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rulings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ruling"
+          }
+        },
+        "translationStatus": {
+          "enum": [
+            "translated",
+            "notTranslatable",
+            "irrelevantToCalculation",
+            "notYetTranslated"
+          ],
+          "type": "string"
+        },
+        "verifiedOn": {
+          "type": "string",
+          "format": "date"
+        },
+        "category": {
+          "const": "基本エネルギー"
+        },
+        "provision": {
+          "$ref": "#/$defs/EnergyProvision"
+        }
+      },
+      "required": [
+        "$schema",
+        "cardIds",
+        "excludedEffects",
+        "name",
+        "rulings",
+        "translationStatus",
+        "verifiedOn",
+        "category",
+        "provision"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "const": "../card-record.schema.json"
+        },
+        "cardIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          },
+          "minItems": 1
+        },
+        "excludedEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExcludedEffect"
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rulings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ruling"
+          }
+        },
+        "translationStatus": {
+          "enum": [
+            "translated",
+            "notTranslatable",
+            "irrelevantToCalculation",
+            "notYetTranslated"
+          ],
+          "type": "string"
+        },
+        "verifiedOn": {
+          "type": "string",
+          "format": "date"
+        },
+        "cardEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CardEffect"
+          }
+        },
+        "category": {
+          "const": "特殊エネルギー"
+        },
+        "provision": {
+          "$ref": "#/$defs/EnergyProvision"
+        }
+      },
+      "required": [
+        "$schema",
+        "cardIds",
+        "excludedEffects",
+        "name",
+        "rulings",
+        "translationStatus",
+        "verifiedOn",
+        "cardEffects",
+        "category",
+        "provision"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "Ability": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "translation": {
+          "$ref": "#/$defs/AbilityTranslation"
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "AbilityTranslation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "effect": {
+              "$ref": "#/$defs/Effect"
+            },
+            "kind": {
+              "const": "activatedInPlay"
+            },
+            "usageLimit": {
+              "enum": [
+                "oncePerTurnPerPokemon",
+                "oncePerTurnPerAbilityName",
+                "unlimited"
+              ],
+              "type": "string"
+            }
+          },
+          "required": ["effect", "kind", "usageLimit"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "effect": {
+              "$ref": "#/$defs/Effect"
+            },
+            "kind": {
+              "const": "activatedFromHand"
+            }
+          },
+          "required": ["effect", "kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "effect": {
+              "$ref": "#/$defs/Effect"
+            },
+            "kind": {
+              "const": "triggeredWhenPlacedOnBenchFromHand"
+            }
+          },
+          "required": ["effect", "kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "continuousEffect": {
+              "$ref": "#/$defs/ContinuousEffect"
+            },
+            "kind": {
+              "const": "continuous"
+            }
+          },
+          "required": ["continuousEffect", "kind"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Attack": {
+      "type": "object",
+      "properties": {
+        "cost": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PokemonType"
+          }
+        },
+        "damage": {
+          "$ref": "#/$defs/AttackDamage"
+        },
+        "effect": {
+          "$ref": "#/$defs/Effect"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["cost", "damage", "name"],
+      "additionalProperties": false
+    },
+    "AttackDamage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "none"
+            }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "bonus": {
+              "$ref": "#/$defs/DamageBonus"
+            },
+            "kind": {
+              "const": "fixed"
+            }
+          },
+          "required": ["amount", "kind"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "BasicCondition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "selfIsActive"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "selfHasNoEnergyAttached"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "attachedPokemonMatches"
+            },
+            "filter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["condition", "filter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "ownPokemonInPlayExists"
+            },
+            "filter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["condition", "filter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "deckHasCards"
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["condition", "minCount"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "handHasCards"
+            },
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "minCountExcludingThisCard": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["condition", "minCountExcludingThisCard"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "noAbilityUsedThisTurnWithNameIncluding"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["condition", "text"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "ownRemainingPrizesAre"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["condition", "count"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "BasicOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "$ref": "#/$defs/DrawCount"
+            },
+            "operation": {
+              "const": "drawCards"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "shuffleHandIntoDeck"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "discardFromHand"
+            }
+          },
+          "required": ["maxCount", "minCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "searchDeckIntoHand"
+            },
+            "picks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/DeckSearchPick"
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["operation", "picks"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckOntoBench"
+            }
+          },
+          "required": ["filter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "searchDeckAndAttachEnergyToEachPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckIntoHandAndAttachRest"
+            },
+            "requiresDistinctTypes": {
+              "type": "boolean"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": [
+            "filter",
+            "maxCount",
+            "operation",
+            "requiresDistinctTypes",
+            "targetFilter"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "canContinueToStage2": {
+              "type": "boolean"
+            },
+            "operation": {
+              "const": "evolveFromDeck"
+            }
+          },
+          "required": ["canContinueToStage2", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "lookCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxTakeCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minTakeCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "lookAtDeckTopAndTakeIntoHand"
+            },
+            "restPlacement": {
+              "enum": ["shuffleIntoDeck", "bottomOfDeck"],
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter",
+            "lookCount",
+            "maxTakeCount",
+            "minTakeCount",
+            "operation",
+            "restPlacement"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "addFromDiscardToHand"
+            }
+          },
+          "required": ["filter", "maxCount", "minCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "placeFromDiscardOntoBench"
+            }
+          },
+          "required": ["filter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "attachEnergyFromHand"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "evolveBasicToStage2FromHand"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "switchActiveWithBench"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "returnSelfToDeck"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "returnPokemonToHand"
+            },
+            "target": {
+              "enum": ["self", "chosenOwnPokemon"],
+              "type": "string"
+            }
+          },
+          "required": ["operation", "target"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "placeSelfOnBenchFromHand"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "discardSelf"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CardEffect": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "effect": {
+              "$ref": "#/$defs/Effect"
+            },
+            "kind": {
+              "const": "whenPlayed"
+            }
+          },
+          "required": ["effect", "kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "effect": {
+              "$ref": "#/$defs/Effect"
+            },
+            "kind": {
+              "const": "activatedOncePerTurn"
+            }
+          },
+          "required": ["effect", "kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "continuousEffect": {
+              "$ref": "#/$defs/ContinuousEffect"
+            },
+            "kind": {
+              "const": "continuous"
+            }
+          },
+          "required": ["continuousEffect", "kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "effect": {
+              "$ref": "#/$defs/Effect"
+            },
+            "kind": {
+              "const": "triggeredWhenAttachedFromHand"
+            }
+          },
+          "required": ["effect", "kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "effect": {
+              "$ref": "#/$defs/Effect"
+            },
+            "kind": {
+              "const": "triggeredAtEndOfOwnTurn"
+            }
+          },
+          "required": ["effect", "kind"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CardFilter": {
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "基本エネルギー",
+              "グッズ",
+              "ポケモン",
+              "特殊エネルギー",
+              "スタジアム",
+              "サポート",
+              "ポケモンのどうぐ"
+            ],
+            "type": "string"
+          }
+        },
+        "excludesPokemonWithRuleBox": {
+          "const": true
+        },
+        "exRules": {
+          "type": "array",
+          "items": {
+            "enum": ["pokemonEx", "megaEvolutionEx"],
+            "type": "string"
+          }
+        },
+        "maxHp": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "pokemonTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PokemonType"
+          }
+        },
+        "providedEnergyTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PokemonType"
+          }
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "enum": ["たね", "1進化", "2進化"],
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "Condition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "selfIsActive"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "selfHasNoEnergyAttached"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "attachedPokemonMatches"
+            },
+            "filter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["condition", "filter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "ownPokemonInPlayExists"
+            },
+            "filter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["condition", "filter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "deckHasCards"
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["condition", "minCount"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "handHasCards"
+            },
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "minCountExcludingThisCard": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["condition", "minCountExcludingThisCard"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "noAbilityUsedThisTurnWithNameIncluding"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["condition", "text"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "ownRemainingPrizesAre"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["condition", "count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "anyOf"
+            },
+            "conditions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/BasicCondition"
+              },
+              "minItems": 2
+            }
+          },
+          "required": ["condition", "conditions"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ContinuousChange": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "setRetreatCostToZero"
+            }
+          },
+          "required": ["change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "change": {
+              "const": "reduceRetreatCost"
+            }
+          },
+          "required": ["amount", "change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "allowBenchedPokemonAttacks"
+            }
+          },
+          "required": ["change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "negateAbilities"
+            }
+          },
+          "required": ["change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "negateToolEffects"
+            }
+          },
+          "required": ["change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "setEnergyProvision"
+            },
+            "provision": {
+              "$ref": "#/$defs/EnergyProvision"
+            }
+          },
+          "required": ["change", "provision"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ContinuousEffect": {
+      "type": "object",
+      "properties": {
+        "change": {
+          "$ref": "#/$defs/ContinuousChange"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Condition"
+          }
+        },
+        "scope": {
+          "$ref": "#/$defs/ContinuousScope"
+        }
+      },
+      "required": ["change", "conditions", "scope"],
+      "additionalProperties": false
+    },
+    "ContinuousScope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "scope": {
+              "const": "self"
+            }
+          },
+          "required": ["scope"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "scope": {
+              "const": "attachedPokemon"
+            }
+          },
+          "required": ["scope"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            },
+            "scope": {
+              "const": "ownPokemon"
+            }
+          },
+          "required": ["filter", "scope"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "DamageBonus": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "perCount"
+            },
+            "target": {
+              "$ref": "#/$defs/DamageCountTarget"
+            },
+            "unit": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["kind", "target", "unit"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "add": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "atLeast": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "kind": {
+              "const": "whenCountAtLeast"
+            },
+            "target": {
+              "$ref": "#/$defs/DamageCountTarget"
+            }
+          },
+          "required": ["add", "atLeast", "kind", "target"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "DamageCountTarget": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "const": "energyAttachedToOwnPokemon"
+            },
+            "energyType": {
+              "$ref": "#/$defs/PokemonType"
+            }
+          },
+          "required": ["count", "energyType"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "abilityName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "count": {
+              "const": "discardPokemonWithAbilityName"
+            }
+          },
+          "required": ["abilityName", "count"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "DeckSearchPick": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "$ref": "#/$defs/CardFilter"
+        },
+        "maxCount": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": ["filter", "maxCount"],
+      "additionalProperties": false
+    },
+    "DrawCount": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "fixed"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["kind", "value"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "perCardDiscardedEarlierInThisEffect"
+            },
+            "multiplier": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["kind", "multiplier"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Effect": {
+      "type": "object",
+      "properties": {
+        "isOptional": {
+          "type": "boolean"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EffectStep"
+          },
+          "minItems": 1
+        },
+        "useConditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Condition"
+          }
+        }
+      },
+      "required": ["isOptional", "steps", "useConditions"],
+      "additionalProperties": false
+    },
+    "EffectStep": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "$ref": "#/$defs/DrawCount"
+            },
+            "operation": {
+              "const": "drawCards"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "shuffleHandIntoDeck"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "discardFromHand"
+            }
+          },
+          "required": ["maxCount", "minCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "searchDeckIntoHand"
+            },
+            "picks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/DeckSearchPick"
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["operation", "picks"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckOntoBench"
+            }
+          },
+          "required": ["filter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "searchDeckAndAttachEnergyToEachPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckIntoHandAndAttachRest"
+            },
+            "requiresDistinctTypes": {
+              "type": "boolean"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": [
+            "filter",
+            "maxCount",
+            "operation",
+            "requiresDistinctTypes",
+            "targetFilter"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "canContinueToStage2": {
+              "type": "boolean"
+            },
+            "operation": {
+              "const": "evolveFromDeck"
+            }
+          },
+          "required": ["canContinueToStage2", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "lookCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxTakeCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minTakeCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "lookAtDeckTopAndTakeIntoHand"
+            },
+            "restPlacement": {
+              "enum": ["shuffleIntoDeck", "bottomOfDeck"],
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter",
+            "lookCount",
+            "maxTakeCount",
+            "minTakeCount",
+            "operation",
+            "restPlacement"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "addFromDiscardToHand"
+            }
+          },
+          "required": ["filter", "maxCount", "minCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "placeFromDiscardOntoBench"
+            }
+          },
+          "required": ["filter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "attachEnergyFromHand"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "evolveBasicToStage2FromHand"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "switchActiveWithBench"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "returnSelfToDeck"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "returnPokemonToHand"
+            },
+            "target": {
+              "enum": ["self", "chosenOwnPokemon"],
+              "type": "string"
+            }
+          },
+          "required": ["operation", "target"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "placeSelfOnBenchFromHand"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "discardSelf"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "$ref": "#/$defs/Condition"
+            },
+            "operation": {
+              "const": "branchOnCondition"
+            },
+            "stepsOtherwise": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/BasicOperation"
+              }
+            },
+            "stepsWhenMet": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/BasicOperation"
+              }
+            }
+          },
+          "required": [
+            "condition",
+            "operation",
+            "stepsOtherwise",
+            "stepsWhenMet"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "EnergyProvision": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "type"
+            },
+            "type": {
+              "$ref": "#/$defs/PokemonType"
+            },
+            "units": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["kind", "type", "units"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "anyType"
+            },
+            "units": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["kind", "units"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ExcludedEffect": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "enum": [
+            "requiresOpponent",
+            "specialCondition",
+            "healing",
+            "damageOrDamageCounters",
+            "damageBonusNotModeled",
+            "ownNextTurnRestriction",
+            "noReasonToUseInSoloPlay"
+          ],
+          "type": "string"
+        }
+      },
+      "required": ["description", "reason"],
+      "additionalProperties": false
+    },
+    "PokemonInPlayFilter": {
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "基本エネルギー",
+              "グッズ",
+              "ポケモン",
+              "特殊エネルギー",
+              "スタジアム",
+              "サポート",
+              "ポケモンのどうぐ"
+            ],
+            "type": "string"
+          }
+        },
+        "excludesPokemonWithRuleBox": {
+          "const": true
+        },
+        "exRules": {
+          "type": "array",
+          "items": {
+            "enum": ["pokemonEx", "megaEvolutionEx"],
+            "type": "string"
+          }
+        },
+        "maxHp": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "pokemonTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PokemonType"
+          }
+        },
+        "providedEnergyTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PokemonType"
+          }
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "enum": ["たね", "1進化", "2進化"],
+            "type": "string"
+          }
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "enum": ["active", "bench"],
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "PokemonType": {
+      "enum": [
+        "grass",
+        "fire",
+        "water",
+        "electric",
+        "psychic",
+        "fighting",
+        "dark",
+        "steel",
+        "fairy",
+        "dragon",
+        "colorless"
+      ],
+      "type": "string"
+    },
+    "Ruling": {
+      "type": "object",
+      "properties": {
+        "interpretation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reflectedIn": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "$ref": "#/$defs/RulingSource"
+        }
+      },
+      "required": ["interpretation", "question", "reflectedIn", "source"],
+      "additionalProperties": false
+    },
+    "RulingSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "checkedOn": {
+              "type": "string",
+              "format": "date"
+            },
+            "kind": {
+              "const": "officialQa"
+            },
+            "questionSummary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "searchUrl": {
+              "type": "string",
+              "pattern": "^https://www\\.pokemon-card\\.com/rules/faq/search\\.php\\?"
+            }
+          },
+          "required": ["checkedOn", "kind", "questionSummary", "searchUrl"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "basis": {
+              "type": "string",
+              "minLength": 1
+            },
+            "checkedOn": {
+              "type": "string",
+              "format": "date"
+            },
+            "kind": {
+              "const": "noMatchingQa"
+            },
+            "searchTerms": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["basis", "checkedOn", "kind", "searchTerms"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

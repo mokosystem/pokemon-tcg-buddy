@@ -1,0 +1,25 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "change": "negateToolEffects"
+        },
+        "conditions": [],
+        "scope": {
+          "filter": {},
+          "scope": "ownPokemon"
+        }
+      },
+      "kind": "continuous"
+    }
+  ],
+  "cardIds": ["047214", "049982", "045791"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "ジャミングタワー",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

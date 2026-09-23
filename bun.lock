@@ -15,6 +15,12 @@
     "packages/solo-play-simulator": {
       "name": "@pokemon-tcg-buddy/solo-play-simulator",
       "version": "0.0.0",
+      "dependencies": {
+        "valibot": "1.5.0",
+      },
+      "devDependencies": {
+        "@valibot/to-json-schema": "1.8.0",
+      },
     },
   },
   "packages": {
@@ -119,6 +125,8 @@
     "@typescript/typescript-win32-arm64": ["@typescript/typescript-win32-arm64@7.0.2", "", { "os": "win32", "cpu": "arm64" }, "sha512-Gyl1Vy6OsWesLzmq+EP0Fb7b4Nid5232AvcA2SFcdYreldpNtYFFofPjnt62y9hQy7VTaZp65ICJjuAQRaVcIQ=="],
 
     "@typescript/typescript-win32-x64": ["@typescript/typescript-win32-x64@7.0.2", "", { "os": "win32", "cpu": "x64" }, "sha512-0BQ3HkAHHlKLSp1qRvf3SUhGpGsDuhB/jgFw75guyqbxJqEaS0Cw/VFO8i2nHglJUzQCRtMMR/IBAKE3ETMC4g=="],
+
+    "@valibot/to-json-schema": ["@valibot/to-json-schema@1.8.0", "", { "peerDependencies": { "valibot": "^1.5.0" } }, "sha512-a0M+uwCuQZEPAo65NYkFSJ14O5c213KoSZmPdoCfuFvUhfULi4T2Z6Tpjv6lTVMW9RoLm74RpRAjNEa43KcN+g=="],
 
     "acorn": ["acorn@8.18.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-lGq+9yr1/GuAWaVYIHRjvvySG5/4VfKIvC8EWxStPdcDh/Ka7FG3twP6v4d5BkravUilhIAsG4Qj83t02LWUPQ=="],
 
@@ -265,6 +273,8 @@
     "undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
 
     "unicorn-magic": ["unicorn-magic@0.3.0", "", {}, "sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA=="],
+
+    "valibot": ["valibot@1.5.0", "", { "peerDependencies": { "typescript": ">=5" }, "optionalPeers": ["typescript"] }, "sha512-nil6AkP2TChWL43Z5uJ6GTxX01CUA+g8LWUM+N/rB9NBbkUMaUsi9PUNzlUPgoKASgmx9f7eGOYpJ04/fSa6FQ=="],
 
     "which-command": ["which-command@0.1.0", "", { "bin": { "which-command": "cli.js" } }, "sha512-XZyoF5/5hZtXitIwzrU4NKK+Wtbb9aB9CezUEw2Q0wlYK8NUYQxC1rRXgNueYLtBAJwXIb+/tFVk4dozciNJMA=="],
 

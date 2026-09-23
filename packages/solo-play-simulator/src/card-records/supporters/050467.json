@@ -1,0 +1,26 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": [
+    "050467",
+    "049440",
+    "042900",
+    "038062",
+    "038882",
+    "043305",
+    "045387",
+    "047288",
+    "050606"
+  ],
+  "category": "サポート",
+  "excludedEffects": [
+    {
+      "description": "相手のベンチポケモンをバトル場に呼ぶ",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "ボスの指令",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

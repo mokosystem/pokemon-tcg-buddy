@@ -4,10 +4,26 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./attack-damage": "./src/attack-damage.ts",
+    "./card-effects": "./src/card-effects.ts",
+    "./card-premises": "./src/card-premises.ts",
+    "./card-record-schema": "./src/card-record-schema.ts",
+    "./card-records": "./src/card-record-table.ts",
     "./cards": "./src/cards.ts",
+    "./continuous-effects": "./src/continuous-effects.ts",
+    "./effect-choices": "./src/effect-choices.ts",
     "./engine": "./src/engine.ts",
     "./random": "./src/random.ts",
     "./simulate": "./src/simulate.ts",
     "./state": "./src/state.ts"
+  },
+  "scripts": {
+    "generate:card-record-files": "bun scripts/generate-card-record-files.ts"
+  },
+  "dependencies": {
+    "valibot": "1.5.0"
+  },
+  "devDependencies": {
+    "@valibot/to-json-schema": "1.8.0"
   }
 }

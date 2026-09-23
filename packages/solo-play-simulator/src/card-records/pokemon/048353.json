@@ -1,0 +1,66 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "fire"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed",
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "energyAttachedToOwnPokemon",
+            "energyType": "fire"
+          },
+          "unit": 90
+        }
+      },
+      "name": "インフェルノX"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ヒトカゲ",
+  "cardIds": ["048353"],
+  "category": "ポケモン",
+  "evolvesFrom": "リザード",
+  "excludedEffects": [
+    {
+      "description": "ワザ「インフェルノX」は、自分の場の炎エネルギーを好きなだけトラッシュし、その枚数×90 ダメージを与える。ダメージは場の炎エネルギー(すべてのタイプとして働くエネルギーを含む)を全部トラッシュしたときの値で求め、トラッシュは含めない",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "exRule": "megaEvolutionEx",
+  "hasRuleBox": true,
+  "hp": 360,
+  "isTerastal": false,
+  "name": "メガリザードンXex",
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "rulings": [
+    {
+      "interpretation": "ダメージは、エネルギーをトラッシュする前に求める",
+      "question": "ワザ「インフェルノX」のダメージは、エネルギーをトラッシュする前と後のどちらで求めるか",
+      "reflectedIn": "ダメージの上乗せを、今の場の炎エネルギーの数で求める(attack-damage.ts の calculateAttackDamage)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "相手の場のトリデプスの特性がはたらいているときにインフェルノXでダメージを与えられるかという質問に、エネルギーをトラッシュする前にダメージを計算するため与えられる、と回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A4%E3%83%B3%E3%83%95%E3%82%A7%E3%83%AB%E3%83%8EX&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "すべてのタイプのエネルギーとして働くエネルギー(レガシーエネルギー、たねポケモンについているプリズムエネルギーなど)も、炎エネルギーとしてトラッシュでき、枚数に数える",
+      "question": "すべてのタイプのエネルギーとして働くエネルギーも、炎エネルギーとしてトラッシュして枚数に数えられるか",
+      "reflectedIn": "数える対象を、すべてのタイプとして働くものを含む炎エネルギーにする(continuous-effects.ts の countEnergyUnitsOfType)",
+      "source": {
+        "basis": "ファイヤーのワザ「だいもんじ」の公式 Q&A。レインボーエネルギーと、たねポケモンについているプリズムエネルギーは、すべてのタイプのエネルギーとして働くため、炎エネルギーとしてトラッシュに選べる、と回答している(検索語「プリズムエネルギー 炎」、2026-09-23 に確認)",
+        "checkedOn": "2026-09-23",
+        "kind": "noMatchingQa",
+        "searchTerms": ["インフェルノX", "メガリザードンXex"]
+      }
+    }
+  ],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

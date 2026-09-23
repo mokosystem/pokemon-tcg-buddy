@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "うみのかげ"
+    }
+  ],
+  "cardIds": ["047663"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「うみのかげ」の、次の相手の番に相手が手札からグッズを使えなくする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "プルリル",
+  "pokemonType": "psychic",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "おつかいダッシュ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "count": {
+                "kind": "fixed",
+                "value": 2
+              },
+              "operation": "drawCards"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "selfIsActive"
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerAbilityName"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 200,
+        "kind": "fixed"
+      },
+      "name": "マシンガンコンボ"
+    }
+  ],
+  "cardIds": ["047847"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「マシンガンコンボ」の、ウラが出るまでコインを投げてオモテの数×50 を足す上乗せ。ダメージは上乗せを除いた 200 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "exRule": "megaEvolutionEx",
+  "hasRuleBox": true,
+  "hp": 300,
+  "isTerastal": false,
+  "name": "メガガルーラex",
+  "pokemonType": "colorless",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

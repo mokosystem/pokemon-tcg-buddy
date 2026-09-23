@@ -1,0 +1,37 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "さかてにとる"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "クルーエルアロー"
+    }
+  ],
+  "cardIds": ["049205", "045913", "050004", "048636"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「さかてにとる」(前の相手の番に自分のポケモンがきぜつしていれば 3 枚引く)",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "exRule": "pokemonEx",
+  "hasRuleBox": true,
+  "hp": 210,
+  "isTerastal": false,
+  "name": "キチキギスex",
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "amount": 2,
+          "change": "reduceRetreatCost"
+        },
+        "conditions": [],
+        "scope": {
+          "scope": "attachedPokemon"
+        }
+      },
+      "kind": "continuous"
+    }
+  ],
+  "cardIds": ["050464", "047889", "047618", "041126", "048441"],
+  "category": "ポケモンのどうぐ",
+  "excludedEffects": [],
+  "name": "ふうせん",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

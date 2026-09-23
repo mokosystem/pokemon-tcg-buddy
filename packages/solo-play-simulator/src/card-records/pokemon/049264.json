@@ -1,0 +1,47 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 70,
+        "kind": "fixed"
+      },
+      "name": "ジェットヘッド"
+    },
+    {
+      "cost": ["fire", "psychic"],
+      "damage": {
+        "amount": 200,
+        "kind": "fixed"
+      },
+      "name": "ファントムダイブ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ドラメシヤ",
+  "cardIds": ["049264"],
+  "category": "ポケモン",
+  "evolvesFrom": "ドロンチ",
+  "excludedEffects": [
+    {
+      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「ファントムダイブ」の、相手のベンチポケモンにダメカンを 6 個のせる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "exRule": "pokemonEx",
+  "hasRuleBox": true,
+  "hp": 320,
+  "isTerastal": true,
+  "name": "ドラパルトex",
+  "pokemonType": "dragon",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

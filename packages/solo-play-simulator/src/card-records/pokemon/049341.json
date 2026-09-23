@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ろうれんのわざ"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 240,
+        "kind": "fixed"
+      },
+      "name": "ブラッドムーン"
+    }
+  ],
+  "cardIds": ["049341", "045689"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「ろうれんのわざ」(相手がとったサイドの枚数ぶん、ワザ「ブラッドムーン」に必要な無色エネルギーが減る)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「ブラッドムーン」を使った次の自分の番に、このポケモンがワザを使えなくなる制限",
+      "reason": "ownNextTurnRestriction"
+    }
+  ],
+  "exRule": "pokemonEx",
+  "hasRuleBox": true,
+  "hp": 260,
+  "isTerastal": false,
+  "name": "ガチグマ アカツキex",
+  "pokemonType": "colorless",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

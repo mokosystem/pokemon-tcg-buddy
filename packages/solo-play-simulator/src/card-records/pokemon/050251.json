@@ -1,0 +1,64 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ばけがくれ"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 80,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": true,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {},
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "にんぎょうキャッチ"
+    }
+  ],
+  "cardIds": ["050251"],
+  "category": "ポケモン",
+  "evolvesFrom": "カゲボウズ",
+  "excludedEffects": [
+    {
+      "description": "特性「ばけがくれ」(相手のワザや特性の効果を受けない)",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "ジュペッタ",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [
+    {
+      "interpretation": "できない。山札を見たら必ず 1 枚選んで手札に加える",
+      "question": "ワザ「にんぎょうキャッチ」で山札を見たとき、1 枚も選ばずに終えられるか",
+      "reflectedIn": "好きなカードを探すときは必ず 1 枚選ぶ(card-effects.ts の minCountForDeckSearch)。見るかどうかは「のぞむなら」(isOptional)で選ぶ",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "「にんぎょうキャッチ」で山札を見たとき、カードを 1 枚も選ばないことはできるか、という質問に、必ず 1 枚選んで手札に加えると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%AB%E3%82%93%E3%81%8E%E3%82%87%E3%81%86%E3%82%AD%E3%83%A3%E3%83%83%E3%83%81&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

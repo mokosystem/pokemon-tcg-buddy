@@ -7,7 +7,7 @@ import type { Card } from "./cards.ts";
 import {
   applyVariant,
   buildDeck,
-  type CardTable,
+  type CardRecordTable,
   type Decklist,
   type DeckVariant,
   type GameResult,
@@ -241,12 +241,12 @@ export function formatSummary(
 }
 
 export interface VariantComparisonOptions {
-  readonly cardTable: CardTable;
   readonly deadlines: readonly Deadline[];
   readonly decklist: Decklist;
   readonly goals: readonly Goal[];
   readonly maxTurn: number;
   readonly policy: PlayingPolicy;
+  readonly recordTable: CardRecordTable;
   readonly seed: number;
   readonly trials: number;
   readonly variants: readonly DeckVariant[];
@@ -284,7 +284,7 @@ export function compareVariants(
     const rows = variants.map((variant) => {
       const summary = simulate({
         cards: buildDeck(
-          options.cardTable,
+          options.recordTable,
           applyVariant(options.decklist, variant)
         ),
         goals: options.goals,

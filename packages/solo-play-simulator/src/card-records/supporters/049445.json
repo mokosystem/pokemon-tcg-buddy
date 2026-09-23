@@ -1,0 +1,84 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "shuffleHandIntoDeck"
+          },
+          {
+            "condition": {
+              "condition": "ownRemainingPrizesAre",
+              "count": 6
+            },
+            "operation": "branchOnCondition",
+            "stepsOtherwise": [
+              {
+                "count": {
+                  "kind": "fixed",
+                  "value": 6
+                },
+                "operation": "drawCards"
+              }
+            ],
+            "stepsWhenMet": [
+              {
+                "count": {
+                  "kind": "fixed",
+                  "value": 8
+                },
+                "operation": "drawCards"
+              }
+            ]
+          }
+        ],
+        "useConditions": [
+          {
+            "condition": "anyOf",
+            "conditions": [
+              {
+                "condition": "handHasCards",
+                "minCountExcludingThisCard": 1
+              },
+              {
+                "condition": "deckHasCards",
+                "minCount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": [
+    "049445",
+    "050468",
+    "049609",
+    "047900",
+    "047795",
+    "048697",
+    "048448",
+    "050607"
+  ],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "リーリエの決心",
+  "rulings": [
+    {
+      "interpretation": "手札がこのカードを含めて 2 枚以上あるか、山札が 1 枚以上あれば使える。手札がこのカードだけでも、山札があれば使える",
+      "question": "手札がこのカードだけのとき、または山札が 0 枚のときに使えるか",
+      "reflectedIn": "使える条件を「このカードを除いた手札が 1 枚以上」または「山札が 1 枚以上」にした(useConditions の anyOf)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "山札が 0 枚でも手札がこのカードを含めて 2 枚以上あれば使える、手札が 2 枚以上か山札が 1 枚以上あれば使える、と回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AA%E3%83%BC%E3%83%AA%E3%82%A8%E3%81%AE%E6%B1%BA%E5%BF%83&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

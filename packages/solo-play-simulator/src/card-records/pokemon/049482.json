@@ -1,0 +1,35 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "fire", "colorless"],
+      "damage": {
+        "amount": 280,
+        "kind": "fixed"
+      },
+      "name": "プロージョンY"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ヒトカゲ",
+  "cardIds": ["049482", "048801", "050034"],
+  "category": "ポケモン",
+  "evolvesFrom": "リザード",
+  "excludedEffects": [
+    {
+      "description": "ワザ「プロージョンY」は、自身のエネルギーを 3 個トラッシュして相手のポケモン 1 匹に 280 ダメージを与える。280 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "exRule": "megaEvolutionEx",
+  "hasRuleBox": true,
+  "hp": 360,
+  "isTerastal": false,
+  "name": "メガリザードンYex",
+  "pokemonType": "fire",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"],
+              "maxHp": 70,
+              "stages": ["たね"]
+            },
+            "maxCount": 2,
+            "operation": "searchDeckOntoBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["048675", "049364", "045209", "045875", "047281"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "なかよしポフィン",
+  "rulings": [
+    {
+      "interpretation": "4 匹なら使えて 1 枚だけ出せる。5 匹なら使えない",
+      "question": "ベンチのポケモンが 4 匹・5 匹のときに使えるか",
+      "reflectedIn": "山札からベンチに出す枚数をベンチの空きまでにし、空きが無ければ使えない(card-effects.ts の hasTargetForFirstStep)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "ベンチが 4 匹のとき使えて 1 枚だけ出せる、5 匹のときは使えない、と回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%AA%E3%81%8B%E3%82%88%E3%81%97%E3%83%9D%E3%83%95%E3%82%A3%E3%83%B3&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

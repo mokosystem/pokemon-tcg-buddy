@@ -1,0 +1,42 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "カースドボム"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["psychic", "psychic", "colorless"],
+      "damage": {
+        "amount": 150,
+        "kind": "fixed"
+      },
+      "name": "かげしばり"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ヨマワル",
+  "cardIds": ["049026"],
+  "category": "ポケモン",
+  "evolvesFrom": "サマヨール",
+  "excludedEffects": [
+    {
+      "description": "特性「カースドボム」(自身をきぜつさせ、相手のポケモン 1 匹にダメカンを 13 個のせる)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「かげしばり」の、次の相手の番にワザを受けたポケモンがにげられなくなる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 160,
+  "isTerastal": false,
+  "name": "ヨノワール",
+  "pokemonType": "psychic",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

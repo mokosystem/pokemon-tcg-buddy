@@ -1,0 +1,43 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["サポート"]
+            },
+            "lookCount": 7,
+            "maxTakeCount": 1,
+            "minTakeCount": 0,
+            "operation": "lookAtDeckTopAndTakeIntoHand",
+            "restPlacement": "shuffleIntoDeck"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["049376", "047617", "038858", "025252", "042719"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "ポケギア3.0",
+  "rulings": [
+    {
+      "interpretation": "終えられる",
+      "question": "山札の上から 7 枚見た中にサポートがあっても、手札に加えずに終えられるか",
+      "reflectedIn": "山札の上から見て取る枚数を 0 枚以上 1 枚以下にする(minTakeCount 0)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "見た中にサポートがあっても手札に加えないことはできるか、という質問に、できると回答(関連カードの印刷 042719 は詳細ページを見比べて同じカードテキスト)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%9D%E3%82%B1%E3%82%AE%E3%82%A23.0&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

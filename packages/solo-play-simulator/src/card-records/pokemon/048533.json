@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": [],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "むずむずかふん"
+    }
+  ],
+  "cardIds": ["048533", "046662"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「むずむずかふん」の、次の相手の番に相手が手札からグッズを使えなくする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 30,
+  "isTerastal": false,
+  "name": "スボミー",
+  "pokemonType": "grass",
+  "retreatCost": 0,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-23"
+}

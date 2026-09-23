@@ -68,11 +68,12 @@ describe("番のルール", () => {
     );
   });
 
-  test("山札からつけるエネルギーは手札からの 1 回の制限に数えない", () => {
-    const state = stateWith([ENERGY], [ENERGY]);
-    state.attachEnergyFromDeck(ENERGY, activeOf(state));
+  test("効果でつけるエネルギーは手札からの 1 回の制限に数えない", () => {
+    const state = stateWith([ENERGY, ENERGY], [ENERGY]);
+    state.attachEnergyByEffect(ENERGY, activeOf(state), "deck");
+    state.attachEnergyByEffect(ENERGY, activeOf(state), "hand");
     state.attachEnergyFromHand(ENERGY, activeOf(state));
-    expect(activeOf(state).countEnergy("psychic")).toBe(2);
+    expect(activeOf(state).energies).toHaveLength(3);
   });
 
   test("番の始めに 1 枚引き、1 番に 1 回の印を戻す", () => {
@@ -146,31 +147,39 @@ describe("進化のルール", () => {
     const state = stateWith([ENERGY, STAGE1], []);
     state.attachEnergyFromHand(ENERGY, activeOf(state));
     state.evolve(activeOf(state), STAGE1, { from: "hand" });
-    expect(activeOf(state).countEnergy("psychic")).toBe(1);
+    expect(activeOf(state).energies).toEqual([ENERGY]);
   });
 
   test("1 進化を飛ばす進化は、この番より前に出したたねポケモンに限る", () => {
     const state = stateWith([BASIC, STAGE2], []);
     const fresh = state.placeOnBench(BASIC, { from: "hand" });
-    expect(() => state.evolveSkippingStage1(fresh, STAGE2, "1進化")).toThrow(
+    expect(() => state.evolveSkippingStage1(fresh, STAGE2)).toThrow(
       IllegalMove
     );
-    state.evolveSkippingStage1(activeOf(state), STAGE2, "1進化");
+    state.evolveSkippingStage1(activeOf(state), STAGE2);
     expect(activeOf(state).name).toBe("2進化");
+  });
+
+  test("1 進化を飛ばす進化は、2進化ポケモンの進化の系統のたねポケモンにだけできる", () => {
+    const state = stateWith([STAGE2], []);
+    state.active = new PokemonInPlay(STAGE1, 0);
+    expect(() => state.evolveSkippingStage1(activeOf(state), STAGE2)).toThrow(
+      IllegalMove
+    );
   });
 });
 
 describe("にげる", () => {
-  test("にげるは必要な数のエネルギーをトラッシュし、1 番に 1 回しかできない", () => {
+  test("にげるは選んだエネルギーをトラッシュしてベンチと入れ替え、1 番に 1 回しかできない", () => {
     const state = stateWith([ENERGY, BASIC], []);
     const bench = state.placeOnBench(BASIC, { from: "hand" });
     state.attachEnergyFromHand(ENERGY, activeOf(state));
     const formerActive = activeOf(state);
-    state.retreat(bench, 1);
+    state.retreat(bench, [ENERGY]);
     expect(state.active).toBe(bench);
     expect(formerActive.energies).toEqual([]);
     expect(state.countInDiscard("基本超エネルギー")).toBe(1);
-    expect(() => state.retreat(formerActive, 0)).toThrow(IllegalMove);
+    expect(() => state.retreat(formerActive, [])).toThrow(IllegalMove);
   });
 });
 
@@ -201,46 +210,25 @@ describe("問い合わせ", () => {
 });
 
 describe("山札の操作", () => {
-  test("条件ごとに山札から 1 枚ずつ手札に加え、見つからない条件は飛ばす", () => {
-    const state = stateWith([], [ENERGY, STAGE1, ENERGY]);
-    const found = state.searchDeckToHand([
-      (card) => card.name === "1進化",
-      (card) => card.name === "グッズ",
-      (card) => card.name === "基本超エネルギー",
-    ]);
-    expect(found).toEqual([STAGE1, ENERGY]);
-    expect(state.hand).toEqual([STAGE1, ENERGY]);
-    expect(state.deck).toEqual([ENERGY]);
-  });
-
-  test("山札の上から見た中に条件に合う 1 枚があれば手札に加え、無ければ何も加えない", () => {
-    const state = stateWith([], [ENERGY, ENERGY, STAGE1]);
-    const isStage1 = (card: Card) => card.name === "1進化";
-    expect(state.revealTopAndTake(2, isStage1)).toBeNull();
-    expect(state.hand).toEqual([]);
-    expect(state.revealTopAndTake(3, isStage1)).toBe(STAGE1);
-    expect(state.hand).toEqual([STAGE1]);
-    expect(state.deck).toHaveLength(2);
-  });
-
-  test("山札の上から見て順位が最も小さい 1 枚を手札に加え、残りを山札の下に戻す", () => {
+  test("山札の上から見たカードのうち選んだものを手札に加え、残りを山札の下に戻す", () => {
     const state = stateWith([], [ENERGY, STAGE1, SUPPORTER, STADIUM]);
-    const taken = state.lookAtTopAndTakeOne(3, (card) =>
-      card.name === "1進化" ? 0 : 1
-    );
-    expect(taken).toBe(STAGE1);
+    state.takeFromDeckTop(3, [STAGE1], "bottomOfDeck");
     expect(state.hand).toEqual([STAGE1]);
     expect(state.deck).toEqual([STADIUM, ENERGY, SUPPORTER]);
   });
 
   test("山札の上から見て加えるとき、同じカードが複数枚あっても選んだ 1 枚だけが手札に移る", () => {
     const state = stateWith([], [STAGE1, STAGE1, ENERGY]);
-    const taken = state.lookAtTopAndTakeOne(2, (card) =>
-      card.name === "1進化" ? 0 : 1
-    );
-    expect(taken).toBe(STAGE1);
+    state.takeFromDeckTop(2, [STAGE1], "bottomOfDeck");
     expect(state.hand).toEqual([STAGE1]);
     expect(state.deck).toEqual([ENERGY, STAGE1]);
+  });
+
+  test("山札の上から見た中に無いカードは加えられない", () => {
+    const state = stateWith([], [ENERGY, ENERGY, STAGE1]);
+    expect(() => state.takeFromDeckTop(2, [STAGE1], "shuffleIntoDeck")).toThrow(
+      IllegalMove
+    );
   });
 
   test("バトル場のポケモンを山札に戻すと、ついているカードごと戻りバトル場が空になる", () => {
@@ -262,6 +250,26 @@ describe("山札の操作", () => {
     state.returnPokemonToDeck(bench);
     expect(state.bench).toEqual([]);
     expect(state.deck).toEqual([BASIC]);
+  });
+
+  test("場のポケモンを手札に戻すと、ついているカードもすべて手札に戻る", () => {
+    const state = stateWith([ENERGY, STAGE1], []);
+    const active = activeOf(state);
+    state.attachEnergyFromHand(ENERGY, active);
+    state.evolve(active, STAGE1, { from: "hand" });
+    state.returnPokemonToHand(active);
+    expect(state.active).toBeNull();
+    expect(state.hand).toEqual([STAGE1, BASIC, ENERGY]);
+  });
+
+  test("バトル場が空のときだけ、ベンチのポケモンをバトル場に出せる", () => {
+    const state = stateWith([BASIC], []);
+    const bench = state.placeOnBench(BASIC, { from: "hand" });
+    expect(() => state.promoteToActive(bench)).toThrow(IllegalMove);
+    state.returnPokemonToDeck(activeOf(state));
+    state.promoteToActive(bench);
+    expect(state.active).toBe(bench);
+    expect(state.bench).toEqual([]);
   });
 
   test("手札を全部山札に戻す", () => {
@@ -311,5 +319,11 @@ describe("ワザのエネルギー", () => {
     expect(canPayCost(["fire", COLORLESS], ["fire", "psychic"])).toBe(true);
     expect(canPayCost(["fire", COLORLESS], ["psychic", "psychic"])).toBe(false);
     expect(canPayCost(["fire", COLORLESS], ["fire"])).toBe(false);
+  });
+
+  test("すべてのタイプとして働く 1 個は、同じタイプで埋まらない指定に回す", () => {
+    expect(canPayCost(["fire", "psychic"], ["any", "fire"])).toBe(true);
+    expect(canPayCost(["fire", "psychic"], ["any", "grass"])).toBe(false);
+    expect(canPayCost(["fire", COLORLESS], ["any", "grass"])).toBe(true);
   });
 });

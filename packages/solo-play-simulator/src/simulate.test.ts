@@ -1,11 +1,21 @@
 import { describe, expect, test } from "bun:test";
 import {
+  attachEnergyFromHandToPokemon,
+  listUsableAttacksOfActive,
+} from "./card-effects.ts";
+import { countEnergyUnitsOfType } from "./continuous-effects.ts";
+import {
   buildDeck,
   type Decklist,
   type Goal,
   type PlayingPolicy,
 } from "./engine.ts";
-import { SAMPLE_CARD_TABLE } from "./sample-cards.ts";
+import {
+  BASIC,
+  ENERGY,
+  firstCandidateChoices,
+  SAMPLE_RECORD_TABLE,
+} from "./sample-cards.ts";
 import {
   compareVariants,
   formatAssumptions,
@@ -14,17 +24,25 @@ import {
   type SimulationOptions,
   simulate,
 } from "./simulate.ts";
+import type { GameState } from "./state.ts";
 
 const MULLIGAN_LINE =
   /^引き直し\(たねポケモンが無い初手\)が起きた対戦: \d+\.\d %$/m;
 
 const BASICS_AND_ENERGIES: Decklist = [
-  { count: 4, name: "たね" },
-  { count: 56, name: "基本超エネルギー" },
+  { cardId: BASIC.cardId, count: 4 },
+  { cardId: ENERGY.cardId, count: 56 },
 ];
+
+function countActiveEnergy(state: GameState): number {
+  return state.active === null
+    ? 0
+    : countEnergyUnitsOfType(state, state.active, "psychic");
+}
 
 /** 手札のエネルギーをバトル場に 1 枚つけ、ワザを使う。 */
 const attachingPolicy: PlayingPolicy = {
+  ...firstCandidateChoices,
   chooseActiveAtSetup: (basics) => {
     const [first] = basics;
     if (first === undefined) {
@@ -32,20 +50,21 @@ const attachingPolicy: PlayingPolicy = {
     }
     return first;
   },
-  chooseAttack: () => "ワザ",
+  chooseAttack: (context) =>
+    listUsableAttacksOfActive(context)[0]?.attack.name ?? null,
   chooseBenchAtSetup: () => [],
-  playTurn: (state) => {
-    const energy = state.findFirstInHand("基本超エネルギー");
+  playTurn: (context) => {
+    const { state } = context;
+    const energy = state.findFirstInHand(ENERGY.name);
     if (energy !== null && state.active !== null) {
-      state.attachEnergyFromHand(energy, state.active);
+      attachEnergyFromHandToPokemon(context, energy, state.active);
     }
   },
 };
 
 const twoEnergies: Goal = {
-  explainFailure: (state) =>
-    `エネルギー ${state.active?.countEnergy("psychic") ?? 0} 個`,
-  isAchieved: (state) => (state.active?.countEnergy("psychic") ?? 0) >= 2,
+  explainFailure: (state) => `エネルギー ${countActiveEnergy(state)} 個`,
+  isAchieved: (state) => countActiveEnergy(state) >= 2,
   name: "エネルギー 2 個",
 };
 
@@ -56,7 +75,7 @@ const neverAchieved: Goal = {
 };
 
 const baseOptions: SimulationOptions = {
-  cards: buildDeck(SAMPLE_CARD_TABLE, BASICS_AND_ENERGIES),
+  cards: buildDeck(SAMPLE_RECORD_TABLE, BASICS_AND_ENERGIES),
   goals: [twoEnergies, neverAchieved],
   maxTurn: 3,
   policy: attachingPolicy,
@@ -94,9 +113,9 @@ describe("乱数試行の集計", () => {
   test("引き直しが起きた対戦の数を数える", () => {
     const summary = simulate({
       ...baseOptions,
-      cards: buildDeck(SAMPLE_CARD_TABLE, [
-        { count: 1, name: "たね" },
-        { count: 59, name: "基本超エネルギー" },
+      cards: buildDeck(SAMPLE_RECORD_TABLE, [
+        { cardId: BASIC.cardId, count: 1 },
+        { cardId: ENERGY.cardId, count: 59 },
       ]),
     });
     expect(summary.mulliganGames).toBeGreaterThan(0);
@@ -154,16 +173,19 @@ describe("集計の整形", () => {
 
 describe("枚数を変えたときの比較", () => {
   const options = {
-    cardTable: SAMPLE_CARD_TABLE,
     deadlines: [{ goal: "エネルギー 2 個", turn: 2 }],
     decklist: BASICS_AND_ENERGIES,
     goals: [twoEnergies],
     maxTurn: 2,
     policy: attachingPolicy,
+    recordTable: SAMPLE_RECORD_TABLE,
     seed: 1,
     trials: 50,
     variants: [
-      { changes: { たね: -3, 基本超エネルギー: 3 }, label: "たね 4→1" },
+      {
+        changes: { [BASIC.cardId]: -3, [ENERGY.cardId]: 3 },
+        label: "たね 4→1",
+      },
     ],
   };
 
