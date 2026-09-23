@@ -53,13 +53,15 @@ describe("ワザのダメージ", () => {
     expect(calculateAttackDamage(four, attack)).toBe(170);
   });
 
-  test("インフェルノX は、自分の場の炎エネルギーを全部トラッシュしたときの値(枚数×90)で求める", () => {
-    const state = buildState({ active: CHARIZARD_X, bench: [RALTS] });
+  test("インフェルノX は、自分の場の炎エネルギー(すべてのタイプとして働くものも数える)を全部トラッシュしたときの値(枚数×90)で求める", () => {
+    const state = buildState({ active: CHARIZARD_X, bench: [RALTS, RALTS] });
+    const [first, second] = state.bench;
     state.active?.energies.push(FIRE_ENERGY, FIRE_ENERGY, IGNITION_ENERGY);
-    state.bench[0]?.energies.push(FIRE_ENERGY);
+    first?.energies.push(FIRE_ENERGY);
+    second?.energies.push(LEGACY_ENERGY, PSYCHIC_ENERGY);
     expect(
       calculateAttackDamage(state, findAttack(CHARIZARD_X, "インフェルノX"))
-    ).toBe(270);
+    ).toBe(4 * 90);
   });
 
   test("固定のダメージはそのまま、コインで決まる上乗せは含めず、ダメージの無いワザは null", () => {
