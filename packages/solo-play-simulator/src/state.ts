@@ -10,6 +10,7 @@
 import {
   CardCategory,
   EvolutionStage,
+  type PokemonInPlayFilter,
   type PokemonType,
 } from "./card-record-schema.ts";
 import {
@@ -40,6 +41,12 @@ export type DeckTopRestPlacement =
   | "shuffleIntoDeck"
   | "bottomOfDeck"
   | "shuffleThenBottomOfDeck";
+
+/** この番だけ、条件に合うポケモンが使うワザのダメージを増やす効果(card-record-schema.ts の increaseAttackDamageThisTurn)。 */
+export interface AttackDamageIncrease {
+  readonly amount: number;
+  readonly attackerFilter: PokemonInPlayFilter;
+}
 
 /**
  * ワザに必要なエネルギー(タイプの並び。無色は colorless)を、ついているエネルギーの
@@ -154,6 +161,8 @@ export class GameState {
   hasRetreated: boolean;
   /** この番に使った特性の名前(場全体)。同じ名前の特性の回数の制限と、名前に文字列を含む条件に使う。 */
   abilityNamesUsedThisTurn: string[] = [];
+  /** この番に使った、ワザのダメージを増やす効果(パワープロテイン)。番の終わりのワザのダメージの判定に使う。 */
+  attackDamageIncreasesThisTurn: AttackDamageIncrease[] = [];
   readonly attacks = new Map<number, string>();
   readonly events: string[] = [];
 
@@ -635,6 +644,12 @@ export class GameState {
     this.switchActive(benchPokemon);
   }
 
+  // ---- この番だけ働く効果 ----
+
+  increaseAttackDamageThisTurn(increase: AttackDamageIncrease): void {
+    this.attackDamageIncreasesThisTurn.push(increase);
+  }
+
   // ---- 番の進行 ----
 
   beginTurn(): void {
@@ -645,6 +660,7 @@ export class GameState {
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
     this.abilityNamesUsedThisTurn = [];
+    this.attackDamageIncreasesThisTurn = [];
     for (const pokemon of this.listPokemonInPlay()) {
       pokemon.abilitiesUsedThisTurn.clear();
     }

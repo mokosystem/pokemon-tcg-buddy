@@ -159,6 +159,7 @@ const firstStepTargetChecks: {
     listRareCandyPairs(state).length > 0,
   evolveFromDeck: (_, { state }) =>
     state.deck.length > 0 && listEvolvableBasics(state).length > 0,
+  increaseAttackDamageThisTurn: alwaysHasTarget,
   // 山札が 4 枚に満たなくても、ある分だけ見て使える(公式 Q&A「はしゃのほうこう」、2026-09-23 確認)
   lookAtDeckTopAndAttachEnergyToSelf: (_, { source, state }) =>
     state.deck.length > 0 && source.pokemon !== null,
@@ -653,6 +654,13 @@ const operationRunners: {
   },
   evolveBasicToStage2FromHand: (_, run) => evolveWithRareCandy(run),
   evolveFromDeck: (step, run) => evolveFromDeck(run, step.canContinueToStage2),
+  increaseAttackDamageThisTurn: (step, { context, label }) => {
+    context.state.increaseAttackDamageThisTurn({
+      amount: step.amount,
+      attackerFilter: step.attackerFilter,
+    });
+    context.state.record(`${label}: この番のワザのダメージ +${step.amount}`);
+  },
   lookAtDeckTopAndAttachEnergyToSelf: (step, run) =>
     lookAtDeckTopAndAttachToSelf(run, step),
   lookAtDeckTopAndTakeIntoHand: (step, { context, label }) => {

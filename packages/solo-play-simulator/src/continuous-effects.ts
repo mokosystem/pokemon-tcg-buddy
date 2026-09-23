@@ -237,6 +237,24 @@ export function calculateBenchLimit(state: GameState): number {
   return limits.length === 0 ? BENCH_LIMIT : Math.max(...limits);
 }
 
+/**
+ * このポケモンが使うワザの、相手のバトルポケモンへのダメージを増やす量(シロナのロズレイドの「グローリーエール」)。
+ * 効果は持ち主ごとに集めるので、同じ特性のポケモンが 2 匹いれば 2 回分を足す(公式 Q&A「グローリーエール」:
+ * 2 匹いれば「+60」)。
+ */
+export function sumAttackDamageIncrease(
+  state: GameState,
+  attacker: PokemonInPlay
+): number {
+  return listEffectsApplyingTo(state, attacker).reduce(
+    (total, collected) =>
+      collected.effect.change.change === "increaseAttackDamage"
+        ? total + collected.effect.change.amount
+        : total,
+    0
+  );
+}
+
 export function countEmptyBenchSlots(state: GameState): number {
   return Math.max(0, calculateBenchLimit(state) - state.bench.length);
 }

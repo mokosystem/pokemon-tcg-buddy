@@ -34,6 +34,7 @@ import {
   namesOf,
   pickCardsByName,
 } from "./card-test-support.ts";
+import type { Card } from "./cards.ts";
 import {
   calculateBenchLimit,
   calculateRetreatCost,
@@ -41,7 +42,7 @@ import {
   listEnergyUnits,
 } from "./continuous-effects.ts";
 import { setupGame } from "./engine.ts";
-import { IllegalMove } from "./state.ts";
+import { type GameState, IllegalMove, PokemonInPlay } from "./state.ts";
 
 const RALTS = buildRecordedCard("049714");
 const KIRLIA = buildRecordedCard("049715");
@@ -99,8 +100,10 @@ const CYNTHIAS_GARCHOMP = buildRecordedCard("047381");
 const CYNTHIAS_GABITE = buildRecordedCard("049093");
 const CYNTHIAS_GIBLE = buildRecordedCard("049092");
 const CYNTHIAS_ROSELIA = buildRecordedCard("048748");
+const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
 const AZURILL = buildRecordedCard("050392");
 const FIGHT_GONG = buildRecordedCard("048677");
+const POWER_PROTEIN = buildRecordedCard("049368");
 const JUDGE = buildRecordedCard("050448");
 const EEVEE_EX = buildRecordedCard("049282");
 const FLAREON_EX = buildRecordedCard("048810");
@@ -121,6 +124,23 @@ const testedTranslations = new Set<string>();
 function describeTranslation(name: string, body: () => void): void {
   testedTranslations.add(name);
   describe(name, body);
+}
+
+/** ワザを使うポケモン attacker が、カード card の持つワザ attackName を使ったときのダメージ。 */
+function damageOf(
+  state: GameState,
+  attacker: PokemonInPlay,
+  card: Card,
+  attackName: string
+): number | null {
+  const attack =
+    card.record.category === "ポケモン"
+      ? card.record.attacks.find((candidate) => candidate.name === attackName)
+      : undefined;
+  if (attack === undefined) {
+    throw new Error(`${card.name} にワザ ${attackName} が無い`);
+  }
+  return calculateAttackDamage(state, attacker, attack);
 }
 
 function repeat<T>(card: T, count: number): T[] {
@@ -1380,7 +1400,9 @@ describeTranslation("メガレックウザex", () => {
     const [storm] = listUsableAttacksOfActive(buildContext(state));
     expect(storm?.attack.name).toBe("ストームエメラルダ");
     expect(
-      storm === undefined ? null : calculateAttackDamage(state, storm.attack)
+      storm === undefined
+        ? null
+        : calculateAttackDamage(state, activeOf(state), storm.attack)
     ).toBe(200);
   });
 });
@@ -1594,6 +1616,79 @@ describeTranslation("ゼロの大空洞", () => {
     expect(namesOf(state.discard).sort()).toEqual(
       ["ゼロの大空洞", "ルリリ", "ルリリ"].sort()
     );
+  });
+});
+
+describeTranslation("パワープロテイン", () => {
+  test("使った番だけ、闘ポケモンのワザのダメージを +30 し、2 枚使えば +60", () => {
+    const state = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      deck: [FIGHTING_ENERGY],
+      hand: [POWER_PROTEIN, POWER_PROTEIN],
+    });
+    const context = buildContext(state);
+    const garchomp = activeOf(state);
+    playTrainerFromHand(context, POWER_PROTEIN);
+    expect(
+      damageOf(state, garchomp, CYNTHIAS_GARCHOMP, "リューノバスター")
+    ).toBe(290);
+    playTrainerFromHand(context, POWER_PROTEIN);
+    expect(
+      damageOf(state, garchomp, CYNTHIAS_GARCHOMP, "リューノバスター")
+    ).toBe(320);
+    state.beginTurn();
+    expect(
+      damageOf(state, garchomp, CYNTHIAS_GARCHOMP, "リューノバスター")
+    ).toBe(260);
+  });
+
+  test("闘ポケモンかはワザを使うポケモンで決まり、ミュウex がベンチの闘ポケモンのワザを使っても増えない", () => {
+    const state = buildState({
+      active: MEW,
+      bench: [CYNTHIAS_GARCHOMP],
+      hand: [POWER_PROTEIN],
+    });
+    playTrainerFromHand(buildContext(state), POWER_PROTEIN);
+    expect(
+      damageOf(state, activeOf(state), CYNTHIAS_GARCHOMP, "リューノバスター")
+    ).toBe(260);
+    expect(
+      damageOf(state, benchAt(state, 0), CYNTHIAS_GARCHOMP, "リューノバスター")
+    ).toBe(290);
+  });
+});
+
+describeTranslation("シロナのロズレイド", () => {
+  test("グローリーエールは、場にいる間、自分の「シロナのポケモン」のワザのダメージを 1 匹につき +30 し、自身のワザも増やす", () => {
+    const state = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      bench: [CYNTHIAS_ROSERADE, MEW],
+    });
+    expect(
+      damageOf(state, activeOf(state), CYNTHIAS_GARCHOMP, "リューノバスター")
+    ).toBe(290);
+    expect(
+      damageOf(state, benchAt(state, 0), CYNTHIAS_ROSERADE, "リーフステップ")
+    ).toBe(110);
+    expect(damageOf(state, benchAt(state, 1), MEW, "テレポートブレイク")).toBe(
+      30
+    );
+    state.bench.push(new PokemonInPlay(CYNTHIAS_ROSERADE, 0));
+    expect(
+      damageOf(state, activeOf(state), CYNTHIAS_GARCHOMP, "リューノバスター")
+    ).toBe(320);
+  });
+
+  test("パワープロテインと重ねて足す", () => {
+    const state = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      bench: [CYNTHIAS_ROSERADE],
+      hand: [POWER_PROTEIN],
+    });
+    playTrainerFromHand(buildContext(state), POWER_PROTEIN);
+    expect(
+      damageOf(state, activeOf(state), CYNTHIAS_GARCHOMP, "リューノバスター")
+    ).toBe(320);
   });
 });
 

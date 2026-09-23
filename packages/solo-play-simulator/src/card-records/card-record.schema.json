@@ -1306,6 +1306,23 @@
         {
           "type": "object",
           "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "attackerFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            },
+            "operation": {
+              "const": "increaseAttackDamageThisTurn"
+            }
+          },
+          "required": ["amount", "attackerFilter", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "operation": {
               "const": "evolveBasicToStage2FromHand"
             }
@@ -1804,6 +1821,20 @@
             }
           },
           "required": ["change", "evolutionFilter", "name"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "change": {
+              "const": "increaseAttackDamage"
+            }
+          },
+          "required": ["amount", "change"],
           "additionalProperties": false
         }
       ]
@@ -2366,6 +2397,23 @@
             }
           },
           "required": ["energyFilter", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "attackerFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            },
+            "operation": {
+              "const": "increaseAttackDamageThisTurn"
+            }
+          },
+          "required": ["amount", "attackerFilter", "operation"],
           "additionalProperties": false
         },
         {

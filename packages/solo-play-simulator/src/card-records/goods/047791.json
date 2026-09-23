@@ -1,16 +1,51 @@
 {
   "$schema": "../card-record.schema.json",
-  "cardEffects": [],
-  "cardIds": ["047791", "048438", "049368"],
-  "category": "グッズ",
-  "excludedEffects": [
+  "cardEffects": [
     {
-      "description": "使った番だけ、闘ポケモンのワザで相手のバトルポケモンに与えるダメージが増える",
-      "reason": "requiresOpponent"
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "amount": 30,
+            "attackerFilter": {
+              "pokemonTypes": ["fighting"]
+            },
+            "operation": "increaseAttackDamageThisTurn"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
     }
   ],
+  "cardIds": ["047791", "048438", "049368"],
+  "category": "グッズ",
+  "excludedEffects": [],
   "name": "パワープロテイン",
-  "rulings": [],
-  "translationStatus": "irrelevantToCalculation",
+  "rulings": [
+    {
+      "interpretation": "2 枚使えば 2 枚分を足す(+60)",
+      "question": "同じ番に 2 枚使ったとき、ダメージの増え方は重なるか",
+      "reflectedIn": "increaseAttackDamageThisTurn を使うたびに、この番の増やす効果を 1 つずつ足す(attack-damage.ts が合計する)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "パワープロテインを使った番にもう 1 枚使うと、闘ポケモンのワザのダメージは +60 になるか(なる)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%91%E3%83%AF%E3%83%BC%E3%83%97%E3%83%AD%E3%83%86%E3%82%A4%E3%83%B3&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "闘ポケモンかどうかは、ワザを使うポケモン(バトルポケモン)で決まる。ほかのポケモンのワザを使う効果でも、ワザの持ち主のタイプは見ない",
+      "question": "ミュウex の「きおくのらせん」でベンチの闘ポケモンのワザを使ったとき、ダメージは増えるか",
+      "reflectedIn": "attackerFilter は、calculateAttackDamage に渡すワザを使うポケモンに当てる",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "パワープロテインを使った番に、ミュウex が「きおくのらせん」でメガルカリオex のワザを使ったとき、ダメージは増えるか(ワザを使うのは超タイプのミュウex なので増えない)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%91%E3%83%AF%E3%83%BC%E3%83%97%E3%83%AD%E3%83%86%E3%82%A4%E3%83%B3&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
   "verifiedOn": "2026-09-23"
 }

@@ -293,6 +293,15 @@ const basicOperationOptions = [
     energyFilter: CardFilterSchema,
     operation: literal("moveEnergyToAnotherOwnPokemon"),
   }),
+  /**
+   * この番、条件に合う自分のポケモンが使うワザの、相手のバトルポケモンへのダメージを amount 増やす(パワープロテイン)。
+   * 条件はワザを使うポケモン(バトルポケモン)に当てる。
+   */
+  strictObject({
+    amount: countFromOne,
+    attackerFilter: PokemonInPlayFilterSchema,
+    operation: literal("increaseAttackDamageThisTurn"),
+  }),
   strictObject({
     operation: literal("evolveBasicToStage2FromHand"),
   }),
@@ -394,6 +403,14 @@ export const ContinuousChangeSchema = variant("change", [
     evolutionFilter: CardFilterSchema,
     name: nonEmptyText,
   }),
+  /**
+   * 範囲のポケモンが使うワザの、相手のバトルポケモンへのダメージを amount 増やす(シロナのロズレイドの
+   * 「グローリーエール」)。範囲はワザを使うポケモン(バトルポケモン)に当てる。
+   */
+  strictObject({
+    amount: countFromOne,
+    change: literal("increaseAttackDamage"),
+  }),
 ]);
 
 export const ContinuousEffectSchema = strictObject({
@@ -436,7 +453,10 @@ export const DamageBonusSchema = variant("kind", [
 ]);
 export type DamageBonus = InferOutput<typeof DamageBonusSchema>;
 
-/** ワザのダメージ。コイン、相手の側、追加のコストで決まる上乗せは持たず、含めなかった効果に書く。 */
+/**
+ * ワザのダメージ。コイン、相手の側、追加のコストで決まる上乗せは持たず、含めなかった効果に書く。
+ * ほかのカードがダメージを増やす効果(グッズ、特性)は、そのカードの記録の翻訳に書く。
+ */
 export const AttackDamageSchema = variant("kind", [
   strictObject({ kind: literal("none") }),
   strictObject({
