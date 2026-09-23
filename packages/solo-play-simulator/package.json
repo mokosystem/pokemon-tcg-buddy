@@ -21,9 +21,9 @@
     "generate:card-record-files": "bun scripts/generate-card-record-files.ts"
   },
   "dependencies": {
-    "valibot": "^1.5.0"
+    "valibot": "1.5.0"
   },
   "devDependencies": {
-    "@valibot/to-json-schema": "^1.8.0"
+    "@valibot/to-json-schema": "1.8.0"
   }
 }
