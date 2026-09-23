@@ -8,21 +8,17 @@
         "amount": 10,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "むずむずかふん"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["048533", "046662"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [
     {
       "description": "ワザ「むずむずかふん」の、次の相手の番に相手が手札からグッズを使えなくする効果",
       "reason": "requiresOpponent"
     }
   ],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 30,
   "isTerastal": false,

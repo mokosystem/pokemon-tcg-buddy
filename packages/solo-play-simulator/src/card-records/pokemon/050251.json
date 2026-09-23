@@ -2,8 +2,7 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "ばけがくれ",
-      "translation": null
+      "name": "ばけがくれ"
     }
   ],
   "attacks": [
@@ -31,7 +30,6 @@
       "name": "にんぎょうキャッチ"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["050251"],
   "category": "ポケモン",
   "evolvesFrom": "カゲボウズ",
@@ -41,7 +39,6 @@
       "reason": "requiresOpponent"
     }
   ],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 80,
   "isTerastal": false,

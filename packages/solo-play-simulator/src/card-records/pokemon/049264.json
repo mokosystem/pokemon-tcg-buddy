@@ -8,7 +8,6 @@
         "amount": 70,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ジェットヘッド"
     },
     {
@@ -17,7 +16,6 @@
         "amount": 200,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ファントムダイブ"
     }
   ],

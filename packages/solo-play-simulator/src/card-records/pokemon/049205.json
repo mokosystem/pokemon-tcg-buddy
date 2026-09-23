@@ -2,8 +2,7 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "さかてにとる",
-      "translation": null
+      "name": "さかてにとる"
     }
   ],
   "attacks": [
@@ -13,14 +12,11 @@
         "amount": 100,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "クルーエルアロー"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049205", "045913", "050004", "048636"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [
     {
       "description": "特性「さかてにとる」(前の相手の番に自分のポケモンがきぜつしていれば 3 枚引く)",

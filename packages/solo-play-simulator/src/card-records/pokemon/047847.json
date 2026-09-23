@@ -33,14 +33,11 @@
         "amount": 200,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "マシンガンコンボ"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["047847"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [
     {
       "description": "ワザ「マシンガンコンボ」の、ウラが出るまでコインを投げてオモテの数×50 を足す上乗せ。ダメージは上乗せを除いた 200 で求める",

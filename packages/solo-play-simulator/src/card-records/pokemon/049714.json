@@ -28,16 +28,12 @@
         "amount": 10,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ずつき"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049714"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 70,
   "isTerastal": false,

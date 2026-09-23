@@ -12,51 +12,62 @@ import {
   type EnergyProvision,
   EvolutionStage,
   type ExRule,
+  type PokemonRecord,
   type PokemonType,
 } from "./card-record-schema.ts";
 
 export interface Card {
-  readonly basicPokemonOfEvolutionLine: string | null;
+  readonly basicPokemonOfEvolutionLine?: string;
   readonly cardId: string;
   readonly category: CardCategory;
-  readonly evolvesFrom: string | null;
-  readonly exRule: ExRule | null;
+  readonly evolvesFrom?: string;
+  readonly exRule?: ExRule;
   readonly hasRuleBox: boolean;
   readonly hp: number;
   readonly isTerastal: boolean;
   readonly name: string;
-  readonly pokemonType: PokemonType | null;
+  readonly pokemonType?: PokemonType;
   /** エネルギーが場で供給するもの。場にある間ずっと働く効果で変わることがある(continuous-effects.ts)。 */
-  readonly provision: EnergyProvision | null;
+  readonly provision?: EnergyProvision;
   readonly record: CardRecord;
   readonly retreatCost: number;
-  readonly stage: EvolutionStage | null;
+  readonly stage?: EvolutionStage;
+}
+
+/** 進化前の名前と進化の系統のたねポケモンの名前。記録の進化の段階が持つものだけを返す。 */
+function extractEvolution(
+  record: PokemonRecord
+): Pick<Card, "basicPokemonOfEvolutionLine" | "evolvesFrom"> {
+  switch (record.stage) {
+    case EvolutionStage.Stage2:
+      return {
+        basicPokemonOfEvolutionLine: record.basicPokemonOfEvolutionLine,
+        evolvesFrom: record.evolvesFrom,
+      };
+    case EvolutionStage.Stage1:
+      return { evolvesFrom: record.evolvesFrom };
+    default:
+      return {};
+  }
 }
 
 /** 記録と、デッキに入っている印刷のカード ID から、対戦で使うカードを作る。 */
 export function buildCardFromRecord(record: CardRecord, cardId: string): Card {
   const common = {
-    basicPokemonOfEvolutionLine: null,
     cardId,
     category: record.category,
-    evolvesFrom: null,
-    exRule: null,
     hasRuleBox: false,
     hp: 0,
     isTerastal: false,
     name: record.name,
-    pokemonType: null,
-    provision: null,
     record,
     retreatCost: 0,
-    stage: null,
   } satisfies Card;
   switch (record.category) {
     case CardCategory.Pokemon:
       return {
         ...common,
-        basicPokemonOfEvolutionLine: record.basicPokemonOfEvolutionLine,
-        evolvesFrom: record.evolvesFrom,
+        ...extractEvolution(record),
         exRule: record.exRule,
         hasRuleBox: record.hasRuleBox,
         hp: record.hp,
@@ -94,7 +105,7 @@ export function isSupporter(card: Card): boolean {
 
 /** エネルギーの記録にある供給のタイプ。場にある間ずっと働く効果による変化は含めない。 */
 function listBaseProvidedTypes(card: Card): readonly PokemonType[] | "any" {
-  if (card.provision === null) {
+  if (card.provision === undefined) {
     return [];
   }
   return card.provision.kind === "anyType" ? "any" : [card.provision.type];
@@ -102,9 +113,11 @@ function listBaseProvidedTypes(card: Card): readonly PokemonType[] | "any" {
 
 function includesIfListed<T>(
   allowed: readonly T[] | undefined,
-  value: T | null
+  value: T | undefined
 ): boolean {
-  return allowed === undefined || (value !== null && allowed.includes(value));
+  return (
+    allowed === undefined || (value !== undefined && allowed.includes(value))
+  );
 }
 
 /** カードを選ぶ条件(CardFilter)に合うか。書かれた欄はすべて満たし、欄の中の並びはどれか 1 つでよい。 */

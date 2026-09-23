@@ -1,140 +1,332 @@
 {
   "oneOf": [
     {
-      "type": "object",
-      "properties": {
-        "$schema": {
-          "const": "../card-record.schema.json"
-        },
-        "cardIds": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^[0-9]{6}$"
-          },
-          "minItems": 1
-        },
-        "excludedEffects": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/ExcludedEffect"
-          }
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1
-        },
-        "rulings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Ruling"
-          }
-        },
-        "translationStatus": {
-          "enum": [
-            "translated",
-            "notTranslatable",
-            "irrelevantToCalculation",
-            "notYetTranslated"
-          ],
-          "type": "string"
-        },
-        "verifiedOn": {
-          "type": "string",
-          "format": "date"
-        },
-        "abilities": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Ability"
-          }
-        },
-        "attacks": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Attack"
-          }
-        },
-        "basicPokemonOfEvolutionLine": {
-          "anyOf": [
-            {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "const": "../card-record.schema.json"
+            },
+            "cardIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]{6}$"
+              },
+              "minItems": 1
+            },
+            "excludedEffects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ExcludedEffect"
+              }
+            },
+            "name": {
               "type": "string",
               "minLength": 1
             },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "category": {
-          "const": "ポケモン"
-        },
-        "evolvesFrom": {
-          "anyOf": [
-            {
-              "type": "string",
-              "minLength": 1
+            "rulings": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ruling"
+              }
             },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "exRule": {
-          "anyOf": [
-            {
+            "translationStatus": {
+              "enum": [
+                "translated",
+                "notTranslatable",
+                "irrelevantToCalculation",
+                "notYetTranslated"
+              ],
+              "type": "string"
+            },
+            "verifiedOn": {
+              "type": "string",
+              "format": "date"
+            },
+            "abilities": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ability"
+              }
+            },
+            "attacks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Attack"
+              }
+            },
+            "category": {
+              "const": "ポケモン"
+            },
+            "exRule": {
               "enum": ["pokemonEx", "megaEvolutionEx"],
               "type": "string"
             },
-            {
-              "type": "null"
+            "hasRuleBox": {
+              "type": "boolean"
+            },
+            "hp": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "isTerastal": {
+              "type": "boolean"
+            },
+            "pokemonType": {
+              "$ref": "#/$defs/PokemonType"
+            },
+            "retreatCost": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stage": {
+              "const": "たね"
             }
-          ]
+          },
+          "required": [
+            "$schema",
+            "cardIds",
+            "excludedEffects",
+            "name",
+            "rulings",
+            "translationStatus",
+            "verifiedOn",
+            "abilities",
+            "attacks",
+            "category",
+            "hasRuleBox",
+            "hp",
+            "isTerastal",
+            "pokemonType",
+            "retreatCost",
+            "stage"
+          ],
+          "additionalProperties": false
         },
-        "hasRuleBox": {
-          "type": "boolean"
+        {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "const": "../card-record.schema.json"
+            },
+            "cardIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]{6}$"
+              },
+              "minItems": 1
+            },
+            "excludedEffects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ExcludedEffect"
+              }
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rulings": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ruling"
+              }
+            },
+            "translationStatus": {
+              "enum": [
+                "translated",
+                "notTranslatable",
+                "irrelevantToCalculation",
+                "notYetTranslated"
+              ],
+              "type": "string"
+            },
+            "verifiedOn": {
+              "type": "string",
+              "format": "date"
+            },
+            "abilities": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ability"
+              }
+            },
+            "attacks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Attack"
+              }
+            },
+            "category": {
+              "const": "ポケモン"
+            },
+            "exRule": {
+              "enum": ["pokemonEx", "megaEvolutionEx"],
+              "type": "string"
+            },
+            "hasRuleBox": {
+              "type": "boolean"
+            },
+            "hp": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "isTerastal": {
+              "type": "boolean"
+            },
+            "pokemonType": {
+              "$ref": "#/$defs/PokemonType"
+            },
+            "retreatCost": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "evolvesFrom": {
+              "type": "string",
+              "minLength": 1
+            },
+            "stage": {
+              "const": "1進化"
+            }
+          },
+          "required": [
+            "$schema",
+            "cardIds",
+            "excludedEffects",
+            "name",
+            "rulings",
+            "translationStatus",
+            "verifiedOn",
+            "abilities",
+            "attacks",
+            "category",
+            "hasRuleBox",
+            "hp",
+            "isTerastal",
+            "pokemonType",
+            "retreatCost",
+            "evolvesFrom",
+            "stage"
+          ],
+          "additionalProperties": false
         },
-        "hp": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "isTerastal": {
-          "type": "boolean"
-        },
-        "pokemonType": {
-          "$ref": "#/$defs/PokemonType"
-        },
-        "retreatCost": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "stage": {
-          "enum": ["たね", "1進化", "2進化"],
-          "type": "string"
+        {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "const": "../card-record.schema.json"
+            },
+            "cardIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]{6}$"
+              },
+              "minItems": 1
+            },
+            "excludedEffects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ExcludedEffect"
+              }
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rulings": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ruling"
+              }
+            },
+            "translationStatus": {
+              "enum": [
+                "translated",
+                "notTranslatable",
+                "irrelevantToCalculation",
+                "notYetTranslated"
+              ],
+              "type": "string"
+            },
+            "verifiedOn": {
+              "type": "string",
+              "format": "date"
+            },
+            "abilities": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Ability"
+              }
+            },
+            "attacks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Attack"
+              }
+            },
+            "category": {
+              "const": "ポケモン"
+            },
+            "exRule": {
+              "enum": ["pokemonEx", "megaEvolutionEx"],
+              "type": "string"
+            },
+            "hasRuleBox": {
+              "type": "boolean"
+            },
+            "hp": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "isTerastal": {
+              "type": "boolean"
+            },
+            "pokemonType": {
+              "$ref": "#/$defs/PokemonType"
+            },
+            "retreatCost": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "basicPokemonOfEvolutionLine": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evolvesFrom": {
+              "type": "string",
+              "minLength": 1
+            },
+            "stage": {
+              "const": "2進化"
+            }
+          },
+          "required": [
+            "$schema",
+            "cardIds",
+            "excludedEffects",
+            "name",
+            "rulings",
+            "translationStatus",
+            "verifiedOn",
+            "abilities",
+            "attacks",
+            "category",
+            "hasRuleBox",
+            "hp",
+            "isTerastal",
+            "pokemonType",
+            "retreatCost",
+            "basicPokemonOfEvolutionLine",
+            "evolvesFrom",
+            "stage"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "$schema",
-        "cardIds",
-        "excludedEffects",
-        "name",
-        "rulings",
-        "translationStatus",
-        "verifiedOn",
-        "abilities",
-        "attacks",
-        "basicPokemonOfEvolutionLine",
-        "category",
-        "evolvesFrom",
-        "exRule",
-        "hasRuleBox",
-        "hp",
-        "isTerastal",
-        "pokemonType",
-        "retreatCost",
-        "stage"
-      ],
-      "additionalProperties": false
+      ]
     },
     {
       "type": "object",
@@ -544,17 +736,10 @@
           "minLength": 1
         },
         "translation": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AbilityTranslation"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/AbilityTranslation"
         }
       },
-      "required": ["name", "translation"],
+      "required": ["name"],
       "additionalProperties": false
     },
     "AbilityTranslation": {
@@ -634,21 +819,14 @@
           "$ref": "#/$defs/AttackDamage"
         },
         "effect": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Effect"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/Effect"
         },
         "name": {
           "type": "string",
           "minLength": 1
         }
       },
-      "required": ["cost", "damage", "effect", "name"],
+      "required": ["cost", "damage", "name"],
       "additionalProperties": false
     },
     "AttackDamage": {

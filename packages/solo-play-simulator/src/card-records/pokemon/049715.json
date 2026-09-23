@@ -32,16 +32,13 @@
         "amount": 30,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "サイコショット"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049715"],
   "category": "ポケモン",
   "evolvesFrom": "ラルトス",
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 100,
   "isTerastal": false,

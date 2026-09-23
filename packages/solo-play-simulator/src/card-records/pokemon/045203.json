@@ -32,16 +32,13 @@
         "amount": 90,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ランドクラッシュ"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["045203", "046791", "048483"],
   "category": "ポケモン",
   "evolvesFrom": "ノコッチ",
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 140,
   "isTerastal": false,

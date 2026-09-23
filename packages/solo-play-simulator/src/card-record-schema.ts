@@ -21,7 +21,6 @@ import {
   minLength,
   minValue,
   nonEmpty,
-  nullable,
   number,
   optional,
   picklist,
@@ -373,8 +372,8 @@ export const AttackSchema = strictObject({
   /** 必要なエネルギー。無色は colorless。必要なエネルギーが無いワザは空の並び。 */
   cost: array(PokemonTypeSchema),
   damage: AttackDamageSchema,
-  /** ダメージ以外の効果の翻訳。ダメージだけのワザ、翻訳しない効果のワザは null。 */
-  effect: nullable(EffectSchema),
+  /** ダメージ以外の効果の翻訳。ダメージだけのワザ、翻訳しない効果のワザは持たない。 */
+  effect: optional(EffectSchema),
   name: nonEmptyText,
 });
 export type Attack = InferOutput<typeof AttackSchema>;
@@ -406,10 +405,10 @@ export const AbilityTranslationSchema = variant("kind", [
 ]);
 export type AbilityTranslation = InferOutput<typeof AbilityTranslationSchema>;
 
-/** 特性。名前は翻訳の有無によらず持つ(特性の名前で数える条件があるため)。翻訳しない特性は translation が null。 */
+/** 特性。名前は翻訳の有無によらず持つ(特性の名前で数える条件があるため)。翻訳しない特性は translation を持たない。 */
 export const AbilitySchema = strictObject({
   name: nonEmptyText,
-  translation: nullable(AbilityTranslationSchema),
+  translation: optional(AbilityTranslationSchema),
 });
 export type Ability = InferOutput<typeof AbilitySchema>;
 
@@ -517,23 +516,40 @@ const commonRecordEntries = {
   verifiedOn: pipe(string(), isoDate()),
 };
 
-export const PokemonRecordSchema = strictObject({
+const pokemonRecordEntries = {
   ...commonRecordEntries,
   abilities: array(AbilitySchema),
   attacks: array(AttackSchema),
-  /** 2進化ポケモンの進化の系統のたねポケモンの名前。1進化を飛ばす進化(ふしぎなアメ)の判定に使う。たねと 1進化は null。 */
-  basicPokemonOfEvolutionLine: nullable(nonEmptyText),
   category: literal(CardCategory.Pokemon),
-  /** 進化前のポケモンの名前。たねポケモンは null。 */
-  evolvesFrom: nullable(nonEmptyText),
-  exRule: nullable(ExRuleSchema),
+  /** ポケモンex・メガシンカex のルール。どちらでもないポケモンは持たない。 */
+  exRule: optional(ExRuleSchema),
   hasRuleBox: boolean(),
   hp: countFromOne,
   isTerastal: boolean(),
   pokemonType: PokemonTypeSchema,
   retreatCost: countFromZero,
-  stage: EvolutionStageSchema,
-});
+};
+
+/** ポケモンの記録。進化前の名前と進化の系統のたねポケモンの名前は、それを持つ進化の段階だけが持つ。 */
+export const PokemonRecordSchema = variant("stage", [
+  strictObject({
+    ...pokemonRecordEntries,
+    stage: literal(EvolutionStage.Basic),
+  }),
+  strictObject({
+    ...pokemonRecordEntries,
+    /** 進化前のポケモンの名前。 */
+    evolvesFrom: nonEmptyText,
+    stage: literal(EvolutionStage.Stage1),
+  }),
+  strictObject({
+    ...pokemonRecordEntries,
+    /** 進化の系統のたねポケモンの名前。1進化を飛ばす進化(ふしぎなアメ)の判定に使う。 */
+    basicPokemonOfEvolutionLine: nonEmptyText,
+    evolvesFrom: nonEmptyText,
+    stage: literal(EvolutionStage.Stage2),
+  }),
+]);
 
 function defineTrainerRecordSchema<
   const Category extends

@@ -2,8 +2,7 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "フェアリーゾーン",
-      "translation": null
+      "name": "フェアリーゾーン"
     }
   ],
   "attacks": [
@@ -13,14 +12,11 @@
         "amount": 20,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "フルムーンロンド"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["047041", "049521", "049003"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [
     {
       "description": "特性「フェアリーゾーン」(相手の場のドラゴンタイプのポケモンの弱点を変える)",

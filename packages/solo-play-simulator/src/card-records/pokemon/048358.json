@@ -41,14 +41,11 @@
         "amount": 110,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ほのおのつばさ"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["048358"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [],
   "exRule": "pokemonEx",
   "hasRuleBox": true,

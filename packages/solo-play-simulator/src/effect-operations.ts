@@ -315,7 +315,7 @@ function evolveFromDeck(run: OperationRun, canContinueToStage2: boolean): void {
     state.deck.filter(
       (card) =>
         card.stage === EvolutionStage.Stage1 &&
-        card.evolvesFrom !== null &&
+        card.evolvesFrom !== undefined &&
         basicNames.has(card.evolvesFrom)
     ),
     { maxCount: 1, minCount: 0 },

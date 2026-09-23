@@ -132,12 +132,10 @@ export function useStadiumEffect(context: EffectContext): void {
 
 function findAbilityTranslation(card: Card, abilityName: string) {
   if (card.record.category !== CardCategory.Pokemon) {
-    return null;
+    return;
   }
-  return (
-    card.record.abilities.find((ability) => ability.name === abilityName)
-      ?.translation ?? null
-  );
+  return card.record.abilities.find((ability) => ability.name === abilityName)
+    ?.translation;
 }
 
 function markAbilityUsed(
@@ -350,7 +348,7 @@ export function listUsableAttacksOfActive(
   return listUsableAttacks(state, active).filter(
     ({ attack }) =>
       canPayCost(attack.cost, units) &&
-      (attack.effect === null ||
+      (attack.effect === undefined ||
         (areConditionsMet(state, attack.effect.useConditions, source) &&
           !wouldLeaveFieldEmpty(state, attack.effect)))
   );
@@ -369,7 +367,7 @@ export function useAttack(context: EffectContext, attackName: string): void {
   state.attacks.set(state.turn, attackName);
   state.record(`ワザ ${attackName}`);
   const { effect } = usable.attack;
-  if (effect !== null) {
+  if (effect !== undefined) {
     runEffect(
       context,
       effect,

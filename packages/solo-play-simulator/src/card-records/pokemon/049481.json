@@ -8,16 +8,13 @@
         "amount": 50,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ヒートブラスト"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049481", "048800"],
   "category": "ポケモン",
   "evolvesFrom": "ヒトカゲ",
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 100,
   "isTerastal": false,

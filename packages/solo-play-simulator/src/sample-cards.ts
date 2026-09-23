@@ -8,6 +8,7 @@ import {
   CardCategory,
   type CardRecord,
   EvolutionStage,
+  type PokemonRecord,
 } from "./card-record-schema.ts";
 import { buildCardFromRecord, type Card } from "./cards.ts";
 import type { CardChoiceRequest, EffectChoices } from "./effect-choices.ts";
@@ -24,18 +25,24 @@ const commonEntries: Pick<
   verifiedOn: "2026-09-23",
 };
 
+type SamplePokemonAttributes = Pick<
+  PokemonRecord,
+  "hasRuleBox" | "hp" | "retreatCost"
+> &
+  (
+    | { stage: typeof EvolutionStage.Basic }
+    | { evolvesFrom: string; stage: typeof EvolutionStage.Stage1 }
+    | {
+        basicPokemonOfEvolutionLine: string;
+        evolvesFrom: string;
+        stage: typeof EvolutionStage.Stage2;
+      }
+  );
+
 function definePokemonRecord(
   cardId: string,
   name: string,
-  attributes: Pick<
-    Extract<CardRecord, { category: typeof CardCategory.Pokemon }>,
-    | "basicPokemonOfEvolutionLine"
-    | "evolvesFrom"
-    | "hasRuleBox"
-    | "hp"
-    | "retreatCost"
-    | "stage"
-  >
+  attributes: SamplePokemonAttributes
 ): CardRecord {
   return {
     ...commonEntries,
@@ -45,13 +52,11 @@ function definePokemonRecord(
       {
         cost: ["psychic"],
         damage: { amount: 10, kind: "fixed" },
-        effect: null,
         name: "ワザ",
       },
     ],
     cardIds: [cardId],
     category: CardCategory.Pokemon,
-    exRule: null,
     isTerastal: false,
     name,
     pokemonType: "psychic",
@@ -79,15 +84,12 @@ function defineTrainerRecord(
 
 const SAMPLE_RECORDS: readonly CardRecord[] = [
   definePokemonRecord("900001", "たね", {
-    basicPokemonOfEvolutionLine: null,
-    evolvesFrom: null,
     hasRuleBox: false,
     hp: 60,
     retreatCost: 1,
     stage: EvolutionStage.Basic,
   }),
   definePokemonRecord("900002", "1進化", {
-    basicPokemonOfEvolutionLine: null,
     evolvesFrom: "たね",
     hasRuleBox: false,
     hp: 90,

@@ -8,7 +8,6 @@
         "amount": 10,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ちょっとうらむ"
     },
     {
@@ -17,16 +16,12 @@
         "amount": 40,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "かみつく"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049262"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 70,
   "isTerastal": false,

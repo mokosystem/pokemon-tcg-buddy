@@ -8,21 +8,17 @@
         "amount": 20,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "うみのかげ"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["047663"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [
     {
       "description": "ワザ「うみのかげ」の、次の相手の番に相手が手札からグッズを使えなくする効果",
       "reason": "requiresOpponent"
     }
   ],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 80,
   "isTerastal": false,

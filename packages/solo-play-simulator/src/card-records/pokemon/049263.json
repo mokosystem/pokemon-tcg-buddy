@@ -30,16 +30,13 @@
         "amount": 70,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "リューズヘッド"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049263"],
   "category": "ポケモン",
   "evolvesFrom": "ドラメシヤ",
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 90,
   "isTerastal": false,

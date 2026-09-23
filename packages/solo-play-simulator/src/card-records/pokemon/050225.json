@@ -2,8 +2,7 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "ばけがくれ",
-      "translation": null
+      "name": "ばけがくれ"
     }
   ],
   "attacks": [
@@ -12,11 +11,9 @@
       "damage": {
         "kind": "none"
       },
-      "effect": null,
       "name": "まっちゃスピン"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["050225"],
   "category": "ポケモン",
   "evolvesFrom": "チャデス",
@@ -30,7 +27,6 @@
       "reason": "requiresOpponent"
     }
   ],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 60,
   "isTerastal": false,

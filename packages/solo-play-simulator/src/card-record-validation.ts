@@ -12,7 +12,6 @@ import {
   type CardEffect,
   type CardRecord,
   CardRecordSchema,
-  EvolutionStage,
 } from "./card-record-schema.ts";
 
 /** 記録の JSON ファイル 1 つ。path は src/card-records/ からの相対パス(例: goods/048675.json)。 */
@@ -81,9 +80,9 @@ function countTranslatedEffects(record: CardRecord): number {
   switch (record.category) {
     case CardCategory.Pokemon:
       return (
-        record.abilities.filter((ability) => ability.translation !== null)
+        record.abilities.filter((ability) => ability.translation !== undefined)
           .length +
-        record.attacks.filter((attack) => attack.effect !== null).length
+        record.attacks.filter((attack) => attack.effect !== undefined).length
       );
     case CardCategory.BasicEnergy:
       return 0;
@@ -134,17 +133,7 @@ function findPokemonAttributeProblems(record: CardRecord): string[] {
     return [];
   }
   const problems: string[] = [];
-  const isBasic = record.stage === EvolutionStage.Basic;
-  if (isBasic !== (record.evolvesFrom === null)) {
-    problems.push("進化前の名前はたねポケモンだけ null にする");
-  }
-  if (
-    (record.stage === EvolutionStage.Stage2) !==
-    (record.basicPokemonOfEvolutionLine !== null)
-  ) {
-    problems.push("進化の系統のたねポケモンの名前は 2進化ポケモンだけに書く");
-  }
-  if (record.exRule !== null && !record.hasRuleBox) {
+  if (record.exRule !== undefined && !record.hasRuleBox) {
     problems.push("ポケモンex・メガシンカex はルールを持つポケモンにする");
   }
   for (const name of findDuplicates(

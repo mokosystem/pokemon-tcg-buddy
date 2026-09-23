@@ -24,16 +24,12 @@
         "amount": 20,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ぶつかる"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["047086", "049290"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 70,
   "isTerastal": false,

@@ -28,16 +28,12 @@
         "amount": 20,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ひだね"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["048351"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 80,
   "isTerastal": false,

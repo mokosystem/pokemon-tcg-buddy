@@ -28,16 +28,12 @@
         "amount": 30,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "つぶやく"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049024"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 60,
   "isTerastal": false,

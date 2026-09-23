@@ -2,8 +2,7 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "ばけがくれ",
-      "translation": null
+      "name": "ばけがくれ"
     }
   ],
   "attacks": [
@@ -12,14 +11,11 @@
       "damage": {
         "kind": "none"
       },
-      "effect": null,
       "name": "ひっそりのせる"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["050224"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [
     {
       "description": "特性「ばけがくれ」(相手のワザや特性の効果を受けない)",
@@ -30,7 +26,6 @@
       "reason": "requiresOpponent"
     }
   ],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 30,
   "isTerastal": false,

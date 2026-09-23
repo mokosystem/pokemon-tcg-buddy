@@ -171,7 +171,7 @@ export function resolveEnergyProvision(
   energy: Card
 ): EnergyProvision {
   const base = energy.provision;
-  if (base === null) {
+  if (base === undefined) {
     throw new Error(`${energy.name} はエネルギーではない`);
   }
   const override = collectContinuousEffects(state).find(

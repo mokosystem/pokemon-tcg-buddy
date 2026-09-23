@@ -2,8 +2,7 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "ろうれんのわざ",
-      "translation": null
+      "name": "ろうれんのわざ"
     }
   ],
   "attacks": [
@@ -13,14 +12,11 @@
         "amount": 240,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "ブラッドムーン"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049341", "045689"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [
     {
       "description": "特性「ろうれんのわざ」(相手がとったサイドの枚数ぶん、ワザ「ブラッドムーン」に必要な無色エネルギーが減る)",

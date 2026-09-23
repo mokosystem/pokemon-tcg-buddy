@@ -403,13 +403,15 @@ JSON Schema は `toJsonSchema` の既定の draft-07(編集器の対応が広い
 
 JSON の欄とスキーマの識別子は、何をして値を得るかが読める命名の方針(Issue 27 の決定事項 2026-09-21)で付けた。値の列挙(カードの種類、たね・1進化・2進化)は順 2 の `CardCategory`、`EvolutionStage` の日本語の値をそのまま使い、タイプは詳細ページのアイコンの class 名(`icon-psychic` など。`icon-none` だけ `colorless`)に合わせた。詳細ページの HTML から機械的に写せるようにするため。
 
+値の無い欄は null を書かず、欄ごと持たない。進化前の名前 `evolvesFrom` は 1進化と 2進化だけ、進化の系統のたねポケモンの名前 `basicPokemonOfEvolutionLine` は 2進化だけが持つ形を、進化の段階 `stage` で分けてスキーマに書いた。たねポケモンに進化前の名前が無いことをスキーマの形で表し、段階と欄の食い違いを記録をまたぐ検査ではなくスキーマの検査で見つけるため。
+
 | 設計の名前 | 識別子 |
 | --- | --- |
 | 名前、カード ID、確認日 | `name`、`cardIds`、`verifiedOn` |
 | 翻訳の状態(翻訳あり、書けない、計算に関係ない、まだ書いていない) | `translationStatus`(`translated`、`notTranslatable`、`irrelevantToCalculation`、`notYetTranslated`) |
-| 属性 | `category`、`stage`、`evolvesFrom`、`basicPokemonOfEvolutionLine`、`hp`、`pokemonType`、`hasRuleBox`、`exRule`(`pokemonEx`、`megaEvolutionEx`)、`isTerastal`、`retreatCost`、エネルギーは `provision`(`type` と `units`、すべてのタイプとして働くものは `anyType`) |
-| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`、`discardPokemonWithAbilityName` |
-| 特性の一覧 | `abilities`(`name`、`translation`。翻訳しない特性は `translation` が null) |
+| 属性 | `category`、`stage`、`evolvesFrom`、`basicPokemonOfEvolutionLine`、`hp`、`pokemonType`、`hasRuleBox`、`exRule`(`pokemonEx`、`megaEvolutionEx`。どちらでもないポケモンは持たない)、`isTerastal`、`retreatCost`、エネルギーは `provision`(`type` と `units`、すべてのタイプとして働くものは `anyType`) |
+| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`、`discardPokemonWithAbilityName` |
+| 特性の一覧 | `abilities`(`name`、`translation`。翻訳しない特性は `translation` を持たない) |
 | トレーナーズと特殊エネルギーの効果 | `cardEffects` |
 | きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional` |
 | 効果 | `useConditions`(使える条件)と `steps`(操作の列)。条件で分かれる歩は `branchOnCondition`(1 段だけ) |

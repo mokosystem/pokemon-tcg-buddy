@@ -2,8 +2,7 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "カースドボム",
-      "translation": null
+      "name": "カースドボム"
     }
   ],
   "attacks": [
@@ -13,11 +12,9 @@
         "amount": 50,
         "kind": "fixed"
       },
-      "effect": null,
       "name": "おにび"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049025"],
   "category": "ポケモン",
   "evolvesFrom": "ヨマワル",
@@ -27,7 +24,6 @@
       "reason": "requiresOpponent"
     }
   ],
-  "exRule": null,
   "hasRuleBox": false,
   "hp": 90,
   "isTerastal": false,

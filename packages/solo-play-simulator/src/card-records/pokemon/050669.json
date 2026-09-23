@@ -36,10 +36,8 @@
       "name": "テレポートブレイク"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["050669"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [],
   "exRule": "pokemonEx",
   "hasRuleBox": true,

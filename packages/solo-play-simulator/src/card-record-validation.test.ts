@@ -51,6 +51,27 @@ describe("スキーマの検査", () => {
       true
     );
   });
+
+  test("進化前の名前は 1進化と 2進化だけが持ち、進化の系統のたねポケモンの名前は 2進化だけが持つ", () => {
+    const { evolvesFrom: _, ...withoutEvolvesFrom } = DRAKLOAK as {
+      evolvesFrom?: string;
+    };
+    const cases = [
+      { ...DHELMISE, evolvesFrom: "ダダリン" },
+      withoutEvolvesFrom,
+      { ...DRAKLOAK, basicPokemonOfEvolutionLine: "ドラメシヤ" },
+    ];
+    for (const content of cases) {
+      expect(
+        "problems" in
+          parseCardRecordFile({ content, path: "pokemon/000000.json" })
+      ).toBe(true);
+    }
+    expect(
+      "record" in
+        parseCardRecordFile({ content: DRAKLOAK, path: "pokemon/049263.json" })
+    ).toBe(true);
+  });
 });
 
 describe("記録をまたぐ検査", () => {
@@ -94,22 +115,15 @@ describe("記録をまたぐ検査", () => {
     ]);
   });
 
-  test("進化前の名前、進化の系統、ワザの名前の重なりを検査する", () => {
+  test("ワザの名前の重なりを検査する", () => {
     const [attack] = DRAKLOAK.category === "ポケモン" ? DRAKLOAK.attacks : [];
     const broken =
       DRAKLOAK.category === "ポケモン" && attack !== undefined
-        ? {
-            ...DRAKLOAK,
-            attacks: [attack, attack],
-            basicPokemonOfEvolutionLine: "ドラメシヤ",
-            evolvesFrom: null,
-          }
+        ? { ...DRAKLOAK, attacks: [attack, attack] }
         : DRAKLOAK;
     expect(
       findCardRecordProblems([{ path: "pokemon/049263.json", record: broken }])
     ).toEqual([
-      "pokemon/049263.json: 進化前の名前はたねポケモンだけ null にする",
-      "pokemon/049263.json: 進化の系統のたねポケモンの名前は 2進化ポケモンだけに書く",
       "pokemon/049263.json: ワザの名前 リューズヘッド が重なっている",
     ]);
   });

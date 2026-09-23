@@ -50,10 +50,8 @@
       "name": "しっぽをまく"
     }
   ],
-  "basicPokemonOfEvolutionLine": null,
   "cardIds": ["049694"],
   "category": "ポケモン",
-  "evolvesFrom": null,
   "excludedEffects": [],
   "exRule": "pokemonEx",
   "hasRuleBox": true,
