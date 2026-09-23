@@ -131,7 +131,7 @@ bun run lint
 bun run analyze
 ```
 
-デッキ全体の記録がそろったら、そのデッキを記録だけで組み立てて回すテスト(`src/recorded-decks.test.ts`)にデッキを足し、使えるカードを片端から使う手順で最後まで回ることを確かめる。基本ルールに反する翻訳や、場が空になる効果の見落としは、ここで見つかる。60 枚の内容は `src/issue22-decks.ts` と `src/decks-without-rule-files.ts` と同じ形で置く。リポジトリに置いてよいのは、持ち主の許可があるデッキと公開されたデッキ(公式の記事に載った大会の優勝デッキなど)だけで、ほかのユーザーのデッキは作業領域で回して捨てる([docs/setup-rate-design.md](../../../docs/setup-rate-design.md)「公式サイトの内容を転載しない方針との整理」)。
+デッキ全体の記録がそろったら、そのデッキを記録だけで組み立てて回すテスト(`src/recorded-decks.test.ts`)にデッキを足し、使えるカードを片端から使う手順で最後まで回ることを確かめる。基本ルールに反する翻訳や、場が空になる効果の見落としは、ここで見つかる。60 枚の内容は `src/issue22-decks.ts` と `src/decks-without-rule-files.ts` と同じ形で置く。リポジトリに置いてよいのは持ち主の許可があるデッキだけで、環境デッキなど大会で結果を残したデッキの 60 枚の内容は置かない([docs/pokemon-tcg/metagame-lookup.md](../../../docs/pokemon-tcg/metagame-lookup.md)「デッキ内容を保存しない」)。置けないデッキは、同じ手順を作業領域で回して確かめ、結果だけを PR に書く。Issue 22 のドラパルトex は、公式の記事で公開された優勝デッキを検証用に置くと決めた例外([docs/setup-rate-design.md](../../../docs/setup-rate-design.md)「公式サイトの内容を転載しない方針との整理」)。
 
 ### 10. 記録に残す
 
