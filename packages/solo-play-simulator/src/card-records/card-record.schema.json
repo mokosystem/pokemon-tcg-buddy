@@ -824,6 +824,9 @@
         "name": {
           "type": "string",
           "minLength": 1
+        },
+        "usesAttackOfBenchedPokemon": {
+          "$ref": "#/$defs/CardFilter"
         }
       },
       "required": ["cost", "damage", "name"],
@@ -1377,6 +1380,9 @@
         {
           "type": "object",
           "properties": {
+            "benchFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
             "operation": {
               "const": "switchActiveWithBench"
             }
@@ -1520,6 +1526,13 @@
             "type": "string"
           }
         },
+        "excludesNames": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "excludesPokemonWithRuleBox": {
           "const": true
         },
@@ -1585,6 +1598,13 @@
                     "ポケモンのどうぐ"
                   ],
                   "type": "string"
+                }
+              },
+              "excludesNames": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
                 }
               },
               "excludesPokemonWithRuleBox": {
@@ -2530,6 +2550,9 @@
         {
           "type": "object",
           "properties": {
+            "benchFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
             "operation": {
               "const": "switchActiveWithBench"
             }
@@ -2690,6 +2713,13 @@
             "type": "string"
           }
         },
+        "excludesNames": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "excludesPokemonWithRuleBox": {
           "const": true
         },
@@ -2755,6 +2785,13 @@
                     "ポケモンのどうぐ"
                   ],
                   "type": "string"
+                }
+              },
+              "excludesNames": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
                 }
               },
               "excludesPokemonWithRuleBox": {

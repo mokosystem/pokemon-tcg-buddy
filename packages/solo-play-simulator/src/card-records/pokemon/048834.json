@@ -1,0 +1,35 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "ころがりタックル"
+    },
+    {
+      "cost": ["fire", "fire", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "ほのお"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "Nのダルマッカ",
+  "cardIds": ["048834"],
+  "stage": "たね",
+  "hp": 80,
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "translationStatus": "irrelevantToCalculation"
+}

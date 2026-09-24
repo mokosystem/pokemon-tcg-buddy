@@ -71,6 +71,15 @@ function minCountForDeckSearch(filter: CardFilter, available: number): number {
   return Object.keys(filter).length === 0 ? Math.min(1, available) : 0;
 }
 
+function listBenchMatchingOrAll(
+  state: GameState,
+  filter: CardFilter | undefined
+): PokemonInPlay[] {
+  return filter === undefined
+    ? [...state.bench]
+    : state.bench.filter((pokemon) => matchesCardFilter(pokemon.card, filter));
+}
+
 function listEvolvableBasics(state: GameState): PokemonInPlay[] {
   return state
     .listPokemonInPlay()
@@ -191,8 +200,9 @@ const firstStepTargetChecks: {
   searchDeckOntoBench: (_, { state }) =>
     state.deck.length > 0 && countEmptyBenchSlots(state) > 0,
   shuffleHandIntoDeck: alwaysHasTarget,
-  switchActiveWithBench: (_, { state }) =>
-    state.active !== null && state.bench.length > 0,
+  switchActiveWithBench: (step, { state }) =>
+    state.active !== null &&
+    listBenchMatchingOrAll(state, step.benchFilter).length > 0,
 };
 
 function hasTargetForStep<Name extends EffectStep["operation"]>(
@@ -815,11 +825,13 @@ const operationRunners: {
     run.context.state.shuffleDeck();
   },
   shuffleHandIntoDeck: (_, { context }) => context.state.returnHandToDeck(),
-  switchActiveWithBench: (_, { context, label }) => {
+  switchActiveWithBench: (step, { context, label }) => {
     const { state } = context;
     const benched = chooseOnePokemon(
       context,
-      state.active === null ? [] : state.bench,
+      state.active === null
+        ? []
+        : listBenchMatchingOrAll(state, step.benchFilter),
       `${label}: バトル場と入れ替えるベンチポケモン`
     );
     if (benched !== null) {

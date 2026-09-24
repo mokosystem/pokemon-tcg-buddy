@@ -87,6 +87,8 @@ export type ExRule = InferOutput<typeof ExRuleSchema>;
 
 const cardFilterEntries = {
   categories: optional(array(CardCategorySchema)),
+  /** この名前のカードを除く(モモワロウex の「しはいのくさり」: 「モモワロウex」をのぞく)。 */
+  excludesNames: optional(array(nonEmptyText)),
   excludesPokemonWithRuleBox: optional(literal(true)),
   exRules: optional(array(ExRuleSchema)),
   /** 「テラスタル」のポケモンだけ(ガラスのラッパ、ゼロの大空洞)。 */
@@ -327,7 +329,9 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("evolveBasicToStage2FromHand"),
   }),
+  /** バトルポケモンをベンチポケモンと入れ替える。benchFilter はバトル場に出すベンチポケモンの条件。 */
   strictObject({
+    benchFilter: optional(CardFilterSchema),
     operation: literal("switchActiveWithBench"),
   }),
   strictObject({
@@ -498,6 +502,11 @@ export const AttackSchema = strictObject({
   /** ダメージ以外の効果の翻訳。ダメージだけのワザ、翻訳しない効果のワザは持たない。 */
   effect: optional(EffectSchema),
   name: nonEmptyText,
+  /**
+   * 自分のベンチの条件に合うポケモンが持つワザを 1 つ選び、このワザとして使う(Nのゾロアークex の
+   * 「ナイトジョーカー」)。選んだワザは、このワザに必要なエネルギーで使える(continuous-effects.ts の listUsableAttacks)。
+   */
+  usesAttackOfBenchedPokemon: optional(CardFilterSchema),
 });
 export type Attack = InferOutput<typeof AttackSchema>;
 

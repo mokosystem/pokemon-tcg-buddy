@@ -1,0 +1,27 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "ひっかく"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "Nのゾロア",
+  "cardIds": ["049185"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

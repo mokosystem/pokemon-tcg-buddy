@@ -1,0 +1,107 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "とりひき",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "maxCount": 1,
+              "minCount": 1,
+              "operation": "discardFromHand"
+            },
+            {
+              "count": {
+                "kind": "fixed",
+                "value": 2
+              },
+              "operation": "drawCards"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "deckHasCards",
+              "minCount": 1
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["dark", "dark"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "ナイトジョーカー",
+      "usesAttackOfBenchedPokemon": {
+        "nameIncludes": "Nの"
+      }
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "使えない",
+      "question": "山札が 0 枚のときに特性「とりひき」を使えるか(手札をトラッシュするだけになるか)",
+      "reflectedIn": "特性の使える条件に deckHasCards(1 枚以上)を書いた",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "山札が無いとき「とりひき」で手札を 1 枚トラッシュできるか、という質問に、特性を使えないと回答。山札が 1 枚なら使えて 1 枚引くとも回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=N%E3%81%AE%E3%82%BE%E3%83%AD%E3%82%A2%E3%83%BC%E3%82%AFex&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使えない",
+      "question": "手札が 0 枚のときに特性「とりひき」を使えるか",
+      "reflectedIn": "最初の操作 discardFromHand に対象が無ければ使えない(骨組みの決まり)ことで満たす",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "手札が 1 枚も無いとき「とりひき」を使えるか、という質問に、使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=N%E3%81%AE%E3%82%BE%E3%83%AD%E3%82%A2%E3%83%BC%E3%82%AFex&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "選べない。ベンチの「Nのポケモン」が自分で持っているワザだけを選べる",
+      "question": "ワザ「ナイトジョーカー」で、ベンチのポケモンが効果で使えるようになったワザ(進化前のワザ、ポケモンのどうぐのワザ)を選べるか",
+      "reflectedIn": "使えるワザの一覧(continuous-effects.ts の listBenchedAttacksUsedAs)に、ベンチのポケモンの記録のワザだけを足す",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "特性「きおくにもぐる」で使える進化前のワザや、ポケモンのどうぐ「ワザマシン エヴォリューション」のワザを「ナイトジョーカー」で選べるか、という質問に、効果で使えるようになったワザはそのポケモンが持っているワザとして扱わないため選べないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%8A%E3%82%A4%E3%83%88%E3%82%B8%E3%83%A7%E3%83%BC%E3%82%AB%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "名前に「Nの」とつくポケモンを「Nのポケモン」として扱う",
+      "question": "「Nのポケモン」はどのポケモンか",
+      "reflectedIn": "ワザ「ナイトジョーカー」の usesAttackOfBenchedPokemon を nameIncludes「Nの」で書いた",
+      "source": {
+        "basis": "「Nのポケモン」を定める公式 Q&A は見つからなかった(検索語「Nのポケモン」は 0 件)。同じ書き方の「ロケット団のポケモン」について、公式 Q&A(ロケット団エネルギーとロケット団のミミッキュGX、ロケット団のアテナ、ロケット団のワナイダー。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&regulation_faq_main_item1=all )が、名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱うと回答している",
+        "checkedOn": "2026-09-24",
+        "kind": "noMatchingQa",
+        "searchTerms": ["ナイトジョーカー", "Nのポケモン"]
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "Nのゾロアークex",
+  "cardIds": ["048634", "047069", "047237"],
+  "stage": "1進化",
+  "evolvesFrom": "Nのゾロア",
+  "hp": 280,
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "exRule": "pokemonEx",
+  "translationStatus": "translated"
+}

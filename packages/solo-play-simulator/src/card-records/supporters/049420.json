@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["049420"],
+  "category": "サポート",
+  "excludedEffects": [
+    {
+      "description": "この番、自分のポケモンが使うワザの、相手のバトル場のポケモンex へのダメージを増やす。増えるかは相手のポケモンで決まる",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "からておうの稽古",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-24"
+}

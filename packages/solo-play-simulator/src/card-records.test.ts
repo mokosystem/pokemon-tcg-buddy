@@ -124,6 +124,15 @@ const SOLROCK = buildRecordedCard("047760");
 const CIPHERMANIAC = buildRecordedCard("045284");
 const CARMINE = buildRecordedCard("049431");
 const AZ = buildRecordedCard("050159");
+const N_ZORUA = buildRecordedCard("049185");
+const N_ZOROARK = buildRecordedCard("048634");
+const N_ZEKROM = buildRecordedCard("048651");
+const N_DARUMAKA = buildRecordedCard("048834");
+const YVELTAL = buildRecordedCard("049197");
+const MUNKIDORI = buildRecordedCard("049207");
+const TATSUGIRI = buildRecordedCard("048657");
+const N_POINT_UP = buildRecordedCard("049351");
+const N_CASTLE = buildRecordedCard("048703");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -1885,6 +1894,184 @@ describeTranslation("AZの安らぎ", () => {
 
     const alone = buildState({ active: RALTS, hand: [AZ] });
     expect(canPlayTrainerFromHand(buildContext(alone), AZ)).toBe(false);
+  });
+});
+
+describeTranslation("Nのゾロアークex", () => {
+  test("とりひきは、手札を 1 枚トラッシュして 2 枚引く。ポケモンごとに番に 1 回", () => {
+    const state = buildState({
+      active: N_ZOROARK,
+      bench: [N_ZOROARK],
+      deck: repeat(PSYCHIC_ENERGY, 5),
+      hand: [FIRE_ENERGY],
+    });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "とりひき");
+    expect(namesOf(state.discard)).toEqual(["基本炎エネルギー"]);
+    expect(state.hand).toHaveLength(2);
+    expect(canUseAbility(context, activeOf(state), "とりひき")).toBe(false);
+    expect(canUseAbility(context, benchAt(state, 0), "とりひき")).toBe(true);
+  });
+
+  test("山札が 0 枚のときと、手札が 0 枚のときは、とりひきを使えない(公式 Q&A)", () => {
+    const emptyDeck = buildState({ active: N_ZOROARK, hand: [FIRE_ENERGY] });
+    expect(
+      canUseAbility(buildContext(emptyDeck), activeOf(emptyDeck), "とりひき")
+    ).toBe(false);
+    const emptyHand = buildState({
+      active: N_ZOROARK,
+      deck: repeat(PSYCHIC_ENERGY, 5),
+    });
+    expect(
+      canUseAbility(buildContext(emptyHand), activeOf(emptyHand), "とりひき")
+    ).toBe(false);
+  });
+
+  test("ナイトジョーカーは、ベンチの「Nのポケモン」のワザを、ナイトジョーカーに必要なエネルギーで使える", () => {
+    const state = buildState({
+      active: N_ZOROARK,
+      bench: [N_ZEKROM, YVELTAL],
+    });
+    activeOf(state).energies.push(DARK_ENERGY, DARK_ENERGY);
+    const usable = listUsableAttacksOfActive(buildContext(state));
+    expect(usable.map(({ attack }) => attack.name)).toEqual([
+      "ひきさく",
+      "ランページサンダー",
+    ]);
+    const thunder = usable.find(
+      ({ attack }) => attack.name === "ランページサンダー"
+    );
+    expect(thunder?.attack.cost).toEqual(["dark", "dark"]);
+    expect(
+      thunder === undefined
+        ? null
+        : calculateAttackDamage(state, activeOf(state), thunder.attack)
+    ).toBe(250);
+  });
+
+  test("ベンチに「Nのポケモン」(Nのゾロアークex を除く)がいなければ、ナイトジョーカーで使えるワザは無い", () => {
+    const state = buildState({ active: N_ZOROARK, bench: [YVELTAL] });
+    activeOf(state).energies.push(DARK_ENERGY, DARK_ENERGY);
+    expect(listUsableAttacksOfActive(buildContext(state))).toEqual([]);
+    // ベンチの Nのゾロアークex のナイトジョーカーは選ぶワザに入れない
+    state.bench.push(new PokemonInPlay(N_ZOROARK, 0));
+    expect(listUsableAttacksOfActive(buildContext(state))).toEqual([]);
+  });
+});
+
+describeTranslation("モモワロウex", () => {
+  test("しはいのくさりは、ベンチの悪ポケモン(モモワロウex を除く)をバトルポケモンと入れ替える", () => {
+    const state = buildState({
+      active: N_DARUMAKA,
+      bench: [MUNKIDORI, N_ZEKROM, MUNKIDORI, YVELTAL],
+    });
+    useAbility(buildContext(state), benchAt(state, 0), "しはいのくさり");
+    expect(activeOf(state).name).toBe("イベルタル");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toContain(
+      "Nのダルマッカ"
+    );
+  });
+
+  test("ベンチにモモワロウex 以外の悪ポケモンがいなければ使えず、別のしはいのくさりを使った番も使えない", () => {
+    const noTarget = buildState({
+      active: MUNKIDORI,
+      bench: [MUNKIDORI, N_ZEKROM],
+    });
+    expect(
+      canUseAbility(
+        buildContext(noTarget),
+        benchAt(noTarget, 0),
+        "しはいのくさり"
+      )
+    ).toBe(false);
+
+    const state = buildState({
+      active: YVELTAL,
+      bench: [MUNKIDORI, MUNKIDORI, N_ZORUA],
+    });
+    const context = buildContext(state);
+    useAbility(context, benchAt(state, 0), "しはいのくさり");
+    expect(canUseAbility(context, benchAt(state, 1), "しはいのくさり")).toBe(
+      false
+    );
+  });
+});
+
+describeTranslation("シャリタツ", () => {
+  test("きゃくよせは、バトル場にいれば山札の上から 6 枚を見てサポートを 1 枚手札に加え、残りを切る", () => {
+    const state = buildState({
+      active: TATSUGIRI,
+      deck: [
+        PSYCHIC_ENERGY,
+        LILLIE,
+        FIRE_ENERGY,
+        BOSS,
+        PSYCHIC_ENERGY,
+        PSYCHIC_ENERGY,
+        HIKARI,
+      ],
+    });
+    useAbility(buildContext(state), activeOf(state), "きゃくよせ");
+    expect(namesOf(state.hand)).toEqual(["リーリエの決心"]);
+    expect(state.deck).toHaveLength(6);
+  });
+
+  test("ベンチにいるときは使えず、山札が 6 枚に満たなくても使える(公式 Q&A)", () => {
+    const benched = buildState({
+      active: YVELTAL,
+      bench: [TATSUGIRI],
+      deck: [LILLIE],
+    });
+    expect(
+      canUseAbility(buildContext(benched), benchAt(benched, 0), "きゃくよせ")
+    ).toBe(false);
+    const small = buildState({
+      active: TATSUGIRI,
+      deck: [FIRE_ENERGY, LILLIE],
+    });
+    useAbility(buildContext(small), activeOf(small), "きゃくよせ");
+    expect(namesOf(small.hand)).toEqual(["リーリエの決心"]);
+  });
+});
+
+describeTranslation("Nのポイントアップ", () => {
+  test("トラッシュの基本エネルギーを 1 枚、ベンチの「Nのポケモン」につける", () => {
+    const state = buildState({
+      active: N_ZOROARK,
+      bench: [YVELTAL, N_ZEKROM],
+      discard: [ROCK_FIGHTING_ENERGY, LIGHTNING_ENERGY],
+      hand: [N_POINT_UP],
+    });
+    playTrainerFromHand(buildContext(state), N_POINT_UP);
+    expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本雷エネルギー"]);
+    expect(benchAt(state, 0).energies).toEqual([]);
+    expect(activeOf(state).energies).toEqual([]);
+  });
+
+  test("ベンチに「Nのポケモン」がいないときは使えない", () => {
+    const state = buildState({
+      active: N_ZOROARK,
+      bench: [YVELTAL],
+      discard: [LIGHTNING_ENERGY],
+      hand: [N_POINT_UP],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), N_POINT_UP)).toBe(false);
+  });
+});
+
+describeTranslation("Nの城", () => {
+  test("自分の場の「Nのポケモン」のにげるエネルギーを 0 にする", () => {
+    const state = buildState({
+      active: N_ZEKROM,
+      bench: [YVELTAL, N_DARUMAKA],
+    });
+    state.stadium = N_CASTLE;
+    expect(calculateRetreatCost(state, activeOf(state))).toBe(0);
+    expect(calculateRetreatCost(state, benchAt(state, 1))).toBe(0);
+    const withoutCastle = buildState({ active: N_ZEKROM });
+    expect(calculateRetreatCost(withoutCastle, activeOf(withoutCastle))).toBe(
+      2
+    );
   });
 });
 

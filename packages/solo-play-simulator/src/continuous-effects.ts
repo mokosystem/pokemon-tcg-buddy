@@ -290,6 +290,39 @@ export interface UsableAttack {
 }
 
 /**
+ * ベンチのポケモンが持つワザを「このワザとして使う」ワザ(Nのゾロアークex の「ナイトジョーカー」)で使えるワザ。
+ * 選んだワザは、元のワザに必要なエネルギーで使う(公式 Q&A にこの点を問う質問は無く、カードテキスト「このワザとして
+ * 使う」による)。ベンチのポケモンが自分で持っているワザだけを選べる(公式 Q&A「ナイトジョーカー」、2026-09-24 確認)。
+ * 元のワザ自体はダメージも効果も持たないため、一覧に入れない。ベンチの別の Nのゾロアークex の「ナイトジョーカー」も
+ * 入れない(選んでも、同じベンチのほかのポケモンのワザを選ぶことになり、一覧に既にある)。
+ */
+function listBenchedAttacksUsedAs(
+  state: GameState,
+  pokemon: PokemonInPlay,
+  usedAs: Attack
+): UsableAttack[] {
+  const filter = usedAs.usesAttackOfBenchedPokemon;
+  if (filter === undefined) {
+    return [];
+  }
+  return state.bench
+    .filter(
+      (benched) =>
+        benched !== pokemon && matchesCardFilter(benched.card, filter)
+    )
+    .flatMap((benched) =>
+      benched.card.record.category === CardCategory.Pokemon
+        ? benched.card.record.attacks
+            .filter((attack) => attack.usesAttackOfBenchedPokemon === undefined)
+            .map((attack) => ({
+              attack: { ...attack, cost: usedAs.cost },
+              owner: benched,
+            }))
+        : []
+    );
+}
+
+/**
  * このポケモンが使えるワザ。自身のワザに、ベンチのポケモンのワザを使えるようにする効果の分を足す。
  * ベンチのポケモンについては、そのポケモン自身が持つワザだけを足し、効果で使えるようになったワザは
  * 足さない(公式 Q&A: 効果で使えるようになったワザは、そのポケモンが持っているワザとして扱わない)。
@@ -300,10 +333,11 @@ export function listUsableAttacks(
 ): UsableAttack[] {
   const own =
     pokemon.card.record.category === CardCategory.Pokemon
-      ? pokemon.card.record.attacks.map((attack) => ({
-          attack,
-          owner: pokemon,
-        }))
+      ? pokemon.card.record.attacks.flatMap((attack) =>
+          attack.usesAttackOfBenchedPokemon === undefined
+            ? [{ attack, owner: pokemon }]
+            : listBenchedAttacksUsedAs(state, pokemon, attack)
+        )
       : [];
   const allowsBenchAttacks = listEffectsApplyingTo(state, pokemon).some(
     (collected) =>

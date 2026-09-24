@@ -144,6 +144,7 @@ export function matchesCardFilter(card: Card, filter: CardFilter): boolean {
     (filter.maxHp === undefined ||
       (isPokemon(card) && card.hp <= filter.maxHp)) &&
     !(filter.excludesPokemonWithRuleBox === true && card.hasRuleBox) &&
+    !(filter.excludesNames?.includes(card.name) ?? false) &&
     (filter.anyOf === undefined ||
       filter.anyOf.some((inner) => matchesCardFilter(card, inner)))
   );

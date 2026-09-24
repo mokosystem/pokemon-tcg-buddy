@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "electric"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "パワーレイジ"
+    },
+    {
+      "cost": ["fire", "fire", "electric", "colorless"],
+      "damage": {
+        "amount": 170,
+        "kind": "fixed"
+      },
+      "name": "イノセントフレイム"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「パワーレイジ」のダメージは、このポケモンにのっているダメカンの数 × 20 で決まる。ダメカンを扱わないため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "Nのレシラム",
+  "cardIds": ["049261"],
+  "stage": "たね",
+  "hp": 130,
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "translationStatus": "irrelevantToCalculation"
+}

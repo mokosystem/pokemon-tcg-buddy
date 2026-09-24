@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"]
+            },
+            "maxPokemonCount": 1,
+            "operation": "attachEnergyFromDiscardToEachChosenPokemon",
+            "targetFilter": {
+              "nameIncludes": "Nの",
+              "positions": ["bench"]
+            }
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["049351"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "Nのポイントアップ",
+  "rulings": [
+    {
+      "interpretation": "名前に「Nの」とつくポケモンを「Nのポケモン」として扱う",
+      "question": "「Nのポケモン」はどのポケモンか",
+      "reflectedIn": "つける先の条件を nameIncludes「Nの」で書いた",
+      "source": {
+        "basis": "「Nのポケモン」を定める公式 Q&A は見つからなかった(検索語「Nのポケモン」は 0 件)。同じ書き方の「ロケット団のポケモン」について、公式 Q&A(ロケット団エネルギーとロケット団のミミッキュGX、ロケット団のアテナ、ロケット団のワナイダー。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&regulation_faq_main_item1=all )が、名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱うと回答している",
+        "checkedOn": "2026-09-24",
+        "kind": "noMatchingQa",
+        "searchTerms": ["Nのポイントアップ", "Nのポケモン"]
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}
