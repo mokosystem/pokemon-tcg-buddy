@@ -1,0 +1,52 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "スカイキャリー",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "switchActiveWithBench"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["water", "electric", "electric"],
+      "damage": {
+        "amount": 330,
+        "kind": "fixed"
+      },
+      "name": "リューノグライド"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「リューノグライド」は、相手のバトルポケモンに 330 ダメージを与えたあと、自身のエネルギーを 2 個トラッシュする。330 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "メガカイリューex",
+  "cardIds": ["048648"],
+  "stage": "2進化",
+  "evolvesFrom": "ハクリュー",
+  "basicPokemonOfEvolutionLine": "ミニリュウ",
+  "hp": 370,
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "exRule": "megaEvolutionEx",
+  "translationStatus": "translated"
+}

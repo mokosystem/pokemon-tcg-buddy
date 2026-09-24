@@ -1,0 +1,58 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "しんかのみちびき",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "searchDeckIntoHand",
+              "picks": [
+                {
+                  "filter": {
+                    "categories": ["ポケモン"],
+                    "stages": ["1進化", "2進化"]
+                  },
+                  "maxCount": 1
+                }
+              ]
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "selfHasEnergyAttached"
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["water", "electric"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "しっぽのムチ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ハクリュー",
+  "cardIds": ["048647"],
+  "stage": "1進化",
+  "evolvesFrom": "ミニリュウ",
+  "hp": 100,
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

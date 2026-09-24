@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "fighting"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "かたいあたま"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「かたいあたま」の、次の相手の番にこのポケモンが受けるワザのダメージを減らす効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ジャラコ",
+  "cardIds": ["050388"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "dragon",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

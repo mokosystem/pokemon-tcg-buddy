@@ -133,6 +133,10 @@ const basicConditionOptions = [
   strictObject({
     condition: literal("selfHasNoEnergyAttached"),
   }),
+  /** このポケモンにエネルギーがついている(ハクリューの「しんかのみちびき」)。 */
+  strictObject({
+    condition: literal("selfHasEnergyAttached"),
+  }),
   strictObject({
     condition: literal("attachedPokemonMatches"),
     filter: PokemonInPlayFilterSchema,

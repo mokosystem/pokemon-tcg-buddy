@@ -91,6 +91,8 @@ const conditionEvaluators: {
       ),
   ownRemainingPrizesAre: (condition, state) =>
     state.prizes.length === condition.count,
+  selfHasEnergyAttached: (_, __, source) =>
+    source.pokemon !== null && source.pokemon.energies.length > 0,
   selfHasNoEnergyAttached: (_, __, source) =>
     source.pokemon !== null && source.pokemon.energies.length === 0,
   selfIsActive: (_, state, source) =>

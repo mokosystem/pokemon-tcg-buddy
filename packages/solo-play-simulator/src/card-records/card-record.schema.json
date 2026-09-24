@@ -905,6 +905,16 @@
           "type": "object",
           "properties": {
             "condition": {
+              "const": "selfHasEnergyAttached"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
               "const": "attachedPokemonMatches"
             },
             "filter": {
@@ -1919,6 +1929,16 @@
           "properties": {
             "condition": {
               "const": "selfHasNoEnergyAttached"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "selfHasEnergyAttached"
             }
           },
           "required": ["condition"],

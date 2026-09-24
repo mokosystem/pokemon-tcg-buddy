@@ -196,6 +196,10 @@ const CELEBI = buildRecordedCard("047739");
 const TOXEL = buildRecordedCard("048482");
 const TOXTRICITY = buildRecordedCard("048495");
 const ROCKET_FACTORY = buildRecordedCard("048712");
+const DRATINI = buildRecordedCard("048646");
+const DRAGONAIR = buildRecordedCard("048647");
+const MEGA_DRAGONITE = buildRecordedCard("048648");
+const KOMMO_O = buildRecordedCard("050390");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3283,6 +3287,56 @@ describeTranslation("ロケット団のファクトリー", () => {
     const context = buildContext(state);
     playTrainerFromHand(context, SURFER);
     expect(canUseStadiumEffect(context)).toBe(false);
+  });
+});
+
+describeTranslation("ハクリュー", () => {
+  test("しんかのみちびきは、このポケモンにエネルギーがついていれば、山札から進化ポケモンを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: DRAGONAIR,
+      deck: [DRATINI, MEGA_DRAGONITE, LIGHTNING_ENERGY],
+    });
+    const context = buildContext(state);
+    expect(canUseAbility(context, activeOf(state), "しんかのみちびき")).toBe(
+      false
+    );
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAbility(context, activeOf(state), "しんかのみちびき");
+    expect(namesOf(state.hand)).toEqual(["メガカイリューex"]);
+  });
+});
+
+describeTranslation("メガカイリューex", () => {
+  test("スカイキャリーは、ポケモンごとに番に 1 回、バトルポケモンをベンチポケモンと入れ替える", () => {
+    const state = buildState({ active: MEGA_DRAGONITE, bench: [DRATINI] });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "スカイキャリー");
+    expect(activeOf(state).name).toBe("ミニリュウ");
+    expect(canUseAbility(context, benchAt(state, 0), "スカイキャリー")).toBe(
+      false
+    );
+  });
+});
+
+describeTranslation("ジャラランガ", () => {
+  test("スケイルビートは、山札の上から 6 枚の基本エネルギーを好きなだけ、自分のドラゴンポケモンに好きなようにつける", () => {
+    const state = buildState({
+      active: KOMMO_O,
+      bench: [DRATINI, TOXEL],
+      deck: [
+        LIGHTNING_ENERGY,
+        BOSS,
+        FIGHTING_ENERGY,
+        ROCK_FIGHTING_ENERGY,
+        WATER_ENERGY,
+        PSYCHIC_ENERGY,
+        LIGHTNING_ENERGY,
+      ],
+    });
+    useAbility(buildContext(state), activeOf(state), "スケイルビート");
+    expect(activeOf(state).energies).toHaveLength(4);
+    expect(benchAt(state, 1).energies).toEqual([]);
+    expect(state.deck).toHaveLength(3);
   });
 });
 
