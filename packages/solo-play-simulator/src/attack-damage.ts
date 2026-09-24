@@ -11,6 +11,7 @@ import {
   type Attack,
   CardCategory,
   type DamageBonus,
+  EvolutionStage,
 } from "./card-record-schema.ts";
 import { matchesPokemonFilter } from "./conditions.ts";
 import {
@@ -55,6 +56,13 @@ function countDamageTarget(
             ).length,
           0
         );
+    case "stadiumsInPlay":
+      return state.stadium === null ? 0 : 1;
+    case "ownBasicPokemonInPlay":
+      return state
+        .listPokemonInPlay()
+        .filter((pokemon) => pokemon.card.stage === EvolutionStage.Basic)
+        .length;
     case "ownBenchedPokemon":
       return state.bench.length;
     default:

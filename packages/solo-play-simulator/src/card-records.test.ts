@@ -181,6 +181,9 @@ const PRECIOUS_CARRIER = buildRecordedCard("046220");
 const ROCKET_RECEIVER = buildRecordedCard("049977");
 const ENERGY_RECYCLER = buildRecordedCard("050068");
 const STEEL_ENERGY = buildRecordedCard("030578");
+const IRON_JUGULIS_TING_LU = buildRecordedCard("045594");
+const N_SCRIPT = buildRecordedCard("049417");
+const PRISM_ENERGY = buildRecordedCard("049455");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -2962,6 +2965,80 @@ describeTranslation("基本鋼エネルギー", () => {
     const state = buildState({ active: BELDUM });
     activeOf(state).energies.push(STEEL_ENERGY);
     expect(listEnergyUnits(state, activeOf(state))).toEqual(["steel"]);
+  });
+});
+
+describeTranslation("イーユイ", () => {
+  test("ひきつけるは 2 枚引く", () => {
+    const state = buildState({
+      active: IRON_JUGULIS_TING_LU,
+      deck: repeat(FIRE_ENERGY, 3),
+    });
+    activeOf(state).energies.push(FIRE_ENERGY);
+    useAttack(buildContext(state), "ひきつける");
+    expect(state.hand).toHaveLength(2);
+  });
+
+  test("グラウンドメルトは、場にスタジアムがあれば 60 を足し、その後スタジアムをトラッシュする(ゼロの大空洞ならベンチを減らす)", () => {
+    const state = buildState({
+      active: IRON_JUGULIS_TING_LU,
+      bench: [FLAREON_EX, DRILBUR, DRILBUR, DRILBUR, DRILBUR, DRILBUR],
+    });
+    state.stadium = ZERO_CAVERN;
+    activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY);
+    expect(
+      damageOf(state, activeOf(state), IRON_JUGULIS_TING_LU, "グラウンドメルト")
+    ).toBe(120);
+    useAttack(buildContext(state), "グラウンドメルト");
+    expect(state.stadium).toBeNull();
+    expect(namesOf(state.discard)).toContain("ゼロの大空洞");
+    expect(state.bench).toHaveLength(5);
+    expect(
+      damageOf(state, activeOf(state), IRON_JUGULIS_TING_LU, "グラウンドメルト")
+    ).toBe(60);
+  });
+});
+
+describeTranslation("Nの筋書き", () => {
+  test("ベンチのポケモンのエネルギーを合計 2 個まで、バトルポケモンにつけ替える", () => {
+    const state = buildState({
+      active: N_ZOROARK,
+      bench: [N_ZEKROM, YVELTAL],
+      hand: [N_SCRIPT],
+    });
+    benchAt(state, 0).energies.push(
+      LIGHTNING_ENERGY,
+      LIGHTNING_ENERGY,
+      FIRE_ENERGY
+    );
+    benchAt(state, 1).energies.push(DARK_ENERGY);
+    playTrainerFromHand(buildContext(state), N_SCRIPT);
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本雷エネルギー",
+      "基本雷エネルギー",
+    ]);
+    expect(benchAt(state, 0).energies).toHaveLength(1);
+    expect(benchAt(state, 1).energies).toHaveLength(1);
+  });
+
+  test("ベンチのポケモンにエネルギーがついていなければ使えない", () => {
+    const state = buildState({
+      active: N_ZOROARK,
+      bench: [N_ZEKROM],
+      hand: [N_SCRIPT],
+    });
+    activeOf(state).energies.push(DARK_ENERGY);
+    expect(canPlayTrainerFromHand(buildContext(state), N_SCRIPT)).toBe(false);
+  });
+});
+
+describeTranslation("プリズムエネルギー", () => {
+  test("たねポケモンについていればすべてのタイプ 1 個ぶん、進化ポケモンなら無色 1 個ぶんとして働く", () => {
+    const state = buildState({ active: DRILBUR, bench: [METANG] });
+    activeOf(state).energies.push(PRISM_ENERGY);
+    benchAt(state, 0).energies.push(PRISM_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["any"]);
+    expect(listEnergyUnits(state, benchAt(state, 0))).toEqual(["colorless"]);
   });
 });
 

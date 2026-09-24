@@ -1490,6 +1490,20 @@
         {
           "type": "object",
           "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "moveEnergyFromBenchToActive"
+            }
+          },
+          "required": ["maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "operation": {
               "const": "moveEnergyFromSwitchedOutPokemonToActive"
             }
@@ -1609,6 +1623,16 @@
           "properties": {
             "operation": {
               "const": "discardSelf"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "discardStadiumInPlay"
             }
           },
           "required": ["operation"],
@@ -2326,6 +2350,26 @@
           "type": "object",
           "properties": {
             "count": {
+              "const": "stadiumsInPlay"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "const": "ownBasicPokemonInPlay"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
               "const": "ownBenchedPokemon"
             }
           },
@@ -2881,6 +2925,20 @@
         {
           "type": "object",
           "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "moveEnergyFromBenchToActive"
+            }
+          },
+          "required": ["maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "operation": {
               "const": "moveEnergyFromSwitchedOutPokemonToActive"
             }
@@ -3000,6 +3058,16 @@
           "properties": {
             "operation": {
               "const": "discardSelf"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "discardStadiumInPlay"
             }
           },
           "required": ["operation"],

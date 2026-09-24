@@ -1,0 +1,76 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 2
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "ひきつける"
+    },
+    {
+      "cost": ["fire", "colorless"],
+      "damage": {
+        "amount": 60,
+        "bonus": {
+          "add": 60,
+          "atLeast": 1,
+          "kind": "whenCountAtLeast",
+          "target": {
+            "count": "stadiumsInPlay"
+          }
+        },
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "discardStadiumInPlay"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "グラウンドメルト"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "追加する。ダメージを計算してからスタジアムをトラッシュする",
+      "question": "ワザ「グラウンドメルト」で、トラッシュするスタジアムの分も 60 を追加するか",
+      "reflectedIn": "ダメージの上乗せ(場のスタジアムが 1 つ以上なら 60)は番の終わりの場で求め、スタジアムのトラッシュはワザの効果(discardStadiumInPlay)として後に実行する",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "イーユイがグラウンドメルトで場のスタジアム(シンオウ神殿)をトラッシュした場合のダメージを問う質問に、スタジアムの分を追加した値で回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B0%E3%83%A9%E3%82%A6%E3%83%B3%E3%83%89%E3%83%A1%E3%83%AB%E3%83%88&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "イーユイ",
+  "cardIds": ["045594"],
+  "stage": "たね",
+  "hp": 110,
+  "pokemonType": "fire",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

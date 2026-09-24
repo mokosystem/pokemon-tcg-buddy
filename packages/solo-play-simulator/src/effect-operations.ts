@@ -182,6 +182,7 @@ const firstStepTargetChecks: {
   // 手札が 0 枚でも使える(公式 Q&A「ゼイユ」: 手札がゼイユだけのときも使える、2026-09-24 確認)
   discardHand: alwaysHasTarget,
   discardSelf: alwaysHasTarget,
+  discardStadiumInPlay: (_, { state }) => state.stadium !== null,
   drawCards: deckHasCards,
   evolveBasicToStage2FromHand: (_, { state }) =>
     listRareCandyPairs(state).length > 0,
@@ -197,6 +198,9 @@ const firstStepTargetChecks: {
   lookAtDeckTopAndTakeIntoHand: deckHasCards,
   moveAnyEnergyFromOwnPokemonToSelf: (_, { source, state }) =>
     listOtherPokemonWithEnergy(state, source.pokemon).length > 0,
+  moveEnergyFromBenchToActive: (_, { state }) =>
+    state.active !== null &&
+    state.bench.some((pokemon) => pokemon.energies.length > 0),
   moveEnergyFromSwitchedOutPokemonToActive: alwaysHasTarget,
   moveEnergyToAnotherOwnPokemon: (step, { state }) =>
     state.listPokemonInPlay().length >= 2 &&
@@ -655,28 +659,46 @@ function attachEnergyFromHandToHolder(
 
 /** つけ替える元のポケモンを 0 匹以上選び、それぞれからエネルギーを 0 枚以上選んで、効果の持ち主につけ替える。 */
 function moveEnergyToHolder(run: OperationRun): void {
-  const { context, label, source } = run;
-  const { state } = context;
-  const holder = source.pokemon;
+  const holder = run.source.pokemon;
   if (holder === null) {
     return;
   }
-  const origins = listOtherPokemonWithEnergy(state, holder);
+  moveChosenEnergies(
+    run,
+    listOtherPokemonWithEnergy(run.context.state, holder),
+    holder,
+    Number.POSITIVE_INFINITY
+  );
+}
+
+/**
+ * つけ替える元のポケモン(origins)を 0 匹以上選び、それぞれから合計 maxTotal 個までのエネルギーを選んで to につけ替える。
+ * 同じカードは同じ参照を枚数分並べて表すため、エネルギーだけを選ぶとどのポケモンの 1 枚か決まらず、元のポケモンから選ぶ。
+ */
+function moveChosenEnergies(
+  run: OperationRun,
+  origins: readonly PokemonInPlay[],
+  to: PokemonInPlay,
+  maxTotal: number
+): void {
+  const { context, label } = run;
+  let remaining = maxTotal;
   for (const from of choosePokemonUpTo(
     context,
     origins,
     origins.length,
-    `${label}: ${holder.name} にエネルギーをつけ替える元のポケモン`
+    `${label}: ${to.name} にエネルギーをつけ替える元のポケモン`
   )) {
     const chosen = chooseCardsWithin(
       context,
       from.energies,
-      { maxCount: from.energies.length, minCount: 0 },
-      `${label}: ${from.name} から ${holder.name} につけ替えるエネルギー`
+      { maxCount: Math.min(remaining, from.energies.length), minCount: 0 },
+      `${label}: ${from.name} から ${to.name} につけ替えるエネルギー`
     );
     for (const energy of chosen) {
-      state.moveAttachedEnergy(from, holder, energy);
+      context.state.moveAttachedEnergy(from, to, energy);
     }
+    remaining -= chosen.length;
   }
 }
 
@@ -850,6 +872,11 @@ const operationRunners: {
       context.state.record(`${label}: ${source.card.name} をトラッシュ`);
     }
   },
+  discardStadiumInPlay: (_, { context }) => {
+    context.state.discardStadium();
+    // ゼロの大空洞がトラッシュされてベンチの上限が下がったら、ベンチをトラッシュする
+    trimBenchToLimit(context);
+  },
   drawCards: (step, { context, label, progress }) => {
     const count = calculateDrawCount(step.count, context.state, progress);
     context.state.draw(count);
@@ -879,6 +906,17 @@ const operationRunners: {
     context.state.takeFromDeckTop(step.lookCount, chosen, step.restPlacement);
   },
   moveAnyEnergyFromOwnPokemonToSelf: (_, run) => moveEnergyToHolder(run),
+  moveEnergyFromBenchToActive: (step, run) => {
+    const { active, bench } = run.context.state;
+    if (active !== null) {
+      moveChosenEnergies(
+        run,
+        bench.filter((pokemon) => pokemon.energies.length > 0),
+        active,
+        step.maxCount
+      );
+    }
+  },
   moveEnergyFromSwitchedOutPokemonToActive: (
     _,
     { context, label, progress }

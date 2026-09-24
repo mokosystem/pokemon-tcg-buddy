@@ -1,0 +1,35 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "colorless"],
+      "damage": {
+        "amount": 60,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "ownBenchedPokemon"
+          },
+          "unit": 20
+        },
+        "kind": "fixed"
+      },
+      "name": "サンダーコネクト"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "カプ・コケコex",
+  "cardIds": ["046500"],
+  "stage": "たね",
+  "hp": 200,
+  "pokemonType": "electric",
+  "retreatCost": 0,
+  "exRule": "pokemonEx",
+  "translationStatus": "irrelevantToCalculation"
+}

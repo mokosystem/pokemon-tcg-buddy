@@ -357,6 +357,11 @@ const basicOperationOptions = [
     operation: literal("attachEnergyFromDiscardDistributedToPokemon"),
     targetFilter: PokemonInPlayFilterSchema,
   }),
+  /** 自分のベンチポケモンについているエネルギーを合計 maxCount 個まで選び、バトルポケモンにつけ替える(Nの筋書き)。 */
+  strictObject({
+    maxCount: countFromOne,
+    operation: literal("moveEnergyFromBenchToActive"),
+  }),
   /**
    * この効果の中の入れ替え(switchActiveWithBench)でベンチに下がったポケモンのエネルギーを 1 個選び、新しいバトルポケモンに
    * つけ替える(ヒガナの信頼)。
@@ -406,6 +411,10 @@ const basicOperationOptions = [
   }),
   strictObject({
     operation: literal("discardSelf"),
+  }),
+  /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
+  strictObject({
+    operation: literal("discardStadiumInPlay"),
   }),
 ] as const;
 
@@ -544,6 +553,10 @@ export const DamageCountTargetSchema = variant("count", [
   strictObject({ count: literal("energyAttachedToAttackingPokemon") }),
   /** 自分のポケモン全員についている基本エネルギーの枚数(タケルライコex の「きょくらいごう」)。 */
   strictObject({ count: literal("basicEnergyAttachedToOwnPokemon") }),
+  /** 場に出ているスタジアムの数(0 か 1。イーユイの「グラウンドメルト」)。 */
+  strictObject({ count: literal("stadiumsInPlay") }),
+  /** 自分の場のたねポケモンの数(ナゲツケサルの「れんけいスロー」)。 */
+  strictObject({ count: literal("ownBasicPokemonInPlay") }),
   /** 自分のベンチポケモンの数(テラパゴスex の「ユニオンビート」)。 */
   strictObject({ count: literal("ownBenchedPokemon") }),
 ]);

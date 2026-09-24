@@ -516,6 +516,16 @@ export class GameState {
     this.record(`サポート ${card.name}`);
   }
 
+  /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
+  discardStadium(): void {
+    if (this.stadium === null) {
+      return;
+    }
+    this.discard.push(this.stadium);
+    this.record(`スタジアム ${this.stadium.name} をトラッシュ`);
+    this.stadium = null;
+  }
+
   playStadium(card: Card): void {
     if (card.category !== CardCategory.Stadium) {
       throw new IllegalMove(`${card.name} はスタジアムではない`);

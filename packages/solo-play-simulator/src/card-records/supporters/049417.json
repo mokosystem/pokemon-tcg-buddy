@@ -1,0 +1,37 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "maxCount": 2,
+            "operation": "moveEnergyFromBenchToActive"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["049417", "047619"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "Nの筋書き",
+  "rulings": [
+    {
+      "interpretation": "選べる。エネルギーはカードの枚数で 2 個まで数え、種類は問わない",
+      "question": "ベンチのポケモンについている特殊エネルギー(イグニッションエネルギー)と基本エネルギーを 1 枚ずつ選べるか",
+      "reflectedIn": "moveEnergyFromBenchToActive はついているエネルギーのカードを合計 2 枚まで選ぶ",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "Nの筋書きで、ベンチの進化ポケモンについているイグニッションエネルギーと基本エネルギーを 1 枚ずつ選べるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=N%E3%81%AE%E7%AD%8B%E6%9B%B8%E3%81%8D&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

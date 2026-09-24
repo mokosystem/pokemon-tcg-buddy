@@ -35,8 +35,31 @@ const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
 const TERAPAGOS = buildRecordedCard("049346");
 const MEGA_EXCADRILL = buildRecordedCard("050321");
 const STEEL_ENERGY = buildRecordedCard("030578");
+const TAPU_KOKO_EX = buildRecordedCard("046500");
+const PASSIMIAN = buildRecordedCard("049123");
 
 describe("ワザのダメージ", () => {
+  test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
+    const state = buildState({
+      active: TAPU_KOKO_EX,
+      bench: [RALTS, GARDEVOIR, PASSIMIAN],
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(TAPU_KOKO_EX, "サンダーコネクト")
+      )
+    ).toBe(60 + 3 * 20);
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(PASSIMIAN, "れんけいスロー")
+      )
+    ).toBe(3 * 20);
+  });
+
   test("マキシマムドリルは、ワザを使うポケモンのエネルギーが 5 個以上なら 200 に 130 を足す(個数で数える)", () => {
     const attack = findAttack(MEGA_EXCADRILL, "マキシマムドリル");
     const four = buildState({ active: MEGA_EXCADRILL, bench: [RALTS] });
