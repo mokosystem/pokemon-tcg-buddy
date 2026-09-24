@@ -173,7 +173,12 @@ export class GameState {
   attackDamageIncreasesThisTurn: AttackDamageIncrease[] = [];
   readonly attacks = new Map<number, string>();
   /** この番に 2 回目のワザ(「おまつりおんど」)を使ったか。1 回目は attacks に番があるかで分かる。 */
-  hasUsedSecondAttack = false;
+  hasUsedSecondAttack: boolean;
+  /**
+   * この番に 1 回目のワザを使ったポケモン。2 回目のワザ(「おまつりおんど」)は、1 回目を使ったポケモンが
+   * 続けて使うときだけ使える。1 回目のワザで入れ替わったバトルポケモンには使わせない。
+   */
+  firstAttackerThisTurn: PokemonInPlay | null = null;
   readonly events: string[] = [];
 
   constructor(
@@ -189,6 +194,7 @@ export class GameState {
     this.hasPlayedStadium = false;
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
+    this.hasUsedSecondAttack = false;
   }
 
   // ---- 記録 ----
@@ -790,6 +796,7 @@ export class GameState {
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
     this.hasUsedSecondAttack = false;
+    this.firstAttackerThisTurn = null;
     this.abilityNamesUsedThisTurn = [];
     this.attackDamageIncreasesThisTurn = [];
     for (const pokemon of this.listPokemonInPlay()) {

@@ -2456,6 +2456,21 @@ describeTranslation("アズマオウ", () => {
     expect(listUsableAttacksOfActive(context)).toEqual([]);
   });
 
+  test("1 回目のワザで入れ替わってバトル場に出たアズマオウは、2 回目を使えない", () => {
+    const state = buildState({
+      active: ABRA,
+      bench: [SEAKING],
+      deck: repeat(PSYCHIC_ENERGY, 6),
+    });
+    state.stadium = FESTIVAL_GROUNDS;
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    benchAt(state, 0).energies.push(GRASS_ENERGY);
+    const context = buildContext(state);
+    useAttack(context, "テレポートアタック");
+    expect(activeOf(state).name).toBe("アズマオウ");
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+  });
+
   test("場に「お祭り会場」が無ければ、2 回目は使えない", () => {
     const state = buildState({
       active: SEAKING,

@@ -384,7 +384,8 @@ export function retreatActive(
 
 /**
  * バトルポケモンが今使えるワザ(エネルギーが足り、先攻の最初の番ではなく、効果の使える条件を満たすもの)。
- * この番にワザを 1 回使ったあとは、2 回目を使える効果(「おまつりおんど」)があるときだけ、2 回目に使えるワザを返す。
+ * この番にワザを 1 回使ったあとは、1 回目を使ったポケモンがバトル場に残っていて、2 回目を使える効果(「おまつりおんど」)が
+ * あるときだけ、2 回目に使えるワザを返す。
  * 効果で自分の場のポケモンがいなくなるワザ(場がニャースex だけのときの「しっぽをまく」)は含めない(wouldLeaveFieldEmpty)。
  */
 export function listUsableAttacksOfActive(
@@ -395,7 +396,10 @@ export function listUsableAttacksOfActive(
   if (active === null || !state.canAttack()) {
     return [];
   }
-  if (state.attacks.has(state.turn) && state.hasUsedSecondAttack) {
+  if (
+    state.attacks.has(state.turn) &&
+    (state.hasUsedSecondAttack || state.firstAttackerThisTurn !== active)
+  ) {
     return [];
   }
   const units = listEnergyUnits(state, active);
@@ -427,6 +431,7 @@ export function useAttack(context: EffectContext, attackName: string): void {
     state.record(`2 回目のワザ ${attackName}`);
   } else {
     state.attacks.set(state.turn, attackName);
+    state.firstAttackerThisTurn = active;
     state.record(`ワザ ${attackName}`);
   }
   if (usable.discardsDeckTopFirst) {
