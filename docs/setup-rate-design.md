@@ -168,7 +168,7 @@ README は「コーディングエージェント上で動くスキルとして�
 | 手札 | グッズ・サポート・スタジアムを使う | なし(基本ルールの制限は骨組み) | 既存 | (基本処理。`card-effects.ts` の `playTrainerFromHand`) | |
 | 手札 | ベンチに出す | たねポケモン。効果で進化ポケモンを直接出す形は印を付ける | 既存 | `placeSelfOnBenchFromHand`(効果で進化ポケモンを出す)。たねポケモンを出す基本処理は `placeBasicPokemonOnBenchFromHand` | ファイアローex |
 | 手札 | エネルギーをつける(1 番に 1 回に数える) | つけ先 | 既存 | (基本処理。`attachEnergyFromHandToPokemon`) | |
-| 手札 | 効果でエネルギーをつける(1 番に 1 回に数えない) | 条件、上限、つけ先の条件 | 追加 | `attachEnergyFromHand`(1〜上限の枚数を 1 匹に) | オドリドリex、ヒビキのホウオウex、オーガポン みどりのめんex、ピカチュウex(050660) |
+| 手札 | 効果でエネルギーをつける(1 番に 1 回に数えない) | 条件、上限、つけ先の条件 | 追加 | `attachEnergyFromHand`(1〜上限の枚数を 1 匹に)、`attachEnergyFromHandToSelf`(効果の持ち主に。順 6 の 3 セッション目) | オドリドリex、ヒビキのホウオウex、オーガポン みどりのめんex、ピカチュウex(050660) |
 | 手札 | 進化させる | 1進化を飛ばす形を含む | 既存 | `evolveBasicToStage2FromHand`(1進化を飛ばす形)。手札からの進化は基本処理 `evolvePokemonFromHand` | ふしぎなアメ |
 | 手札 | 山札の上に置く | 枚数 | 追加 | — | 夜のアカデミー |
 | 手札 | ポケモンのどうぐをつける | つけ先 | 追加 | (基本処理。`attachToolFromHand`) | ふうせん |
@@ -179,9 +179,9 @@ README は「コーディングエージェント上で動くスキルとして�
 | 場 | ついているカードごと山札に戻して切る | 対象 | 既存 | `returnSelfToDeck`(自身だけ) | ノココッチ |
 | 場 | ついているカードごと手札に戻す | 対象 | 追加 | `returnPokemonToHand`(自身か、選んだ自分のポケモン) | ポケモン回収サイクロン |
 | 場 | ついているエネルギーを手札に戻す | 対象 | 追加 | —(ミツルの思いやりは順 6 の裁定で翻訳しないことにした。「順 6 で決めたこと」) | ミツルの思いやり |
-| 場 | ついているエネルギーを別のポケモンに移す | 個数、条件、移し先の条件 | 追加 | `moveEnergyToAnotherOwnPokemon`(1 個を自分の別のポケモンに。個数と移し先の条件はまだ無い) | エネルギーつけかえ、Nの筋書き、テツノイサハex、ヒガナの信頼 |
+| 場 | ついているエネルギーを別のポケモンに移す | 個数、条件、移し先の条件 | 追加 | `moveEnergyToAnotherOwnPokemon`(1 個を自分の別のポケモンに)、`moveAnyEnergyFromOwnPokemonToSelf`(ほかのポケモンから好きなだけ効果の持ち主に。順 6 の 3 セッション目) | エネルギーつけかえ、Nの筋書き、テツノイサハex、ヒガナの信頼 |
 | 場 | 山札のポケモンと置き換える(ついているカードを引き継ぐ) | 条件 | 追加 | — | メタモン |
-| 場 | バトル場を入れ替える | にげる(エネルギーをトラッシュ)、または効果で | 既存 | `switchActiveWithBench`(効果で入れ替える)。にげるは基本処理 `retreatActive` | ポケモンいれかえ、モモワロウex |
+| 場 | バトル場を入れ替える | にげる(エネルギーをトラッシュ)、または効果で | 既存 | `switchActiveWithBench`(効果で入れ替える。入れ替え先の条件 `benchFilter` は順 6 の 3 セッション目に追加)、`switchSelfWithActive`(ベンチの効果の持ち主をバトル場に。3 セッション目)。にげるは基本処理 `retreatActive` | ポケモンいれかえ、モモワロウex |
 | 場 | ワザを使う | ワザの名前 | 既存(番の終わり) | (基本処理。`useAttack`。効果はワザの一覧の effect) | |
 | (この番) | ワザのダメージを増やす | 量、ワザを使うポケモンの条件 | 追加(順 6 の 2 セッション目) | `increaseAttackDamageThisTurn` | パワープロテイン、グラジオの決戦 |
 
@@ -415,7 +415,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | 名前、カード ID、確認日 | `name`、`cardIds`、`verifiedOn` |
 | 翻訳の状態(翻訳あり、書けない、計算に関係ない、まだ書いていない) | `translationStatus`(`translated`、`notTranslatable`、`irrelevantToCalculation`、`notYetTranslated`) |
 | 属性 | `category`、`stage`、`evolvesFrom`、`basicPokemonOfEvolutionLine`、`hp`、`pokemonType`、`hasRuleBox`、`exRule`(`pokemonEx`、`megaEvolutionEx`。どちらでもないポケモンは持たない)、`isTerastal`、`retreatCost`、エネルギーは `provision`(`type` と `units`、すべてのタイプとして働くものは `anyType`) |
-| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName`、`ownBenchedPokemon`(3 セッション目に追加)。ベンチのポケモンのワザを「このワザとして使う」ワザは `usesAttackOfBenchedPokemon`(ベンチのポケモンの条件。3 セッション目に追加) |
+| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName`、`ownBenchedPokemon`、`basicEnergyAttachedToOwnPokemon`(いずれも 3 セッション目に追加)。ベンチのポケモンのワザを「このワザとして使う」ワザは `usesAttackOfBenchedPokemon`(ベンチのポケモンの条件。3 セッション目に追加) |
 | 特性の一覧 | `abilities`(`name`、`translation`。翻訳しない特性は `translation` を持たない) |
 | トレーナーズと特殊エネルギーの効果 | `cardEffects` |
 | きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional`。基本ルールの例外の印「先攻の最初の番でも使える」は `whenPlayed` の `usableOnFirstTurnGoingFirst`(3 セッション目に追加) |
@@ -559,6 +559,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | ドラパルトex(`niLLgQ-YL6A8Y-gQQn9N`) | 無し(Issue 22 と開発責任者のデッキの記録で 60 枚がそろった) | — | — | — |
 | メガルカリオex(`UR2MXy-P7Pfrq-pMypUy`) | 8 種 | 3(メガルカリオex、ルナトーン、暗号マニアの解読) | 0 | 5(リオル 2 種、ソルロック、ノココッチex、グラビティーマウンテン) |
 | メガレックウザex(`1kvFVF-JDWJKx-k5fkkb`) | 4 種 | 2(ゼイユ、AZの安らぎ) | 0 | 2(テラパゴスex、オーガポン いどのめんex) |
+| タケルライコex(`kVdb5F-ZkgmrI-Fkf1V5`) | 4 種 | 4(タケルライコex、オーガポン みどりのめんex、テツノイサハex、基本草エネルギー) | 0 | 0 |
 | Nのゾロアークex(`ppXMUX-Qecj3h-yySRpM`) | 13 種 | 5(Nのゾロアークex、モモワロウex、シャリタツ、Nのポイントアップ、Nの城) | 0 | 8(Nのゾロア、Nのゼクロム、Nのレシラム、Nのダルマッカ、Nのヒヒダルマ、イベルタル、くさりもち、からておうの稽古) |
 
 #### 足した部品
@@ -572,6 +573,9 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | ダメージの数える対象 `ownBenchedPokemon` | ワザのダメージの追加 | テラパゴスex | 自分のベンチポケモンの数(「ユニオンビート」は × 30)。自分の側の数で決まる上乗せは記録に持つ(「カードの記録の形」)。テラパゴスex は「計算に関係ない」だが、ダメージは狙いの判定に使うため持つ |
 | ワザの欄 `usesAttackOfBenchedPokemon` | ワザの追加 | Nのゾロアークex | ベンチの条件に合うポケモンが持つワザを 1 つ選び、このワザとして使う(「ナイトジョーカー」)。使えるワザの一覧(`listUsableAttacks`)に、ベンチの「Nのポケモン」が持つワザを、ナイトジョーカーに必要なエネルギー(悪 2 個)で足す。選んだワザのダメージと効果はそのワザのもので、ダメージを増やす効果はワザを使うポケモン(Nのゾロアークex)に当てる。ナイトジョーカー自体はダメージも効果も持たないため一覧に入れず、ベンチの別の Nのゾロアークex のナイトジョーカーも入れない(作業領域で回したとき、何も起きないワザとして使われた)。ミュウex の「きおくのらせん」(場にある間ずっと働く効果。ベンチのワザをそのワザのエネルギーで使う)とは、エネルギーの払い方とワザそのものが持つ点が違うため、場にある間ずっと働く効果の項目にはしなかった。ベンチのポケモンが効果で使えるワザは選べない(公式 Q&A「ナイトジョーカー」) |
 | `switchActiveWithBench` の `benchFilter`、カードを選ぶ条件の `excludesNames` | 基本操作と条件の手直し | モモワロウex | 「しはいのくさり」はベンチの悪ポケモン(「モモワロウex」を除く)とだけ入れ替える。入れ替え先の条件と、名前で除く条件が無かった |
+| `attachEnergyFromHandToSelf` | 基本操作の追加 | オーガポン みどりのめんex | 手札のエネルギーを効果の持ち主につける。`attachEnergyFromHand` はつけ先を条件で選ぶ形で、「このポケモン」を表せない。山札が 0 枚でもつけられ、つけたら引かないことは選べない(公式 Q&A「みどりのまい」) |
+| `switchSelfWithActive`、`moveAnyEnergyFromOwnPokemonToSelf` | 基本操作の追加 | テツノイサハex | 「ラピッドバーニア」は、手札からベンチに出したこのポケモンをバトルポケモンと入れ替え、場のほかのポケモンのエネルギーを好きなだけこのポケモンにつけ替える。`switchActiveWithBench` はベンチから選ぶ形で、`moveEnergyToAnotherOwnPokemon` は 1 個を選んだ先に移す形で、どちらも「このポケモン」を表せない。つけ替えは元のポケモンを選び、それぞれから 0 枚以上選ぶ(同じカードは同じ参照を枚数分並べて表すため、エネルギーだけを選ぶとどのポケモンの 1 枚か決まらない。`moveEnergyToAnotherOwnPokemon` と同じ理由)。公式 Q&A に該当は無かった(検索語「ラピッドバーニア」「テツノイサハ」) |
+| ダメージの数える対象 `basicEnergyAttachedToOwnPokemon` | ワザのダメージの追加 | タケルライコex | 自分の場の基本エネルギーの枚数(「きょくらいごう」は × 70)。`energyAttachedToOwnPokemon` はタイプの個数を数え、すべてのタイプとして働く特殊エネルギーも数えるため、「基本エネルギー」を表せない。トラッシュする枚数は好きなだけで、インフェルノX と同じく全部トラッシュしたときの値で持ち、トラッシュは含めなかった効果に書いた |
 | 含めなかった理由 `firstTurnGoingSecondRestriction` | 理由の追加 | テラパゴスex | 後攻の最初の番にワザを使えない制限(「ユニオンビート」)。翻訳しないカードのワザには使える条件を書けない(効果の操作が 1 つ以上要る)ため、制限を持たずに前提に出す。`ownNextTurnRestriction`(ワザを使った次の番の制限)とはきっかけが違うため分けた。採らなかった案: `ownNextTurnRestriction` に含める(前提を読む人がどちらの制限か取り違える) |
 
 #### 記録で分かったこと

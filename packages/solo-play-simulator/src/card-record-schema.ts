@@ -295,6 +295,12 @@ const basicOperationOptions = [
     operation: literal("attachEnergyFromHand"),
     targetFilter: PokemonInPlayFilterSchema,
   }),
+  /** 手札から条件に合うエネルギーを 1〜maxCount 枚選び、このポケモン(効果の持ち主)につける。手札からつける番に 1 回には数えない。 */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
+    operation: literal("attachEnergyFromHandToSelf"),
+  }),
   /** 条件に合う自分のポケモンを maxPokemonCount 匹まで選び、トラッシュから条件に合うエネルギーを 1 枚ずつつける。 */
   strictObject({
     energyFilter: CardFilterSchema,
@@ -311,6 +317,10 @@ const basicOperationOptions = [
     maxCount: countFromOne,
     operation: literal("attachEnergyFromDiscardDistributedToPokemon"),
     targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /** 自分の場のほかのポケモンについているエネルギーを好きなだけ選び、このポケモン(効果の持ち主)につけ替える。 */
+  strictObject({
+    operation: literal("moveAnyEnergyFromOwnPokemonToSelf"),
   }),
   /** 自分の場のポケモンについている条件に合うエネルギーを 1 枚選び、自分の別のポケモンにつけ替える。 */
   strictObject({
@@ -336,6 +346,10 @@ const basicOperationOptions = [
   }),
   strictObject({
     operation: literal("returnSelfToDeck"),
+  }),
+  /** ベンチにいるこのポケモン(効果の持ち主)を、バトルポケモンと入れ替える(テツノイサハex の「ラピッドバーニア」)。 */
+  strictObject({
+    operation: literal("switchSelfWithActive"),
   }),
   strictObject({
     operation: literal("returnPokemonToHand"),
@@ -462,6 +476,8 @@ export const DamageCountTargetSchema = variant("count", [
     abilityName: nonEmptyText,
     count: literal("discardPokemonWithAbilityName"),
   }),
+  /** 自分のポケモン全員についている基本エネルギーの枚数(タケルライコex の「きょくらいごう」)。 */
+  strictObject({ count: literal("basicEnergyAttachedToOwnPokemon") }),
   /** 自分のベンチポケモンの数(テラパゴスex の「ユニオンビート」)。 */
   strictObject({ count: literal("ownBenchedPokemon") }),
 ]);

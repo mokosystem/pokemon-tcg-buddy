@@ -40,6 +40,17 @@ function countDamageTarget(
             (ability) => ability.name === target.abilityName
           )
       ).length;
+    case "basicEnergyAttachedToOwnPokemon":
+      return state
+        .listPokemonInPlay()
+        .reduce(
+          (total, pokemon) =>
+            total +
+            pokemon.energies.filter(
+              (energy) => energy.category === CardCategory.BasicEnergy
+            ).length,
+          0
+        );
     case "ownBenchedPokemon":
       return state.bench.length;
     default:

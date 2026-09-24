@@ -71,6 +71,15 @@ function minCountForDeckSearch(filter: CardFilter, available: number): number {
   return Object.keys(filter).length === 0 ? Math.min(1, available) : 0;
 }
 
+function listOtherPokemonWithEnergy(
+  state: GameState,
+  holder: PokemonInPlay | null
+): PokemonInPlay[] {
+  return state
+    .listPokemonInPlay()
+    .filter((pokemon) => pokemon !== holder && pokemon.energies.length > 0);
+}
+
 function listBenchMatchingOrAll(
   state: GameState,
   filter: CardFilter | undefined
@@ -162,6 +171,9 @@ const firstStepTargetChecks: {
   attachEnergyFromHand: (step, { hand, state }) =>
     listMatching(hand, step.energyFilter).some(isEnergy) &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
+  attachEnergyFromHandToSelf: (step, { hand, source }) =>
+    listMatching(hand, step.energyFilter).some(isEnergy) &&
+    source.pokemon !== null,
   branchOnCondition: alwaysHasTarget,
   discardFromHand: (step, { hand }) =>
     listMatchingOrAll(hand, step.filter).length >= Math.max(step.minCount, 1),
@@ -178,6 +190,8 @@ const firstStepTargetChecks: {
   lookAtDeckTopAndAttachEnergyToSelf: (_, { source, state }) =>
     state.deck.length > 0 && source.pokemon !== null,
   lookAtDeckTopAndTakeIntoHand: deckHasCards,
+  moveAnyEnergyFromOwnPokemonToSelf: (_, { source, state }) =>
+    listOtherPokemonWithEnergy(state, source.pokemon).length > 0,
   moveEnergyToAnotherOwnPokemon: (step, { state }) =>
     state.listPokemonInPlay().length >= 2 &&
     listPokemonWithEnergyMatching(state, step.energyFilter).length > 0,
@@ -203,6 +217,10 @@ const firstStepTargetChecks: {
   switchActiveWithBench: (step, { state }) =>
     state.active !== null &&
     listBenchMatchingOrAll(state, step.benchFilter).length > 0,
+  switchSelfWithActive: (_, { source, state }) =>
+    state.active !== null &&
+    source.pokemon !== null &&
+    state.bench.includes(source.pokemon),
 };
 
 function hasTargetForStep<Name extends EffectStep["operation"]>(
@@ -563,6 +581,55 @@ function attachFromDiscardDistributed(
   }
 }
 
+/** 手札からエネルギーを 1〜maxCount 枚選び、効果の持ち主につける。 */
+function attachEnergyFromHandToHolder(
+  run: OperationRun,
+  step: Extract<BasicOperation, { operation: "attachEnergyFromHandToSelf" }>
+): void {
+  const { context, label, source } = run;
+  const holder = source.pokemon;
+  if (holder === null) {
+    return;
+  }
+  const chosen = chooseCardsWithin(
+    context,
+    listMatching(context.state.hand, step.energyFilter).filter(isEnergy),
+    { maxCount: step.maxCount, minCount: 1 },
+    `${label}: ${holder.name} につける手札のエネルギー`
+  );
+  for (const energy of chosen) {
+    context.state.attachEnergyByEffect(energy, holder, "hand");
+    resolveAttachedFromHandTriggers(context, energy, holder);
+  }
+}
+
+/** つけ替える元のポケモンを 0 匹以上選び、それぞれからエネルギーを 0 枚以上選んで、効果の持ち主につけ替える。 */
+function moveEnergyToHolder(run: OperationRun): void {
+  const { context, label, source } = run;
+  const { state } = context;
+  const holder = source.pokemon;
+  if (holder === null) {
+    return;
+  }
+  const origins = listOtherPokemonWithEnergy(state, holder);
+  for (const from of choosePokemonUpTo(
+    context,
+    origins,
+    origins.length,
+    `${label}: ${holder.name} にエネルギーをつけ替える元のポケモン`
+  )) {
+    const chosen = chooseCardsWithin(
+      context,
+      from.energies,
+      { maxCount: from.energies.length, minCount: 0 },
+      `${label}: ${from.name} から ${holder.name} につけ替えるエネルギー`
+    );
+    for (const energy of chosen) {
+      state.moveAttachedEnergy(from, holder, energy);
+    }
+  }
+}
+
 /** 山札から count 枚(山札が足りなければ全部)を選び、残りを切ってから、選んだ順に山札の上に置く。 */
 function searchDeckAndPlaceOnTop(run: OperationRun, count: number): void {
   const { context, label } = run;
@@ -705,6 +772,8 @@ const operationRunners: {
   attachEnergyFromDiscardToEachChosenPokemon: (step, run) =>
     attachFromDiscardToEachChosenPokemon(run, step),
   attachEnergyFromHand: (step, run) => attachEnergyChosenFromHand(run, step),
+  attachEnergyFromHandToSelf: (step, run) =>
+    attachEnergyFromHandToHolder(run, step),
   discardFromHand: (step, { context, label, progress }) => {
     const chosen = chooseCardsWithin(
       context,
@@ -754,6 +823,7 @@ const operationRunners: {
     );
     context.state.takeFromDeckTop(step.lookCount, chosen, step.restPlacement);
   },
+  moveAnyEnergyFromOwnPokemonToSelf: (_, run) => moveEnergyToHolder(run),
   moveEnergyToAnotherOwnPokemon: (step, run) =>
     moveEnergyBetweenOwnPokemon(run, step),
   placeFromDiscardOntoBench: (step, run) =>
@@ -836,6 +906,12 @@ const operationRunners: {
     );
     if (benched !== null) {
       state.switchActive(benched);
+    }
+  },
+  switchSelfWithActive: (_, { context, source }) => {
+    const holder = source.pokemon;
+    if (holder !== null && context.state.bench.includes(holder)) {
+      context.state.switchActive(holder);
     }
   },
 };

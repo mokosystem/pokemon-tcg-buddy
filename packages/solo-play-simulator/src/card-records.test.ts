@@ -133,6 +133,10 @@ const MUNKIDORI = buildRecordedCard("049207");
 const TATSUGIRI = buildRecordedCard("048657");
 const N_POINT_UP = buildRecordedCard("049351");
 const N_CASTLE = buildRecordedCard("048703");
+const RAGING_BOLT = buildRecordedCard("049270");
+const TEAL_MASK_OGERPON = buildRecordedCard("048798");
+const IRON_LEAVES = buildRecordedCard("049478");
+const GRASS_ENERGY = buildRecordedCard("047903");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -2072,6 +2076,113 @@ describeTranslation("Nの城", () => {
     expect(calculateRetreatCost(withoutCastle, activeOf(withoutCastle))).toBe(
       2
     );
+  });
+});
+
+describeTranslation("タケルライコex", () => {
+  test("はじけるほうこうは、手札をすべてトラッシュして 6 枚引く", () => {
+    const state = buildState({
+      active: RAGING_BOLT,
+      deck: repeat(PSYCHIC_ENERGY, 8),
+      hand: [BOSS, GRASS_ENERGY],
+    });
+    activeOf(state).energies.push(GRASS_ENERGY);
+    useAttack(buildContext(state), "はじけるほうこう");
+    expect(namesOf(state.discard).sort()).toEqual(
+      ["ボスの指令", "基本草エネルギー"].sort()
+    );
+    expect(state.hand).toHaveLength(6);
+  });
+
+  test("きょくらいごうのダメージは、自分の場の基本エネルギーの枚数 × 70(特殊エネルギーは数えない)", () => {
+    const state = buildState({
+      active: RAGING_BOLT,
+      bench: [TEAL_MASK_OGERPON],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY, FIGHTING_ENERGY);
+    benchAt(state, 0).energies.push(GRASS_ENERGY, ROCK_FIGHTING_ENERGY);
+    expect(
+      damageOf(state, activeOf(state), RAGING_BOLT, "きょくらいごう")
+    ).toBe(3 * 70);
+  });
+});
+
+describeTranslation("オーガポン みどりのめんex", () => {
+  test("みどりのまいは、手札の基本草エネルギーを 1 枚このポケモンにつけて 1 枚引く。ポケモンごとに番に 1 回", () => {
+    const state = buildState({
+      active: RAGING_BOLT,
+      bench: [TEAL_MASK_OGERPON],
+      deck: repeat(PSYCHIC_ENERGY, 3),
+      hand: [GRASS_ENERGY, GRASS_ENERGY],
+    });
+    const context = buildContext(state);
+    useAbility(context, benchAt(state, 0), "みどりのまい");
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本草エネルギー"]);
+    expect(namesOf(state.hand).sort()).toEqual(
+      ["基本草エネルギー", "基本超エネルギー"].sort()
+    );
+    expect(state.hasAttachedEnergy).toBe(false);
+    expect(canUseAbility(context, benchAt(state, 0), "みどりのまい")).toBe(
+      false
+    );
+  });
+
+  test("山札が 0 枚でも使え(公式 Q&A)、手札に基本草エネルギーが無ければ使えない", () => {
+    const emptyDeck = buildState({
+      active: TEAL_MASK_OGERPON,
+      hand: [GRASS_ENERGY],
+    });
+    useAbility(buildContext(emptyDeck), activeOf(emptyDeck), "みどりのまい");
+    expect(namesOf(activeOf(emptyDeck).energies)).toEqual(["基本草エネルギー"]);
+    const noGrass = buildState({
+      active: TEAL_MASK_OGERPON,
+      deck: [PSYCHIC_ENERGY],
+      hand: [LIGHTNING_ENERGY],
+    });
+    expect(
+      canUseAbility(buildContext(noGrass), activeOf(noGrass), "みどりのまい")
+    ).toBe(false);
+  });
+});
+
+describeTranslation("テツノイサハex", () => {
+  test("ラピッドバーニアは、手札からベンチに出したとき、バトルポケモンと入れ替え、場のエネルギーを好きなだけつけ替える", () => {
+    const state = buildState({
+      active: RAGING_BOLT,
+      bench: [TEAL_MASK_OGERPON],
+      hand: [IRON_LEAVES],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY, FIGHTING_ENERGY);
+    benchAt(state, 0).energies.push(GRASS_ENERGY);
+    placeBasicPokemonOnBenchFromHand(
+      buildContext(state, {
+        chooseCards: pickCardsByName(["基本草エネルギー", "基本雷エネルギー"]),
+      }),
+      IRON_LEAVES
+    );
+    expect(activeOf(state).name).toBe("テツノイサハex");
+    expect(namesOf(activeOf(state).energies).sort()).toEqual(
+      ["基本草エネルギー", "基本雷エネルギー"].sort()
+    );
+    expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本闘エネルギー"]);
+  });
+
+  test("使わないことを選べば、ベンチに出るだけになる", () => {
+    const state = buildState({ active: RAGING_BOLT, hand: [IRON_LEAVES] });
+    placeBasicPokemonOnBenchFromHand(
+      buildContext(state, { choosesToApplyOptionalEffect: () => false }),
+      IRON_LEAVES
+    );
+    expect(activeOf(state).name).toBe("タケルライコex");
+    expect(benchAt(state, 0).name).toBe("テツノイサハex");
+  });
+});
+
+describeTranslation("基本草エネルギー", () => {
+  test("草エネルギー 1 個ぶんとして働く", () => {
+    const state = buildState({ active: TEAL_MASK_OGERPON });
+    activeOf(state).energies.push(GRASS_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["grass"]);
   });
 });
 

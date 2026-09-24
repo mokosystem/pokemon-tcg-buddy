@@ -2,6 +2,7 @@
 // 生成し直したかは src/card-record-files.test.ts が検査する。
 
 import { buildCardRecordTable } from "./card-record-validation.ts";
+import energies047903 from "./card-records/energies/047903.json";
 import energies047905 from "./card-records/energies/047905.json";
 import energies047906 from "./card-records/energies/047906.json";
 import energies047908 from "./card-records/energies/047908.json";
@@ -54,6 +55,7 @@ import pokemon048634 from "./card-records/pokemon/048634.json";
 import pokemon048651 from "./card-records/pokemon/048651.json";
 import pokemon048657 from "./card-records/pokemon/048657.json";
 import pokemon048748 from "./card-records/pokemon/048748.json";
+import pokemon048798 from "./card-records/pokemon/048798.json";
 import pokemon048810 from "./card-records/pokemon/048810.json";
 import pokemon048834 from "./card-records/pokemon/048834.json";
 import pokemon048835 from "./card-records/pokemon/048835.json";
@@ -72,9 +74,11 @@ import pokemon049261 from "./card-records/pokemon/049261.json";
 import pokemon049262 from "./card-records/pokemon/049262.json";
 import pokemon049263 from "./card-records/pokemon/049263.json";
 import pokemon049264 from "./card-records/pokemon/049264.json";
+import pokemon049270 from "./card-records/pokemon/049270.json";
 import pokemon049282 from "./card-records/pokemon/049282.json";
 import pokemon049341 from "./card-records/pokemon/049341.json";
 import pokemon049346 from "./card-records/pokemon/049346.json";
+import pokemon049478 from "./card-records/pokemon/049478.json";
 import pokemon049481 from "./card-records/pokemon/049481.json";
 import pokemon049482 from "./card-records/pokemon/049482.json";
 import pokemon049694 from "./card-records/pokemon/049694.json";
@@ -123,6 +127,7 @@ import supporters050467 from "./card-records/supporters/050467.json";
 
 /** カード ID(どの印刷の ID からも)→ カードの記録。読み込み時に全記録を検査し、誤りがあれば止める。 */
 export const cardRecordTable = buildCardRecordTable([
+  { content: energies047903, path: "energies/047903.json" },
   { content: energies047905, path: "energies/047905.json" },
   { content: energies047906, path: "energies/047906.json" },
   { content: energies047908, path: "energies/047908.json" },
@@ -179,6 +184,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon048651, path: "pokemon/048651.json" },
   { content: pokemon048657, path: "pokemon/048657.json" },
   { content: pokemon048748, path: "pokemon/048748.json" },
+  { content: pokemon048798, path: "pokemon/048798.json" },
   { content: pokemon048810, path: "pokemon/048810.json" },
   { content: pokemon048834, path: "pokemon/048834.json" },
   { content: pokemon048835, path: "pokemon/048835.json" },
@@ -197,9 +203,11 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon049262, path: "pokemon/049262.json" },
   { content: pokemon049263, path: "pokemon/049263.json" },
   { content: pokemon049264, path: "pokemon/049264.json" },
+  { content: pokemon049270, path: "pokemon/049270.json" },
   { content: pokemon049282, path: "pokemon/049282.json" },
   { content: pokemon049341, path: "pokemon/049341.json" },
   { content: pokemon049346, path: "pokemon/049346.json" },
+  { content: pokemon049478, path: "pokemon/049478.json" },
   { content: pokemon049481, path: "pokemon/049481.json" },
   { content: pokemon049482, path: "pokemon/049482.json" },
   { content: pokemon049694, path: "pokemon/049694.json" },

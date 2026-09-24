@@ -1298,6 +1298,23 @@
             "energyFilter": {
               "$ref": "#/$defs/CardFilter"
             },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "attachEnergyFromHandToSelf"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
             "maxPokemonCount": {
               "type": "integer",
               "minimum": 1
@@ -1335,6 +1352,16 @@
             }
           },
           "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "moveAnyEnergyFromOwnPokemonToSelf"
+            }
+          },
+          "required": ["operation"],
           "additionalProperties": false
         },
         {
@@ -1395,6 +1422,16 @@
           "properties": {
             "operation": {
               "const": "returnSelfToDeck"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "switchSelfWithActive"
             }
           },
           "required": ["operation"],
@@ -2051,6 +2088,16 @@
           "type": "object",
           "properties": {
             "count": {
+              "const": "basicEnergyAttachedToOwnPokemon"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
               "const": "ownBenchedPokemon"
             }
           },
@@ -2468,6 +2515,23 @@
             "energyFilter": {
               "$ref": "#/$defs/CardFilter"
             },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "attachEnergyFromHandToSelf"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
             "maxPokemonCount": {
               "type": "integer",
               "minimum": 1
@@ -2505,6 +2569,16 @@
             }
           },
           "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "moveAnyEnergyFromOwnPokemonToSelf"
+            }
+          },
+          "required": ["operation"],
           "additionalProperties": false
         },
         {
@@ -2565,6 +2639,16 @@
           "properties": {
             "operation": {
               "const": "returnSelfToDeck"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "switchSelfWithActive"
             }
           },
           "required": ["operation"],

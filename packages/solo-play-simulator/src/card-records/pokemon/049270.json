@@ -1,0 +1,63 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "discardHand"
+          },
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 6
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "はじけるほうこう"
+    },
+    {
+      "cost": ["electric", "fighting"],
+      "damage": {
+        "amount": 0,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "basicEnergyAttachedToOwnPokemon"
+          },
+          "unit": 70
+        },
+        "kind": "fixed"
+      },
+      "name": "きょくらいごう"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「きょくらいごう」は、自分の場のポケモンについている基本エネルギーを好きなだけトラッシュし、その枚数 × 70 ダメージを与える。ダメージは場の基本エネルギーを全部トラッシュしたときの値で求め、トラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "タケルライコex",
+  "cardIds": ["049270"],
+  "stage": "たね",
+  "hp": 240,
+  "pokemonType": "dragon",
+  "retreatCost": 3,
+  "exRule": "pokemonEx",
+  "translationStatus": "translated"
+}
