@@ -33,8 +33,30 @@ const IGNITION_ENERGY = buildRecordedCard("049452");
 const CYNTHIAS_SPIRITOMB = buildRecordedCard("049968");
 const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
 const TERAPAGOS = buildRecordedCard("049346");
+const MEGA_EXCADRILL = buildRecordedCard("050321");
+const STEEL_ENERGY = buildRecordedCard("030578");
 
 describe("ワザのダメージ", () => {
+  test("マキシマムドリルは、ワザを使うポケモンのエネルギーが 5 個以上なら 200 に 130 を足す(個数で数える)", () => {
+    const attack = findAttack(MEGA_EXCADRILL, "マキシマムドリル");
+    const four = buildState({ active: MEGA_EXCADRILL, bench: [RALTS] });
+    four.active?.energies.push(
+      ...Array.from({ length: 4 }, () => STEEL_ENERGY)
+    );
+    four.bench[0]?.energies.push(STEEL_ENERGY);
+    expect(calculateAttackDamage(four, activeOf(four), attack)).toBe(200);
+    const withIgnition = buildState({ active: MEGA_EXCADRILL });
+    withIgnition.active?.energies.push(
+      STEEL_ENERGY,
+      STEEL_ENERGY,
+      STEEL_ENERGY,
+      IGNITION_ENERGY
+    );
+    expect(
+      calculateAttackDamage(withIgnition, activeOf(withIgnition), attack)
+    ).toBe(330);
+  });
+
   test("ユニオンビートは、自分のベンチポケモンの数×30", () => {
     const attack = findAttack(TERAPAGOS, "ユニオンビート");
     const threeOnBench = buildState({

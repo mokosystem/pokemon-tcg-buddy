@@ -161,7 +161,7 @@ README は「コーディングエージェント上で動くスキルとして�
 | 山札 | 探してつけて切る | 条件、上限、つけ先の条件 | 既存(1 匹にまとめてつける形は順 6 の 2 セッション目に追加) | `searchDeckAndAttachEnergyToEachPokemon`(全員に 1 枚ずつ)、`searchDeckAndAttachEnergyToOnePokemon`(上限まで選び 1 匹にまとめて)、`searchDeckIntoHandAndAttachRest`(アカマツ) | メガサーナイトex、ブースターex、ルリリ、アカマツ |
 | 山札 | 探して進化させて切る | 条件 | 既存 | `evolveFromDeck` | 偉大な大樹 |
 | 山札 | 探して、残りを切ってから山札の上に置く | 枚数(好きなカード。山札が足りなければ全部)、好きな順 | 追加(順 6 の 3 セッション目) | `searchDeckAndPlaceOnTopAfterShuffle`(条件は要るカードが無く持たない) | 暗号マニアの解読 |
-| 山札 | 上から見て取る | 見る枚数、条件、取る上限、取ったカードの先(手札、つける)、残りの扱い(切る、下に戻す、切ってから下に戻す) | 既存(取る上限は既存。先をつける形は順 6 の 2 セッション目に別の操作として追加) | `lookAtDeckTopAndTakeIntoHand`(手札に加える)、`lookAtDeckTopAndAttachEnergyToSelf`(効果の持ち主につける)。残りの扱い `restPlacement` は `shuffleIntoDeck`、`bottomOfDeck`、`shuffleThenBottomOfDeck` | ポケギア3.0、ドロンチ、メガレックウザex、ジャラランガ(050390)、ウエートレス、むしとりセット |
+| 山札 | 上から見て取る | 見る枚数、条件、取る上限、取ったカードの先(手札、つける)、残りの扱い(切る、下に戻す、切ってから下に戻す) | 既存(取る上限は既存。先をつける形は順 6 の 2 セッション目に別の操作として追加) | `lookAtDeckTopAndTakeIntoHand`(手札に加える)、`lookAtDeckTopAndAttachEnergyToSelf`(効果の持ち主につける)、`lookAtDeckTopAndAttachEnergyToOwnPokemon`(条件に合う自分のポケモンに好きなように。3 セッション目)。残りの扱い `restPlacement` は `shuffleIntoDeck`、`bottomOfDeck`、`shuffleThenBottomOfDeck` | ポケギア3.0、ドロンチ、メガレックウザex、ジャラランガ(050390)、ウエートレス、むしとりセット |
 | 山札 | 上からトラッシュする | 枚数 | 追加(状態の側の `GameState.discardFromDeckTop` だけ。順 6 の 3 セッション目) | —(ヤドキングはワザの欄 `usesAttackOfDiscardedDeckTop` で書いた。記法の操作はモルペコの翻訳のときに足す) | ヤドキング、モルペコ |
 | 手札 | 山札に全部戻して切る | なし | 既存 | `shuffleHandIntoDeck` | リーリエの決心、ジャッジマン |
 | 手札 | トラッシュする | 枚数、条件。すべて | 既存(すべてトラッシュする形は順 6 の 3 セッション目に追加) | `discardFromHand`、`discardHand`(すべて。手札が 0 枚でも使える) | ハイパーボール、タケルライコex、ルナトーン、ゼイユ |
@@ -415,7 +415,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | 名前、カード ID、確認日 | `name`、`cardIds`、`verifiedOn` |
 | 翻訳の状態(翻訳あり、書けない、計算に関係ない、まだ書いていない) | `translationStatus`(`translated`、`notTranslatable`、`irrelevantToCalculation`、`notYetTranslated`) |
 | 属性 | `category`、`stage`、`evolvesFrom`、`basicPokemonOfEvolutionLine`、`hp`、`pokemonType`、`hasRuleBox`、`exRule`(`pokemonEx`、`megaEvolutionEx`。どちらでもないポケモンは持たない)、`isTerastal`、`retreatCost`、エネルギーは `provision`(`type` と `units`、すべてのタイプとして働くものは `anyType`) |
-| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName`、`ownBenchedPokemon`、`basicEnergyAttachedToOwnPokemon`(いずれも 3 セッション目に追加)。ベンチのポケモンのワザを「このワザとして使う」ワザは `usesAttackOfBenchedPokemon`(ベンチのポケモンの条件)、山札の上からトラッシュしたポケモンのワザを使うワザは `usesAttackOfDiscardedDeckTop`(トラッシュしたカードの条件。いずれも 3 セッション目に追加) |
+| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName`、`ownBenchedPokemon`、`basicEnergyAttachedToOwnPokemon`、`energyAttachedToAttackingPokemon`(いずれも 3 セッション目に追加)。ベンチのポケモンのワザを「このワザとして使う」ワザは `usesAttackOfBenchedPokemon`(ベンチのポケモンの条件)、山札の上からトラッシュしたポケモンのワザを使うワザは `usesAttackOfDiscardedDeckTop`(トラッシュしたカードの条件。いずれも 3 セッション目に追加) |
 | 特性の一覧 | `abilities`(`name`、`translation`。翻訳しない特性は `translation` を持たない) |
 | トレーナーズと特殊エネルギーの効果 | `cardEffects` |
 | きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenEvolvedFromHand`(3 セッション目に追加)、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional`。基本ルールの例外の印「先攻の最初の番でも使える」は `whenPlayed` の `usableOnFirstTurnGoingFirst`(3 セッション目に追加) |
@@ -559,6 +559,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | ドラパルトex(`niLLgQ-YL6A8Y-gQQn9N`) | 無し(Issue 22 と開発責任者のデッキの記録で 60 枚がそろった) | — | — | — |
 | メガルカリオex(`UR2MXy-P7Pfrq-pMypUy`) | 8 種 | 3(メガルカリオex、ルナトーン、暗号マニアの解読) | 0 | 5(リオル 2 種、ソルロック、ノココッチex、グラビティーマウンテン) |
 | メガレックウザex(`1kvFVF-JDWJKx-k5fkkb`) | 4 種 | 2(ゼイユ、AZの安らぎ) | 0 | 2(テラパゴスex、オーガポン いどのめんex) |
+| メガドリュウズex(`pppRMX-JZDwG9-XyUSSU`) | 11 種 | 8(モグリュー、メタング、ゲノセクトex、エネルギー転送、プレシャスキャリー、ロケット団のレシーバー、エネルギーリサイクル、基本鋼エネルギー) | 0 | 3(メガドリュウズex、ダンバル、ツールスクラッパー) |
 | フーディン(`MX2Uyp-wLeekg-ppRRMp`) | 13 種 | 7(ケーシィ、ユンゲラー、フーディン、ドデカバシ、スイレンのお世話、夜の鉱山、リッチエネルギー) | 3(ゲノセクト、改造ハンマー、ラッキーメット) | 3(ツツケラ、ケララッパ、コダック) |
 | シロナのガブリアスex(`LnQi9n-TWLU6N-PgNLgN`) | 3 種 | 3(ロケット団のラムダ、サーファー、活力の森) | 0 | 0 |
 | メガゲッコウガex(`vbFkw1-fA38fT-FFVFkF`) | 6 種 | 5(ケロマツ、ゲコガシラ、ゲッコウガex、ヒガナの信頼、ネオアッパーエネルギー) | 1(メガゲッコウガex) | 0 |
@@ -590,12 +591,15 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | 変える項目 `allowEvolvingFreshPokemon` | 場にある間ずっと働く効果の追加 | 活力の森 | 出したばかりの番(最初の自分の番を除く)でも、範囲の草ポケモンを手札の草ポケモンに進化させられる(順 4 の論点「進化できるかの判定を変える」)。手札から進化させる判定(`canEvolvePokemonFromHand`)だけが見て、ふしぎなアメには働かない(公式 Q&A「活力の森」)。この番に進化したポケモンも続けて進化させられる(同)。採らなかった案: イーブイex の `allowEvolutionFromHandAsIfNamed` に欄を足す(変えるのが進化前の名前ではなく出したばかりの制限で、判定の場所が違う) |
 | きっかけ `triggeredWhenEvolvedFromHand` | きっかけの追加 | ユンゲラー、フーディン | 手札から出して進化させたとき(順 5 の「きっかけ」)。手札から進化させる操作と、ふしぎなアメの操作の後に問い合わせ、山札から進化させたとき(偉大な大樹)は起きない。ふしぎなアメで進化させたときも起きることは、同じ書き方のポケパワーの公式 Q&A を拠り所にした(「サイコドロー」の公式 Q&A は無く、出典は該当なし)。「手札からベンチに出したとき」と同じ問い合わせの処理(`resolveAbilityTriggers`)にまとめた |
 | 変える項目 `addColorlessToAttackCost` | 場にある間ずっと働く効果の追加 | 夜の鉱山 | ワザに必要なエネルギーを無色 N 個ぶん多くする(順 4 の論点「ワザのエネルギーの判定を変える」)。ワザを使うポケモンに働く効果で求め(`calculateAttackCost`)、ミュウex の「きおくのらせん」でテラスタルのポケモンのワザを使っても増えない(公式 Q&A「夜の鉱山」) |
+| `lookAtDeckTopAndAttachEnergyToOwnPokemon` | 基本操作の追加 | メタング | 山札の上から見て、条件に合うエネルギーを選び、条件に合う自分のポケモンに好きなようにつける(「メタルメーカー」)。棚卸しの一覧はメガレックウザex と同じ手直しとしていたが、つけ先が効果の持ち主ではなく自分のポケモン全員から 1 枚ずつ選ぶ形で、`lookAtDeckTopAndAttachEnergyToSelf` では表せない。つけないことも選べる(公式 Q&A「メタルメーカー」) |
+| ダメージの数える対象 `energyAttachedToAttackingPokemon` | ワザのダメージの追加 | メガドリュウズex | ワザを使うポケモンについているエネルギーの個数(「マキシマムドリル」は、必要なエネルギー 3 個より 2 個多い 5 個以上で 130 を足す)。個数で数えることは公式 Q&A(イグニッションエネルギーは 3 個)で確かめた。数える関数(`calculateAttackDamage` の中)にワザを使うポケモンを渡すようにした |
 | 含めなかった理由 `firstTurnGoingSecondRestriction` | 理由の追加 | テラパゴスex | 後攻の最初の番にワザを使えない制限(「ユニオンビート」)。翻訳しないカードのワザには使える条件を書けない(効果の操作が 1 つ以上要る)ため、制限を持たずに前提に出す。`ownNextTurnRestriction`(ワザを使った次の番の制限)とはきっかけが違うため分けた。採らなかった案: `ownNextTurnRestriction` に含める(前提を読む人がどちらの制限か取り違える) |
 
 #### 記録で分かったこと
 
 - ソルロックの「コスモビーム」は、自分のベンチに「ルナトーン」がいないと失敗する。ダメージの上乗せの形(`perCount`、`whenCountAtLeast`)では書けず、数える対象(ベンチの名前)も無いため、ダメージは 70 で持ち、失敗する条件を含めなかった効果(`damageBonusNotModeled`)に書いた。ソルロックは「計算に関係ない」で、狙いのワザになることは考えにくい。採らなかった案: 数える対象を足す(使うカードがソルロックだけで、狙いに効かない)
 - Nのゾロアークex の代表デッキの印刷 048634 の詳細ページには「特別なルール」の見出し(ポケモンex のルール)が無い。公式 Q&A の関連カードの印刷 047069、047237 にはあり、ほかのカードテキスト(HP、特性、ワザ、にげる)は同じだったため、同じカードとしてポケモンex にし、3 つを 1 つの記録にした。詳細ページのデータの抜けとみて、取得したページの突き合わせでは 048634 の exRule の食い違いを確かめたうえで残した
+- 「好きなだけ」ベンチに出す(プレシャスキャリー)は、上限を山札の最大の枚数 60 で書いた。実際の上限はベンチの空きで、骨組みが空きの範囲に縮める
 - ルナトーンの「ルナサイクル」は、ルナトーンごとに番に 1 回で、別の「ルナサイクル」を使った番は使えない。2 つを合わせると場全体で番に 1 回になるため、`oncePerTurnPerAbilityName` で書いた。公式 Q&A に該当は無かった(検索語「ルナサイクル」、2026-09-24)
 
 Issue 22 の完了の定義に対応する記録。いずれも 2026-09-17 に、乱数の種 20260917、試行 20000 回で実行した。枚数を変えたときの比較は同じ種で回すので、差は試行の揺れではなく変更の効果として読める。20000 回のときの割合の揺れはおよそ ±0.7 ポイント(95 % の範囲)。

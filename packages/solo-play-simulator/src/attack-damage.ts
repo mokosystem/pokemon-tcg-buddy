@@ -15,15 +15,19 @@ import {
 import { matchesPokemonFilter } from "./conditions.ts";
 import {
   countEnergyUnitsOfTypes,
+  listEnergyUnits,
   sumAttackDamageIncrease,
 } from "./continuous-effects.ts";
 import type { GameState, PokemonInPlay } from "./state.ts";
 
 function countDamageTarget(
   state: GameState,
+  attacker: PokemonInPlay,
   target: DamageBonus["target"]
 ): number {
   switch (target.count) {
+    case "energyAttachedToAttackingPokemon":
+      return listEnergyUnits(state, attacker).length;
     case "energyAttachedToOwnPokemon":
       return state
         .listPokemonInPlay()
@@ -58,8 +62,12 @@ function countDamageTarget(
   }
 }
 
-function calculateBonus(state: GameState, bonus: DamageBonus): number {
-  const count = countDamageTarget(state, bonus.target);
+function calculateBonus(
+  state: GameState,
+  attacker: PokemonInPlay,
+  bonus: DamageBonus
+): number {
+  const count = countDamageTarget(state, attacker, bonus.target);
   if (bonus.kind === "perCount") {
     return count * bonus.unit;
   }
@@ -99,7 +107,9 @@ export function calculateAttackDamage(
   }
   const base =
     damage.amount +
-    (damage.bonus === undefined ? 0 : calculateBonus(state, damage.bonus));
+    (damage.bonus === undefined
+      ? 0
+      : calculateBonus(state, attacker, damage.bonus));
   if (base === 0) {
     return 0;
   }

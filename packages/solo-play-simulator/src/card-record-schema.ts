@@ -296,6 +296,19 @@ const basicOperationOptions = [
     operation: literal("lookAtDeckTopAndAttachEnergyToSelf"),
     restPlacement: DeckTopRestPlacementSchema,
   }),
+  /**
+   * 山札の上から lookCount 枚を見て、条件に合うエネルギーを選び、条件に合う自分のポケモンに好きなようにつける
+   * (メタングの「メタルメーカー」)。
+   */
+  strictObject({
+    filter: CardFilterSchema,
+    lookCount: countFromOne,
+    maxAttachCount: countFromOne,
+    minAttachCount: countFromZero,
+    operation: literal("lookAtDeckTopAndAttachEnergyToOwnPokemon"),
+    restPlacement: DeckTopRestPlacementSchema,
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
   strictObject({
     filter: CardFilterSchema,
     maxCount: countFromOne,
@@ -527,6 +540,8 @@ export const DamageCountTargetSchema = variant("count", [
     abilityName: nonEmptyText,
     count: literal("discardPokemonWithAbilityName"),
   }),
+  /** ワザを使うポケモンについているエネルギーの数(メガドリュウズex の「マキシマムドリル」)。 */
+  strictObject({ count: literal("energyAttachedToAttackingPokemon") }),
   /** 自分のポケモン全員についている基本エネルギーの枚数(タケルライコex の「きょくらいごう」)。 */
   strictObject({ count: literal("basicEnergyAttachedToOwnPokemon") }),
   /** 自分のベンチポケモンの数(テラパゴスex の「ユニオンビート」)。 */

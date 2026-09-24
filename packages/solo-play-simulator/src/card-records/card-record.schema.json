@@ -1308,6 +1308,50 @@
             "filter": {
               "$ref": "#/$defs/CardFilter"
             },
+            "lookCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxAttachCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minAttachCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "lookAtDeckTopAndAttachEnergyToOwnPokemon"
+            },
+            "restPlacement": {
+              "enum": [
+                "shuffleIntoDeck",
+                "bottomOfDeck",
+                "shuffleThenBottomOfDeck"
+              ],
+              "type": "string"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": [
+            "filter",
+            "lookCount",
+            "maxAttachCount",
+            "minAttachCount",
+            "operation",
+            "restPlacement",
+            "targetFilter"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
             "maxCount": {
               "type": "integer",
               "minimum": 1
@@ -2262,6 +2306,16 @@
           "type": "object",
           "properties": {
             "count": {
+              "const": "energyAttachedToAttackingPokemon"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
               "const": "basicEnergyAttachedToOwnPokemon"
             }
           },
@@ -2636,6 +2690,50 @@
             "minAttachCount",
             "operation",
             "restPlacement"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "lookCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxAttachCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minAttachCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "lookAtDeckTopAndAttachEnergyToOwnPokemon"
+            },
+            "restPlacement": {
+              "enum": [
+                "shuffleIntoDeck",
+                "bottomOfDeck",
+                "shuffleThenBottomOfDeck"
+              ],
+              "type": "string"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": [
+            "filter",
+            "lookCount",
+            "maxAttachCount",
+            "minAttachCount",
+            "operation",
+            "restPlacement",
+            "targetFilter"
           ],
           "additionalProperties": false
         },

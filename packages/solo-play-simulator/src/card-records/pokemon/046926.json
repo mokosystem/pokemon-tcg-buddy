@@ -1,0 +1,66 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "メタルメーカー",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "filter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["steel"]
+              },
+              "lookCount": 4,
+              "maxAttachCount": 4,
+              "minAttachCount": 0,
+              "operation": "lookAtDeckTopAndAttachEnergyToOwnPokemon",
+              "restPlacement": "shuffleThenBottomOfDeck",
+              "targetFilter": {}
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["steel", "colorless", "colorless"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "ビーム"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "つけなくてよい",
+      "question": "特性「メタルメーカー」で見た 4 枚に基本鋼エネルギーがあっても、つけないことを選べるか",
+      "reflectedIn": "lookAtDeckTopAndAttachEnergyToOwnPokemon の minAttachCount を 0 にした",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "メタルメーカーで山札の上から見た 4 枚に基本鋼エネルギーがあった場合でも、つけないことはできるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%A1%E3%82%BF%E3%83%AB%E3%83%A1%E3%83%BC%E3%82%AB%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "メタング",
+  "cardIds": ["046926", "049213", "045264"],
+  "stage": "1進化",
+  "evolvesFrom": "ダンバル",
+  "hp": 100,
+  "pokemonType": "steel",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

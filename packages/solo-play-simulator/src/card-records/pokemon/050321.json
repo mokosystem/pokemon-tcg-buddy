@@ -1,0 +1,62 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["steel", "steel"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "ほりくずす"
+    },
+    {
+      "cost": ["steel", "steel", "steel"],
+      "damage": {
+        "amount": 200,
+        "bonus": {
+          "add": 130,
+          "atLeast": 5,
+          "kind": "whenCountAtLeast",
+          "target": {
+            "count": "energyAttachedToAttackingPokemon"
+          }
+        },
+        "kind": "fixed"
+      },
+      "name": "マキシマムドリル"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ほりくずす」の、相手の山札を上から 2 枚トラッシュする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "エネルギーの数は、エネルギーが働く個数で数える(イグニッションエネルギーは 3 個)",
+      "question": "ワザ「マキシマムドリル」の「2 個多くエネルギーがついている」は、カードの枚数と個数のどちらで数えるか",
+      "reflectedIn": "上乗せの数える対象 energyAttachedToAttackingPokemon は、ワザを使うポケモンのエネルギーの個数(continuous-effects.ts の listEnergyUnits)で数え、必要なエネルギー 3 個に 2 個を足した 5 個以上で 130 を足す",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "イグニッションエネルギー 1 枚と鋼エネルギー 3 個がついているメガドリュウズexがマキシマムドリルを使ったとき、130 を追加できるかという質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%9E%E3%82%AD%E3%82%B7%E3%83%9E%E3%83%A0%E3%83%89%E3%83%AA%E3%83%AB&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "メガドリュウズex",
+  "cardIds": ["050321", "050282"],
+  "stage": "1進化",
+  "evolvesFrom": "モグリュー",
+  "hp": 340,
+  "pokemonType": "steel",
+  "retreatCost": 4,
+  "exRule": "megaEvolutionEx",
+  "translationStatus": "irrelevantToCalculation"
+}

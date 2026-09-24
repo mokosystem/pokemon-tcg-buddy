@@ -188,6 +188,9 @@ const firstStepTargetChecks: {
   evolveFromDeck: (_, { state }) =>
     state.deck.length > 0 && listEvolvableBasics(state).length > 0,
   increaseAttackDamageThisTurn: alwaysHasTarget,
+  lookAtDeckTopAndAttachEnergyToOwnPokemon: (step, { state }) =>
+    state.deck.length > 0 &&
+    listOwnPokemonMatching(state, step.targetFilter).length > 0,
   // 山札が 4 枚に満たなくても、ある分だけ見て使える(公式 Q&A「はしゃのほうこう」、2026-09-23 確認)
   lookAtDeckTopAndAttachEnergyToSelf: (_, { source, state }) =>
     state.deck.length > 0 && source.pokemon !== null,
@@ -506,6 +509,40 @@ function lookAtDeckTopAndAttachToSelf(
     `${label}: 山札の上から見て ${holder.name} につけるエネルギー`
   );
   state.attachFromDeckTop(step.lookCount, chosen, holder, step.restPlacement);
+}
+
+/** 山札の上から見て、条件に合うエネルギーを選び、1 枚ずつつける先のポケモンを選ぶ。 */
+function lookAtDeckTopAndAttachToOwnPokemon(
+  run: OperationRun,
+  step: Extract<
+    BasicOperation,
+    { operation: "lookAtDeckTopAndAttachEnergyToOwnPokemon" }
+  >
+): void {
+  const { context, label } = run;
+  const { state } = context;
+  const targets = listOwnPokemonMatching(state, step.targetFilter);
+  const chosen = chooseCardsWithin(
+    context,
+    listMatching(state.deck.slice(0, step.lookCount), step.filter).filter(
+      isEnergy
+    ),
+    { maxCount: step.maxAttachCount, minCount: step.minAttachCount },
+    `${label}: 山札の上から見てつけるエネルギー`
+  );
+  const assignments = chosen.flatMap((energy) => {
+    const target = chooseOnePokemon(
+      context,
+      targets,
+      `${label}: ${energy.name} をつけるポケモン`
+    );
+    return target === null ? [] : [{ energy, target }];
+  });
+  state.attachFromDeckTopToEach(
+    step.lookCount,
+    assignments,
+    step.restPlacement
+  );
 }
 
 /** つけ替える元のポケモン、エネルギー、つけ替える先のポケモンの順に選ぶ。 */
@@ -827,6 +864,8 @@ const operationRunners: {
     });
     context.state.record(`${label}: この番のワザのダメージ +${step.amount}`);
   },
+  lookAtDeckTopAndAttachEnergyToOwnPokemon: (step, run) =>
+    lookAtDeckTopAndAttachToOwnPokemon(run, step),
   lookAtDeckTopAndAttachEnergyToSelf: (step, run) =>
     lookAtDeckTopAndAttachToSelf(run, step),
   lookAtDeckTopAndTakeIntoHand: (step, { context, label }) => {

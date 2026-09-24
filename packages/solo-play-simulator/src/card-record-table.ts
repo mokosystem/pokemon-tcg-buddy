@@ -2,6 +2,7 @@
 // 生成し直したかは src/card-record-files.test.ts が検査する。
 
 import { buildCardRecordTable } from "./card-record-validation.ts";
+import energies030578 from "./card-records/energies/030578.json";
 import energies045217 from "./card-records/energies/045217.json";
 import energies046293 from "./card-records/energies/046293.json";
 import energies047903 from "./card-records/energies/047903.json";
@@ -16,7 +17,9 @@ import energies049463 from "./card-records/energies/049463.json";
 import energies049712 from "./card-records/energies/049712.json";
 import energies049713 from "./card-records/energies/049713.json";
 import energies050746 from "./card-records/energies/050746.json";
+import goods042243 from "./card-records/goods/042243.json";
 import goods045783 from "./card-records/goods/045783.json";
+import goods046220 from "./card-records/goods/046220.json";
 import goods047791 from "./card-records/goods/047791.json";
 import goods047792 from "./card-records/goods/047792.json";
 import goods048299 from "./card-records/goods/048299.json";
@@ -34,7 +37,10 @@ import goods049376 from "./card-records/goods/049376.json";
 import goods049380 from "./card-records/goods/049380.json";
 import goods049383 from "./card-records/goods/049383.json";
 import goods049602 from "./card-records/goods/049602.json";
+import goods049977 from "./card-records/goods/049977.json";
+import goods050068 from "./card-records/goods/050068.json";
 import goods050156 from "./card-records/goods/050156.json";
+import goods050206 from "./card-records/goods/050206.json";
 import goods050402 from "./card-records/goods/050402.json";
 import goods050424 from "./card-records/goods/050424.json";
 import goods050461 from "./card-records/goods/050461.json";
@@ -54,6 +60,7 @@ import pokemon046668 from "./card-records/pokemon/046668.json";
 import pokemon046670 from "./card-records/pokemon/046670.json";
 import pokemon046689 from "./card-records/pokemon/046689.json";
 import pokemon046690 from "./card-records/pokemon/046690.json";
+import pokemon046926 from "./card-records/pokemon/046926.json";
 import pokemon047041 from "./card-records/pokemon/047041.json";
 import pokemon047086 from "./card-records/pokemon/047086.json";
 import pokemon047087 from "./card-records/pokemon/047087.json";
@@ -68,6 +75,7 @@ import pokemon047832 from "./card-records/pokemon/047832.json";
 import pokemon047833 from "./card-records/pokemon/047833.json";
 import pokemon047834 from "./card-records/pokemon/047834.json";
 import pokemon047847 from "./card-records/pokemon/047847.json";
+import pokemon047988 from "./card-records/pokemon/047988.json";
 import pokemon048351 from "./card-records/pokemon/048351.json";
 import pokemon048353 from "./card-records/pokemon/048353.json";
 import pokemon048358 from "./card-records/pokemon/048358.json";
@@ -96,6 +104,7 @@ import pokemon049185 from "./card-records/pokemon/049185.json";
 import pokemon049197 from "./card-records/pokemon/049197.json";
 import pokemon049205 from "./card-records/pokemon/049205.json";
 import pokemon049207 from "./card-records/pokemon/049207.json";
+import pokemon049212 from "./card-records/pokemon/049212.json";
 import pokemon049261 from "./card-records/pokemon/049261.json";
 import pokemon049262 from "./card-records/pokemon/049262.json";
 import pokemon049263 from "./card-records/pokemon/049263.json";
@@ -121,10 +130,12 @@ import pokemon050225 from "./card-records/pokemon/050225.json";
 import pokemon050250 from "./card-records/pokemon/050250.json";
 import pokemon050251 from "./card-records/pokemon/050251.json";
 import pokemon050258 from "./card-records/pokemon/050258.json";
+import pokemon050263 from "./card-records/pokemon/050263.json";
 import pokemon050283 from "./card-records/pokemon/050283.json";
 import pokemon050284 from "./card-records/pokemon/050284.json";
 import pokemon050285 from "./card-records/pokemon/050285.json";
 import pokemon050308 from "./card-records/pokemon/050308.json";
+import pokemon050321 from "./card-records/pokemon/050321.json";
 import pokemon050392 from "./card-records/pokemon/050392.json";
 import pokemon050396 from "./card-records/pokemon/050396.json";
 import pokemon050400 from "./card-records/pokemon/050400.json";
@@ -173,6 +184,7 @@ import supporters050467 from "./card-records/supporters/050467.json";
 
 /** カード ID(どの印刷の ID からも)→ カードの記録。読み込み時に全記録を検査し、誤りがあれば止める。 */
 export const cardRecordTable = buildCardRecordTable([
+  { content: energies030578, path: "energies/030578.json" },
   { content: energies045217, path: "energies/045217.json" },
   { content: energies046293, path: "energies/046293.json" },
   { content: energies047903, path: "energies/047903.json" },
@@ -187,7 +199,9 @@ export const cardRecordTable = buildCardRecordTable([
   { content: energies049712, path: "energies/049712.json" },
   { content: energies049713, path: "energies/049713.json" },
   { content: energies050746, path: "energies/050746.json" },
+  { content: goods042243, path: "goods/042243.json" },
   { content: goods045783, path: "goods/045783.json" },
+  { content: goods046220, path: "goods/046220.json" },
   { content: goods047791, path: "goods/047791.json" },
   { content: goods047792, path: "goods/047792.json" },
   { content: goods048299, path: "goods/048299.json" },
@@ -205,7 +219,10 @@ export const cardRecordTable = buildCardRecordTable([
   { content: goods049380, path: "goods/049380.json" },
   { content: goods049383, path: "goods/049383.json" },
   { content: goods049602, path: "goods/049602.json" },
+  { content: goods049977, path: "goods/049977.json" },
+  { content: goods050068, path: "goods/050068.json" },
   { content: goods050156, path: "goods/050156.json" },
+  { content: goods050206, path: "goods/050206.json" },
   { content: goods050402, path: "goods/050402.json" },
   { content: goods050424, path: "goods/050424.json" },
   { content: goods050461, path: "goods/050461.json" },
@@ -231,6 +248,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon046670, path: "pokemon/046670.json" },
   { content: pokemon046689, path: "pokemon/046689.json" },
   { content: pokemon046690, path: "pokemon/046690.json" },
+  { content: pokemon046926, path: "pokemon/046926.json" },
   { content: pokemon047041, path: "pokemon/047041.json" },
   { content: pokemon047086, path: "pokemon/047086.json" },
   { content: pokemon047087, path: "pokemon/047087.json" },
@@ -245,6 +263,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon047833, path: "pokemon/047833.json" },
   { content: pokemon047834, path: "pokemon/047834.json" },
   { content: pokemon047847, path: "pokemon/047847.json" },
+  { content: pokemon047988, path: "pokemon/047988.json" },
   { content: pokemon048351, path: "pokemon/048351.json" },
   { content: pokemon048353, path: "pokemon/048353.json" },
   { content: pokemon048358, path: "pokemon/048358.json" },
@@ -273,6 +292,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon049197, path: "pokemon/049197.json" },
   { content: pokemon049205, path: "pokemon/049205.json" },
   { content: pokemon049207, path: "pokemon/049207.json" },
+  { content: pokemon049212, path: "pokemon/049212.json" },
   { content: pokemon049261, path: "pokemon/049261.json" },
   { content: pokemon049262, path: "pokemon/049262.json" },
   { content: pokemon049263, path: "pokemon/049263.json" },
@@ -298,10 +318,12 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon050250, path: "pokemon/050250.json" },
   { content: pokemon050251, path: "pokemon/050251.json" },
   { content: pokemon050258, path: "pokemon/050258.json" },
+  { content: pokemon050263, path: "pokemon/050263.json" },
   { content: pokemon050283, path: "pokemon/050283.json" },
   { content: pokemon050284, path: "pokemon/050284.json" },
   { content: pokemon050285, path: "pokemon/050285.json" },
   { content: pokemon050308, path: "pokemon/050308.json" },
+  { content: pokemon050321, path: "pokemon/050321.json" },
   { content: pokemon050392, path: "pokemon/050392.json" },
   { content: pokemon050396, path: "pokemon/050396.json" },
   { content: pokemon050400, path: "pokemon/050400.json" },

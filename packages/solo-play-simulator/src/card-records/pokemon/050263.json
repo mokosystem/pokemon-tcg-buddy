@@ -1,0 +1,48 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"],
+              "stages": ["たね"]
+            },
+            "maxCount": 2,
+            "operation": "searchDeckOntoBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "なかまをよぶ"
+    },
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "ツメをたてる"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "モグリュー",
+  "cardIds": ["050263"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "fighting",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["サポート"],
+                  "nameIncludes": "ロケット団"
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["049977", "049391", "047483"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "ロケット団のレシーバー",
+  "rulings": [
+    {
+      "interpretation": "選べる。名前に「ロケット団」を含むサポートを選べる(「ロケット団の」でなくてよい)",
+      "question": "「ロケット団参上！」のように、名前に「ロケット団の」とつかないサポートも選べるか",
+      "reflectedIn": "探す条件を nameIncludes「ロケット団」にした",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "ロケット団のレシーバーで「ロケット団の手口」「ロケット団参上!」などのサポートを選べるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%AC%E3%82%B7%E3%83%BC%E3%83%90%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

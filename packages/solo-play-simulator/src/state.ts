@@ -359,6 +359,26 @@ export class GameState {
     }
   }
 
+  /** 山札の上から lookCount 枚のうち、エネルギーをそれぞれの target につけ、残りを restPlacement の通りに山札に戻す。 */
+  attachFromDeckTopToEach(
+    lookCount: number,
+    assignments: readonly { energy: Card; target: PokemonInPlay }[],
+    restPlacement: DeckTopRestPlacement
+  ): void {
+    if (!assignments.every(({ energy }) => isEnergy(energy))) {
+      throw new IllegalMove("エネルギーではないカードをつけようとした");
+    }
+    this.removeFromDeckTop(
+      lookCount,
+      assignments.map(({ energy }) => energy),
+      restPlacement
+    );
+    for (const { energy, target } of assignments) {
+      target.energies.push(energy);
+      this.record(`エネルギー ${energy.name} → ${target.name}(山札の上から)`);
+    }
+  }
+
   /**
    * 山札の上から lookCount 枚を見て chosen を取り出し、残りを山札に戻す(切る、下に置く、切ってから下に置く)。
    * 同じカードは同じ参照を枚数分並べているため、参照ではなく位置で 1 枚ずつ除く。

@@ -171,6 +171,16 @@ const LILLIES_CARE = buildRecordedCard("045637");
 const NIGHT_MINE = buildRecordedCard("048710");
 const RICH_ENERGY = buildRecordedCard("046293");
 const TERAPAGOS_EX = buildRecordedCard("049346");
+const DRILBUR = buildRecordedCard("050263");
+const MEGA_EXCADRILL = buildRecordedCard("050321");
+const BELDUM = buildRecordedCard("049212");
+const METANG = buildRecordedCard("046926");
+const GENESECT_EX = buildRecordedCard("047988");
+const ENERGY_SEARCH = buildRecordedCard("042243");
+const PRECIOUS_CARRIER = buildRecordedCard("046220");
+const ROCKET_RECEIVER = buildRecordedCard("049977");
+const ENERGY_RECYCLER = buildRecordedCard("050068");
+const STEEL_ENERGY = buildRecordedCard("030578");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -2830,6 +2840,128 @@ describeTranslation("リッチエネルギー", () => {
     );
     expect(state.hand).toHaveLength(4);
     expect(listEnergyUnits(state, activeOf(state))).toEqual(["colorless"]);
+  });
+});
+
+describeTranslation("モグリュー", () => {
+  test("なかまをよぶは、山札からたねポケモンを 2 枚までベンチに出す", () => {
+    const state = buildState({
+      active: DRILBUR,
+      deck: [BELDUM, METANG, GENESECT_EX, DRILBUR],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    useAttack(buildContext(state), "なかまをよぶ");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
+      "ダンバル",
+      "ゲノセクトex",
+    ]);
+  });
+});
+
+describeTranslation("メタング", () => {
+  test("メタルメーカーは、山札の上から 4 枚の基本鋼エネルギーを好きなだけ、自分のポケモンに好きなようにつけ、残りを山札の下に置く", () => {
+    const state = buildState({
+      active: METANG,
+      bench: [BELDUM],
+      deck: [STEEL_ENERGY, BOSS, STEEL_ENERGY, STEEL_ENERGY, PSYCHIC_ENERGY],
+    });
+    // 1 枚目をメタングに、2 枚目と 3 枚目をダンバルにつける
+    const targets = ["メタング", "ダンバル", "ダンバル"];
+    useAbility(
+      buildContext(state, {
+        choosePokemon: (_, request) => {
+          const name = targets.shift();
+          return request.candidates.filter((pokemon) => pokemon.name === name);
+        },
+      }),
+      activeOf(state),
+      "メタルメーカー"
+    );
+    expect(activeOf(state).energies).toHaveLength(1);
+    expect(benchAt(state, 0).energies).toHaveLength(2);
+    expect(namesOf(state.deck)).toEqual(["基本超エネルギー", "ボスの指令"]);
+  });
+
+  test("見た中に基本鋼エネルギーがあっても、つけないことを選べる(公式 Q&A)", () => {
+    const state = buildState({
+      active: METANG,
+      deck: [STEEL_ENERGY, BOSS],
+    });
+    useAbility(
+      buildContext(state, { chooseCards: () => [] }),
+      activeOf(state),
+      "メタルメーカー"
+    );
+    expect(activeOf(state).energies).toEqual([]);
+    expect(state.deck).toHaveLength(2);
+  });
+});
+
+describeTranslation("ゲノセクトex", () => {
+  test("メタルシグナルは、山札から鋼の進化ポケモンを 2 枚まで手札に加える(たねのメガシンカex は選べない)", () => {
+    const state = buildState({
+      active: GENESECT_EX,
+      deck: [BELDUM, MEGA_EXCADRILL, METANG, METANG, STEEL_ENERGY],
+    });
+    useAbility(buildContext(state), activeOf(state), "メタルシグナル");
+    expect(namesOf(state.hand)).toEqual(["メガドリュウズex", "メタング"]);
+  });
+});
+
+describeTranslation("エネルギー転送", () => {
+  test("山札から基本エネルギーを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: BELDUM,
+      deck: [BOSS, STEEL_ENERGY],
+      hand: [ENERGY_SEARCH],
+    });
+    playTrainerFromHand(buildContext(state), ENERGY_SEARCH);
+    expect(namesOf(state.hand)).toEqual(["基本鋼エネルギー"]);
+  });
+});
+
+describeTranslation("プレシャスキャリー", () => {
+  test("山札からたねポケモンを好きなだけ、ベンチの空きの範囲でベンチに出す", () => {
+    const state = buildState({
+      active: BELDUM,
+      bench: [DRILBUR],
+      deck: [...repeat(BELDUM, 6), METANG],
+      hand: [PRECIOUS_CARRIER],
+    });
+    playTrainerFromHand(buildContext(state), PRECIOUS_CARRIER);
+    expect(state.bench).toHaveLength(5);
+  });
+});
+
+describeTranslation("ロケット団のレシーバー", () => {
+  test("山札から、名前に「ロケット団」とつくサポートを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: BELDUM,
+      deck: [BOSS, ARIANA],
+      hand: [ROCKET_RECEIVER],
+    });
+    playTrainerFromHand(buildContext(state), ROCKET_RECEIVER);
+    expect(namesOf(state.hand)).toEqual(["ロケット団のラムダ"]);
+  });
+});
+
+describeTranslation("エネルギーリサイクル", () => {
+  test("トラッシュの基本エネルギーを 5 枚まで山札に戻して切る", () => {
+    const state = buildState({
+      active: BELDUM,
+      discard: [...repeat(STEEL_ENERGY, 6), ROCK_FIGHTING_ENERGY],
+      hand: [ENERGY_RECYCLER],
+    });
+    playTrainerFromHand(buildContext(state), ENERGY_RECYCLER);
+    expect(namesOf(state.deck)).toEqual(repeat("基本鋼エネルギー", 5));
+  });
+});
+
+describeTranslation("基本鋼エネルギー", () => {
+  test("鋼エネルギー 1 個ぶんとして働く", () => {
+    const state = buildState({ active: BELDUM });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["steel"]);
   });
 });
 

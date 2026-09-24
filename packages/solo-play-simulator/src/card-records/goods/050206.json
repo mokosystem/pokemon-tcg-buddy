@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["050206"],
+  "category": "グッズ",
+  "excludedEffects": [
+    {
+      "description": "おたがいの場のポケモンのどうぐを 2 枚までトラッシュする。相手のどうぐを消すための効果で、一人回しでは使っても成立率が上がらない",
+      "reason": "noReasonToUseInSoloPlay"
+    }
+  ],
+  "name": "ツールスクラッパー",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-24"
+}
