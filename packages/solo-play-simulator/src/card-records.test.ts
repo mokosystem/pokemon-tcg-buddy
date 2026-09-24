@@ -117,6 +117,11 @@ const FIGHTING_ENERGY = buildRecordedCard("049464");
 const ROCK_FIGHTING_ENERGY = buildRecordedCard("049713");
 const LIGHTNING_ENERGY = buildRecordedCard("050480");
 const WATER_ENERGY = buildRecordedCard("050479");
+const RIOLU = buildRecordedCard("046518");
+const MEGA_LUCARIO = buildRecordedCard("047762");
+const LUNATONE = buildRecordedCard("047759");
+const SOLROCK = buildRecordedCard("047760");
+const CIPHERMANIAC = buildRecordedCard("045284");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -1689,6 +1694,144 @@ describeTranslation("シロナのロズレイド", () => {
     expect(
       damageOf(state, activeOf(state), CYNTHIAS_GARCHOMP, "リューノバスター")
     ).toBe(320);
+  });
+});
+
+describeTranslation("メガルカリオex", () => {
+  test("はどうづきは、トラッシュの基本闘エネルギーを 3 枚まで、ベンチポケモンに好きなようにつける", () => {
+    const state = buildState({
+      active: MEGA_LUCARIO,
+      bench: [RIOLU, LUNATONE],
+      discard: [
+        FIGHTING_ENERGY,
+        ROCK_FIGHTING_ENERGY,
+        FIGHTING_ENERGY,
+        FIGHTING_ENERGY,
+        FIGHTING_ENERGY,
+      ],
+    });
+    activeOf(state).energies.push(FIGHTING_ENERGY);
+    useAttack(
+      buildContext(state, {
+        choosePokemon: (_, request) =>
+          request.candidates.filter((pokemon) => pokemon.name === "リオル"),
+      }),
+      "はどうづき"
+    );
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(
+      repeat("基本闘エネルギー", 3)
+    );
+    expect(benchAt(state, 1).energies).toEqual([]);
+    expect(namesOf(activeOf(state).energies)).toEqual(["基本闘エネルギー"]);
+    expect(namesOf(state.discard).sort()).toEqual(
+      ["ロック闘エネルギー", "基本闘エネルギー"].sort()
+    );
+  });
+
+  test("はどうづきで、トラッシュに基本闘エネルギーがあってもつけないことを選べる(公式 Q&A)", () => {
+    const state = buildState({
+      active: MEGA_LUCARIO,
+      bench: [RIOLU],
+      discard: [FIGHTING_ENERGY],
+    });
+    activeOf(state).energies.push(FIGHTING_ENERGY);
+    useAttack(buildContext(state, { chooseCards: () => [] }), "はどうづき");
+    expect(benchAt(state, 0).energies).toEqual([]);
+    expect(namesOf(state.discard)).toEqual(["基本闘エネルギー"]);
+  });
+});
+
+describeTranslation("ルナトーン", () => {
+  test("ルナサイクルは、場にソルロックがいれば手札の基本闘エネルギーを 1 枚トラッシュして 3 枚引く", () => {
+    const state = buildState({
+      active: SOLROCK,
+      bench: [LUNATONE],
+      deck: repeat(PSYCHIC_ENERGY, 5),
+      hand: [ROCK_FIGHTING_ENERGY, FIGHTING_ENERGY],
+    });
+    useAbility(buildContext(state), benchAt(state, 0), "ルナサイクル");
+    expect(namesOf(state.discard)).toEqual(["基本闘エネルギー"]);
+    expect(state.hand).toHaveLength(4);
+    expect(state.deck).toHaveLength(2);
+  });
+
+  test("場にソルロックがいないときと、手札に基本闘エネルギーが無いときは使えない", () => {
+    const noSolrock = buildState({
+      active: LUNATONE,
+      deck: repeat(PSYCHIC_ENERGY, 5),
+      hand: [FIGHTING_ENERGY],
+    });
+    expect(
+      canUseAbility(
+        buildContext(noSolrock),
+        activeOf(noSolrock),
+        "ルナサイクル"
+      )
+    ).toBe(false);
+    const noBasicEnergy = buildState({
+      active: LUNATONE,
+      bench: [SOLROCK],
+      deck: repeat(PSYCHIC_ENERGY, 5),
+      hand: [ROCK_FIGHTING_ENERGY],
+    });
+    expect(
+      canUseAbility(
+        buildContext(noBasicEnergy),
+        activeOf(noBasicEnergy),
+        "ルナサイクル"
+      )
+    ).toBe(false);
+  });
+
+  test("別のルナトーンのルナサイクルを使った番は使えない", () => {
+    const state = buildState({
+      active: LUNATONE,
+      bench: [LUNATONE, SOLROCK],
+      deck: repeat(PSYCHIC_ENERGY, 8),
+      hand: [FIGHTING_ENERGY, FIGHTING_ENERGY],
+    });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "ルナサイクル");
+    expect(canUseAbility(context, benchAt(state, 0), "ルナサイクル")).toBe(
+      false
+    );
+  });
+});
+
+describeTranslation("暗号マニアの解読", () => {
+  test("山札から 2 枚を選び、残りを切ってから、選んだ順に山札の上に置く", () => {
+    const state = buildState({
+      deck: [PSYCHIC_ENERGY, RIOLU, FIRE_ENERGY, LUNATONE, DARK_ENERGY],
+      hand: [CIPHERMANIAC],
+    });
+    playTrainerFromHand(
+      buildContext(state, {
+        chooseCards: pickCardsByName(["ルナトーン", "リオル"]),
+      }),
+      CIPHERMANIAC
+    );
+    expect(namesOf(state.deck.slice(0, 2))).toEqual(["ルナトーン", "リオル"]);
+    expect(state.deck).toHaveLength(5);
+    expect(namesOf(state.discard)).toEqual(["暗号マニアの解読"]);
+  });
+
+  test("山札が 2 枚以上あれば 1 枚だけは選べず、山札が 1 枚ならその 1 枚を置く", () => {
+    const twoOrMore = buildState({
+      deck: [PSYCHIC_ENERGY, RIOLU, FIRE_ENERGY],
+      hand: [CIPHERMANIAC],
+    });
+    expect(() =>
+      playTrainerFromHand(
+        buildContext(twoOrMore, {
+          chooseCards: pickCardsByName(["リオル"]),
+        }),
+        CIPHERMANIAC
+      )
+    ).toThrow(IllegalMove);
+
+    const one = buildState({ deck: [RIOLU], hand: [CIPHERMANIAC] });
+    playTrainerFromHand(buildContext(one), CIPHERMANIAC);
+    expect(namesOf(one.deck)).toEqual(["リオル"]);
   });
 });
 

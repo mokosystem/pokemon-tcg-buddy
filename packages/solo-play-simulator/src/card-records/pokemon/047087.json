@@ -1,0 +1,46 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "ぎゃっきょうテール"
+    },
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 150,
+        "kind": "fixed"
+      },
+      "name": "ドリルブレイク"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ぎゃっきょうテール」のダメージは、相手の場のポケモンex の数 × 60 で決まる。相手の場を扱わないため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    },
+    {
+      "description": "ワザ「ドリルブレイク」の、相手のバトルポケモンにかかっている効果を計算しない効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ノココッチex",
+  "cardIds": ["047087"],
+  "stage": "1進化",
+  "evolvesFrom": "ノコッチ",
+  "hp": 270,
+  "pokemonType": "colorless",
+  "retreatCost": 3,
+  "exRule": "pokemonEx",
+  "translationStatus": "irrelevantToCalculation"
+}

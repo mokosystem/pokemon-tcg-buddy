@@ -1,0 +1,64 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ルナサイクル",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "filter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["fighting"]
+              },
+              "maxCount": 1,
+              "minCount": 1,
+              "operation": "discardFromHand"
+            },
+            {
+              "count": {
+                "kind": "fixed",
+                "value": 3
+              },
+              "operation": "drawCards"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "names": ["ソルロック"]
+              }
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerAbilityName"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fighting", "fighting"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "パワージェム"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ルナトーン",
+  "cardIds": ["047759"],
+  "stage": "たね",
+  "hp": 110,
+  "pokemonType": "fighting",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

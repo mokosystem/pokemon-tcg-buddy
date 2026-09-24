@@ -1,0 +1,71 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fighting"],
+      "damage": {
+        "amount": 130,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"],
+              "providedEnergyTypes": ["fighting"]
+            },
+            "maxCount": 3,
+            "operation": "attachEnergyFromDiscardDistributedToPokemon",
+            "targetFilter": {
+              "positions": ["bench"]
+            }
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "はどうづき"
+    },
+    {
+      "cost": ["fighting", "fighting"],
+      "damage": {
+        "amount": 270,
+        "kind": "fixed"
+      },
+      "name": "メガブレイブ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「メガブレイブ」を使った次の自分の番に、このポケモンがこのワザを使えなくなる制限",
+      "reason": "ownNextTurnRestriction"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "つけなくてよい。トラッシュから選ぶエネルギーは 0〜3 枚",
+      "question": "ワザ「はどうづき」で、トラッシュに基本闘エネルギーがあってもベンチポケモンにつけないことを選べるか",
+      "reflectedIn": "attachEnergyFromDiscardDistributedToPokemon の選ぶ枚数の下限を 0 にする(effect-operations.ts の attachFromDiscardDistributed)",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "トラッシュに基本闘エネルギーが 1 枚あるとき、「はどうづき」でベンチポケモンにつけないことはできるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%AF%E3%81%A9%E3%81%86%E3%81%A5%E3%81%8D&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "メガルカリオex",
+  "cardIds": ["047762"],
+  "stage": "1進化",
+  "evolvesFrom": "リオル",
+  "hp": 340,
+  "pokemonType": "fighting",
+  "retreatCost": 2,
+  "exRule": "megaEvolutionEx",
+  "translationStatus": "translated"
+}

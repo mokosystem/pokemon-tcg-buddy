@@ -1130,6 +1130,20 @@
         {
           "type": "object",
           "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckAndPlaceOnTopAfterShuffle"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "filter": {
               "$ref": "#/$defs/CardFilter"
             },
@@ -1288,6 +1302,26 @@
             "operation",
             "targetFilter"
           ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "attachEnergyFromDiscardDistributedToPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
           "additionalProperties": false
         },
         {
@@ -2226,6 +2260,20 @@
         {
           "type": "object",
           "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckAndPlaceOnTopAfterShuffle"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "filter": {
               "$ref": "#/$defs/CardFilter"
             },
@@ -2384,6 +2432,26 @@
             "operation",
             "targetFilter"
           ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "attachEnergyFromDiscardDistributedToPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
           "additionalProperties": false
         },
         {

@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fighting"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "でんこうせっか"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「でんこうせっか」の、コインでオモテなら 20 を足す上乗せ。ダメージは上乗せを除いた 10 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "リオル",
+  "cardIds": ["046518"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "fighting",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

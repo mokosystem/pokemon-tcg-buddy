@@ -286,6 +286,21 @@ export class GameState {
     this.hand.push(card);
   }
 
+  /**
+   * 山札から chosen を取り出し、残りを切ってから、chosen を並びの順に山札の上に置く(先頭がいちばん上)。
+   * 切ってから置くので、次に引くカードは chosen の順で決まる。
+   */
+  placeOnDeckTopAfterShuffle(chosen: readonly Card[]): void {
+    for (const card of chosen) {
+      removeCard(this.deck, card, "山札");
+    }
+    this.shuffleDeck();
+    this.deck.unshift(...chosen);
+    this.record(
+      `山札の上に ${chosen.map((card) => card.name).join("、")} を置く`
+    );
+  }
+
   /** 山札の上から lookCount 枚のうち chosen を手札に加え、残りを restPlacement の通りに山札に戻す。 */
   takeFromDeckTop(
     lookCount: number,

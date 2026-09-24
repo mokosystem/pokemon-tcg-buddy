@@ -144,6 +144,9 @@ const firstStepTargetChecks: {
   addFromDiscardToHand: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
+  attachEnergyFromDiscardDistributedToPokemon: (step, { state }) =>
+    listMatching(state.discard, step.energyFilter).some(isEnergy) &&
+    listOwnPokemonMatching(state, step.targetFilter).length > 0,
   attachEnergyFromDiscardToEachChosenPokemon: (step, { state }) =>
     listMatching(state.discard, step.energyFilter).some(isEnergy) &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
@@ -180,6 +183,7 @@ const firstStepTargetChecks: {
   searchDeckAndAttachEnergyToOnePokemon: (step, { state }) =>
     state.deck.length > 0 &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
+  searchDeckAndPlaceOnTopAfterShuffle: deckHasCards,
   searchDeckIntoHand: deckHasCards,
   searchDeckIntoHandAndAttachRest: deckHasCards,
   searchDeckOntoBench: (_, { state }) =>
@@ -380,6 +384,36 @@ function attachEnergyChosenFromHand(
   }
 }
 
+/**
+ * 山札かトラッシュから、条件に合うエネルギーを 0〜maxCount 枚選ぶ。つける先の候補(条件に合う自分のポケモン)が
+ * いなければ選ばない。
+ */
+function chooseEnergiesForOwnPokemon(
+  run: OperationRun,
+  step: {
+    readonly energyFilter: CardFilter;
+    readonly maxCount: number;
+    readonly targetFilter: PokemonInPlayFilter;
+  },
+  zone: Extract<CardSource, "deck" | "discard">
+): { chosen: readonly Card[]; targets: PokemonInPlay[] } {
+  const { state } = run.context;
+  const targets = listOwnPokemonMatching(state, step.targetFilter);
+  const cards = zone === "deck" ? state.deck : state.discard;
+  const chosen =
+    targets.length === 0
+      ? []
+      : chooseCardsWithin(
+          run.context,
+          listMatching(cards, step.energyFilter).filter(isEnergy),
+          { maxCount: step.maxCount, minCount: 0 },
+          `${run.label}: ${ZONE_NAMES[zone]}から選ぶエネルギー`
+        );
+  return { chosen, targets };
+}
+
+const ZONE_NAMES = { deck: "山札", discard: "トラッシュ" } as const;
+
 /** 山札からエネルギーを 0〜maxCount 枚選び、1 匹にまとめてつけて切る(公式 Q&A「バーニングチャージ」: 1 枚も選ばなくてよい)。 */
 function searchDeckAndAttachToOnePokemon(
   run: OperationRun,
@@ -390,16 +424,7 @@ function searchDeckAndAttachToOnePokemon(
 ): void {
   const { context, label } = run;
   const { state } = context;
-  const targets = listOwnPokemonMatching(state, step.targetFilter);
-  const chosen =
-    targets.length === 0
-      ? []
-      : chooseCardsWithin(
-          context,
-          listMatching(state.deck, step.energyFilter).filter(isEnergy),
-          { maxCount: step.maxCount, minCount: 0 },
-          `${label}: 山札から選ぶエネルギー`
-        );
+  const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, "deck");
   const target =
     chosen.length === 0
       ? null
@@ -501,6 +526,42 @@ function attachFromDiscardToEachChosenPokemon(
       state.attachEnergyByEffect(energy, target, "discard");
     }
   }
+}
+
+/** トラッシュのエネルギーを 0〜maxCount 枚選び、1 枚ずつつける先のポケモンを選ぶ(同じポケモンに何枚つけてもよい)。 */
+function attachFromDiscardDistributed(
+  run: OperationRun,
+  step: Extract<
+    BasicOperation,
+    { operation: "attachEnergyFromDiscardDistributedToPokemon" }
+  >
+): void {
+  const { context, label } = run;
+  const { state } = context;
+  const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, "discard");
+  for (const energy of chosen) {
+    const target = chooseOnePokemon(
+      context,
+      targets,
+      `${label}: ${energy.name} をつけるポケモン`
+    );
+    if (target !== null) {
+      state.attachEnergyByEffect(energy, target, "discard");
+    }
+  }
+}
+
+/** 山札から count 枚(山札が足りなければ全部)を選び、残りを切ってから、選んだ順に山札の上に置く。 */
+function searchDeckAndPlaceOnTop(run: OperationRun, count: number): void {
+  const { context, label } = run;
+  const { state } = context;
+  const chosen = chooseCardsWithin(
+    context,
+    state.deck,
+    { maxCount: count, minCount: count },
+    `${label}: 山札の上に置くカード(先頭がいちばん上)`
+  );
+  state.placeOnDeckTopAfterShuffle(chosen);
 }
 
 function evolveFromDeck(run: OperationRun, canContinueToStage2: boolean): void {
@@ -627,6 +688,8 @@ const operationRunners: {
       context.state.takeFromDiscardToHand(card);
     }
   },
+  attachEnergyFromDiscardDistributedToPokemon: (step, run) =>
+    attachFromDiscardDistributed(run, step),
   attachEnergyFromDiscardToEachChosenPokemon: (step, run) =>
     attachFromDiscardToEachChosenPokemon(run, step),
   attachEnergyFromHand: (step, run) => attachEnergyChosenFromHand(run, step),
@@ -716,6 +779,8 @@ const operationRunners: {
   },
   searchDeckAndAttachEnergyToOnePokemon: (step, run) =>
     searchDeckAndAttachToOnePokemon(run, step),
+  searchDeckAndPlaceOnTopAfterShuffle: (step, run) =>
+    searchDeckAndPlaceOnTop(run, step.count),
   searchDeckIntoHand: (step, { context, label }) => {
     const { state } = context;
     for (const pick of step.picks) {
