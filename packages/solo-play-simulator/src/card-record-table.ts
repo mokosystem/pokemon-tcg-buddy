@@ -57,6 +57,7 @@ import pokemon045978 from "./card-records/pokemon/045978.json";
 import pokemon046247 from "./card-records/pokemon/046247.json";
 import pokemon046248 from "./card-records/pokemon/046248.json";
 import pokemon046372 from "./card-records/pokemon/046372.json";
+import pokemon046470 from "./card-records/pokemon/046470.json";
 import pokemon046500 from "./card-records/pokemon/046500.json";
 import pokemon046518 from "./card-records/pokemon/046518.json";
 import pokemon046667 from "./card-records/pokemon/046667.json";
@@ -73,6 +74,8 @@ import pokemon047258 from "./card-records/pokemon/047258.json";
 import pokemon047259 from "./card-records/pokemon/047259.json";
 import pokemon047366 from "./card-records/pokemon/047366.json";
 import pokemon047381 from "./card-records/pokemon/047381.json";
+import pokemon047411 from "./card-records/pokemon/047411.json";
+import pokemon047412 from "./card-records/pokemon/047412.json";
 import pokemon047663 from "./card-records/pokemon/047663.json";
 import pokemon047759 from "./card-records/pokemon/047759.json";
 import pokemon047760 from "./card-records/pokemon/047760.json";
@@ -145,6 +148,7 @@ import pokemon050284 from "./card-records/pokemon/050284.json";
 import pokemon050285 from "./card-records/pokemon/050285.json";
 import pokemon050308 from "./card-records/pokemon/050308.json";
 import pokemon050321 from "./card-records/pokemon/050321.json";
+import pokemon050364 from "./card-records/pokemon/050364.json";
 import pokemon050392 from "./card-records/pokemon/050392.json";
 import pokemon050396 from "./card-records/pokemon/050396.json";
 import pokemon050400 from "./card-records/pokemon/050400.json";
@@ -258,6 +262,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon046247, path: "pokemon/046247.json" },
   { content: pokemon046248, path: "pokemon/046248.json" },
   { content: pokemon046372, path: "pokemon/046372.json" },
+  { content: pokemon046470, path: "pokemon/046470.json" },
   { content: pokemon046500, path: "pokemon/046500.json" },
   { content: pokemon046518, path: "pokemon/046518.json" },
   { content: pokemon046667, path: "pokemon/046667.json" },
@@ -274,6 +279,8 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon047259, path: "pokemon/047259.json" },
   { content: pokemon047366, path: "pokemon/047366.json" },
   { content: pokemon047381, path: "pokemon/047381.json" },
+  { content: pokemon047411, path: "pokemon/047411.json" },
+  { content: pokemon047412, path: "pokemon/047412.json" },
   { content: pokemon047663, path: "pokemon/047663.json" },
   { content: pokemon047759, path: "pokemon/047759.json" },
   { content: pokemon047760, path: "pokemon/047760.json" },
@@ -346,6 +353,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon050285, path: "pokemon/050285.json" },
   { content: pokemon050308, path: "pokemon/050308.json" },
   { content: pokemon050321, path: "pokemon/050321.json" },
+  { content: pokemon050364, path: "pokemon/050364.json" },
   { content: pokemon050392, path: "pokemon/050392.json" },
   { content: pokemon050396, path: "pokemon/050396.json" },
   { content: pokemon050400, path: "pokemon/050400.json" },

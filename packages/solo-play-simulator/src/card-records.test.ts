@@ -188,6 +188,8 @@ const MARNIES_IMPIDIMP = buildRecordedCard("047257");
 const MARNIES_MORGREM = buildRecordedCard("047258");
 const MARNIES_GRIMMSNARL = buildRecordedCard("047259");
 const SPIKEMUTH_GYM = buildRecordedCard("047271");
+const TORCHIC = buildRecordedCard("047411");
+const BLAZIKEN_EX = buildRecordedCard("046470");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3103,6 +3105,41 @@ describeTranslation("スパイクタウンジム", () => {
     useStadiumEffect(context);
     expect(namesOf(state.hand)).toEqual(["マリィのオーロンゲex"]);
     expect(canUseStadiumEffect(context)).toBe(false);
+  });
+});
+
+describeTranslation("アチャモ", () => {
+  test("もってくるは 1 枚引く", () => {
+    const state = buildState({ active: TORCHIC, deck: [FIRE_ENERGY] });
+    activeOf(state).energies.push(FIRE_ENERGY);
+    useAttack(buildContext(state), "もってくる");
+    expect(namesOf(state.hand)).toEqual(["基本炎エネルギー"]);
+  });
+});
+
+describeTranslation("バシャーモex", () => {
+  test("たぎるとうしは、ポケモンごとに番に 1 回、トラッシュの基本エネルギーを 1 枚自分のポケモンにつける", () => {
+    const state = buildState({
+      active: DRAGAPULT,
+      bench: [BLAZIKEN_EX],
+      discard: [ROCK_FIGHTING_ENERGY, PSYCHIC_ENERGY],
+    });
+    const context = buildContext(state);
+    useAbility(context, benchAt(state, 0), "たぎるとうし");
+    expect(namesOf(activeOf(state).energies)).toEqual(["基本超エネルギー"]);
+    expect(canUseAbility(context, benchAt(state, 0), "たぎるとうし")).toBe(
+      false
+    );
+  });
+
+  test("トラッシュに基本エネルギーが無ければ使えない", () => {
+    const state = buildState({
+      active: BLAZIKEN_EX,
+      discard: [ROCK_FIGHTING_ENERGY],
+    });
+    expect(
+      canUseAbility(buildContext(state), activeOf(state), "たぎるとうし")
+    ).toBe(false);
   });
 });
 
