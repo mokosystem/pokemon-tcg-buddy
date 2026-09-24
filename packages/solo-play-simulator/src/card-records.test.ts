@@ -372,6 +372,37 @@ describeTranslation("ミュウex", () => {
     expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本超エネルギー"]);
   });
 
+  test("きおくのらせんで使うベンチのヤドキングのひらめきチャレンジも、自分で置いた山札の上のポケモンのワザとして使える", () => {
+    const state = buildState({
+      active: MEW,
+      bench: [SLOWKING],
+      deck: [PSYCHIC_ENERGY],
+      hand: [METAGROSS],
+    });
+    state.placeHandCardsOnDeckTop([METAGROSS]);
+    activeOf(state).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    const context = buildContext(state);
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["テレポートブレイク", "はねかえす", "メタリックハンマー"]);
+    useAttack(context, "メタリックハンマー");
+    expect(namesOf(state.discard)).toEqual(["メタグロス"]);
+    expect(namesOf(state.deck)).toEqual(["基本超エネルギー"]);
+  });
+
+  test("きおくのらせんで使うベンチの Nのゾロアークex のナイトジョーカーも、ベンチの「Nのポケモン」のワザとして使える", () => {
+    const state = buildState({
+      active: MEW,
+      bench: [N_ZOROARK, N_ZEKROM],
+    });
+    activeOf(state).energies.push(DARK_ENERGY, DARK_ENERGY);
+    expect(
+      listUsableAttacksOfActive(buildContext(state)).map(
+        ({ attack }) => attack.name
+      )
+    ).toEqual(["ひきさく", "ランページサンダー"]);
+  });
+
   test("テレポートブレイクは、のぞむならベンチポケモンと入れ替える", () => {
     const state = buildState({ active: MEW, bench: [RALTS] });
     activeOf(state).energies.push(PSYCHIC_ENERGY);

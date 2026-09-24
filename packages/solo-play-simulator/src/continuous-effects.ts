@@ -331,7 +331,10 @@ export interface UsableAttack {
   readonly attack: Attack;
   /** 使う前に山札の上から 1 枚トラッシュする(ヤドキングの「ひらめきチャレンジ」)。 */
   readonly discardsDeckTopFirst?: true;
-  /** ワザを持っているポケモン。ミュウex の「きおくのらせん」ではベンチのポケモン。 */
+  /**
+   * ワザを持っているポケモン。ミュウex の「きおくのらせん」ではベンチのポケモン。ヤドキングの「ひらめきチャレンジ」で
+   * 山札の上のポケモンのワザを使うときは、「ひらめきチャレンジ」を持っているポケモン。
+   */
   readonly owner: PokemonInPlay;
 }
 
@@ -347,7 +350,7 @@ export interface UsableAttack {
  */
 function listDeckTopAttacksUsedAs(
   state: GameState,
-  pokemon: PokemonInPlay,
+  owner: PokemonInPlay,
   usedAs: Attack,
   filter: CardFilter
 ): UsableAttack[] {
@@ -359,14 +362,14 @@ function listDeckTopAttacksUsedAs(
     top.record.category !== CardCategory.Pokemon ||
     !matchesCardFilter(top, filter)
   ) {
-    return [{ attack: usedAs, discardsDeckTopFirst: true, owner: pokemon }];
+    return [{ attack: usedAs, discardsDeckTopFirst: true, owner }];
   }
   return top.record.attacks
     .filter((attack) => !usesAnotherAttack(attack))
     .map((attack) => ({
       attack: { ...attack, cost: usedAs.cost },
       discardsDeckTopFirst: true,
-      owner: pokemon,
+      owner,
     }));
 }
 
@@ -377,24 +380,29 @@ function usesAnotherAttack(attack: Attack): boolean {
   );
 }
 
-/** このポケモンの記録のワザ 1 つから、使えるワザを返す。ほかのワザを「このワザとして使う」ワザは、選べるワザに置き換える。 */
+/**
+ * owner の記録のワザ 1 つから、user(ワザを使うバトルポケモン)が使えるワザを返す。ほかのワザを「このワザとして使う」ワザは、
+ * 選べるワザに置き換える。ミュウex の「きおくのらせん」でベンチのポケモンのワザを使うときは、user がミュウex、owner が
+ * ベンチのポケモンになる。
+ */
 function listAttacksUsedAs(
   state: GameState,
-  pokemon: PokemonInPlay,
+  user: PokemonInPlay,
+  owner: PokemonInPlay,
   attack: Attack
 ): UsableAttack[] {
   if (attack.usesAttackOfBenchedPokemon !== undefined) {
-    return listBenchedAttacksUsedAs(state, pokemon, attack);
+    return listBenchedAttacksUsedAs(state, user, attack);
   }
   if (attack.usesAttackOfDiscardedDeckTop !== undefined) {
     return listDeckTopAttacksUsedAs(
       state,
-      pokemon,
+      owner,
       attack,
       attack.usesAttackOfDiscardedDeckTop
     );
   }
-  return [{ attack, owner: pokemon }];
+  return [{ attack, owner }];
 }
 
 /**
@@ -406,7 +414,7 @@ function listAttacksUsedAs(
  */
 function listBenchedAttacksUsedAs(
   state: GameState,
-  pokemon: PokemonInPlay,
+  user: PokemonInPlay,
   usedAs: Attack
 ): UsableAttack[] {
   const filter = usedAs.usesAttackOfBenchedPokemon;
@@ -415,8 +423,7 @@ function listBenchedAttacksUsedAs(
   }
   return state.bench
     .filter(
-      (benched) =>
-        benched !== pokemon && matchesCardFilter(benched.card, filter)
+      (benched) => benched !== user && matchesCardFilter(benched.card, filter)
     )
     .flatMap((benched) =>
       benched.card.record.category === CardCategory.Pokemon
@@ -456,6 +463,10 @@ export function listSecondAttacks(
  * このポケモンが使えるワザ。自身のワザに、ベンチのポケモンのワザを使えるようにする効果の分を足す。
  * ベンチのポケモンについては、そのポケモン自身が持つワザだけを足し、効果で使えるようになったワザは
  * 足さない(公式 Q&A: 効果で使えるようになったワザは、そのポケモンが持っているワザとして扱わない)。
+ * ベンチのポケモンが持つワザがほかのワザを「このワザとして使う」ワザ(ヤドキングの「ひらめきチャレンジ」、
+ * Nのゾロアークex の「ナイトジョーカー」)なら、自身のワザと同じく選べるワザに置き換える。そのワザ自体は
+ * ベンチのポケモンが持っているワザなので、ミュウex の「きおくのらせん」で使える(カードテキスト「ベンチポケモンが
+ * 持つワザを、すべて使える」による。この組み合わせを問う公式 Q&A は無い、2026-09-24 確認)。
  */
 export function listUsableAttacks(
   state: GameState,
@@ -464,7 +475,7 @@ export function listUsableAttacks(
   const own =
     pokemon.card.record.category === CardCategory.Pokemon
       ? pokemon.card.record.attacks.flatMap((attack) =>
-          listAttacksUsedAs(state, pokemon, attack)
+          listAttacksUsedAs(state, pokemon, pokemon, attack)
         )
       : [];
   const allowsBenchAttacks = listEffectsApplyingTo(state, pokemon).some(
@@ -478,10 +489,9 @@ export function listUsableAttacks(
     .filter((benched) => benched !== pokemon)
     .flatMap((benched) =>
       benched.card.record.category === CardCategory.Pokemon
-        ? benched.card.record.attacks.map((attack) => ({
-            attack,
-            owner: benched,
-          }))
+        ? benched.card.record.attacks.flatMap((attack) =>
+            listAttacksUsedAs(state, pokemon, benched, attack)
+          )
         : []
     );
   return [...own, ...fromBench];
