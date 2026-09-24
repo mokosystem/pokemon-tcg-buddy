@@ -827,6 +827,9 @@
         },
         "usesAttackOfBenchedPokemon": {
           "$ref": "#/$defs/CardFilter"
+        },
+        "usesAttackOfDiscardedDeckTop": {
+          "$ref": "#/$defs/CardFilter"
         }
       },
       "required": ["cost", "damage", "name"],
@@ -995,6 +998,20 @@
             }
           },
           "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "placeHandCardsOnDeckTop"
+            }
+          },
+          "required": ["count", "operation"],
           "additionalProperties": false
         },
         {
@@ -2212,6 +2229,20 @@
             }
           },
           "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "placeHandCardsOnDeckTop"
+            }
+          },
+          "required": ["count", "operation"],
           "additionalProperties": false
         },
         {

@@ -1,0 +1,62 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "ひらめきチャレンジ",
+      "usesAttackOfDiscardedDeckTop": {
+        "categories": ["ポケモン"],
+        "excludesPokemonWithRuleBox": true
+      }
+    },
+    {
+      "cost": ["psychic", "psychic", "colorless"],
+      "damage": {
+        "amount": 120,
+        "kind": "fixed"
+      },
+      "name": "ちょうねんりき"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "ワザを使うのはヤドキングで、選んだワザの条件や効果は超タイプのヤドキングに当てる",
+      "question": "ワザ「ひらめきチャレンジ」で別のポケモンのワザを使うとき、ワザを使うポケモンはどちらか",
+      "reflectedIn": "選んだワザは、バトル場のヤドキングを持ち主として実行し、ダメージを増やす効果もヤドキングに当てる(card-effects.ts の useAttack、attack-damage.ts の calculateAttackDamage)",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "「ひらめきチャレンジ」で無色ポケモンのワザを使ったとき、無色ポケモンのワザのコインを投げなおす効果(リトライバッジ)は、ワザを使っているのが超タイプのヤドキングなので働かないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%B2%E3%82%89%E3%82%81%E3%81%8D%E3%83%81%E3%83%A3%E3%83%AC%E3%83%B3%E3%82%B8&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "選べる。のぞむなら追加のダメージの効果も使え、ヤドキングに鋼エネルギーがついていればトラッシュする",
+      "question": "ワザ「ひらめきチャレンジ」で、のぞむなら自身のエネルギーをトラッシュして追加のダメージを与えるワザ(メタグロスの「メタリックハンマー」)を選んだとき、追加のダメージを与えられるか",
+      "reflectedIn": "選んだワザのダメージ(メタリックハンマーは 150。追加のダメージは記録に持たない)をそのまま使う",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "鋼エネルギーのついていないヤドキングが「ひらめきチャレンジ」でメタグロスの「メタリックハンマー」を使い、効果をのぞんだとき 150 を追加できるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%B2%E3%82%89%E3%82%81%E3%81%8D%E3%83%81%E3%83%A3%E3%83%AC%E3%83%B3%E3%82%B8&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "ヤドキング",
+  "cardIds": ["045978"],
+  "stage": "1進化",
+  "evolvesFrom": "ヤドン",
+  "hp": 120,
+  "pokemonType": "psychic",
+  "retreatCost": 3,
+  "translationStatus": "translated"
+}

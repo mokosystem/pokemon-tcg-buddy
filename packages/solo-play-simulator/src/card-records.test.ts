@@ -137,6 +137,14 @@ const RAGING_BOLT = buildRecordedCard("049270");
 const TEAL_MASK_OGERPON = buildRecordedCard("048798");
 const IRON_LEAVES = buildRecordedCard("049478");
 const GRASS_ENERGY = buildRecordedCard("047903");
+const SLOWPOKE = buildRecordedCard("045977");
+const SLOWKING = buildRecordedCard("045978");
+const KYUREM = buildRecordedCard("045922");
+const METAGROSS = buildRecordedCard("050143");
+const SMOOCHUM = buildRecordedCard("046247");
+const WONDER_PATCH = buildRecordedCard("048299");
+const NIGHT_ACADEMY = buildRecordedCard("045939");
+const BOOMERANG_ENERGY = buildRecordedCard("049454");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -2183,6 +2191,139 @@ describeTranslation("基本草エネルギー", () => {
     const state = buildState({ active: TEAL_MASK_OGERPON });
     activeOf(state).energies.push(GRASS_ENERGY);
     expect(listEnergyUnits(state, activeOf(state))).toEqual(["grass"]);
+  });
+});
+
+describeTranslation("ヤドン", () => {
+  test("しっぽをたらすは、トラッシュのポケモンを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: SLOWPOKE,
+      discard: [PSYCHIC_ENERGY, KYUREM],
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttack(buildContext(state), "しっぽをたらす");
+    expect(namesOf(state.hand)).toEqual(["キュレム"]);
+  });
+});
+
+describeTranslation("ヤドキング", () => {
+  test("ひらめきチャレンジは、山札の上がルールを持たないポケモンなら、そのワザをひらめきチャレンジのエネルギーで使える", () => {
+    const state = buildState({
+      active: SLOWKING,
+      deck: [METAGROSS, PSYCHIC_ENERGY],
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    const context = buildContext(state);
+    const usable = listUsableAttacksOfActive(context);
+    expect(usable.map(({ attack }) => attack.name)).toEqual([
+      "はねかえす",
+      "メタリックハンマー",
+    ]);
+    const hammer = usable.find(
+      ({ attack }) => attack.name === "メタリックハンマー"
+    );
+    expect(
+      hammer === undefined
+        ? null
+        : calculateAttackDamage(state, activeOf(state), hammer.attack)
+    ).toBe(150);
+    useAttack(context, "メタリックハンマー");
+    expect(namesOf(state.discard)).toEqual(["メタグロス"]);
+    expect(namesOf(state.deck)).toEqual(["基本超エネルギー"]);
+  });
+
+  test("山札の上がポケモンでないとき(ルールを持つポケモンのときも)は、山札の上をトラッシュするだけのワザになる", () => {
+    const energyOnTop = buildState({
+      active: SLOWKING,
+      deck: [PSYCHIC_ENERGY, METAGROSS],
+    });
+    activeOf(energyOnTop).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    const context = buildContext(energyOnTop);
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["ひらめきチャレンジ"]);
+    useAttack(context, "ひらめきチャレンジ");
+    expect(namesOf(energyOnTop.discard)).toEqual(["基本超エネルギー"]);
+
+    const ruleBoxOnTop = buildState({ active: SLOWKING, deck: [MEOWTH] });
+    activeOf(ruleBoxOnTop).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    expect(
+      listUsableAttacksOfActive(buildContext(ruleBoxOnTop)).map(
+        ({ attack }) => attack.name
+      )
+    ).toEqual(["ひらめきチャレンジ"]);
+  });
+});
+
+describeTranslation("ムチュール", () => {
+  test("るんるんキッスは、山札の基本超エネルギーを 2 枚まで、ベンチポケモン 1 匹につける", () => {
+    const state = buildState({
+      active: SMOOCHUM,
+      bench: [SLOWPOKE],
+      deck: [PSYCHIC_ENERGY, FIRE_ENERGY, PSYCHIC_ENERGY, PSYCHIC_ENERGY],
+    });
+    useAttack(buildContext(state), "るんるんキッス");
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(
+      repeat("基本超エネルギー", 2)
+    );
+    expect(activeOf(state).energies).toEqual([]);
+  });
+});
+
+describeTranslation("ワンダーパッチ", () => {
+  test("トラッシュの基本超エネルギーを 1 枚、ベンチの超ポケモンにつける", () => {
+    const state = buildState({
+      active: SLOWKING,
+      bench: [N_ZEKROM, SLOWPOKE],
+      discard: [FIRE_ENERGY, PSYCHIC_ENERGY],
+      hand: [WONDER_PATCH],
+    });
+    playTrainerFromHand(buildContext(state), WONDER_PATCH);
+    expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本超エネルギー"]);
+    expect(benchAt(state, 0).energies).toEqual([]);
+  });
+
+  test("ベンチに超ポケモンがいないときは使えない", () => {
+    const state = buildState({
+      active: SLOWKING,
+      bench: [N_ZEKROM],
+      discard: [PSYCHIC_ENERGY],
+      hand: [WONDER_PATCH],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), WONDER_PATCH)).toBe(
+      false
+    );
+  });
+});
+
+describeTranslation("夜のアカデミー", () => {
+  test("自分の番ごとに 1 回、手札を 1 枚山札の上に置ける。山札が 0 枚でも置ける(公式 Q&A)", () => {
+    const state = buildState({
+      active: SLOWKING,
+      hand: [KYUREM, BOSS],
+    });
+    state.stadium = NIGHT_ACADEMY;
+    const context = buildContext(state, {
+      chooseCards: pickCardsByName(["キュレム"]),
+    });
+    useStadiumEffect(context);
+    expect(namesOf(state.deck)).toEqual(["キュレム"]);
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+    expect(canUseStadiumEffect(context)).toBe(false);
+  });
+
+  test("手札が 0 枚のときは使えない", () => {
+    const state = buildState({ active: SLOWKING, deck: [PSYCHIC_ENERGY] });
+    state.stadium = NIGHT_ACADEMY;
+    expect(canUseStadiumEffect(buildContext(state))).toBe(false);
+  });
+});
+
+describeTranslation("ブーメランエネルギー", () => {
+  test("無色エネルギー 1 個ぶんとして働く", () => {
+    const state = buildState({ active: SLOWKING });
+    activeOf(state).energies.push(BOOMERANG_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["colorless"]);
   });
 });
 

@@ -198,6 +198,7 @@ const firstStepTargetChecks: {
   placeFromDiscardOntoBench: (step, { state }) =>
     countEmptyBenchSlots(state) > 0 &&
     listMatching(state.discard, step.filter).some(isBasicPokemon),
+  placeHandCardsOnDeckTop: (step, { hand }) => hand.length >= step.count,
   placeSelfOnBenchFromHand: (_, { state }) => countEmptyBenchSlots(state) > 0,
   returnPokemonToHand: (step, { source, state }) =>
     step.target === "self"
@@ -828,6 +829,15 @@ const operationRunners: {
     moveEnergyBetweenOwnPokemon(run, step),
   placeFromDiscardOntoBench: (step, run) =>
     placeOntoBenchFrom(run, "discard", step),
+  placeHandCardsOnDeckTop: (step, { context, label }) => {
+    const chosen = chooseCardsWithin(
+      context,
+      context.state.hand,
+      { maxCount: step.count, minCount: step.count },
+      `${label}: 山札の上に置く手札(先頭がいちばん上)`
+    );
+    context.state.placeHandCardsOnDeckTop(chosen);
+  },
   placeSelfOnBenchFromHand: (_, { context, source }) => {
     const { state } = context;
     state.placeOnBench(source.card, {

@@ -210,6 +210,11 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("shuffleHandIntoDeck"),
   }),
+  /** 手札を count 枚選び、山札の上に置く(夜のアカデミー)。山札は切らない。山札が 0 枚でも置ける(公式 Q&A「夜のアカデミー」)。 */
+  strictObject({
+    count: countFromOne,
+    operation: literal("placeHandCardsOnDeckTop"),
+  }),
   /** 手札をすべてトラッシュする。手札が 0 枚でも使える(公式 Q&A「ゼイユ」)。 */
   strictObject({
     operation: literal("discardHand"),
@@ -523,6 +528,11 @@ export const AttackSchema = strictObject({
    * 「ナイトジョーカー」)。選んだワザは、このワザに必要なエネルギーで使える(continuous-effects.ts の listUsableAttacks)。
    */
   usesAttackOfBenchedPokemon: optional(CardFilterSchema),
+  /**
+   * 山札の上から 1 枚トラッシュし、それが条件に合うポケモンなら、そのポケモンが持つワザを 1 つ選び、このワザとして
+   * 使う(ヤドキングの「ひらめきチャレンジ」)。選んだワザは、このワザに必要なエネルギーで使える。
+   */
+  usesAttackOfDiscardedDeckTop: optional(CardFilterSchema),
 });
 export type Attack = InferOutput<typeof AttackSchema>;
 

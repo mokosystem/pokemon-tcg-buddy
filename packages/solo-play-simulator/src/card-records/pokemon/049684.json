@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark", "dark"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "たたきつぶす"
+    },
+    {
+      "cost": ["dark", "dark", "dark"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "ハザードテール"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ハザードテール」の、このポケモンにも 70 ダメージを与える効果",
+      "reason": "damageOrDamageCounters"
+    },
+    {
+      "description": "ワザ「ハザードテール」の、相手のバトルポケモンをどくとマヒにする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ドラピオン",
+  "cardIds": ["049684"],
+  "stage": "1進化",
+  "evolvesFrom": "スコルピ",
+  "hp": 140,
+  "pokemonType": "dark",
+  "retreatCost": 3,
+  "translationStatus": "irrelevantToCalculation"
+}

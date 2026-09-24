@@ -86,7 +86,8 @@ function countTranslatedEffects(record: CardRecord): number {
         record.attacks.filter(
           (attack) =>
             attack.effect !== undefined ||
-            attack.usesAttackOfBenchedPokemon !== undefined
+            attack.usesAttackOfBenchedPokemon !== undefined ||
+            attack.usesAttackOfDiscardedDeckTop !== undefined
         ).length
       );
     case CardCategory.BasicEnergy:

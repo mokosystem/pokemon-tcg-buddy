@@ -1,0 +1,46 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["steel"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "はねかえす"
+    },
+    {
+      "cost": ["steel", "steel", "steel", "colorless"],
+      "damage": {
+        "amount": 150,
+        "kind": "fixed"
+      },
+      "name": "メタリックハンマー"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「はねかえす」の、相手のバトルポケモンをベンチポケモンと入れ替える効果",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「メタリックハンマー」の、のぞむなら自身の鋼エネルギーを 3 個トラッシュして 150 を足す上乗せ。追加のコストで決まるため持たず、ダメージは上乗せを除いた 150 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "メタグロス",
+  "cardIds": ["050143"],
+  "stage": "2進化",
+  "evolvesFrom": "メタング",
+  "basicPokemonOfEvolutionLine": "ダンバル",
+  "hp": 180,
+  "pokemonType": "steel",
+  "retreatCost": 3,
+  "translationStatus": "irrelevantToCalculation"
+}

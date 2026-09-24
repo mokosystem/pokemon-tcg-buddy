@@ -8,6 +8,7 @@
 import {
   type Attack,
   CardCategory,
+  type CardFilter,
   type ContinuousEffect,
   type EnergyProvision,
   type PokemonType,
@@ -285,8 +286,67 @@ export function findEvolutionNameAllowedByEffect(
 
 export interface UsableAttack {
   readonly attack: Attack;
+  /** 使う前に山札の上から 1 枚トラッシュする(ヤドキングの「ひらめきチャレンジ」)。 */
+  readonly discardsDeckTopFirst?: true;
   /** ワザを持っているポケモン。ミュウex の「きおくのらせん」ではベンチのポケモン。 */
   readonly owner: PokemonInPlay;
+}
+
+/**
+ * 山札の上から 1 枚トラッシュしたポケモンのワザを「このワザとして使う」ワザ(ヤドキングの「ひらめきチャレンジ」)で
+ * 使えるワザ。トラッシュするのは使うときで、ここでは山札のいちばん上のカードを見て、それが条件に合うポケモンなら
+ * そのワザを、元のワザに必要なエネルギーで使えるワザとして返す。合わなければ(山札が 0 枚のときも)元のワザを、
+ * トラッシュだけが起きるワザとして返す。山札の上は実際には使うまで分からないが、ワザを使ったときに起きることは同じ。
+ * ほかのワザを「このワザとして使う」ワザ(ヤドキング自身の「ひらめきチャレンジ」)は選ぶワザに入れない。
+ */
+function listDeckTopAttacksUsedAs(
+  state: GameState,
+  pokemon: PokemonInPlay,
+  usedAs: Attack,
+  filter: CardFilter
+): UsableAttack[] {
+  const [top] = state.deck;
+  if (
+    top === undefined ||
+    top.record.category !== CardCategory.Pokemon ||
+    !matchesCardFilter(top, filter)
+  ) {
+    return [{ attack: usedAs, discardsDeckTopFirst: true, owner: pokemon }];
+  }
+  return top.record.attacks
+    .filter((attack) => !usesAnotherAttack(attack))
+    .map((attack) => ({
+      attack: { ...attack, cost: usedAs.cost },
+      discardsDeckTopFirst: true,
+      owner: pokemon,
+    }));
+}
+
+function usesAnotherAttack(attack: Attack): boolean {
+  return (
+    attack.usesAttackOfBenchedPokemon !== undefined ||
+    attack.usesAttackOfDiscardedDeckTop !== undefined
+  );
+}
+
+/** このポケモンの記録のワザ 1 つから、使えるワザを返す。ほかのワザを「このワザとして使う」ワザは、選べるワザに置き換える。 */
+function listAttacksUsedAs(
+  state: GameState,
+  pokemon: PokemonInPlay,
+  attack: Attack
+): UsableAttack[] {
+  if (attack.usesAttackOfBenchedPokemon !== undefined) {
+    return listBenchedAttacksUsedAs(state, pokemon, attack);
+  }
+  if (attack.usesAttackOfDiscardedDeckTop !== undefined) {
+    return listDeckTopAttacksUsedAs(
+      state,
+      pokemon,
+      attack,
+      attack.usesAttackOfDiscardedDeckTop
+    );
+  }
+  return [{ attack, owner: pokemon }];
 }
 
 /**
@@ -313,7 +373,7 @@ function listBenchedAttacksUsedAs(
     .flatMap((benched) =>
       benched.card.record.category === CardCategory.Pokemon
         ? benched.card.record.attacks
-            .filter((attack) => attack.usesAttackOfBenchedPokemon === undefined)
+            .filter((attack) => !usesAnotherAttack(attack))
             .map((attack) => ({
               attack: { ...attack, cost: usedAs.cost },
               owner: benched,
@@ -334,9 +394,7 @@ export function listUsableAttacks(
   const own =
     pokemon.card.record.category === CardCategory.Pokemon
       ? pokemon.card.record.attacks.flatMap((attack) =>
-          attack.usesAttackOfBenchedPokemon === undefined
-            ? [{ attack, owner: pokemon }]
-            : listBenchedAttacksUsedAs(state, pokemon, attack)
+          listAttacksUsedAs(state, pokemon, attack)
         )
       : [];
   const allowsBenchAttacks = listEffectsApplyingTo(state, pokemon).some(

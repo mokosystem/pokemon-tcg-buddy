@@ -292,6 +292,27 @@ export class GameState {
     this.hand.push(card);
   }
 
+  /** 山札の上から count 枚をトラッシュする。山札が足りなければある分だけ。 */
+  discardFromDeckTop(count: number): Card[] {
+    const discarded = this.deck.splice(0, count);
+    this.discard.push(...discarded);
+    this.record(
+      `山札の上から ${discarded.map((card) => card.name).join("、")} をトラッシュ`
+    );
+    return discarded;
+  }
+
+  /** 手札の chosen を、並びの順に山札の上に置く(先頭がいちばん上)。山札は切らない。 */
+  placeHandCardsOnDeckTop(chosen: readonly Card[]): void {
+    for (const card of chosen) {
+      removeCard(this.hand, card, "手札");
+    }
+    this.deck.unshift(...chosen);
+    this.record(
+      `手札の ${chosen.map((card) => card.name).join("、")} を山札の上に置く`
+    );
+  }
+
   /**
    * 山札から chosen を取り出し、残りを切ってから、chosen を並びの順に山札の上に置く(先頭がいちばん上)。
    * 切ってから置くので、次に引くカードは chosen の順で決まる。

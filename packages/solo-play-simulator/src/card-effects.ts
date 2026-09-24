@@ -413,6 +413,9 @@ export function useAttack(context: EffectContext, attackName: string): void {
   }
   state.attacks.set(state.turn, attackName);
   state.record(`ワザ ${attackName}`);
+  if (usable.discardsDeckTopFirst) {
+    state.discardFromDeckTop(1);
+  }
   const { effect } = usable.attack;
   if (effect !== undefined) {
     runEffect(
