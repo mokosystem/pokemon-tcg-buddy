@@ -50,8 +50,7 @@ const attachingPolicy: PlayingPolicy = {
     }
     return first;
   },
-  chooseAttack: (context) =>
-    listUsableAttacksOfActive(context)[0]?.attack.name ?? null,
+  chooseAttack: (context) => listUsableAttacksOfActive(context)[0] ?? null,
   chooseBenchAtSetup: () => [],
   playTurn: (context) => {
     const { state } = context;

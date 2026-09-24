@@ -16,6 +16,7 @@ import { buildCardFromRecord, type Card, isBasicPokemon } from "./cards.ts";
 import {
   calculateBenchLimit,
   countEmptyBenchSlots,
+  type UsableAttack,
 } from "./continuous-effects.ts";
 import type { EffectChoices, EffectContext } from "./effect-choices.ts";
 import { GameState, HAND_SIZE_AT_SETUP, type RandomSource } from "./state.ts";
@@ -44,8 +45,8 @@ export interface DeckVariant {
  */
 export interface PlayingPolicy extends EffectChoices {
   chooseActiveAtSetup: (basics: readonly Card[]) => Card;
-  /** 使うワザの名前。使わないときは null。先攻の最初の番は呼ばれない。 */
-  chooseAttack: (context: EffectContext) => string | null;
+  /** 使うワザ(使えるワザの一覧 listUsableAttacksOfActive の候補の 1 つ)。使わないときは null。先攻の最初の番は呼ばれない。 */
+  chooseAttack: (context: EffectContext) => UsableAttack | null;
   chooseBenchAtSetup: (basics: readonly Card[]) => readonly Card[];
   /** 番の最初に 1 枚引いた後、ワザを選ぶ前までの行動をすべて行う。card-effects.ts の関数で行動する。 */
   playTurn: (context: EffectContext) => void;

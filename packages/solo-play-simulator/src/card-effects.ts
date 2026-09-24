@@ -416,13 +416,33 @@ export function listUsableAttacksOfActive(
   );
 }
 
-/** バトルポケモンでワザを使い、ダメージ以外の効果の翻訳を実行する。ダメージは相手がいないため与えない。 */
-export function useAttack(context: EffectContext, attackName: string): void {
+/**
+ * 使えるワザの一覧の 2 つの候補が、同じワザを同じ経路で使うものか。名前だけでは、ヤドキングの「ひらめきチャレンジ」で
+ * 山札の上のヤドキングの「ちょうねんりき」を使う候補と、自身の「ちょうねんりき」を直接使う候補を区別できない。
+ */
+function isSameUsableAttack(left: UsableAttack, right: UsableAttack): boolean {
+  return (
+    left.attack.name === right.attack.name &&
+    left.owner === right.owner &&
+    left.usedAs?.name === right.usedAs?.name &&
+    left.discardsDeckTopFirst === right.discardsDeckTopFirst
+  );
+}
+
+/**
+ * バトルポケモンでワザを使い、ダメージ以外の効果の翻訳を実行する。ダメージは相手がいないため与えない。
+ * 使うワザは、使えるワザの一覧(listUsableAttacksOfActive)の候補の 1 つで受け取る。
+ */
+export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   const { state } = context;
   const { active } = state;
-  const usable = listUsableAttacksOfActive(context).find(
-    (candidate) => candidate.attack.name === attackName
+  const usable = listUsableAttacksOfActive(context).find((candidate) =>
+    isSameUsableAttack(candidate, chosen)
   );
+  const attackName =
+    chosen.usedAs === undefined
+      ? chosen.attack.name
+      : `${chosen.usedAs.name}(${chosen.attack.name})`;
   if (active === null || usable === undefined) {
     throw new IllegalMove(`ワザ ${attackName} は今使えない`);
   }
@@ -430,7 +450,7 @@ export function useAttack(context: EffectContext, attackName: string): void {
     state.hasUsedSecondAttack = true;
     state.record(`2 回目のワザ ${attackName}`);
   } else {
-    state.attacks.set(state.turn, attackName);
+    state.attacks.set(state.turn, usable.attack.name);
     state.firstAttackerThisTurn = active;
     state.record(`ワザ ${attackName}`);
   }

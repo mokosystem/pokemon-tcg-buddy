@@ -104,8 +104,7 @@ const greedyPolicy: PlayingPolicy = {
     }
     return first;
   },
-  chooseAttack: (context) =>
-    listUsableAttacksOfActive(context)[0]?.attack.name ?? null,
+  chooseAttack: (context) => listUsableAttacksOfActive(context)[0] ?? null,
   chooseBenchAtSetup: (basics) => basics,
   playTurn: (context) => {
     for (let count = 0; count < MAX_ACTIONS_PER_TURN; count += 1) {

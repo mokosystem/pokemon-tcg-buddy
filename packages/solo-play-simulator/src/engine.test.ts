@@ -43,8 +43,7 @@ const idlePolicy: PlayingPolicy = {
 /** 手札のエネルギーをバトル場につけ、進化できれば進化し、使えるワザを使う。 */
 const evolvingPolicy: PlayingPolicy = {
   ...idlePolicy,
-  chooseAttack: (context) =>
-    listUsableAttacksOfActive(context)[0]?.attack.name ?? null,
+  chooseAttack: (context) => listUsableAttacksOfActive(context)[0] ?? null,
   playTurn: (context) => {
     const { state } = context;
     const { active } = state;

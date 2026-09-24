@@ -33,6 +33,7 @@ import {
   buildState,
   namesOf,
   pickCardsByName,
+  useAttackNamed,
 } from "./card-test-support.ts";
 import type { Card } from "./cards.ts";
 import {
@@ -238,7 +239,7 @@ describeTranslation("メガサーナイトex", () => {
       deck: [PSYCHIC_ENERGY, FIRE_ENERGY, PSYCHIC_ENERGY, PSYCHIC_ENERGY],
     });
     activeOf(state).energies.push(PSYCHIC_ENERGY);
-    useAttack(buildContext(state), "あふれるねがい");
+    useAttackNamed(buildContext(state), "あふれるねがい");
     expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本超エネルギー"]);
     expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本超エネルギー"]);
     expect(state.deck).toHaveLength(2);
@@ -252,7 +253,7 @@ describeTranslation("キルリア", () => {
       deck: [RALTS, PSYCHIC_ENERGY, RALTS, GARDEVOIR, LATIAS],
     });
     activeOf(state).energies.push(PSYCHIC_ENERGY);
-    useAttack(buildContext(state), "コールサイン");
+    useAttackNamed(buildContext(state), "コールサイン");
     expect(namesOf(state.hand)).toEqual([
       "ラルトス",
       "ラルトス",
@@ -268,7 +269,7 @@ describeTranslation("ラルトス", () => {
   test("もってくるは山札を 1 枚引く", () => {
     const state = buildState({ active: RALTS, deck: [KIRLIA, RALTS] });
     activeOf(state).energies.push(FIRE_ENERGY);
-    useAttack(buildContext(state), "もってくる");
+    useAttackNamed(buildContext(state), "もってくる");
     expect(namesOf(state.hand)).toEqual(["キルリア"]);
   });
 });
@@ -332,7 +333,7 @@ describeTranslation("ニャースex", () => {
   test("しっぽをまくは自身をついているカードごと手札に戻し、ベンチのポケモンをバトル場に出す。場が空になるなら使えない", () => {
     const state = buildState({ active: MEOWTH, bench: [RALTS] });
     activeOf(state).energies.push(...repeat(DARK_ENERGY, 3));
-    useAttack(buildContext(state), "しっぽをまく");
+    useAttackNamed(buildContext(state), "しっぽをまく");
     expect(namesOf(state.hand)).toEqual([
       "ニャースex",
       "基本悪エネルギー",
@@ -343,7 +344,7 @@ describeTranslation("ニャースex", () => {
 
     const alone = buildState({ active: MEOWTH });
     activeOf(alone).energies.push(...repeat(DARK_ENERGY, 3));
-    expect(() => useAttack(buildContext(alone), "しっぽをまく")).toThrow(
+    expect(() => useAttackNamed(buildContext(alone), "しっぽをまく")).toThrow(
       IllegalMove
     );
   });
@@ -367,7 +368,7 @@ describeTranslation("ミュウex", () => {
       "もってくる",
       "ずつき",
     ]);
-    useAttack(context, "あふれるねがい");
+    useAttackNamed(context, "あふれるねがい");
     expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本超エネルギー"]);
     expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本超エネルギー"]);
   });
@@ -385,7 +386,7 @@ describeTranslation("ミュウex", () => {
     expect(
       listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
     ).toEqual(["テレポートブレイク", "はねかえす", "メタリックハンマー"]);
-    useAttack(context, "メタリックハンマー");
+    useAttackNamed(context, "メタリックハンマー");
     expect(namesOf(state.discard)).toEqual(["メタグロス"]);
     expect(namesOf(state.deck)).toEqual(["基本超エネルギー"]);
   });
@@ -406,13 +407,13 @@ describeTranslation("ミュウex", () => {
   test("テレポートブレイクは、のぞむならベンチポケモンと入れ替える", () => {
     const state = buildState({ active: MEW, bench: [RALTS] });
     activeOf(state).energies.push(PSYCHIC_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(state, { choosesToApplyOptionalEffect: () => false }),
       "テレポートブレイク"
     );
     expect(activeOf(state).name).toBe("ミュウex");
     state.attacks.clear();
-    useAttack(buildContext(state), "テレポートブレイク");
+    useAttackNamed(buildContext(state), "テレポートブレイク");
     expect(activeOf(state).name).toBe("ラルトス");
   });
 });
@@ -496,7 +497,7 @@ describeTranslation("ファイアローex", () => {
       deck: [RARE_CANDY, LILLIE, FIRE_ENERGY],
     });
     activeOf(state).energies.push(IGNITION_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(state, {
         chooseCards: pickCardsByName(["ふしぎなアメ", "リーリエの決心"]),
       }),
@@ -507,7 +508,7 @@ describeTranslation("ファイアローex", () => {
     const noPick = buildState({ active: TALONFLAME, deck: [RARE_CANDY] });
     activeOf(noPick).energies.push(IGNITION_ENERGY);
     expect(() =>
-      useAttack(
+      useAttackNamed(
         buildContext(noPick, { chooseCards: () => [] }),
         "かぎづめハント"
       )
@@ -519,7 +520,7 @@ describeTranslation("ジュペッタ", () => {
   test("にんぎょうキャッチは、のぞむなら山札から好きなカードを 1 枚手札に加え、見たら必ず 1 枚選ぶ", () => {
     const state = buildState({ active: BANETTE, deck: [MUKU, DHELMISE] });
     activeOf(state).energies.push(PSYCHIC_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(state, { chooseCards: pickCardsByName(["ダダリン"]) }),
       "にんぎょうキャッチ"
     );
@@ -528,7 +529,7 @@ describeTranslation("ジュペッタ", () => {
     const noPick = buildState({ active: BANETTE, deck: [MUKU] });
     activeOf(noPick).energies.push(PSYCHIC_ENERGY);
     expect(() =>
-      useAttack(
+      useAttackNamed(
         buildContext(noPick, { chooseCards: () => [] }),
         "にんぎょうキャッチ"
       )
@@ -576,7 +577,7 @@ describeTranslation("ノコッチ", () => {
   test("いれかわるは、自身をベンチポケモンと入れ替える", () => {
     const state = buildState({ active: DUNSPARCE, bench: [SHUPPET] });
     activeOf(state).energies.push(PSYCHIC_ENERGY);
-    useAttack(buildContext(state), "いれかわる");
+    useAttackNamed(buildContext(state), "いれかわる");
     expect(activeOf(state).name).toBe("カゲボウズ");
     expect(benchAt(state, 0).name).toBe("ノコッチ");
   });
@@ -608,7 +609,7 @@ describeTranslation("ヨマワル", () => {
       discard: [DUSKULL, DUSKULL, DUSKULL, RALTS],
     });
     activeOf(state).energies.push(PSYCHIC_ENERGY);
-    useAttack(buildContext(state), "むかえにいく");
+    useAttackNamed(buildContext(state), "むかえにいく");
     expect(state.countInPlay("ヨマワル")).toBe(3);
     expect(state.countInDiscard("ヨマワル")).toBe(1);
   });
@@ -1223,7 +1224,7 @@ describeTranslation("シロナのガブリアスex", () => {
       hand: [FIGHT_GONG, JUDGE],
     });
     activeOf(state).energies.push(FIGHTING_ENERGY);
-    useAttack(buildContext(state), "スクリューダイブ");
+    useAttackNamed(buildContext(state), "スクリューダイブ");
     expect(state.hand).toHaveLength(6);
 
     const fullHand = buildState({
@@ -1232,7 +1233,7 @@ describeTranslation("シロナのガブリアスex", () => {
       hand: repeat(JUDGE, 7),
     });
     activeOf(fullHand).energies.push(FIGHTING_ENERGY);
-    useAttack(buildContext(fullHand), "スクリューダイブ");
+    useAttackNamed(buildContext(fullHand), "スクリューダイブ");
     expect(fullHand.hand).toHaveLength(7);
   });
 
@@ -1242,7 +1243,7 @@ describeTranslation("シロナのガブリアスex", () => {
       deck: repeat(FIGHTING_ENERGY, 10),
     });
     activeOf(state).energies.push(FIGHTING_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(state, { choosesToApplyOptionalEffect: () => false }),
       "スクリューダイブ"
     );
@@ -1288,7 +1289,7 @@ describeTranslation("ルリリ", () => {
       bench: [CYNTHIAS_GIBLE],
       deck: [ROCK_FIGHTING_ENERGY, FIGHTING_ENERGY],
     });
-    useAttack(buildContext(state), "ぴょんぴょんチャージ");
+    useAttackNamed(buildContext(state), "ぴょんぴょんチャージ");
     expect(namesOf(benchAt(state, 0).energies)).toEqual(["ロック闘エネルギー"]);
     expect(activeOf(state).energies).toEqual([]);
   });
@@ -1298,7 +1299,7 @@ describeTranslation("ルリリ", () => {
       active: AZURILL,
       deck: [FIGHTING_ENERGY],
     });
-    useAttack(buildContext(state), "ぴょんぴょんチャージ");
+    useAttackNamed(buildContext(state), "ぴょんぴょんチャージ");
     expect(activeOf(state).energies).toEqual([]);
     expect(state.deck).toHaveLength(1);
   });
@@ -1434,7 +1435,7 @@ describeTranslation("ブースターex", () => {
       deck: [ROCK_FIGHTING_ENERGY, FIRE_ENERGY, LIGHTNING_ENERGY, WATER_ENERGY],
     });
     activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(state, {
         choosePokemon: (_, request) =>
           request.candidates.filter(
@@ -1456,7 +1457,7 @@ describeTranslation("ブースターex", () => {
       deck: [FIRE_ENERGY],
     });
     activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(state, { chooseCards: () => [] }),
       "バーニングチャージ"
     );
@@ -1820,7 +1821,7 @@ describeTranslation("メガルカリオex", () => {
       ],
     });
     activeOf(state).energies.push(FIGHTING_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(state, {
         choosePokemon: (_, request) =>
           request.candidates.filter((pokemon) => pokemon.name === "リオル"),
@@ -1844,7 +1845,10 @@ describeTranslation("メガルカリオex", () => {
       discard: [FIGHTING_ENERGY],
     });
     activeOf(state).energies.push(FIGHTING_ENERGY);
-    useAttack(buildContext(state, { chooseCards: () => [] }), "はどうづき");
+    useAttackNamed(
+      buildContext(state, { chooseCards: () => [] }),
+      "はどうづき"
+    );
     expect(benchAt(state, 0).energies).toEqual([]);
     expect(namesOf(state.discard)).toEqual(["基本闘エネルギー"]);
   });
@@ -2181,7 +2185,7 @@ describeTranslation("タケルライコex", () => {
       hand: [BOSS, GRASS_ENERGY],
     });
     activeOf(state).energies.push(GRASS_ENERGY);
-    useAttack(buildContext(state), "はじけるほうこう");
+    useAttackNamed(buildContext(state), "はじけるほうこう");
     expect(namesOf(state.discard).sort()).toEqual(
       ["ボスの指令", "基本草エネルギー"].sort()
     );
@@ -2287,7 +2291,7 @@ describeTranslation("ヤドン", () => {
       discard: [PSYCHIC_ENERGY, KYUREM],
     });
     activeOf(state).energies.push(PSYCHIC_ENERGY);
-    useAttack(buildContext(state), "しっぽをたらす");
+    useAttackNamed(buildContext(state), "しっぽをたらす");
     expect(namesOf(state.hand)).toEqual(["キュレム"]);
   });
 });
@@ -2315,7 +2319,7 @@ describeTranslation("ヤドキング", () => {
         ? null
         : calculateAttackDamage(state, activeOf(state), hammer.attack)
     ).toBe(150);
-    useAttack(context, "メタリックハンマー");
+    useAttackNamed(context, "メタリックハンマー");
     expect(namesOf(state.discard)).toEqual(["メタグロス"]);
     expect(namesOf(state.deck)).toEqual(["基本超エネルギー"]);
   });
@@ -2332,7 +2336,7 @@ describeTranslation("ヤドキング", () => {
     expect(
       listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
     ).toEqual(["ひらめきチャレンジ"]);
-    useAttack(context, "ひらめきチャレンジ");
+    useAttackNamed(context, "ひらめきチャレンジ");
     expect(namesOf(energyOnTop.discard)).toEqual(["基本超エネルギー"]);
 
     const ruleBoxOnTop = buildState({ active: SLOWKING, hand: [MEOWTH] });
@@ -2343,6 +2347,45 @@ describeTranslation("ヤドキング", () => {
         ({ attack }) => attack.name
       )
     ).toEqual(["ひらめきチャレンジ"]);
+  });
+
+  test("自身のワザと同じ名前のワザを山札の上から選べるときも、直接使うワザでは山札の上をトラッシュしない", () => {
+    const buildWithSlowkingOnTop = () => {
+      const slowkingOnTop = buildRecordedCard("045978");
+      const state = buildState({
+        active: SLOWKING,
+        deck: [PSYCHIC_ENERGY],
+        hand: [slowkingOnTop],
+      });
+      state.placeHandCardsOnDeckTop([slowkingOnTop]);
+      activeOf(state).energies.push(...repeat(PSYCHIC_ENERGY, 3));
+      return state;
+    };
+    const direct = buildWithSlowkingOnTop();
+    const directContext = buildContext(direct);
+    const candidates = listUsableAttacksOfActive(directContext);
+    expect(
+      candidates.map(({ attack, usedAs }) => [attack.name, usedAs?.name])
+    ).toEqual([
+      ["ちょうねんりき", "ひらめきチャレンジ"],
+      ["ちょうねんりき", undefined],
+    ]);
+    const [, directCandidate] = candidates;
+    if (directCandidate === undefined) {
+      throw new Error("自身のちょうねんりきが一覧に無い");
+    }
+    useAttack(directContext, directCandidate);
+    expect(namesOf(direct.deck)).toEqual(["ヤドキング", "基本超エネルギー"]);
+    expect(direct.discard).toEqual([]);
+
+    const viaChallenge = buildWithSlowkingOnTop();
+    const viaContext = buildContext(viaChallenge);
+    const [viaCandidate] = listUsableAttacksOfActive(viaContext);
+    if (viaCandidate === undefined) {
+      throw new Error("ひらめきチャレンジのちょうねんりきが一覧に無い");
+    }
+    useAttack(viaContext, viaCandidate);
+    expect(namesOf(viaChallenge.discard)).toEqual(["ヤドキング"]);
   });
 
   test("山札の上が何のカードか分からないとき(置いた後に切ったときも)は、ひらめきチャレンジを使えない", () => {
@@ -2377,7 +2420,7 @@ describeTranslation("ムチュール", () => {
       bench: [SLOWPOKE],
       deck: [PSYCHIC_ENERGY, FIRE_ENERGY, PSYCHIC_ENERGY, PSYCHIC_ENERGY],
     });
-    useAttack(buildContext(state), "るんるんキッス");
+    useAttackNamed(buildContext(state), "るんるんキッス");
     expect(namesOf(benchAt(state, 0).energies)).toEqual(
       repeat("基本超エネルギー", 2)
     );
@@ -2478,11 +2521,11 @@ describeTranslation("アズマオウ", () => {
     state.stadium = FESTIVAL_GROUNDS;
     activeOf(state).energies.push(GRASS_ENERGY);
     const context = buildContext(state);
-    useAttack(context, "クイックドロー");
+    useAttackNamed(context, "クイックドロー");
     expect(
       listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
     ).toEqual(["クイックドロー"]);
-    useAttack(context, "クイックドロー");
+    useAttackNamed(context, "クイックドロー");
     expect(state.hand).toHaveLength(4);
     expect(listUsableAttacksOfActive(context)).toEqual([]);
   });
@@ -2497,7 +2540,7 @@ describeTranslation("アズマオウ", () => {
     activeOf(state).energies.push(PSYCHIC_ENERGY);
     benchAt(state, 0).energies.push(GRASS_ENERGY);
     const context = buildContext(state);
-    useAttack(context, "テレポートアタック");
+    useAttackNamed(context, "テレポートアタック");
     expect(activeOf(state).name).toBe("アズマオウ");
     expect(listUsableAttacksOfActive(context)).toEqual([]);
   });
@@ -2509,7 +2552,7 @@ describeTranslation("アズマオウ", () => {
     });
     activeOf(state).energies.push(GRASS_ENERGY);
     const context = buildContext(state);
-    useAttack(context, "クイックドロー");
+    useAttackNamed(context, "クイックドロー");
     expect(listUsableAttacksOfActive(context)).toEqual([]);
     expect(state.hand).toHaveLength(2);
   });
@@ -2613,7 +2656,7 @@ describeTranslation("ケロマツ", () => {
   test("もってくるは 1 枚引く", () => {
     const state = buildState({ active: FROAKIE, deck: [WATER_ENERGY] });
     activeOf(state).energies.push(WATER_ENERGY);
-    useAttack(buildContext(state), "もってくる");
+    useAttackNamed(buildContext(state), "もってくる");
     expect(namesOf(state.hand)).toEqual(["基本水エネルギー"]);
   });
 });
@@ -2625,7 +2668,7 @@ describeTranslation("ゲコガシラ", () => {
       deck: [FROAKIE, WATER_ENERGY, GRENINJA_EX, MEGA_GRENINJA, FROAKIE],
     });
     activeOf(state).energies.push(WATER_ENERGY);
-    useAttack(buildContext(state), "よびよせのじゅつ");
+    useAttackNamed(buildContext(state), "よびよせのじゅつ");
     expect(namesOf(state.hand)).toEqual([
       "ケロマツ",
       "ゲッコウガex",
@@ -2641,7 +2684,7 @@ describeTranslation("ゲッコウガex", () => {
       deck: [WATER_ENERGY, BOSS],
     });
     activeOf(state).energies.push(WATER_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(state, { chooseCards: pickCardsByName(["ボスの指令"]) }),
       "しのびのやいば"
     );
@@ -2649,7 +2692,7 @@ describeTranslation("ゲッコウガex", () => {
 
     const declined = buildState({ active: GRENINJA_EX, deck: [BOSS] });
     activeOf(declined).energies.push(WATER_ENERGY);
-    useAttack(
+    useAttackNamed(
       buildContext(declined, { choosesToApplyOptionalEffect: () => false }),
       "しのびのやいば"
     );
@@ -2810,7 +2853,7 @@ describeTranslation("ケーシィ", () => {
   test("テレポートアタックは、このポケモンをベンチポケモンと入れ替える", () => {
     const state = buildState({ active: ABRA, bench: [KADABRA] });
     activeOf(state).energies.push(PSYCHIC_ENERGY);
-    useAttack(buildContext(state), "テレポートアタック");
+    useAttackNamed(buildContext(state), "テレポートアタック");
     expect(activeOf(state).name).toBe("ユンゲラー");
   });
 });
@@ -2944,7 +2987,7 @@ describeTranslation("モグリュー", () => {
       deck: [BELDUM, METANG, GENESECT_EX, DRILBUR],
     });
     activeOf(state).energies.push(STEEL_ENERGY);
-    useAttack(buildContext(state), "なかまをよぶ");
+    useAttackNamed(buildContext(state), "なかまをよぶ");
     expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
       "ダンバル",
       "ゲノセクトex",
@@ -3066,7 +3109,7 @@ describeTranslation("イーユイ", () => {
       deck: repeat(FIRE_ENERGY, 3),
     });
     activeOf(state).energies.push(FIRE_ENERGY);
-    useAttack(buildContext(state), "ひきつける");
+    useAttackNamed(buildContext(state), "ひきつける");
     expect(state.hand).toHaveLength(2);
   });
 
@@ -3080,7 +3123,7 @@ describeTranslation("イーユイ", () => {
     expect(
       damageOf(state, activeOf(state), IRON_JUGULIS_TING_LU, "グラウンドメルト")
     ).toBe(120);
-    useAttack(buildContext(state), "グラウンドメルト");
+    useAttackNamed(buildContext(state), "グラウンドメルト");
     expect(state.stadium).toBeNull();
     expect(namesOf(state.discard)).toContain("ゼロの大空洞");
     expect(state.bench).toHaveLength(5);
@@ -3137,7 +3180,7 @@ describeTranslation("マリィのベロバー", () => {
   test("くすねるは 1 枚引く", () => {
     const state = buildState({ active: MARNIES_IMPIDIMP, deck: [DARK_ENERGY] });
     activeOf(state).energies.push(DARK_ENERGY);
-    useAttack(buildContext(state), "くすねる");
+    useAttackNamed(buildContext(state), "くすねる");
     expect(namesOf(state.hand)).toEqual(["基本悪エネルギー"]);
   });
 });
@@ -3197,7 +3240,7 @@ describeTranslation("アチャモ", () => {
   test("もってくるは 1 枚引く", () => {
     const state = buildState({ active: TORCHIC, deck: [FIRE_ENERGY] });
     activeOf(state).energies.push(FIRE_ENERGY);
-    useAttack(buildContext(state), "もってくる");
+    useAttackNamed(buildContext(state), "もってくる");
     expect(namesOf(state.hand)).toEqual(["基本炎エネルギー"]);
   });
 });
@@ -3282,7 +3325,7 @@ describeTranslation("セレビィ", () => {
       deck: [FROAKIE, GRAND_TREE_FOREST, APPLIN, GRASS_ENERGY, MEGANIUM],
     });
     activeOf(state).energies.push(GRASS_ENERGY);
-    useAttack(buildContext(state), "ときをめぐる");
+    useAttackNamed(buildContext(state), "ときをめぐる");
     expect(namesOf(state.hand)).toEqual([
       "活力の森",
       "カジッチュ",
@@ -3298,7 +3341,7 @@ describeTranslation("エレズン", () => {
       deck: [MEOWTH, TOXTRICITY, TOXEL, BOSS],
     });
     activeOf(state).energies.push(DARK_ENERGY);
-    useAttack(buildContext(state), "なかまをよぶ");
+    useAttackNamed(buildContext(state), "なかまをよぶ");
     expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
       "ニャースex",
       "エレズン",

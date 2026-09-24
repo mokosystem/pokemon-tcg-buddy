@@ -336,6 +336,11 @@ export interface UsableAttack {
    * 山札の上のポケモンのワザを使うときは、「ひらめきチャレンジ」を持っているポケモン。
    */
   readonly owner: PokemonInPlay;
+  /**
+   * ほかのワザを「このワザとして使う」とき、その元のワザ(「ひらめきチャレンジ」、「ナイトジョーカー」)。
+   * 同じ名前のワザを直接使う候補と、元のワザを通して使う候補を区別する(card-effects.ts の isSameUsableAttack)。
+   */
+  readonly usedAs?: Attack;
 }
 
 /**
@@ -370,6 +375,7 @@ function listDeckTopAttacksUsedAs(
       attack: { ...attack, cost: usedAs.cost },
       discardsDeckTopFirst: true,
       owner,
+      usedAs,
     }));
 }
 
@@ -432,6 +438,7 @@ function listBenchedAttacksUsedAs(
             .map((attack) => ({
               attack: { ...attack, cost: usedAs.cost },
               owner: benched,
+              usedAs,
             }))
         : []
     );

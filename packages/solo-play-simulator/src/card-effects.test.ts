@@ -11,9 +11,11 @@ import {
   buildContext,
   buildRecordedCard,
   buildState,
+  useAttackNamed,
 } from "./card-test-support.ts";
 import { buildCardFromRecord } from "./cards.ts";
 import { BASIC, SAMPLE_RECORD_TABLE } from "./sample-cards.ts";
+import { IllegalMove } from "./state.ts";
 
 function buildPokemonWithConditionalAttack() {
   const basicRecord = SAMPLE_RECORD_TABLE.get(BASIC.cardId);
@@ -47,7 +49,18 @@ describe("ワザ", () => {
     const state = buildState({ active: pokemon, deck: [BASIC, BASIC] });
     const context = buildContext(state);
     expect(listUsableAttacksOfActive(context)).toEqual([]);
-    expect(() => useAttack(context, "条件つきのワザ")).toThrow();
+    const [attack] =
+      pokemon.record.category === CardCategory.Pokemon
+        ? pokemon.record.attacks
+        : [];
+    const { active } = state;
+    if (attack === undefined || active === null) {
+      throw new Error("ワザを持つバトルポケモンが無い");
+    }
+    // 一覧に無い候補を渡しても使えない
+    expect(() => useAttack(context, { attack, owner: active })).toThrow(
+      IllegalMove
+    );
     expect(state.hand).toEqual([]);
   });
 
@@ -58,7 +71,7 @@ describe("ワザ", () => {
     expect(
       listUsableAttacksOfActive(context).map((usable) => usable.attack.name)
     ).toEqual(["条件つきのワザ"]);
-    useAttack(context, "条件つきのワザ");
+    useAttackNamed(context, "条件つきのワザ");
     expect(state.hand).toHaveLength(1);
   });
 });
