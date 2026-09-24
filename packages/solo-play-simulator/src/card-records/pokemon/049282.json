@@ -1,0 +1,65 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "にじいろDNA",
+      "translation": {
+        "continuousEffect": {
+          "change": {
+            "change": "allowEvolutionFromHandAsIfNamed",
+            "evolutionFilter": {
+              "exRules": ["pokemonEx", "megaEvolutionEx"]
+            },
+            "name": "イーブイ"
+          },
+          "conditions": [],
+          "scope": {
+            "scope": "self"
+          }
+        },
+        "kind": "continuous"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fire", "water", "electric"],
+      "damage": {
+        "amount": 200,
+        "kind": "fixed"
+      },
+      "name": "クォーツシャイン"
+    }
+  ],
+  "cardIds": ["049282", "046787"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 200,
+  "isTerastal": true,
+  "name": "イーブイex",
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "rulings": [
+    {
+      "interpretation": "できない。この特性で進化できるのは、手札から出して進化させるときだけ",
+      "question": "スタジアム「偉大な大樹」のように、山札から進化させる効果でも、この特性で「イーブイ」から進化するポケモンex に進化できるか",
+      "reflectedIn": "変える項目 allowEvolutionFromHandAsIfNamed を、手札から進化させる判定(card-effects.ts の canEvolvePokemonFromHand)だけが見る",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "偉大な大樹の効果で、にじいろDNA を持つイーブイex をブースターex に進化させられるか、という質問に、できないと回答(関連カードの印刷 046787 は詳細ページを見比べて同じカードテキスト)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%AB%E3%81%98%E3%81%84%E3%82%8DDNA&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23",
+  "exRule": "pokemonEx"
+}

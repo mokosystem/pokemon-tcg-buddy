@@ -1,0 +1,55 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "change": "setBenchLimit",
+          "limit": 8
+        },
+        "conditions": [
+          {
+            "condition": "ownPokemonInPlayExists",
+            "filter": {
+              "isTerastal": true
+            }
+          }
+        ],
+        "scope": {
+          "scope": "ownPlayer"
+        }
+      },
+      "kind": "continuous"
+    }
+  ],
+  "cardIds": ["048706", "046041"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "ゼロの大空洞",
+  "rulings": [
+    {
+      "interpretation": "出せない。ベンチの上限は出す前の場で判定する",
+      "question": "場に「テラスタル」のポケモンがいなくてベンチが 5 匹のとき、「テラスタル」のたねポケモンを 6 匹目としてベンチに出せるか",
+      "reflectedIn": "ベンチの上限を今の場の条件で求め、出す前に判定する(continuous-effects.ts の calculateBenchLimit、countEmptyBenchSlots)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "場に「テラスタル」のポケモンがいないときベンチが 5 匹なら「テラスタル」のたねポケモンをベンチに出せないと回答。山札から 2 枚をベンチに出すワザでも、ベンチが 4 匹なら 2 枚は出せないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%BC%E3%83%AD%E3%81%AE%E5%A4%A7%E7%A9%BA%E6%B4%9E&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "ベンチが 5 匹になるまで、選んだベンチポケモンをついているカードごとトラッシュする(きぜつではない)。バトル場のポケモンがいなくなったときは、ベンチを減らしてからバトル場に出す",
+      "question": "このカードがトラッシュされたときや、場に「テラスタル」のポケモンがいなくなったとき、ベンチをどう減らすか。バトル場に出すのとどちらが先か",
+      "reflectedIn": "ベンチの上限を超えたらトラッシュする処理(effect-operations.ts の trimBenchToLimit)を、スタジアムを出したときと、場のポケモンを山札や手札に戻したとき(バトル場に出す前)に行う",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "バトル場の「テラスタル」のポケモンがいなくなったとき、ベンチを 5 匹になるまでトラッシュするのを、バトル場に出すより先に行うと回答。トラッシュしたポケモンはきぜつしないとも回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%BC%E3%83%AD%E3%81%AE%E5%A4%A7%E7%A9%BA%E6%B4%9E&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}

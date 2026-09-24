@@ -1,0 +1,66 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "おうじゃのよびごえ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "searchDeckIntoHand",
+              "picks": [
+                {
+                  "filter": {
+                    "categories": ["ポケモン"],
+                    "nameIncludes": "シロナの"
+                  },
+                  "maxCount": 1
+                }
+              ]
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fighting"],
+      "damage": {
+        "amount": 40,
+        "kind": "fixed"
+      },
+      "name": "リューノスライス"
+    }
+  ],
+  "cardIds": ["049093"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 100,
+  "isTerastal": false,
+  "name": "シロナのガバイト",
+  "pokemonType": "fighting",
+  "retreatCost": 1,
+  "rulings": [
+    {
+      "interpretation": "名前に「シロナの」とつくポケモンを「シロナのポケモン」として扱う",
+      "question": "「シロナのポケモン」はどのポケモンか",
+      "reflectedIn": "特性「おうじゃのよびごえ」の条件を nameIncludes「シロナの」で書いた",
+      "source": {
+        "basis": "「シロナのポケモン」を定める公式 Q&A は見つからなかった(検索語「シロナのポケモン」の結果は、個別のカードの効果の処理を問うものだけ)。同じ書き方の「ロケット団のポケモン」について、公式 Q&A(ロケット団のミミッキュGX と ロケット団エネルギー、ロケット団のアテナ、ロケット団のワナイダー。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&regulation_faq_main_item1=all )が、名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱うと回答している",
+        "checkedOn": "2026-09-23",
+        "kind": "noMatchingQa",
+        "searchTerms": ["おうじゃのよびごえ", "シロナのポケモン"]
+      }
+    }
+  ],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23",
+  "evolvesFrom": "シロナのフカマル"
+}

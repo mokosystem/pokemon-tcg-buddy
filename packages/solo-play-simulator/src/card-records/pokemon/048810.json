@@ -1,0 +1,72 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "colorless"],
+      "damage": {
+        "amount": 130,
+        "kind": "fixed"
+      },
+      "name": "バーニングチャージ",
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"]
+            },
+            "maxCount": 2,
+            "operation": "searchDeckAndAttachEnergyToOnePokemon",
+            "targetFilter": {}
+          }
+        ],
+        "useConditions": []
+      }
+    },
+    {
+      "cost": ["fire", "water", "electric"],
+      "damage": {
+        "amount": 280,
+        "kind": "fixed"
+      },
+      "name": "カーネリアン"
+    }
+  ],
+  "cardIds": ["048810", "046683"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「カーネリアン」を使った次の自分の番に、このポケモンがワザを使えなくなる制限",
+      "reason": "ownNextTurnRestriction"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 270,
+  "isTerastal": true,
+  "name": "ブースターex",
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "rulings": [
+    {
+      "interpretation": "できる",
+      "question": "ワザ「バーニングチャージ」で、山札から基本エネルギーを 1 枚も選ばないことができるか",
+      "reflectedIn": "山札から選ぶ枚数を 0〜2 枚にした(effect-operations.ts の searchDeckAndAttachEnergyToOnePokemon)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "バーニングチャージで山札から基本エネルギーを 1 枚も選ばないことができるか、という質問に、できると回答(関連カードの印刷 046683 は詳細ページを見比べて同じカードテキスト)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%90%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23",
+  "exRule": "pokemonEx",
+  "evolvesFrom": "イーブイ"
+}

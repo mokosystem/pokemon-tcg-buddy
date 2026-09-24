@@ -9,6 +9,10 @@
 import { resolveEndOfTurnTriggers, useAttack } from "./card-effects.ts";
 import type { CardRecord } from "./card-record-schema.ts";
 import { buildCardFromRecord, type Card, isBasicPokemon } from "./cards.ts";
+import {
+  calculateBenchLimit,
+  countEmptyBenchSlots,
+} from "./continuous-effects.ts";
 import type { EffectChoices, EffectContext } from "./effect-choices.ts";
 import { GameState, HAND_SIZE_AT_SETUP, type RandomSource } from "./state.ts";
 
@@ -147,10 +151,13 @@ export function setupGame(
   for (const card of policy.chooseBenchAtSetup(
     state.hand.filter(isBasicPokemon)
   )) {
-    if (state.countEmptyBenchSlots() <= 0) {
+    if (countEmptyBenchSlots(state) <= 0) {
       break;
     }
-    state.placeOnBench(card, { from: "hand" });
+    state.placeOnBench(card, {
+      benchLimit: calculateBenchLimit(state),
+      from: "hand",
+    });
   }
   state.placePrizesFromDeck();
 }

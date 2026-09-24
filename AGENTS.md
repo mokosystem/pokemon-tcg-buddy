@@ -12,7 +12,7 @@
 - **CONTEXT.md** — 文書で使う用語の定義(ユビキタス言語)。用語の正はここ。手順と知識は docs/pokemon-tcg/ に置き、CONTEXT.md には書かない。
 - **docs/** — 手順書などの作業文書。ポケモンカードのドメイン文書は `docs/pokemon-tcg/` に置き、開発に関する文書と区別する。
 - **setup_rate/** — 主軸の成立率を計算する骨組み(Python、依存パッケージ無し、環境管理は uv)。デッキごとの規則ファイルは `setup_rate/decks/`、テストは `tests/`。実行方法は `pokemon-tcg-estimate-setup-rate` スキルにある。Issue 22 で作った試作で、Issue 27 で TypeScript の `packages/` に置き換える(README「提供形態」)。
-- **packages/** — 複数の場所から使う TypeScript の共有ライブラリ(Bun の workspaces)。`packages/solo-play-simulator` は成立率の計算の骨組み(一人回しの乱数試行)の移植先(Issue 27)。Bun の版は `mise.toml` で固定する。テストは最上位で `bun run test`、整形と lint の検査は `bun run lint`(修正は `bun run lint:fix`)、未使用のコードなどの解析は `bun run analyze`。Pull Request では GitHub Actions(`.github/workflows/ci.yml`)で同じ検査が `packages/` を対象に走り、合格しないとマージできない。ファイル名、ジョブ名、scripts の名前は「何をするか」と「どの範囲か」が読めるように付け、`check` のような何をするか曖昧な名前は使わない。環境の詳しい内容は [docs/setup-rate-design.md](docs/setup-rate-design.md)「TypeScript の環境」にある。カードの記録(効果の翻訳を含む)は `packages/solo-play-simulator/src/card-records/` に 1 記録 1 ファイルの JSON で置き、書式は同じ設計文書の「効果の記法と裁定のデータ」にある。記録を足したり記法のスキーマを変えたりしたら、パッケージのディレクトリで `bun run generate:card-record-files` を実行して入口と JSON Schema を生成し直す(最新かはテストが検査する)。
+- **packages/** — 複数の場所から使う TypeScript の共有ライブラリ(Bun の workspaces)。`packages/solo-play-simulator` は成立率の計算の骨組み(一人回しの乱数試行)の移植先(Issue 27)。Bun の版は `mise.toml` で固定する。テストは最上位で `bun run test`、整形と lint の検査は `bun run lint`(修正は `bun run lint:fix`)、未使用のコードなどの解析は `bun run analyze`。Pull Request では GitHub Actions(`.github/workflows/ci.yml`)で同じ検査が `packages/` を対象に走り、合格しないとマージできない。ファイル名、ジョブ名、scripts の名前は「何をするか」と「どの範囲か」が読めるように付け、`check` のような何をするか曖昧な名前は使わない。環境の詳しい内容は [docs/setup-rate-design.md](docs/setup-rate-design.md)「TypeScript の環境」にある。カードの記録(効果の翻訳を含む)は `packages/solo-play-simulator/src/card-records/` に 1 記録 1 ファイルの JSON で置き、書式は同じ設計文書の「効果の記法と裁定のデータ」、書く手順は `pokemon-tcg-translate-card-effects` スキルにある。記録を足したり記法のスキーマを変えたりしたら、パッケージのディレクトリで `bun run generate:card-record-files` を実行して入口と JSON Schema を生成し直す(最新かはテストが検査する)。
 
 ## 文書の用語
 
@@ -49,7 +49,7 @@ ln -s ../.claude/skills .agents/skills
 
 スキルの名前には規約がある。ポケモンカードのドメイン知識を扱うスキルには接頭辞 `pokemon-tcg-` を必ず付け、開発作業の規約スキル(`create-git-commit` など)と名前だけで区別できるようにする。文書がディレクトリ(`docs/pokemon-tcg/`)で区別するのと方式が違うのは、スキルが名前だけの一覧に並ぶフラットな名前空間で、名前以外に区別の手段が無いためである。
 
-Git コミット、GitHub Issue、Pull Request の規約は、`.claude/skills/` の `create-git-commit`、`create-github-issue`、`create-github-pull-request` に、ルールや裁定の質問に答える手順は `pokemon-tcg-answer-rules-question`、デッキを新しく組む相談は `pokemon-tcg-build-deck`、既存デッキの診断と改良の相談は `pokemon-tcg-diagnose-deck`(設計の理由は [docs/deck-diagnosis-design.md](docs/deck-diagnosis-design.md))、主軸の成立率を数字で示す計算は `pokemon-tcg-estimate-setup-rate`(設計の理由は [docs/setup-rate-design.md](docs/setup-rate-design.md)。計算の骨組みは `setup_rate/`、デッキごとの規則ファイルは `setup_rate/decks/`)にある。該当する作業ではそのスキルに従う。
+Git コミット、GitHub Issue、Pull Request の規約は、`.claude/skills/` の `create-git-commit`、`create-github-issue`、`create-github-pull-request` に、ルールや裁定の質問に答える手順は `pokemon-tcg-answer-rules-question`、デッキを新しく組む相談は `pokemon-tcg-build-deck`、既存デッキの診断と改良の相談は `pokemon-tcg-diagnose-deck`(設計の理由は [docs/deck-diagnosis-design.md](docs/deck-diagnosis-design.md))、主軸の成立率を数字で示す計算は `pokemon-tcg-estimate-setup-rate`(設計の理由は [docs/setup-rate-design.md](docs/setup-rate-design.md)。計算の骨組みは `setup_rate/`、デッキごとの規則ファイルは `setup_rate/decks/`)、カードの記録(効果の翻訳を含む)を書く手順は `pokemon-tcg-translate-card-effects` にある。該当する作業ではそのスキルに従う。
 
 ## 文章の言語
 

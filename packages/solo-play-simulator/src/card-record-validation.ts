@@ -12,6 +12,7 @@ import {
   type CardEffect,
   type CardRecord,
   CardRecordSchema,
+  type ContinuousEffect,
 } from "./card-record-schema.ts";
 
 /** 記録の JSON ファイル 1 つ。path は src/card-records/ からの相対パス(例: goods/048675.json)。 */
@@ -170,6 +171,36 @@ function findCardEffectProblems(record: CardRecord): string[] {
   return problems;
 }
 
+function listContinuousEffects(record: CardRecord): ContinuousEffect[] {
+  if (record.category === CardCategory.Pokemon) {
+    return record.abilities.flatMap((ability) =>
+      ability.translation?.kind === "continuous"
+        ? [ability.translation.continuousEffect]
+        : []
+    );
+  }
+  return "cardEffects" in record
+    ? record.cardEffects.flatMap((cardEffect) =>
+        cardEffect.kind === "continuous" ? [cardEffect.continuousEffect] : []
+      )
+    : [];
+}
+
+/**
+ * プレイヤーの値を変える効果(ベンチの上限)は範囲を ownPlayer にし、ポケモンの値を変える効果は ownPlayer にしない。
+ * 食い違うと、骨組みがその効果を集めずに何も起きないため。
+ */
+function findContinuousScopeProblems(record: CardRecord): string[] {
+  return listContinuousEffects(record).flatMap((effect) =>
+    (effect.change.change === "setBenchLimit") ===
+    (effect.scope.scope === "ownPlayer")
+      ? []
+      : [
+          `場にある間ずっと働く効果 ${effect.change.change} の範囲 ${effect.scope.scope} が合わない(ベンチの上限だけを ownPlayer にする)`,
+        ]
+  );
+}
+
 function findRulingProblems(record: CardRecord): string[] {
   return record.rulings.flatMap((ruling) =>
     ruling.source.kind === "officialQa" &&
@@ -188,6 +219,7 @@ function findRecordProblems(file: ParsedCardRecordFile): string[] {
       ...findTranslationStatusProblems(record),
       ...findPokemonAttributeProblems(record),
       ...findCardEffectProblems(record),
+      ...findContinuousScopeProblems(record),
       ...findRulingProblems(record),
       ...findDuplicates(record.cardIds).map(
         (cardId) => `カード ID ${cardId} が記録の中で重なっている`

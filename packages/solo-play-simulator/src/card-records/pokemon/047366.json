@@ -1,0 +1,82 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "グローリーエール",
+      "translation": {
+        "continuousEffect": {
+          "change": {
+            "amount": 30,
+            "change": "increaseAttackDamage"
+          },
+          "conditions": [],
+          "scope": {
+            "filter": {
+              "nameIncludes": "シロナの"
+            },
+            "scope": "ownPokemon"
+          }
+        },
+        "kind": "continuous"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["grass", "colorless", "colorless"],
+      "damage": {
+        "amount": 80,
+        "kind": "fixed"
+      },
+      "name": "リーフステップ"
+    }
+  ],
+  "cardIds": ["047366"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "シロナのロズレイド",
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "rulings": [
+    {
+      "interpretation": "2 匹いれば 2 匹分を足す(+60)",
+      "question": "場にこのポケモンが 2 匹いるとき、ダメージの増え方は重なるか",
+      "reflectedIn": "場にある間ずっと働く効果は持ち主ごとに集めるため、2 匹いれば 2 回分を足す(continuous-effects.ts の sumAttackDamageIncrease)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "「グローリーエール」が働くシロナのロズレイドが 2 匹いるとき、シロナのポケモンのワザのダメージは +60 になるか(なる)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B0%E3%83%AD%E3%83%BC%E3%83%AA%E3%83%BC%E3%82%A8%E3%83%BC%E3%83%AB&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "このポケモン自身のワザも増える",
+      "question": "このポケモン自身が使うワザ「リーフステップ」のダメージも増えるか",
+      "reflectedIn": "範囲を自分の場の「シロナのポケモン」全員にし、このポケモン自身を除かない",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "シロナのロズレイド自身のワザ「リーフステップ」も「グローリーエール」で +30 できるか(できる)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B0%E3%83%AD%E3%83%BC%E3%83%AA%E3%83%BC%E3%82%A8%E3%83%BC%E3%83%AB&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "名前に「シロナの」とつくポケモンを「シロナのポケモン」として扱う",
+      "question": "「シロナのポケモン」はどのポケモンか",
+      "reflectedIn": "特性「グローリーエール」の範囲を nameIncludes「シロナの」で書いた",
+      "source": {
+        "basis": "「シロナのポケモン」を定める公式 Q&A は見つからなかった(検索語「シロナのポケモン」の結果は、個別のカードの効果の処理を問うものだけ)。同じ書き方の「ロケット団のポケモン」について、公式 Q&A(ロケット団のミミッキュGX と ロケット団エネルギー、ロケット団のアテナ、ロケット団のワナイダー。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&regulation_faq_main_item1=all )が、名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱うと回答している",
+        "checkedOn": "2026-09-23",
+        "kind": "noMatchingQa",
+        "searchTerms": ["グローリーエール", "シロナのポケモン"]
+      }
+    }
+  ],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23",
+  "evolvesFrom": "シロナのロゼリア"
+}

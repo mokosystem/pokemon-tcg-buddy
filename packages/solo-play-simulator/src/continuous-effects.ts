@@ -12,9 +12,14 @@ import {
   type EnergyProvision,
   type PokemonType,
 } from "./card-record-schema.ts";
-import type { Card } from "./cards.ts";
+import { type Card, isPokemon, matchesCardFilter } from "./cards.ts";
 import { areConditionsMet, matchesPokemonFilter } from "./conditions.ts";
-import type { EnergyUnit, GameState, PokemonInPlay } from "./state.ts";
+import {
+  BENCH_LIMIT,
+  type EnergyUnit,
+  type GameState,
+  type PokemonInPlay,
+} from "./state.ts";
 
 interface CollectedContinuousEffect {
   readonly effect: ContinuousEffect;
@@ -56,6 +61,7 @@ function appliesTo(
     case "ownPokemon":
       return matchesPokemonFilter(state, pokemon, scope.filter);
     default:
+      // ownPlayer はポケモンではなくプレイヤーの値(ベンチの上限)を変える
       return false;
   }
 }
@@ -202,15 +208,79 @@ export function listEnergyUnits(
   );
 }
 
-/** ついているエネルギーのうち、指定のタイプとして数えられる個数(すべてのタイプとして働くものを含む)。 */
-export function countEnergyUnitsOfType(
+/**
+ * ついているエネルギーのうち、指定のタイプのいずれかとして数えられる個数。すべてのタイプとして働く 1 個は、
+ * タイプをいくつ指定しても 1 つと数える(公式 Q&A「ストームエメラルダ」)。
+ */
+export function countEnergyUnitsOfTypes(
   state: GameState,
   pokemon: PokemonInPlay,
-  type: PokemonType
+  types: readonly PokemonType[]
 ): number {
   return listEnergyUnits(state, pokemon).filter(
-    (unit) => unit === type || unit === "any"
+    (unit) => unit === "any" || types.includes(unit)
   ).length;
+}
+
+/**
+ * 自分のベンチに出せるポケモンの数。ベンチの上限を変える効果(ゼロの大空洞)が働いていればその数、
+ * 無ければ基本ルールの 5 匹。効果が働くかは、今の場で判定する(公式 Q&A「ゼロの大空洞」: 場に「テラスタル」の
+ * ポケモンがいないときは、「テラスタル」のたねポケモンを 6 匹目としてベンチに出せない)。
+ */
+export function calculateBenchLimit(state: GameState): number {
+  const limits = collectContinuousEffects(state).flatMap((collected) =>
+    collected.effect.change.change === "setBenchLimit" &&
+    collected.effect.scope.scope === "ownPlayer"
+      ? [collected.effect.change.limit]
+      : []
+  );
+  return limits.length === 0 ? BENCH_LIMIT : Math.max(...limits);
+}
+
+/**
+ * このポケモンが使うワザの、相手のバトルポケモンへのダメージを増やす量(シロナのロズレイドの「グローリーエール」)。
+ * 効果は持ち主ごとに集めるので、同じ特性のポケモンが 2 匹いれば 2 回分を足す(公式 Q&A「グローリーエール」:
+ * 2 匹いれば「+60」)。
+ */
+export function sumAttackDamageIncrease(
+  state: GameState,
+  attacker: PokemonInPlay
+): number {
+  return listEffectsApplyingTo(state, attacker).reduce(
+    (total, collected) =>
+      collected.effect.change.change === "increaseAttackDamage"
+        ? total + collected.effect.change.amount
+        : total,
+    0
+  );
+}
+
+export function countEmptyBenchSlots(state: GameState): number {
+  return Math.max(0, calculateBenchLimit(state) - state.bench.length);
+}
+
+/**
+ * 手札の進化ポケモン card を、進化前の名前が違う target にのせて進化させる効果(イーブイex の「にじいろDNA」)が
+ * 働いていれば、照らし合わせる進化前の名前を返す。働いていなければ undefined。
+ */
+export function findEvolutionNameAllowedByEffect(
+  state: GameState,
+  target: PokemonInPlay,
+  card: Card
+): string | undefined {
+  if (!isPokemon(card)) {
+    return;
+  }
+  for (const collected of listEffectsApplyingTo(state, target)) {
+    const { change } = collected.effect;
+    if (
+      change.change === "allowEvolutionFromHandAsIfNamed" &&
+      card.evolvesFrom === change.name &&
+      matchesCardFilter(card, change.evolutionFilter)
+    ) {
+      return change.name;
+    }
+  }
 }
 
 export interface UsableAttack {

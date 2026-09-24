@@ -1,11 +1,13 @@
 /**
- * Issue 22 の 4 デッキを、カードの記録だけで組み立てて回す。使えるカードと特性を片端から使う手順で、
- * 翻訳した効果が基本ルールに反さずに最後まで動くかを確かめる(効果の中の選択は候補の先頭から選ぶ)。
+ * 記録をそろえたデッキ(Issue 22 の 4 デッキと、規則ファイルの無い開発責任者の 2 デッキ)を、カードの記録だけで
+ * 組み立てて回す。使えるカードと特性を片端から使う手順で、翻訳した効果が基本ルールに反さずに最後まで動くかを
+ * 確かめる(効果の中の選択は候補の先頭から選ぶ)。
  */
 
 import { describe, expect, test } from "bun:test";
 import {
   attachEnergyFromHandToPokemon,
+  canEvolvePokemonFromHand,
   canPlayTrainerFromHand,
   canUseAbility,
   canUseAbilityFromHand,
@@ -21,6 +23,8 @@ import {
 import { CardCategory } from "./card-record-schema.ts";
 import { cardRecordTable } from "./card-record-table.ts";
 import { type Card, isBasicPokemon, isEnergy } from "./cards.ts";
+import { countEmptyBenchSlots } from "./continuous-effects.ts";
+import { DECKS_WITHOUT_RULE_FILES } from "./decks-without-rule-files.ts";
 import type { EffectContext } from "./effect-choices.ts";
 import { buildDeck, type PlayingPolicy, runGame } from "./engine.ts";
 import { ISSUE22_DECKS } from "./issue22-decks.ts";
@@ -40,7 +44,7 @@ function playCardFromHand(context: EffectContext, card: Card): boolean {
     playTrainerFromHand(context, card);
     return true;
   }
-  if (isBasicPokemon(card) && state.countEmptyBenchSlots() > 0) {
+  if (isBasicPokemon(card) && countEmptyBenchSlots(state) > 0) {
     placeBasicPokemonOnBenchFromHand(context, card);
     return true;
   }
@@ -53,7 +57,7 @@ function playCardFromHand(context: EffectContext, card: Card): boolean {
   }
   const target = state
     .listPokemonInPlay()
-    .find((pokemon) => state.canEvolve(pokemon, card));
+    .find((pokemon) => canEvolvePokemonFromHand(context, pokemon, card));
   if (target !== undefined) {
     evolvePokemonFromHand(context, target, card);
     return true;
@@ -113,8 +117,8 @@ const greedyPolicy: PlayingPolicy = {
   },
 };
 
-describe("Issue 22 の 4 デッキ", () => {
-  for (const deck of ISSUE22_DECKS) {
+describe("記録をそろえたデッキ", () => {
+  for (const deck of [...ISSUE22_DECKS, ...DECKS_WITHOUT_RULE_FILES]) {
     test(`${deck.name}: 60 枚すべてをカードの記録から組み立てられる`, () => {
       expect(buildDeck(cardRecordTable, deck.decklist)).toHaveLength(60);
     });

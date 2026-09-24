@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["045281", "049403", "048300"],
+  "category": "ポケモンのどうぐ",
+  "excludedEffects": [
+    {
+      "description": "つけているポケモンの最大 HP を増やす。相手がいないためワザのダメージを受けず、最大 HP は成立率に影響しない",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "ヒーローマント",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-23"
+}

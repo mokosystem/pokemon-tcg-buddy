@@ -110,6 +110,27 @@ export function chooseCardsWithin(
   });
 }
 
+/** 候補から 0〜maxCount 匹を選ぶ。候補が足りないときは、ある分までに範囲を縮める。 */
+export function choosePokemonUpTo(
+  context: EffectContext,
+  candidates: readonly PokemonInPlay[],
+  maxCount: number,
+  purpose: string
+): readonly PokemonInPlay[] {
+  if (candidates.length === 0) {
+    return [];
+  }
+  const request = {
+    candidates,
+    maxCount: Math.min(maxCount, candidates.length),
+    minCount: 0,
+    purpose,
+  };
+  const chosen = context.choices.choosePokemon(context.state, request);
+  validateChosen(request, chosen);
+  return chosen;
+}
+
 /** 候補が 1 つでもあれば必ず 1 匹を選ぶ。候補が無ければ null。 */
 export function chooseOnePokemon(
   context: EffectContext,

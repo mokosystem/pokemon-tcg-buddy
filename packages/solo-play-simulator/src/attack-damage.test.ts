@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { calculateAttackDamage } from "./attack-damage.ts";
 import type { Attack } from "./card-record-schema.ts";
-import { buildRecordedCard, buildState } from "./card-test-support.ts";
+import {
+  activeOf,
+  buildRecordedCard,
+  buildState,
+} from "./card-test-support.ts";
 import type { Card } from "./cards.ts";
 
 function findAttack(card: Card, name: string): Attack {
@@ -26,6 +30,8 @@ const TELEPATH_ENERGY = buildRecordedCard("049712");
 const LEGACY_ENERGY = buildRecordedCard("049457");
 const FIRE_ENERGY = buildRecordedCard("050746");
 const IGNITION_ENERGY = buildRecordedCard("049452");
+const CYNTHIAS_SPIRITOMB = buildRecordedCard("049968");
+const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
 
 describe("ワザのダメージ", () => {
   test("メガシンフォニアは、自分のポケモン全員についている超エネルギーの数×50(すべてのタイプとして働くものも数える)", () => {
@@ -35,7 +41,11 @@ describe("ワザのダメージ", () => {
     first?.energies.push(PSYCHIC_ENERGY, FIRE_ENERGY);
     second?.energies.push(LEGACY_ENERGY, PSYCHIC_ENERGY);
     expect(
-      calculateAttackDamage(state, findAttack(GARDEVOIR, "メガシンフォニア"))
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(GARDEVOIR, "メガシンフォニア")
+      )
     ).toBe(5 * 50);
   });
 
@@ -48,9 +58,9 @@ describe("ワザのダメージ", () => {
       active: DHELMISE,
       discard: bakegakure.slice(1),
     });
-    expect(calculateAttackDamage(three, attack)).toBe(30);
+    expect(calculateAttackDamage(three, activeOf(three), attack)).toBe(30);
     const four = buildState({ active: DHELMISE, discard: bakegakure });
-    expect(calculateAttackDamage(four, attack)).toBe(170);
+    expect(calculateAttackDamage(four, activeOf(four), attack)).toBe(170);
   });
 
   test("インフェルノX は、自分の場の炎エネルギー(すべてのタイプとして働くものも数える)を全部トラッシュしたときの値(枚数×90)で求める", () => {
@@ -60,20 +70,54 @@ describe("ワザのダメージ", () => {
     first?.energies.push(FIRE_ENERGY);
     second?.energies.push(LEGACY_ENERGY, PSYCHIC_ENERGY);
     expect(
-      calculateAttackDamage(state, findAttack(CHARIZARD_X, "インフェルノX"))
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(CHARIZARD_X, "インフェルノX")
+      )
     ).toBe(4 * 90);
   });
 
   test("固定のダメージはそのまま、コインで決まる上乗せは含めず、ダメージの無いワザは null", () => {
     const state = buildState({ active: DRAGAPULT });
     expect(
-      calculateAttackDamage(state, findAttack(DRAGAPULT, "ファントムダイブ"))
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(DRAGAPULT, "ファントムダイブ")
+      )
     ).toBe(200);
     expect(
-      calculateAttackDamage(state, findAttack(KANGASKHAN, "マシンガンコンボ"))
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(KANGASKHAN, "マシンガンコンボ")
+      )
     ).toBe(200);
     expect(
-      calculateAttackDamage(state, findAttack(GARDEVOIR, "あふれるねがい"))
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(GARDEVOIR, "あふれるねがい")
+      )
     ).toBeNull();
+  });
+
+  test("基本のダメージが 0 なら、ダメージを増やす効果を足さない", () => {
+    const state = buildState({
+      active: CYNTHIAS_SPIRITOMB,
+      bench: [CYNTHIAS_ROSERADE],
+    });
+    state.increaseAttackDamageThisTurn({
+      amount: 30,
+      attackerFilter: { pokemonTypes: ["dark"] },
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(CYNTHIAS_SPIRITOMB, "レイジングカース")
+      )
+    ).toBe(0);
   });
 });

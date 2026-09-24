@@ -100,11 +100,11 @@ describe("番のルール", () => {
       []
     );
     for (let index = 0; index < BENCH_LIMIT; index += 1) {
-      state.placeOnBench(BASIC, { from: "hand" });
+      state.placeOnBench(BASIC, { benchLimit: BENCH_LIMIT, from: "hand" });
     }
-    expect(() => state.placeOnBench(BASIC, { from: "hand" })).toThrow(
-      IllegalMove
-    );
+    expect(() =>
+      state.placeOnBench(BASIC, { benchLimit: BENCH_LIMIT, from: "hand" })
+    ).toThrow(IllegalMove);
   });
 });
 
@@ -119,7 +119,10 @@ describe("進化のルール", () => {
 
   test("この番に出したポケモンは進化できない", () => {
     const state = stateWith([BASIC, STAGE1], []);
-    const fresh = state.placeOnBench(BASIC, { from: "hand" });
+    const fresh = state.placeOnBench(BASIC, {
+      benchLimit: BENCH_LIMIT,
+      from: "hand",
+    });
     expect(state.canEvolve(fresh, STAGE1)).toBe(false);
   });
 
@@ -152,7 +155,10 @@ describe("進化のルール", () => {
 
   test("1 進化を飛ばす進化は、この番より前に出したたねポケモンに限る", () => {
     const state = stateWith([BASIC, STAGE2], []);
-    const fresh = state.placeOnBench(BASIC, { from: "hand" });
+    const fresh = state.placeOnBench(BASIC, {
+      benchLimit: BENCH_LIMIT,
+      from: "hand",
+    });
     expect(() => state.evolveSkippingStage1(fresh, STAGE2)).toThrow(
       IllegalMove
     );
@@ -172,7 +178,10 @@ describe("進化のルール", () => {
 describe("にげる", () => {
   test("にげるは選んだエネルギーをトラッシュしてベンチと入れ替え、1 番に 1 回しかできない", () => {
     const state = stateWith([ENERGY, BASIC], []);
-    const bench = state.placeOnBench(BASIC, { from: "hand" });
+    const bench = state.placeOnBench(BASIC, {
+      benchLimit: BENCH_LIMIT,
+      from: "hand",
+    });
     state.attachEnergyFromHand(ENERGY, activeOf(state));
     const formerActive = activeOf(state);
     state.retreat(bench, [ENERGY]);
@@ -188,7 +197,7 @@ describe("問い合わせ", () => {
     const state = stateWith([BASIC, ENERGY], [ENERGY, ENERGY]);
     state.prizes.push(ENERGY);
     state.discard.push(BASIC);
-    state.placeOnBench(BASIC, { from: "hand" });
+    state.placeOnBench(BASIC, { benchLimit: BENCH_LIMIT, from: "hand" });
     expect(state.countInPlay("たね")).toBe(2);
     expect(state.countInHand("基本超エネルギー")).toBe(1);
     expect(state.countInDeck("基本超エネルギー")).toBe(2);
@@ -246,7 +255,10 @@ describe("山札の操作", () => {
 
   test("ベンチのポケモンを山札に戻すとベンチから消える", () => {
     const state = stateWith([BASIC], []);
-    const bench = state.placeOnBench(BASIC, { from: "hand" });
+    const bench = state.placeOnBench(BASIC, {
+      benchLimit: BENCH_LIMIT,
+      from: "hand",
+    });
     state.returnPokemonToDeck(bench);
     expect(state.bench).toEqual([]);
     expect(state.deck).toEqual([BASIC]);
@@ -264,7 +276,10 @@ describe("山札の操作", () => {
 
   test("バトル場が空のときだけ、ベンチのポケモンをバトル場に出せる", () => {
     const state = stateWith([BASIC], []);
-    const bench = state.placeOnBench(BASIC, { from: "hand" });
+    const bench = state.placeOnBench(BASIC, {
+      benchLimit: BENCH_LIMIT,
+      from: "hand",
+    });
     expect(() => state.promoteToActive(bench)).toThrow(IllegalMove);
     state.returnPokemonToDeck(activeOf(state));
     state.promoteToActive(bench);

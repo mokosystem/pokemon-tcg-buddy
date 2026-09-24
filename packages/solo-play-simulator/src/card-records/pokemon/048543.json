@@ -1,0 +1,82 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "こんじきのほのお",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["fire"]
+              },
+              "maxCount": 2,
+              "operation": "attachEnergyFromHand",
+              "targetFilter": {
+                "nameIncludes": "ヒビキの",
+                "positions": ["bench"]
+              }
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fire", "fire", "fire", "fire"],
+      "damage": {
+        "amount": 160,
+        "kind": "fixed"
+      },
+      "name": "シャイニングフェザー"
+    }
+  ],
+  "cardIds": ["048543", "047315"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「シャイニングフェザー」の、自分のポケモン全員の HP を回復する効果",
+      "reason": "healing"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 230,
+  "isTerastal": false,
+  "name": "ヒビキのホウオウex",
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "rulings": [
+    {
+      "interpretation": "つけられる。1 枚か 2 枚を選ぶ",
+      "question": "特性「こんじきのほのお」で、手札の基本炎エネルギーを 1 枚だけ選んでつけられるか",
+      "reflectedIn": "手札から選ぶ枚数を 1〜maxCount 枚にした(effect-operations.ts の attachEnergyFromHand)",
+      "source": {
+        "checkedOn": "2026-09-23",
+        "kind": "officialQa",
+        "questionSummary": "こんじきのほのおで手札の基本炎エネルギーを 1 枚だけ選んで、ベンチの「ヒビキのポケモン」につけられるか、という質問に、できると回答(関連カードの印刷 047315 は詳細ページを見比べて同じカードテキスト)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%93%E3%82%93%E3%81%98%E3%81%8D%E3%81%AE%E3%81%BB%E3%81%AE%E3%81%8A&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "名前に「ヒビキの」とつくポケモンを「ヒビキのポケモン」として扱う",
+      "question": "「ヒビキのポケモン」はどのポケモンか",
+      "reflectedIn": "特性「こんじきのほのお」の条件を nameIncludes「ヒビキの」で書いた",
+      "source": {
+        "basis": "「ヒビキのポケモン」を定める公式 Q&A は見つからなかった(検索語「ヒビキのポケモン」の結果は、個別のカードの効果の処理を問うものだけ)。同じ書き方の「ロケット団のポケモン」について、公式 Q&A(ロケット団のミミッキュGX と ロケット団エネルギー、ロケット団のアテナ、ロケット団のワナイダー。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&regulation_faq_main_item1=all )が、名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱うと回答している",
+        "checkedOn": "2026-09-23",
+        "kind": "noMatchingQa",
+        "searchTerms": ["こんじきのほのお", "ヒビキのポケモン"]
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23",
+  "exRule": "pokemonEx"
+}

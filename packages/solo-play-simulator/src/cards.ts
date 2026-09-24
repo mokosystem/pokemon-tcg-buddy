@@ -120,23 +120,31 @@ function includesIfListed<T>(
   );
 }
 
-/** カードを選ぶ条件(CardFilter)に合うか。書かれた欄はすべて満たし、欄の中の並びはどれか 1 つでよい。 */
-export function matchesCardFilter(card: Card, filter: CardFilter): boolean {
-  if (filter.providedEnergyTypes !== undefined) {
-    const provided = listBaseProvidedTypes(card);
-    const wanted = filter.providedEnergyTypes;
-    if (provided !== "any" && !provided.some((type) => wanted.includes(type))) {
-      return false;
-    }
+function providesListedType(card: Card, filter: CardFilter): boolean {
+  if (filter.providedEnergyTypes === undefined) {
+    return true;
   }
+  const provided = listBaseProvidedTypes(card);
+  const wanted = filter.providedEnergyTypes;
+  return provided === "any" || provided.some((type) => wanted.includes(type));
+}
+
+/** カードを選ぶ条件(CardFilter)に合うか。書かれた欄はすべて満たし、欄の中の並びと anyOf はどれか 1 つでよい。 */
+export function matchesCardFilter(card: Card, filter: CardFilter): boolean {
   return (
+    providesListedType(card, filter) &&
     includesIfListed(filter.categories, card.category) &&
     includesIfListed(filter.stages, card.stage) &&
     includesIfListed(filter.names, card.name) &&
     includesIfListed(filter.pokemonTypes, card.pokemonType) &&
     includesIfListed(filter.exRules, card.exRule) &&
+    (filter.nameIncludes === undefined ||
+      card.name.includes(filter.nameIncludes)) &&
+    (filter.isTerastal === undefined || card.isTerastal) &&
     (filter.maxHp === undefined ||
       (isPokemon(card) && card.hp <= filter.maxHp)) &&
-    !(filter.excludesPokemonWithRuleBox === true && card.hasRuleBox)
+    !(filter.excludesPokemonWithRuleBox === true && card.hasRuleBox) &&
+    (filter.anyOf === undefined ||
+      filter.anyOf.some((inner) => matchesCardFilter(card, inner)))
   );
 }

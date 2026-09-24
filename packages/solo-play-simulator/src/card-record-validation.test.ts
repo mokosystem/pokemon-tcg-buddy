@@ -128,6 +128,36 @@ describe("記録をまたぐ検査", () => {
     ]);
   });
 
+  test("ベンチの上限を変える効果だけを、範囲 ownPlayer にする", () => {
+    const cavern = findRecord("048706");
+    const [cardEffect] = "cardEffects" in cavern ? cavern.cardEffects : [];
+    const pokemonScoped =
+      cardEffect?.kind === "continuous"
+        ? {
+            ...cavern,
+            cardEffects: [
+              {
+                ...cardEffect,
+                continuousEffect: {
+                  ...cardEffect.continuousEffect,
+                  scope: { filter: {}, scope: "ownPokemon" as const },
+                },
+              },
+            ],
+          }
+        : cavern;
+    expect(
+      findCardRecordProblems([
+        { path: "stadiums/048706.json", record: pokemonScoped },
+      ])
+    ).toEqual([
+      "stadiums/048706.json: 場にある間ずっと働く効果 setBenchLimit の範囲 ownPokemon が合わない(ベンチの上限だけを ownPlayer にする)",
+    ]);
+    expect(
+      findCardRecordProblems([{ path: "stadiums/048706.json", record: cavern }])
+    ).toEqual([]);
+  });
+
   test("進化前の名前の記録があるかは検査しない", () => {
     expect(
       findCardRecordProblems([

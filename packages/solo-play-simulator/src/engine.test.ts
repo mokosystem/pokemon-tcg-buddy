@@ -4,7 +4,7 @@ import {
   evolvePokemonFromHand,
   listUsableAttacksOfActive,
 } from "./card-effects.ts";
-import { countEnergyUnitsOfType } from "./continuous-effects.ts";
+import { countEnergyUnitsOfTypes } from "./continuous-effects.ts";
 import {
   applyVariant,
   buildDeck,
@@ -168,7 +168,7 @@ describe("対戦の進行", () => {
           explainFailure: () => "まだ",
           isAchieved: (state) =>
             state.active !== null &&
-            countEnergyUnitsOfType(state, state.active, "psychic") >= 2,
+            countEnergyUnitsOfTypes(state, state.active, ["psychic"]) >= 2,
           name: "エネルギー 2 個",
         },
       ],

@@ -1110,6 +1110,26 @@
         {
           "type": "object",
           "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckAndAttachEnergyToOnePokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "filter": {
               "$ref": "#/$defs/CardFilter"
             },
@@ -1129,7 +1149,11 @@
               "const": "lookAtDeckTopAndTakeIntoHand"
             },
             "restPlacement": {
-              "enum": ["shuffleIntoDeck", "bottomOfDeck"],
+              "enum": [
+                "shuffleIntoDeck",
+                "bottomOfDeck",
+                "shuffleThenBottomOfDeck"
+              ],
               "type": "string"
             }
           },
@@ -1138,6 +1162,46 @@
             "lookCount",
             "maxTakeCount",
             "minTakeCount",
+            "operation",
+            "restPlacement"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "lookCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxAttachCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minAttachCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "lookAtDeckTopAndAttachEnergyToSelf"
+            },
+            "restPlacement": {
+              "enum": [
+                "shuffleIntoDeck",
+                "bottomOfDeck",
+                "shuffleThenBottomOfDeck"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter",
+            "lookCount",
+            "maxAttachCount",
+            "minAttachCount",
             "operation",
             "restPlacement"
           ],
@@ -1187,6 +1251,10 @@
             "energyFilter": {
               "$ref": "#/$defs/CardFilter"
             },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
             "operation": {
               "const": "attachEnergyFromHand"
             },
@@ -1194,7 +1262,62 @@
               "$ref": "#/$defs/PokemonInPlayFilter"
             }
           },
-          "required": ["energyFilter", "operation", "targetFilter"],
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxPokemonCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "attachEnergyFromDiscardToEachChosenPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": [
+            "energyFilter",
+            "maxPokemonCount",
+            "operation",
+            "targetFilter"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "moveEnergyToAnotherOwnPokemon"
+            }
+          },
+          "required": ["energyFilter", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "attackerFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            },
+            "operation": {
+              "const": "increaseAttackDamageThisTurn"
+            }
+          },
+          "required": ["amount", "attackerFilter", "operation"],
           "additionalProperties": false
         },
         {
@@ -1360,9 +1483,16 @@
             "type": "string"
           }
         },
+        "isTerastal": {
+          "const": true
+        },
         "maxHp": {
           "type": "integer",
           "minimum": 0
+        },
+        "nameIncludes": {
+          "type": "string",
+          "minLength": 1
         },
         "names": {
           "type": "array",
@@ -1389,6 +1519,79 @@
             "enum": ["たね", "1進化", "2進化"],
             "type": "string"
           }
+        },
+        "anyOf": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "categories": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "基本エネルギー",
+                    "グッズ",
+                    "ポケモン",
+                    "特殊エネルギー",
+                    "スタジアム",
+                    "サポート",
+                    "ポケモンのどうぐ"
+                  ],
+                  "type": "string"
+                }
+              },
+              "excludesPokemonWithRuleBox": {
+                "const": true
+              },
+              "exRules": {
+                "type": "array",
+                "items": {
+                  "enum": ["pokemonEx", "megaEvolutionEx"],
+                  "type": "string"
+                }
+              },
+              "isTerastal": {
+                "const": true
+              },
+              "maxHp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "nameIncludes": {
+                "type": "string",
+                "minLength": 1
+              },
+              "names": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "pokemonTypes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/PokemonType"
+                }
+              },
+              "providedEnergyTypes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/PokemonType"
+                }
+              },
+              "stages": {
+                "type": "array",
+                "items": {
+                  "enum": ["たね", "1進化", "2進化"],
+                  "type": "string"
+                }
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "minItems": 2
         }
       },
       "required": [],
@@ -1588,6 +1791,51 @@
           },
           "required": ["change", "provision"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "setBenchLimit"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["change", "limit"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "allowEvolutionFromHandAsIfNamed"
+            },
+            "evolutionFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["change", "evolutionFilter", "name"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "change": {
+              "const": "increaseAttackDamage"
+            }
+          },
+          "required": ["amount", "change"],
+          "additionalProperties": false
         }
       ]
     },
@@ -1644,6 +1892,16 @@
           },
           "required": ["filter", "scope"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "scope": {
+              "const": "ownPlayer"
+            }
+          },
+          "required": ["scope"],
+          "additionalProperties": false
         }
       ]
     },
@@ -1697,11 +1955,15 @@
             "count": {
               "const": "energyAttachedToOwnPokemon"
             },
-            "energyType": {
-              "$ref": "#/$defs/PokemonType"
+            "energyTypes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/PokemonType"
+              },
+              "minItems": 1
             }
           },
-          "required": ["count", "energyType"],
+          "required": ["count", "energyTypes"],
           "additionalProperties": false
         },
         {
@@ -1762,6 +2024,20 @@
             }
           },
           "required": ["kind", "multiplier"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "handSize": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "kind": {
+              "const": "untilHandSize"
+            }
+          },
+          "required": ["handSize", "kind"],
           "additionalProperties": false
         }
       ]
@@ -1930,6 +2206,26 @@
         {
           "type": "object",
           "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckAndAttachEnergyToOnePokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "filter": {
               "$ref": "#/$defs/CardFilter"
             },
@@ -1949,7 +2245,11 @@
               "const": "lookAtDeckTopAndTakeIntoHand"
             },
             "restPlacement": {
-              "enum": ["shuffleIntoDeck", "bottomOfDeck"],
+              "enum": [
+                "shuffleIntoDeck",
+                "bottomOfDeck",
+                "shuffleThenBottomOfDeck"
+              ],
               "type": "string"
             }
           },
@@ -1958,6 +2258,46 @@
             "lookCount",
             "maxTakeCount",
             "minTakeCount",
+            "operation",
+            "restPlacement"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "lookCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxAttachCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minAttachCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "lookAtDeckTopAndAttachEnergyToSelf"
+            },
+            "restPlacement": {
+              "enum": [
+                "shuffleIntoDeck",
+                "bottomOfDeck",
+                "shuffleThenBottomOfDeck"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter",
+            "lookCount",
+            "maxAttachCount",
+            "minAttachCount",
             "operation",
             "restPlacement"
           ],
@@ -2007,6 +2347,10 @@
             "energyFilter": {
               "$ref": "#/$defs/CardFilter"
             },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
             "operation": {
               "const": "attachEnergyFromHand"
             },
@@ -2014,7 +2358,62 @@
               "$ref": "#/$defs/PokemonInPlayFilter"
             }
           },
-          "required": ["energyFilter", "operation", "targetFilter"],
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxPokemonCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "attachEnergyFromDiscardToEachChosenPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": [
+            "energyFilter",
+            "maxPokemonCount",
+            "operation",
+            "targetFilter"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "moveEnergyToAnotherOwnPokemon"
+            }
+          },
+          "required": ["energyFilter", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "attackerFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            },
+            "operation": {
+              "const": "increaseAttackDamageThisTurn"
+            }
+          },
+          "required": ["amount", "attackerFilter", "operation"],
           "additionalProperties": false
         },
         {
@@ -2199,9 +2598,16 @@
             "type": "string"
           }
         },
+        "isTerastal": {
+          "const": true
+        },
         "maxHp": {
           "type": "integer",
           "minimum": 0
+        },
+        "nameIncludes": {
+          "type": "string",
+          "minLength": 1
         },
         "names": {
           "type": "array",
@@ -2228,6 +2634,79 @@
             "enum": ["たね", "1進化", "2進化"],
             "type": "string"
           }
+        },
+        "anyOf": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "categories": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "基本エネルギー",
+                    "グッズ",
+                    "ポケモン",
+                    "特殊エネルギー",
+                    "スタジアム",
+                    "サポート",
+                    "ポケモンのどうぐ"
+                  ],
+                  "type": "string"
+                }
+              },
+              "excludesPokemonWithRuleBox": {
+                "const": true
+              },
+              "exRules": {
+                "type": "array",
+                "items": {
+                  "enum": ["pokemonEx", "megaEvolutionEx"],
+                  "type": "string"
+                }
+              },
+              "isTerastal": {
+                "const": true
+              },
+              "maxHp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "nameIncludes": {
+                "type": "string",
+                "minLength": 1
+              },
+              "names": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "pokemonTypes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/PokemonType"
+                }
+              },
+              "providedEnergyTypes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/PokemonType"
+                }
+              },
+              "stages": {
+                "type": "array",
+                "items": {
+                  "enum": ["たね", "1進化", "2進化"],
+                  "type": "string"
+                }
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "minItems": 2
         },
         "positions": {
           "type": "array",

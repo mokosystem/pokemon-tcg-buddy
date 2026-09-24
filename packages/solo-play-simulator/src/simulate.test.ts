@@ -3,7 +3,7 @@ import {
   attachEnergyFromHandToPokemon,
   listUsableAttacksOfActive,
 } from "./card-effects.ts";
-import { countEnergyUnitsOfType } from "./continuous-effects.ts";
+import { countEnergyUnitsOfTypes } from "./continuous-effects.ts";
 import {
   buildDeck,
   type Decklist,
@@ -37,7 +37,7 @@ const BASICS_AND_ENERGIES: Decklist = [
 function countActiveEnergy(state: GameState): number {
   return state.active === null
     ? 0
-    : countEnergyUnitsOfType(state, state.active, "psychic");
+    : countEnergyUnitsOfTypes(state, state.active, ["psychic"]);
 }
 
 /** 手札のエネルギーをバトル場に 1 枚つけ、ワザを使う。 */

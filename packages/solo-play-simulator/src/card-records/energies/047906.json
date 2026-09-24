@@ -1,0 +1,15 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardIds": ["047906", "050480", "050610", "050748"],
+  "category": "基本エネルギー",
+  "excludedEffects": [],
+  "name": "基本雷エネルギー",
+  "provision": {
+    "kind": "type",
+    "type": "electric",
+    "units": 1
+  },
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-23"
+}
