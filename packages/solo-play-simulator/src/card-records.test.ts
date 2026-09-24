@@ -160,6 +160,9 @@ const MEGA_GRENINJA = buildRecordedCard("050106");
 const GRENINJA_EX = buildRecordedCard("045621");
 const DRAYDENS_TRUST = buildRecordedCard("050407");
 const NEO_UPPER_ENERGY = buildRecordedCard("045217");
+const ARIANA = buildRecordedCard("047526");
+const SURFER = buildRecordedCard("050009");
+const GRAND_TREE_FOREST = buildRecordedCard("050076");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -2586,6 +2589,108 @@ describeTranslation("ネオアッパーエネルギー", () => {
     benchAt(state, 0).energies.push(NEO_UPPER_ENERGY);
     expect(listEnergyUnits(state, activeOf(state))).toEqual(["any", "any"]);
     expect(listEnergyUnits(state, benchAt(state, 0))).toEqual(["colorless"]);
+  });
+});
+
+describeTranslation("ロケット団のラムダ", () => {
+  test("山札からトレーナーズを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: FROAKIE,
+      deck: [FROGADIER, WATER_ENERGY, NIGHT_ACADEMY],
+      hand: [ARIANA],
+    });
+    playTrainerFromHand(buildContext(state), ARIANA);
+    expect(namesOf(state.hand)).toEqual(["夜のアカデミー"]);
+  });
+});
+
+describeTranslation("サーファー", () => {
+  test("バトルポケモンをベンチと入れ替え、手札が 5 枚になるように引く", () => {
+    const state = buildState({
+      active: FROAKIE,
+      bench: [FROGADIER],
+      deck: repeat(WATER_ENERGY, 8),
+      hand: [SURFER, BOSS],
+    });
+    playTrainerFromHand(buildContext(state), SURFER);
+    expect(activeOf(state).name).toBe("ゲコガシラ");
+    expect(state.hand).toHaveLength(5);
+  });
+
+  test("手札が 6 枚以上でも使え(公式 Q&A)、引かない。ベンチにポケモンがいなければ使えない", () => {
+    const state = buildState({
+      active: FROAKIE,
+      bench: [FROGADIER],
+      deck: repeat(WATER_ENERGY, 8),
+      hand: [SURFER, ...repeat(BOSS, 6)],
+    });
+    playTrainerFromHand(buildContext(state), SURFER);
+    expect(state.hand).toHaveLength(6);
+    const alone = buildState({ active: FROAKIE, hand: [SURFER] });
+    expect(canPlayTrainerFromHand(buildContext(alone), SURFER)).toBe(false);
+  });
+});
+
+describeTranslation("活力の森", () => {
+  test("出したばかりの草ポケモンを、草ポケモンに進化させられる(最初の自分の番を除く)", () => {
+    const state = buildState({
+      active: FROAKIE,
+      hand: [CYNTHIAS_ROSELIA, CYNTHIAS_ROSERADE],
+    });
+    state.stadium = GRAND_TREE_FOREST;
+    const context = buildContext(state);
+    const roselia = placeBasicPokemonOnBenchFromHand(context, CYNTHIAS_ROSELIA);
+    expect(canEvolvePokemonFromHand(context, roselia, CYNTHIAS_ROSERADE)).toBe(
+      true
+    );
+    evolvePokemonFromHand(context, roselia, CYNTHIAS_ROSERADE);
+    expect(benchAt(state, 0).name).toBe("シロナのロズレイド");
+  });
+
+  test("活力の森が無いとき、草ポケモンでないとき、最初の自分の番は進化させられない", () => {
+    const noForest = buildState({
+      active: FROAKIE,
+      hand: [CYNTHIAS_ROSELIA, CYNTHIAS_ROSERADE],
+    });
+    const roselia = placeBasicPokemonOnBenchFromHand(
+      buildContext(noForest),
+      CYNTHIAS_ROSELIA
+    );
+    expect(
+      canEvolvePokemonFromHand(
+        buildContext(noForest),
+        roselia,
+        CYNTHIAS_ROSERADE
+      )
+    ).toBe(false);
+
+    const water = buildState({ active: SEAKING, hand: [FROAKIE, FROGADIER] });
+    water.stadium = GRAND_TREE_FOREST;
+    const froakie = placeBasicPokemonOnBenchFromHand(
+      buildContext(water),
+      FROAKIE
+    );
+    expect(
+      canEvolvePokemonFromHand(buildContext(water), froakie, FROGADIER)
+    ).toBe(false);
+
+    const firstTurn = buildState({
+      active: FROAKIE,
+      hand: [CYNTHIAS_ROSELIA, CYNTHIAS_ROSERADE],
+      turn: 1,
+    });
+    firstTurn.stadium = GRAND_TREE_FOREST;
+    const firstRoselia = placeBasicPokemonOnBenchFromHand(
+      buildContext(firstTurn),
+      CYNTHIAS_ROSELIA
+    );
+    expect(
+      canEvolvePokemonFromHand(
+        buildContext(firstTurn),
+        firstRoselia,
+        CYNTHIAS_ROSERADE
+      )
+    ).toBe(false);
   });
 });
 

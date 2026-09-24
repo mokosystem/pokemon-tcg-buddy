@@ -133,11 +133,13 @@ import stadiums048419 from "./card-records/stadiums/048419.json";
 import stadiums048703 from "./card-records/stadiums/048703.json";
 import stadiums048706 from "./card-records/stadiums/048706.json";
 import stadiums048711 from "./card-records/stadiums/048711.json";
+import stadiums050076 from "./card-records/stadiums/050076.json";
 import stadiums050164 from "./card-records/stadiums/050164.json";
 import supporters045284 from "./card-records/supporters/045284.json";
 import supporters045934 from "./card-records/supporters/045934.json";
 import supporters046442 from "./card-records/supporters/046442.json";
 import supporters047357 from "./card-records/supporters/047357.json";
+import supporters047526 from "./card-records/supporters/047526.json";
 import supporters047856 from "./card-records/supporters/047856.json";
 import supporters047894 from "./card-records/supporters/047894.json";
 import supporters048418 from "./card-records/supporters/048418.json";
@@ -147,6 +149,7 @@ import supporters049420 from "./card-records/supporters/049420.json";
 import supporters049431 from "./card-records/supporters/049431.json";
 import supporters049445 from "./card-records/supporters/049445.json";
 import supporters049708 from "./card-records/supporters/049708.json";
+import supporters050009 from "./card-records/supporters/050009.json";
 import supporters050083 from "./card-records/supporters/050083.json";
 import supporters050159 from "./card-records/supporters/050159.json";
 import supporters050295 from "./card-records/supporters/050295.json";
@@ -288,11 +291,13 @@ export const cardRecordTable = buildCardRecordTable([
   { content: stadiums048703, path: "stadiums/048703.json" },
   { content: stadiums048706, path: "stadiums/048706.json" },
   { content: stadiums048711, path: "stadiums/048711.json" },
+  { content: stadiums050076, path: "stadiums/050076.json" },
   { content: stadiums050164, path: "stadiums/050164.json" },
   { content: supporters045284, path: "supporters/045284.json" },
   { content: supporters045934, path: "supporters/045934.json" },
   { content: supporters046442, path: "supporters/046442.json" },
   { content: supporters047357, path: "supporters/047357.json" },
+  { content: supporters047526, path: "supporters/047526.json" },
   { content: supporters047856, path: "supporters/047856.json" },
   { content: supporters047894, path: "supporters/047894.json" },
   { content: supporters048418, path: "supporters/048418.json" },
@@ -302,6 +307,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: supporters049431, path: "supporters/049431.json" },
   { content: supporters049445, path: "supporters/049445.json" },
   { content: supporters049708, path: "supporters/049708.json" },
+  { content: supporters050009, path: "supporters/050009.json" },
   { content: supporters050083, path: "supporters/050083.json" },
   { content: supporters050159, path: "supporters/050159.json" },
   { content: supporters050295, path: "supporters/050295.json" },

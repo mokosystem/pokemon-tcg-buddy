@@ -2064,6 +2064,19 @@
         {
           "type": "object",
           "properties": {
+            "change": {
+              "const": "allowEvolvingFreshPokemon"
+            },
+            "evolutionFilter": {
+              "$ref": "#/$defs/CardFilter"
+            }
+          },
+          "required": ["change", "evolutionFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "amount": {
               "type": "integer",
               "minimum": 1

@@ -284,6 +284,19 @@ export function findEvolutionNameAllowedByEffect(
   }
 }
 
+/** 出したばかりの target を、手札の card に進化させられる効果(活力の森)が働いているか。 */
+export function isFreshEvolutionAllowedByEffect(
+  state: GameState,
+  target: PokemonInPlay,
+  card: Card
+): boolean {
+  return listEffectsApplyingTo(state, target).some(
+    (collected) =>
+      collected.effect.change.change === "allowEvolvingFreshPokemon" &&
+      matchesCardFilter(card, collected.effect.change.evolutionFilter)
+  );
+}
+
 export interface UsableAttack {
   readonly attack: Attack;
   /** 使う前に山札の上から 1 枚トラッシュする(ヤドキングの「ひらめきチャレンジ」)。 */

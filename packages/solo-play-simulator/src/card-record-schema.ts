@@ -482,6 +482,14 @@ export const ContinuousChangeSchema = variant("change", [
     name: nonEmptyText,
   }),
   /**
+   * 範囲のポケモンを、出したばかりの番(最初の自分の番を除く)でも、evolutionFilter に合う手札の進化ポケモンに進化させられる
+   * (活力の森)。手札から進化させるときだけ働き、ふしぎなアメには働かない(公式 Q&A「活力の森」)。
+   */
+  strictObject({
+    change: literal("allowEvolvingFreshPokemon"),
+    evolutionFilter: CardFilterSchema,
+  }),
+  /**
    * 範囲のポケモンが使うワザの、相手のバトルポケモンへのダメージを amount 増やす(シロナのロズレイドの
    * 「グローリーエール」)。範囲はワザを使うポケモン(バトルポケモン)に当てる。
    */

@@ -1,0 +1,53 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "change": "allowEvolvingFreshPokemon",
+          "evolutionFilter": {
+            "pokemonTypes": ["grass"]
+          }
+        },
+        "conditions": [],
+        "scope": {
+          "filter": {
+            "pokemonTypes": ["grass"]
+          },
+          "scope": "ownPokemon"
+        }
+      },
+      "kind": "continuous"
+    }
+  ],
+  "cardIds": ["050076", "048704", "047857"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "活力の森",
+  "rulings": [
+    {
+      "interpretation": "進化させられない。手札から進化させるときだけ働く",
+      "question": "活力の森が出ているとき、出したばかりのたねポケモンにふしぎなアメを使えるか",
+      "reflectedIn": "allowEvolvingFreshPokemon は手札から進化させる判定(card-effects.ts の canEvolvePokemonFromHand)だけが見る",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "活力の森が出ているとき、手札からベンチに出したフシギダネにふしぎなアメを使ってメガフシギバナexに進化させられるか、という質問に、ふしぎなアメは出したばかりのポケモンに使えないためできないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E6%B4%BB%E5%8A%9B%E3%81%AE%E6%A3%AE&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "進化させられる。この番に進化させた草ポケモンも、続けて草ポケモンに進化させられる",
+      "question": "活力の森が出ているとき、出したばかりのポケモンを 1進化させた同じ番に、さらに 2進化させられるか",
+      "reflectedIn": "出したばかりの判定(PokemonInPlay.isFresh)はこの番に進化したポケモンも含め、効果が働けば進化させられる",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "活力の森が出ているとき、出したばかりのフシギダネをフシギソウに進化させた同じ番に、メガフシギバナexに進化させられるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E6%B4%BB%E5%8A%9B%E3%81%AE%E6%A3%AE&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

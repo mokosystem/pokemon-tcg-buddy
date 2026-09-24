@@ -421,7 +421,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional`。基本ルールの例外の印「先攻の最初の番でも使える」は `whenPlayed` の `usableOnFirstTurnGoingFirst`(3 セッション目に追加) |
 | 効果 | `useConditions`(使える条件)と `steps`(操作の列)。条件で分かれる歩は `branchOnCondition`(1 段だけ) |
 | 条件 | カードを選ぶ条件は `categories`、`stages`、`names`、`nameIncludes`(名前に文字列を含む)、`pokemonTypes`、`providedEnergyTypes`、`maxHp`、`excludesPokemonWithRuleBox`、`exRules`、`isTerastal`、`excludesNames`(この名前を除く。3 セッション目に追加)、`anyOf`(欄をまたぐ「または」。1 段だけ)。場のポケモンにはこれに `positions` を足す。効果を使える条件は `selfIsActive`、`selfHasNoEnergyAttached`、`attachedPokemonMatches`、`ownPokemonInPlayExists`、`deckHasCards`、`handHasCards`、`noAbilityUsedThisTurnWithNameIncluding`、`ownRemainingPrizesAre`、`stadiumInPlayNamed`、`activePokemonHasAbilityNamed`、`handHasNoOtherCards`(この 3 つは 3 セッション目に追加)、`anyOf`(または。1 段だけ) |
-| 場にある間ずっと働く効果 | 働く範囲 `scope`(`self`、`attachedPokemon`、`ownPokemon`、`ownPlayer`)、変える項目 `change`(`setRetreatCostToZero`、`reduceRetreatCost`、`allowBenchedPokemonAttacks`、`negateAbilities`、`negateToolEffects`、`setEnergyProvision`、`setBenchLimit`、`allowEvolutionFromHandAsIfNamed`、`increaseAttackDamage`、`useAttacksTwice`(3 セッション目に追加))、働く条件 `conditions` |
+| 場にある間ずっと働く効果 | 働く範囲 `scope`(`self`、`attachedPokemon`、`ownPokemon`、`ownPlayer`)、変える項目 `change`(`setRetreatCostToZero`、`reduceRetreatCost`、`allowBenchedPokemonAttacks`、`negateAbilities`、`negateToolEffects`、`setEnergyProvision`、`setBenchLimit`、`allowEvolutionFromHandAsIfNamed`、`increaseAttackDamage`、`useAttacksTwice`、`allowEvolvingFreshPokemon`(この 2 つは 3 セッション目に追加))、働く条件 `conditions` |
 | 裁定のデータ | `rulings`(論点 `question`、採った解釈 `interpretation`、翻訳への反映 `reflectedIn`、出典 `source`)。出典は `officialQa`(`searchUrl`、`questionSummary`、`checkedOn`)か `noMatchingQa`(`searchTerms`、`basis`、`checkedOn`) |
 | 含めなかった効果 | `excludedEffects`(`description`、`reason`)。理由は `requiresOpponent`、`specialCondition`、`healing`、`damageOrDamageCounters`、`damageBonusNotModeled`、`ownNextTurnRestriction`、`firstTurnGoingSecondRestriction`(3 セッション目に追加)、`noReasonToUseInSoloPlay` |
 
@@ -559,6 +559,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | ドラパルトex(`niLLgQ-YL6A8Y-gQQn9N`) | 無し(Issue 22 と開発責任者のデッキの記録で 60 枚がそろった) | — | — | — |
 | メガルカリオex(`UR2MXy-P7Pfrq-pMypUy`) | 8 種 | 3(メガルカリオex、ルナトーン、暗号マニアの解読) | 0 | 5(リオル 2 種、ソルロック、ノココッチex、グラビティーマウンテン) |
 | メガレックウザex(`1kvFVF-JDWJKx-k5fkkb`) | 4 種 | 2(ゼイユ、AZの安らぎ) | 0 | 2(テラパゴスex、オーガポン いどのめんex) |
+| シロナのガブリアスex(`LnQi9n-TWLU6N-PgNLgN`) | 3 種 | 3(ロケット団のラムダ、サーファー、活力の森) | 0 | 0 |
 | メガゲッコウガex(`vbFkw1-fA38fT-FFVFkF`) | 6 種 | 5(ケロマツ、ゲコガシラ、ゲッコウガex、ヒガナの信頼、ネオアッパーエネルギー) | 1(メガゲッコウガex) | 0 |
 | おまつりおんど(`QLLgH9-dlyOhY-Nnging`) | 12 種 | 6(バチンキー、アズマオウ、むしとりセット、せいなるはい、シークレットボックス、グラジオの決戦) | 1(シェイミ) | 5(カジッチュ、カミッチュ、サルノリ、トサキント、お祭り会場) |
 | ヤドキング(`fFkFbk-LG7BwQ-vVF1Vk`) | 12 種 | 6(ヤドン、ヤドキング、ムチュール、ワンダーパッチ、夜のアカデミー、ブーメランエネルギー) | 3(キュレム、コノヨザル、プライムキャッチャー) | 3(メタグロス、ドラピオン、ブレイブバングル) |
@@ -585,6 +586,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | 条件 `stadiumInPlayNamed`、`activePokemonHasAbilityNamed`、`handHasNoOtherCards` | 条件の追加 | アズマオウ、バチンキー、グラジオの決戦 | 場のスタジアムの名前、バトルポケモンの特性の名前、手札がこのカードだけ(順 5 の条件の表にあるもの)。バトルポケモンの特性が無くなっているときは数えない(公式 Q&A「ドンドンだいこ」)が、特性が無くなっているかは場にある間ずっと働く効果を集めないと分からず、条件の判定から効果を集める判定を呼ぶと読み込みが循環する。記録にある特性を無くす効果(ロケット団の監視塔)は無色ポケモンにだけ働き、「おまつりおんど」を持つポケモンに届かないため、今は見ていない(裁定のデータとコードのコメントに書いた) |
 | `returnFromDiscardToDeck` | 基本操作の追加 | せいなるはい | トラッシュから条件に合うカードを選び、山札に戻して切る。1〜5 枚を選ぶ(公式 Q&A「せいなるはい」) |
 | `moveEnergyFromSwitchedOutPokemonToActive` | 基本操作の追加 | ヒガナの信頼 | 入れ替えたあと、ベンチに下がったポケモンのエネルギーを 1 個、新しいバトルポケモンにつけ替える。どのポケモンが下がったかは効果の中で覚える(`OperationRun` の `progress.switchedOutPokemon`。ムクの「トラッシュした枚数」と同じ置き場所)。つけ替えないことは選べず、エネルギーが無ければ入れ替えだけが起きる(公式 Q&A「ヒガナの信頼」)。採らなかった案: `moveEnergyToAnotherOwnPokemon` に元と先の条件を足す(元が「この効果で下がったポケモン」で、場の状態の条件では表せない) |
+| 変える項目 `allowEvolvingFreshPokemon` | 場にある間ずっと働く効果の追加 | 活力の森 | 出したばかりの番(最初の自分の番を除く)でも、範囲の草ポケモンを手札の草ポケモンに進化させられる(順 4 の論点「進化できるかの判定を変える」)。手札から進化させる判定(`canEvolvePokemonFromHand`)だけが見て、ふしぎなアメには働かない(公式 Q&A「活力の森」)。この番に進化したポケモンも続けて進化させられる(同)。採らなかった案: イーブイex の `allowEvolutionFromHandAsIfNamed` に欄を足す(変えるのが進化前の名前ではなく出したばかりの制限で、判定の場所が違う) |
 | 含めなかった理由 `firstTurnGoingSecondRestriction` | 理由の追加 | テラパゴスex | 後攻の最初の番にワザを使えない制限(「ユニオンビート」)。翻訳しないカードのワザには使える条件を書けない(効果の操作が 1 つ以上要る)ため、制限を持たずに前提に出す。`ownNextTurnRestriction`(ワザを使った次の番の制限)とはきっかけが違うため分けた。採らなかった案: `ownNextTurnRestriction` に含める(前提を読む人がどちらの制限か取り違える) |
 
 #### 記録で分かったこと

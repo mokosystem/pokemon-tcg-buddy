@@ -14,6 +14,7 @@ import {
   calculateRetreatCost,
   findEvolutionNameAllowedByEffect,
   isAbilityNegated,
+  isFreshEvolutionAllowedByEffect,
   listEnergyUnits,
   listSecondAttacks,
   listUsableAttacks,
@@ -314,7 +315,22 @@ export function canEvolvePokemonFromHand(
     state.hand.includes(card) &&
     (state.canEvolve(target, card) ||
       (state.canEvolveThisTurn(target) &&
-        findEvolutionNameAllowedByEffect(state, target, card) !== undefined))
+        findEvolutionNameAllowedByEffect(state, target, card) !== undefined) ||
+      canEvolveFreshPokemonByEffect(state, target, card))
+  );
+}
+
+/** 出したばかりのポケモンを、進化させられる効果(活力の森)で進化させられるか。最初の自分の番は除く。 */
+function canEvolveFreshPokemonByEffect(
+  state: GameState,
+  target: PokemonInPlay,
+  card: Card
+): boolean {
+  return (
+    state.turn >= 2 &&
+    target.isFresh(state.turn) &&
+    card.evolvesFrom === target.name &&
+    isFreshEvolutionAllowedByEffect(state, target, card)
   );
 }
 
@@ -330,10 +346,13 @@ export function evolvePokemonFromHand(
   const asIfNamed = state.canEvolve(target, card)
     ? undefined
     : findEvolutionNameAllowedByEffect(state, target, card);
+  const ignoreFreshness = canEvolveFreshPokemonByEffect(state, target, card);
   state.evolve(
     target,
     card,
-    asIfNamed === undefined ? { from: "hand" } : { asIfNamed, from: "hand" }
+    asIfNamed === undefined
+      ? { from: "hand", ignoreFreshness }
+      : { asIfNamed, from: "hand", ignoreFreshness }
   );
 }
 
