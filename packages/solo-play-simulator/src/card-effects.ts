@@ -38,6 +38,17 @@ import {
 
 // ---- トレーナーズ ----
 
+/** サポートの基本ルールの例外の印(先攻の最初の番でも使える)。 */
+function supporterOptionsOf(card: Card): {
+  usableOnFirstTurnGoingFirst: boolean;
+} {
+  return {
+    usableOnFirstTurnGoingFirst: findCardEffects(card, "whenPlayed").some(
+      (cardEffect) => cardEffect.usableOnFirstTurnGoingFirst === true
+    ),
+  };
+}
+
 /** グッズ・サポート・スタジアムを手札から使えるか。基本ルールの制限と、翻訳の使える条件の両方を見る。 */
 export function canPlayTrainerFromHand(
   context: EffectContext,
@@ -55,7 +66,9 @@ export function canPlayTrainerFromHand(
     case CardCategory.Goods:
       return effectsAreUsable;
     case CardCategory.Supporter:
-      return state.canUseSupporter() && effectsAreUsable;
+      return (
+        state.canUseSupporter(supporterOptionsOf(card)) && effectsAreUsable
+      );
     case CardCategory.Stadium:
       return !state.hasPlayedStadium && state.stadium?.name !== card.name;
     default:
@@ -74,7 +87,7 @@ export function playTrainerFromHand(context: EffectContext, card: Card): void {
       state.useGoods(card);
       break;
     case CardCategory.Supporter:
-      state.useSupporter(card);
+      state.useSupporter(card, supporterOptionsOf(card));
       break;
     default:
       state.playStadium(card);

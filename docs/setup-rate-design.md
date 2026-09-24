@@ -164,7 +164,7 @@ README は「コーディングエージェント上で動くスキルとして�
 | 山札 | 上から見て取る | 見る枚数、条件、取る上限、取ったカードの先(手札、つける)、残りの扱い(切る、下に戻す、切ってから下に戻す) | 既存(取る上限は既存。先をつける形は順 6 の 2 セッション目に別の操作として追加) | `lookAtDeckTopAndTakeIntoHand`(手札に加える)、`lookAtDeckTopAndAttachEnergyToSelf`(効果の持ち主につける)。残りの扱い `restPlacement` は `shuffleIntoDeck`、`bottomOfDeck`、`shuffleThenBottomOfDeck` | ポケギア3.0、ドロンチ、メガレックウザex、ジャラランガ(050390)、ウエートレス、むしとりセット |
 | 山札 | 上からトラッシュする | 枚数 | 追加 | — | ヤドキング、モルペコ |
 | 手札 | 山札に全部戻して切る | なし | 既存 | `shuffleHandIntoDeck` | リーリエの決心、ジャッジマン |
-| 手札 | トラッシュする | 枚数、条件 | 既存 | `discardFromHand` | ハイパーボール、タケルライコex、ルナトーン |
+| 手札 | トラッシュする | 枚数、条件。すべて | 既存(すべてトラッシュする形は順 6 の 3 セッション目に追加) | `discardFromHand`、`discardHand`(すべて。手札が 0 枚でも使える) | ハイパーボール、タケルライコex、ルナトーン、ゼイユ |
 | 手札 | グッズ・サポート・スタジアムを使う | なし(基本ルールの制限は骨組み) | 既存 | (基本処理。`card-effects.ts` の `playTrainerFromHand`) | |
 | 手札 | ベンチに出す | たねポケモン。効果で進化ポケモンを直接出す形は印を付ける | 既存 | `placeSelfOnBenchFromHand`(効果で進化ポケモンを出す)。たねポケモンを出す基本処理は `placeBasicPokemonOnBenchFromHand` | ファイアローex |
 | 手札 | エネルギーをつける(1 番に 1 回に数える) | つけ先 | 既存 | (基本処理。`attachEnergyFromHandToPokemon`) | |
@@ -415,15 +415,15 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | 名前、カード ID、確認日 | `name`、`cardIds`、`verifiedOn` |
 | 翻訳の状態(翻訳あり、書けない、計算に関係ない、まだ書いていない) | `translationStatus`(`translated`、`notTranslatable`、`irrelevantToCalculation`、`notYetTranslated`) |
 | 属性 | `category`、`stage`、`evolvesFrom`、`basicPokemonOfEvolutionLine`、`hp`、`pokemonType`、`hasRuleBox`、`exRule`(`pokemonEx`、`megaEvolutionEx`。どちらでもないポケモンは持たない)、`isTerastal`、`retreatCost`、エネルギーは `provision`(`type` と `units`、すべてのタイプとして働くものは `anyType`) |
-| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName` |
+| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName`、`ownBenchedPokemon`(3 セッション目に追加) |
 | 特性の一覧 | `abilities`(`name`、`translation`。翻訳しない特性は `translation` を持たない) |
 | トレーナーズと特殊エネルギーの効果 | `cardEffects` |
-| きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional` |
+| きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional`。基本ルールの例外の印「先攻の最初の番でも使える」は `whenPlayed` の `usableOnFirstTurnGoingFirst`(3 セッション目に追加) |
 | 効果 | `useConditions`(使える条件)と `steps`(操作の列)。条件で分かれる歩は `branchOnCondition`(1 段だけ) |
 | 条件 | カードを選ぶ条件は `categories`、`stages`、`names`、`nameIncludes`(名前に文字列を含む)、`pokemonTypes`、`providedEnergyTypes`、`maxHp`、`excludesPokemonWithRuleBox`、`exRules`、`isTerastal`、`anyOf`(欄をまたぐ「または」。1 段だけ)。場のポケモンにはこれに `positions` を足す。効果を使える条件は `selfIsActive`、`selfHasNoEnergyAttached`、`attachedPokemonMatches`、`ownPokemonInPlayExists`、`deckHasCards`、`handHasCards`、`noAbilityUsedThisTurnWithNameIncluding`、`ownRemainingPrizesAre`、`anyOf`(または。1 段だけ) |
 | 場にある間ずっと働く効果 | 働く範囲 `scope`(`self`、`attachedPokemon`、`ownPokemon`、`ownPlayer`)、変える項目 `change`(`setRetreatCostToZero`、`reduceRetreatCost`、`allowBenchedPokemonAttacks`、`negateAbilities`、`negateToolEffects`、`setEnergyProvision`、`setBenchLimit`、`allowEvolutionFromHandAsIfNamed`、`increaseAttackDamage`)、働く条件 `conditions` |
 | 裁定のデータ | `rulings`(論点 `question`、採った解釈 `interpretation`、翻訳への反映 `reflectedIn`、出典 `source`)。出典は `officialQa`(`searchUrl`、`questionSummary`、`checkedOn`)か `noMatchingQa`(`searchTerms`、`basis`、`checkedOn`) |
-| 含めなかった効果 | `excludedEffects`(`description`、`reason`)。理由は `requiresOpponent`、`specialCondition`、`healing`、`damageOrDamageCounters`、`damageBonusNotModeled`、`ownNextTurnRestriction`、`noReasonToUseInSoloPlay` |
+| 含めなかった効果 | `excludedEffects`(`description`、`reason`)。理由は `requiresOpponent`、`specialCondition`、`healing`、`damageOrDamageCounters`、`damageBonusNotModeled`、`ownNextTurnRestriction`、`firstTurnGoingSecondRestriction`(3 セッション目に追加)、`noReasonToUseInSoloPlay` |
 
 基本操作の識別子は「基本操作」の表の「記法の識別子」の列にある。順 5 の設計に無かったものとして、属性 `basicPokemonOfEvolutionLine`(2進化ポケモンの進化の系統のたねポケモンの名前)を足した。ふしぎなアメで進化させられるたねポケモンは 2進化ポケモンのカードからしか決まらず、1進化ポケモンがデッキに無くても判定が要るため(ファイアローex の系統のヒノヤコマ・ヤヤコマはどのデッキにも無い)。詳細ページの「進化」の欄から写す。含めなかった理由にも 2 つを足した。`damageBonusNotModeled`(コイン、相手の側、追加のコストで決まるダメージの上乗せ。「カードの記録の形」で持たないと決めたもの)と、`ownNextTurnRestriction`(ワザを使った次の自分の番の制限。順 4 の一覧の根拠に多く出る「自分の次の番の制限」)。
 
@@ -558,6 +558,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | --- | --- | --- | --- | --- |
 | ドラパルトex(`niLLgQ-YL6A8Y-gQQn9N`) | 無し(Issue 22 と開発責任者のデッキの記録で 60 枚がそろった) | — | — | — |
 | メガルカリオex(`UR2MXy-P7Pfrq-pMypUy`) | 8 種 | 3(メガルカリオex、ルナトーン、暗号マニアの解読) | 0 | 5(リオル 2 種、ソルロック、ノココッチex、グラビティーマウンテン) |
+| メガレックウザex(`1kvFVF-JDWJKx-k5fkkb`) | 4 種 | 2(ゼイユ、AZの安らぎ) | 0 | 2(テラパゴスex、オーガポン いどのめんex) |
 
 #### 足した部品
 
@@ -565,6 +566,10 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | --- | --- | --- | --- |
 | `attachEnergyFromDiscardDistributedToPokemon` | 基本操作の追加 | メガルカリオex | トラッシュのエネルギーを上限まで選び、条件に合うポケモンに好きなようにつける(1 匹に何枚でも)。既にある `attachEnergyFromDiscardToEachChosenPokemon` は選んだポケモンに 1 枚ずつで、「はどうづき」の 1 匹に 3 枚つける形を表せない。1 枚も選ばなくてよいことは公式 Q&A「はどうづき」で確かめた。選ぶ順はエネルギー → 1 枚ごとのつける先。採らなかった案: 既にある部品に「1 匹に何枚まで」の欄を足す(選ぶ順が違い、1 つの部品の中で分かれる) |
 | `searchDeckAndPlaceOnTopAfterShuffle` | 基本操作の追加 | 暗号マニアの解読 | 山札から好きなカードを N 枚選び、残りを切ってから、選んだ順に山札の上に置く(順 5 の論点 7)。枚数はちょうど N 枚(山札が足りなければ全部)。暗号マニアの解読に直接の公式 Q&A は無く、同じ書き方の「マオ」の公式 Q&A(山札が 2 枚以上あれば必ず 2 枚選ぶ)を拠り所にした。カードを選ぶ条件の欄は、要るカードが無いため持たない。状態の側の操作は `GameState.placeOnDeckTopAfterShuffle` |
+| `discardHand` | 基本操作の追加 | ゼイユ | 手札をすべてトラッシュする。`discardFromHand` は枚数の範囲で選ぶ形で、「すべて」を表せない。手札が 0 枚でも使える(公式 Q&A「ゼイユ」: 手札がゼイユだけでも使える)ため、最初の操作に対象が無ければ使えない決まりの対象にしない |
+| `whenPlayed` の `usableOnFirstTurnGoingFirst` | きっかけの印の追加 | ゼイユ | 先攻の最初の番でもサポートを使える印(順 5 の論点 5)。`GameState.canUseSupporter` と `useSupporter` が印を受け取る。採らなかった案: 骨組みにカード名を書く(効果をデータにする方針に反する) |
+| ダメージの数える対象 `ownBenchedPokemon` | ワザのダメージの追加 | テラパゴスex | 自分のベンチポケモンの数(「ユニオンビート」は × 30)。自分の側の数で決まる上乗せは記録に持つ(「カードの記録の形」)。テラパゴスex は「計算に関係ない」だが、ダメージは狙いの判定に使うため持つ |
+| 含めなかった理由 `firstTurnGoingSecondRestriction` | 理由の追加 | テラパゴスex | 後攻の最初の番にワザを使えない制限(「ユニオンビート」)。翻訳しないカードのワザには使える条件を書けない(効果の操作が 1 つ以上要る)ため、制限を持たずに前提に出す。`ownNextTurnRestriction`(ワザを使った次の番の制限)とはきっかけが違うため分けた。採らなかった案: `ownNextTurnRestriction` に含める(前提を読む人がどちらの制限か取り違える) |
 
 #### 記録で分かったこと
 

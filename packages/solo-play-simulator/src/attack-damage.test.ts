@@ -32,8 +32,22 @@ const FIRE_ENERGY = buildRecordedCard("050746");
 const IGNITION_ENERGY = buildRecordedCard("049452");
 const CYNTHIAS_SPIRITOMB = buildRecordedCard("049968");
 const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
+const TERAPAGOS = buildRecordedCard("049346");
 
 describe("ワザのダメージ", () => {
+  test("ユニオンビートは、自分のベンチポケモンの数×30", () => {
+    const attack = findAttack(TERAPAGOS, "ユニオンビート");
+    const threeOnBench = buildState({
+      active: TERAPAGOS,
+      bench: [RALTS, RALTS, GARDEVOIR],
+    });
+    expect(
+      calculateAttackDamage(threeOnBench, activeOf(threeOnBench), attack)
+    ).toBe(3 * 30);
+    const noBench = buildState({ active: TERAPAGOS });
+    expect(calculateAttackDamage(noBench, activeOf(noBench), attack)).toBe(0);
+  });
+
   test("メガシンフォニアは、自分のポケモン全員についている超エネルギーの数×50(すべてのタイプとして働くものも数える)", () => {
     const state = buildState({ active: GARDEVOIR, bench: [RALTS, RALTS] });
     const [first, second] = state.bench;

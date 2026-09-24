@@ -997,6 +997,16 @@
         {
           "type": "object",
           "properties": {
+            "operation": {
+              "const": "discardHand"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "filter": {
               "$ref": "#/$defs/CardFilter"
             },
@@ -1430,6 +1440,9 @@
             },
             "kind": {
               "const": "whenPlayed"
+            },
+            "usableOnFirstTurnGoingFirst": {
+              "const": true
             }
           },
           "required": ["effect", "kind"],
@@ -2013,6 +2026,16 @@
           },
           "required": ["abilityName", "count"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "const": "ownBenchedPokemon"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
         }
       ]
     },
@@ -2119,6 +2142,16 @@
           "properties": {
             "operation": {
               "const": "shuffleHandIntoDeck"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "discardHand"
             }
           },
           "required": ["operation"],
@@ -2630,6 +2663,7 @@
             "damageOrDamageCounters",
             "damageBonusNotModeled",
             "ownNextTurnRestriction",
+            "firstTurnGoingSecondRestriction",
             "noReasonToUseInSoloPlay"
           ],
           "type": "string"

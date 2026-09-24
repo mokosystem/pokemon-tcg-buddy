@@ -40,6 +40,8 @@ function countDamageTarget(
             (ability) => ability.name === target.abilityName
           )
       ).length;
+    case "ownBenchedPokemon":
+      return state.bench.length;
     default:
       return 0;
   }

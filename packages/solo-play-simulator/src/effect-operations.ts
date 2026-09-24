@@ -156,6 +156,8 @@ const firstStepTargetChecks: {
   branchOnCondition: alwaysHasTarget,
   discardFromHand: (step, { hand }) =>
     listMatchingOrAll(hand, step.filter).length >= Math.max(step.minCount, 1),
+  // 手札が 0 枚でも使える(公式 Q&A「ゼイユ」: 手札がゼイユだけのときも使える、2026-09-24 確認)
+  discardHand: alwaysHasTarget,
   discardSelf: alwaysHasTarget,
   drawCards: deckHasCards,
   evolveBasicToStage2FromHand: (_, { state }) =>
@@ -702,6 +704,12 @@ const operationRunners: {
     );
     context.state.discardFromHand(chosen);
     progress.discardedCount += chosen.length;
+  },
+  discardHand: (_, { context, label }) => {
+    context.state.record(
+      `${label}: 手札 ${context.state.hand.length} 枚をトラッシュ`
+    );
+    context.state.discardHand();
   },
   discardSelf: (_, { context, label, source }) => {
     const holder = source.pokemon;

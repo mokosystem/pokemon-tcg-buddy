@@ -122,6 +122,8 @@ const MEGA_LUCARIO = buildRecordedCard("047762");
 const LUNATONE = buildRecordedCard("047759");
 const SOLROCK = buildRecordedCard("047760");
 const CIPHERMANIAC = buildRecordedCard("045284");
+const CARMINE = buildRecordedCard("049431");
+const AZ = buildRecordedCard("050159");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -1832,6 +1834,57 @@ describeTranslation("暗号マニアの解読", () => {
     const one = buildState({ deck: [RIOLU], hand: [CIPHERMANIAC] });
     playTrainerFromHand(buildContext(one), CIPHERMANIAC);
     expect(namesOf(one.deck)).toEqual(["リオル"]);
+  });
+});
+
+describeTranslation("ゼイユ", () => {
+  test("手札をすべてトラッシュして 5 枚引く。先攻の最初の番でも使える", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 6),
+      hand: [CARMINE, LILLIE, FIRE_ENERGY],
+      turn: 1,
+      wentFirst: true,
+    });
+    const context = buildContext(state);
+    expect(canPlayTrainerFromHand(context, LILLIE)).toBe(false);
+    playTrainerFromHand(context, CARMINE);
+    expect(namesOf(state.discard).sort()).toEqual(
+      ["ゼイユ", "リーリエの決心", "基本炎エネルギー"].sort()
+    );
+    expect(namesOf(state.hand)).toEqual(repeat("基本超エネルギー", 5));
+  });
+
+  test("手札がゼイユだけでも使える(公式 Q&A)が、この番にサポートを使っていれば使えない", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 6),
+      hand: [CARMINE],
+    });
+    playTrainerFromHand(buildContext(state), CARMINE);
+    expect(state.hand).toHaveLength(5);
+
+    const used = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 6),
+      hand: [CARMINE],
+      turn: 1,
+      wentFirst: true,
+    });
+    used.hasUsedSupporter = true;
+    expect(canPlayTrainerFromHand(buildContext(used), CARMINE)).toBe(false);
+  });
+});
+
+describeTranslation("AZの安らぎ", () => {
+  test("バトルポケモンをベンチポケモンと入れ替える。ベンチにポケモンがいなければ使えない", () => {
+    const state = buildState({ active: RALTS, bench: [KIRLIA], hand: [AZ] });
+    playTrainerFromHand(buildContext(state), AZ);
+    expect(activeOf(state).name).toBe("キルリア");
+    expect(benchAt(state, 0).name).toBe("ラルトス");
+
+    const alone = buildState({ active: RALTS, hand: [AZ] });
+    expect(canPlayTrainerFromHand(buildContext(alone), AZ)).toBe(false);
   });
 });
 

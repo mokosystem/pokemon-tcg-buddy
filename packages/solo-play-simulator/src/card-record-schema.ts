@@ -208,6 +208,10 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("shuffleHandIntoDeck"),
   }),
+  /** 手札をすべてトラッシュする。手札が 0 枚でも使える(公式 Q&A「ゼイユ」)。 */
+  strictObject({
+    operation: literal("discardHand"),
+  }),
   strictObject({
     filter: optional(CardFilterSchema),
     maxCount: countFromOne,
@@ -454,6 +458,8 @@ export const DamageCountTargetSchema = variant("count", [
     abilityName: nonEmptyText,
     count: literal("discardPokemonWithAbilityName"),
   }),
+  /** 自分のベンチポケモンの数(テラパゴスex の「ユニオンビート」)。 */
+  strictObject({ count: literal("ownBenchedPokemon") }),
 ]);
 
 export const DamageBonusSchema = variant("kind", [
@@ -532,8 +538,15 @@ export type Ability = InferOutput<typeof AbilitySchema>;
 // ---- トレーナーズと特殊エネルギーの効果 ----
 
 export const CardEffectSchema = variant("kind", [
-  /** グッズ・サポートを使ったとき。 */
-  strictObject({ effect: EffectSchema, kind: literal("whenPlayed") }),
+  /**
+   * グッズ・サポートを使ったとき。usableOnFirstTurnGoingFirst は基本ルールの例外の印で、先攻の最初の番でも
+   * サポートを使える(ゼイユ)。例外はカード自身に書かれている(docs/pokemon-tcg/basic-rules.md)。
+   */
+  strictObject({
+    effect: EffectSchema,
+    kind: literal("whenPlayed"),
+    usableOnFirstTurnGoingFirst: optional(literal(true)),
+  }),
   /** スタジアムの「自分の番ごとに 1 回」。 */
   strictObject({
     effect: EffectSchema,
@@ -591,7 +604,8 @@ export type Ruling = InferOutput<typeof RulingSchema>;
 
 /**
  * 含めなかった理由。相手の側に働く、特殊状態、回復、ダメージやダメカンを与える処理、ダメージの上乗せのうち
- * 記録に持たないもの(コイン、相手の側、追加のコストで決まるもの)、自分の次の番の制限、一人回しでは使う理由が無い。
+ * 記録に持たないもの(コイン、相手の側、追加のコストで決まるもの)、自分の次の番の制限、後攻の最初の番に使えない制限、
+ * 一人回しでは使う理由が無い。
  */
 export const ExclusionReasonSchema = picklist([
   "requiresOpponent",
@@ -600,6 +614,7 @@ export const ExclusionReasonSchema = picklist([
   "damageOrDamageCounters",
   "damageBonusNotModeled",
   "ownNextTurnRestriction",
+  "firstTurnGoingSecondRestriction",
   "noReasonToUseInSoloPlay",
 ]);
 export type ExclusionReason = InferOutput<typeof ExclusionReasonSchema>;

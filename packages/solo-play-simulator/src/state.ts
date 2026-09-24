@@ -234,8 +234,14 @@ export class GameState {
     return this.wentFirst && this.turn === 1;
   }
 
-  canUseSupporter(): boolean {
-    return !(this.hasUsedSupporter || this.isFirstTurnGoingFirst());
+  /** usableOnFirstTurnGoingFirst は、先攻の最初の番でも使える印を持つサポート(ゼイユ)のときに真にする。 */
+  canUseSupporter(
+    options: { usableOnFirstTurnGoingFirst?: boolean } = {}
+  ): boolean {
+    return !(
+      this.hasUsedSupporter ||
+      (this.isFirstTurnGoingFirst() && !options.usableOnFirstTurnGoingFirst)
+    );
   }
 
   /** ワザを使える番か。ワザごとのエネルギーの判定は card-effects.ts が場の効果を集めて行う。 */
@@ -379,6 +385,11 @@ export class GameState {
     }
   }
 
+  discardHand(): void {
+    this.discard.push(...this.hand);
+    this.hand = [];
+  }
+
   returnHandToDeck(): void {
     this.deck.push(...this.hand);
     this.hand = [];
@@ -435,11 +446,14 @@ export class GameState {
   }
 
   /** サポートを使う基本処理。効果の扱いは useGoods と同じ。 */
-  useSupporter(card: Card): void {
+  useSupporter(
+    card: Card,
+    options: { usableOnFirstTurnGoingFirst?: boolean } = {}
+  ): void {
     if (!isSupporter(card)) {
       throw new IllegalMove(`${card.name} はサポートではない`);
     }
-    if (!this.canUseSupporter()) {
+    if (!this.canUseSupporter(options)) {
       throw new IllegalMove("この番はサポートを使えない");
     }
     this.hasUsedSupporter = true;

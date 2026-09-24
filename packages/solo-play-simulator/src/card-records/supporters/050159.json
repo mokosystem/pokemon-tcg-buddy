@@ -1,0 +1,29 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "switchActiveWithBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050159"],
+  "category": "サポート",
+  "excludedEffects": [
+    {
+      "description": "ポケモンex をベンチに入れ替えたときに、そのポケモンの HP を回復する効果",
+      "reason": "healing"
+    }
+  ],
+  "name": "AZの安らぎ",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}
