@@ -10,7 +10,7 @@
               "categories": ["ポケモン"],
               "stages": ["たね"]
             },
-            "maxCount": 60,
+            "maxCount": 8,
             "operation": "searchDeckOntoBench"
           }
         ],
