@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "かんしのめ"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "かみつく"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「かんしのめ」(おたがいのポケモンのダメカンを別のポケモンにのせ替えられなくする)。止める対象は相手の場が要る効果で一人回しでは使わないため、止めても成立率は変わらない",
+      "reason": "noReasonToUseInSoloPlay"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ミネズミ",
+  "cardIds": ["050152"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

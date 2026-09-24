@@ -47,6 +47,7 @@ import goods050424 from "./card-records/goods/050424.json";
 import goods050461 from "./card-records/goods/050461.json";
 import goods050462 from "./card-records/goods/050462.json";
 import pokemon045203 from "./card-records/pokemon/045203.json";
+import pokemon045519 from "./card-records/pokemon/045519.json";
 import pokemon045594 from "./card-records/pokemon/045594.json";
 import pokemon045621 from "./card-records/pokemon/045621.json";
 import pokemon045724 from "./card-records/pokemon/045724.json";
@@ -137,6 +138,7 @@ import pokemon050104 from "./card-records/pokemon/050104.json";
 import pokemon050105 from "./card-records/pokemon/050105.json";
 import pokemon050106 from "./card-records/pokemon/050106.json";
 import pokemon050143 from "./card-records/pokemon/050143.json";
+import pokemon050152 from "./card-records/pokemon/050152.json";
 import pokemon050224 from "./card-records/pokemon/050224.json";
 import pokemon050225 from "./card-records/pokemon/050225.json";
 import pokemon050250 from "./card-records/pokemon/050250.json";
@@ -252,6 +254,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemonTools049405, path: "pokemon-tools/049405.json" },
   { content: pokemonTools050464, path: "pokemon-tools/050464.json" },
   { content: pokemon045203, path: "pokemon/045203.json" },
+  { content: pokemon045519, path: "pokemon/045519.json" },
   { content: pokemon045594, path: "pokemon/045594.json" },
   { content: pokemon045621, path: "pokemon/045621.json" },
   { content: pokemon045724, path: "pokemon/045724.json" },
@@ -342,6 +345,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon050105, path: "pokemon/050105.json" },
   { content: pokemon050106, path: "pokemon/050106.json" },
   { content: pokemon050143, path: "pokemon/050143.json" },
+  { content: pokemon050152, path: "pokemon/050152.json" },
   { content: pokemon050224, path: "pokemon/050224.json" },
   { content: pokemon050225, path: "pokemon/050225.json" },
   { content: pokemon050250, path: "pokemon/050250.json" },
