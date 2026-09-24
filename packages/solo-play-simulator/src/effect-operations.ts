@@ -192,6 +192,7 @@ const firstStepTargetChecks: {
   lookAtDeckTopAndTakeIntoHand: deckHasCards,
   moveAnyEnergyFromOwnPokemonToSelf: (_, { source, state }) =>
     listOtherPokemonWithEnergy(state, source.pokemon).length > 0,
+  moveEnergyFromSwitchedOutPokemonToActive: alwaysHasTarget,
   moveEnergyToAnotherOwnPokemon: (step, { state }) =>
     state.listPokemonInPlay().length >= 2 &&
     listPokemonWithEnergyMatching(state, step.energyFilter).length > 0,
@@ -281,8 +282,14 @@ export function canStartEffect(
 interface OperationRun {
   readonly context: EffectContext;
   readonly label: string;
-  /** この効果の中でここまでに手札からトラッシュした枚数(ムクの「その枚数×3 枚ぶん引く」)。 */
-  readonly progress: { discardedCount: number };
+  /**
+   * この効果の中でここまでに起きたこと。手札からトラッシュした枚数(ムクの「その枚数×3 枚ぶん引く」)と、
+   * 入れ替えでベンチに下がったポケモン(ヒガナの信頼の「ベンチに入れ替えたポケモン」)。
+   */
+  readonly progress: {
+    discardedCount: number;
+    switchedOutPokemon: PokemonInPlay | null;
+  };
   readonly source: EffectSource;
 }
 
@@ -828,6 +835,26 @@ const operationRunners: {
     context.state.takeFromDeckTop(step.lookCount, chosen, step.restPlacement);
   },
   moveAnyEnergyFromOwnPokemonToSelf: (_, run) => moveEnergyToHolder(run),
+  moveEnergyFromSwitchedOutPokemonToActive: (
+    _,
+    { context, label, progress }
+  ) => {
+    const { state } = context;
+    const from = progress.switchedOutPokemon;
+    const to = state.active;
+    if (from === null || to === null) {
+      return;
+    }
+    // ベンチに下がったポケモンにエネルギーがあれば、つけ替えないことは選べない(公式 Q&A「ヒガナの信頼」、2026-09-24 確認)
+    for (const energy of chooseCardsWithin(
+      context,
+      from.energies,
+      { maxCount: 1, minCount: 1 },
+      `${label}: ${from.name} から ${to.name} につけ替えるエネルギー`
+    )) {
+      state.moveAttachedEnergy(from, to, energy);
+    }
+  },
   moveEnergyToAnotherOwnPokemon: (step, run) =>
     moveEnergyBetweenOwnPokemon(run, step),
   placeFromDiscardOntoBench: (step, run) =>
@@ -917,7 +944,7 @@ const operationRunners: {
     run.context.state.shuffleDeck();
   },
   shuffleHandIntoDeck: (_, { context }) => context.state.returnHandToDeck(),
-  switchActiveWithBench: (step, { context, label }) => {
+  switchActiveWithBench: (step, { context, label, progress }) => {
     const { state } = context;
     const benched = chooseOnePokemon(
       context,
@@ -927,6 +954,7 @@ const operationRunners: {
       `${label}: バトル場と入れ替えるベンチポケモン`
     );
     if (benched !== null) {
+      progress.switchedOutPokemon = state.active;
       state.switchActive(benched);
     }
   },
@@ -962,7 +990,7 @@ export function runEffect(
   const run: OperationRun = {
     context,
     label,
-    progress: { discardedCount: 0 },
+    progress: { discardedCount: 0, switchedOutPokemon: null },
     source,
   };
   for (const step of effect.steps) {

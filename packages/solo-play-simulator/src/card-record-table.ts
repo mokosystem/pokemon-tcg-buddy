@@ -2,6 +2,7 @@
 // 生成し直したかは src/card-record-files.test.ts が検査する。
 
 import { buildCardRecordTable } from "./card-record-validation.ts";
+import energies045217 from "./card-records/energies/045217.json";
 import energies047903 from "./card-records/energies/047903.json";
 import energies047905 from "./card-records/energies/047905.json";
 import energies047906 from "./card-records/energies/047906.json";
@@ -37,6 +38,7 @@ import goods050424 from "./card-records/goods/050424.json";
 import goods050461 from "./card-records/goods/050461.json";
 import goods050462 from "./card-records/goods/050462.json";
 import pokemon045203 from "./card-records/pokemon/045203.json";
+import pokemon045621 from "./card-records/pokemon/045621.json";
 import pokemon045922 from "./card-records/pokemon/045922.json";
 import pokemon045977 from "./card-records/pokemon/045977.json";
 import pokemon045978 from "./card-records/pokemon/045978.json";
@@ -103,6 +105,9 @@ import pokemon049694 from "./card-records/pokemon/049694.json";
 import pokemon049714 from "./card-records/pokemon/049714.json";
 import pokemon049715 from "./card-records/pokemon/049715.json";
 import pokemon049968 from "./card-records/pokemon/049968.json";
+import pokemon050104 from "./card-records/pokemon/050104.json";
+import pokemon050105 from "./card-records/pokemon/050105.json";
+import pokemon050106 from "./card-records/pokemon/050106.json";
 import pokemon050143 from "./card-records/pokemon/050143.json";
 import pokemon050224 from "./card-records/pokemon/050224.json";
 import pokemon050225 from "./card-records/pokemon/050225.json";
@@ -146,11 +151,13 @@ import supporters050083 from "./card-records/supporters/050083.json";
 import supporters050159 from "./card-records/supporters/050159.json";
 import supporters050295 from "./card-records/supporters/050295.json";
 import supporters050297 from "./card-records/supporters/050297.json";
+import supporters050407 from "./card-records/supporters/050407.json";
 import supporters050428 from "./card-records/supporters/050428.json";
 import supporters050467 from "./card-records/supporters/050467.json";
 
 /** カード ID(どの印刷の ID からも)→ カードの記録。読み込み時に全記録を検査し、誤りがあれば止める。 */
 export const cardRecordTable = buildCardRecordTable([
+  { content: energies045217, path: "energies/045217.json" },
   { content: energies047903, path: "energies/047903.json" },
   { content: energies047905, path: "energies/047905.json" },
   { content: energies047906, path: "energies/047906.json" },
@@ -191,6 +198,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemonTools049405, path: "pokemon-tools/049405.json" },
   { content: pokemonTools050464, path: "pokemon-tools/050464.json" },
   { content: pokemon045203, path: "pokemon/045203.json" },
+  { content: pokemon045621, path: "pokemon/045621.json" },
   { content: pokemon045922, path: "pokemon/045922.json" },
   { content: pokemon045977, path: "pokemon/045977.json" },
   { content: pokemon045978, path: "pokemon/045978.json" },
@@ -257,6 +265,9 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon049714, path: "pokemon/049714.json" },
   { content: pokemon049715, path: "pokemon/049715.json" },
   { content: pokemon049968, path: "pokemon/049968.json" },
+  { content: pokemon050104, path: "pokemon/050104.json" },
+  { content: pokemon050105, path: "pokemon/050105.json" },
+  { content: pokemon050106, path: "pokemon/050106.json" },
   { content: pokemon050143, path: "pokemon/050143.json" },
   { content: pokemon050224, path: "pokemon/050224.json" },
   { content: pokemon050225, path: "pokemon/050225.json" },
@@ -295,6 +306,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: supporters050159, path: "supporters/050159.json" },
   { content: supporters050295, path: "supporters/050295.json" },
   { content: supporters050297, path: "supporters/050297.json" },
+  { content: supporters050407, path: "supporters/050407.json" },
   { content: supporters050428, path: "supporters/050428.json" },
   { content: supporters050467, path: "supporters/050467.json" },
 ]);

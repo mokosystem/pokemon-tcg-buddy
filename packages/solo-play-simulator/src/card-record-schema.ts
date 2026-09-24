@@ -344,6 +344,13 @@ const basicOperationOptions = [
     operation: literal("attachEnergyFromDiscardDistributedToPokemon"),
     targetFilter: PokemonInPlayFilterSchema,
   }),
+  /**
+   * この効果の中の入れ替え(switchActiveWithBench)でベンチに下がったポケモンのエネルギーを 1 個選び、新しいバトルポケモンに
+   * つけ替える(ヒガナの信頼)。
+   */
+  strictObject({
+    operation: literal("moveEnergyFromSwitchedOutPokemonToActive"),
+  }),
   /** 自分の場のほかのポケモンについているエネルギーを好きなだけ選び、このポケモン(効果の持ち主)につけ替える。 */
   strictObject({
     operation: literal("moveAnyEnergyFromOwnPokemonToSelf"),

@@ -1434,6 +1434,16 @@
           "type": "object",
           "properties": {
             "operation": {
+              "const": "moveEnergyFromSwitchedOutPokemonToActive"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
               "const": "moveAnyEnergyFromOwnPokemonToSelf"
             }
           },
@@ -2728,6 +2738,16 @@
             }
           },
           "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "moveEnergyFromSwitchedOutPokemonToActive"
+            }
+          },
+          "required": ["operation"],
           "additionalProperties": false
         },
         {

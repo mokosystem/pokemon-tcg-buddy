@@ -154,6 +154,12 @@ const SACRED_ASH = buildRecordedCard("048672");
 const SECRET_BOX = buildRecordedCard("045783");
 const GLADION = buildRecordedCard("050295");
 const FESTIVAL_GROUNDS = buildRecordedCard("046841");
+const FROAKIE = buildRecordedCard("050104");
+const FROGADIER = buildRecordedCard("050105");
+const MEGA_GRENINJA = buildRecordedCard("050106");
+const GRENINJA_EX = buildRecordedCard("045621");
+const DRAYDENS_TRUST = buildRecordedCard("050407");
+const NEO_UPPER_ENERGY = buildRecordedCard("045217");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -2485,6 +2491,101 @@ describeTranslation("グラジオの決戦", () => {
       hand: [GLADION, PSYCHIC_ENERGY],
     });
     expect(canPlayTrainerFromHand(buildContext(state), GLADION)).toBe(false);
+  });
+});
+
+describeTranslation("ケロマツ", () => {
+  test("もってくるは 1 枚引く", () => {
+    const state = buildState({ active: FROAKIE, deck: [WATER_ENERGY] });
+    activeOf(state).energies.push(WATER_ENERGY);
+    useAttack(buildContext(state), "もってくる");
+    expect(namesOf(state.hand)).toEqual(["基本水エネルギー"]);
+  });
+});
+
+describeTranslation("ゲコガシラ", () => {
+  test("よびよせのじゅつは、山札からポケモンを 3 枚まで手札に加える", () => {
+    const state = buildState({
+      active: FROGADIER,
+      deck: [FROAKIE, WATER_ENERGY, GRENINJA_EX, MEGA_GRENINJA, FROAKIE],
+    });
+    activeOf(state).energies.push(WATER_ENERGY);
+    useAttack(buildContext(state), "よびよせのじゅつ");
+    expect(namesOf(state.hand)).toEqual([
+      "ケロマツ",
+      "ゲッコウガex",
+      "メガゲッコウガex",
+    ]);
+  });
+});
+
+describeTranslation("ゲッコウガex", () => {
+  test("しのびのやいばは、のぞむなら山札から好きなカードを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: GRENINJA_EX,
+      deck: [WATER_ENERGY, BOSS],
+    });
+    activeOf(state).energies.push(WATER_ENERGY);
+    useAttack(
+      buildContext(state, { chooseCards: pickCardsByName(["ボスの指令"]) }),
+      "しのびのやいば"
+    );
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+
+    const declined = buildState({ active: GRENINJA_EX, deck: [BOSS] });
+    activeOf(declined).energies.push(WATER_ENERGY);
+    useAttack(
+      buildContext(declined, { choosesToApplyOptionalEffect: () => false }),
+      "しのびのやいば"
+    );
+    expect(declined.hand).toEqual([]);
+  });
+});
+
+describeTranslation("ヒガナの信頼", () => {
+  test("バトルポケモンをベンチと入れ替え、ベンチに下がったポケモンのエネルギーを 1 個新しいバトルポケモンにつけ替える", () => {
+    const state = buildState({
+      active: MEGA_GRENINJA,
+      bench: [FROAKIE, GRENINJA_EX],
+      hand: [DRAYDENS_TRUST],
+    });
+    activeOf(state).energies.push(WATER_ENERGY, WATER_ENERGY);
+    playTrainerFromHand(
+      buildContext(state, {
+        choosePokemon: (_, request) =>
+          request.candidates.filter(
+            (pokemon) => pokemon.name === "ゲッコウガex"
+          ),
+      }),
+      DRAYDENS_TRUST
+    );
+    expect(activeOf(state).name).toBe("ゲッコウガex");
+    expect(namesOf(activeOf(state).energies)).toEqual(["基本水エネルギー"]);
+    const switchedOut = state.bench.find(
+      (pokemon) => pokemon.name === "メガゲッコウガex"
+    );
+    expect(switchedOut?.energies).toHaveLength(1);
+  });
+
+  test("バトルポケモンにエネルギーが無くても使え、入れ替えだけが起きる(公式 Q&A)", () => {
+    const state = buildState({
+      active: FROAKIE,
+      bench: [FROGADIER],
+      hand: [DRAYDENS_TRUST],
+    });
+    playTrainerFromHand(buildContext(state), DRAYDENS_TRUST);
+    expect(activeOf(state).name).toBe("ゲコガシラ");
+    expect(activeOf(state).energies).toEqual([]);
+  });
+});
+
+describeTranslation("ネオアッパーエネルギー", () => {
+  test("2進化ポケモンについていればすべてのタイプ 2 個ぶん、ほかは無色 1 個ぶんとして働く", () => {
+    const state = buildState({ active: MEGA_GRENINJA, bench: [FROAKIE] });
+    activeOf(state).energies.push(NEO_UPPER_ENERGY);
+    benchAt(state, 0).energies.push(NEO_UPPER_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["any", "any"]);
+    expect(listEnergyUnits(state, benchAt(state, 0))).toEqual(["colorless"]);
   });
 });
 
