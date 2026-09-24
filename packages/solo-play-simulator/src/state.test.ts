@@ -293,6 +293,27 @@ describe("山札の操作", () => {
     expect(state.hand).toEqual([]);
     expect(state.deck).toHaveLength(3);
   });
+
+  test("自分で山札の上に置いたカードは分かっている扱いになり、上から引くと減り、切ると無くなる", () => {
+    const state = stateWith([STAGE1], [BASIC, ENERGY, SUPPORTER]);
+    state.placeOnDeckTopAfterShuffle([ENERGY, SUPPORTER]);
+    expect(state.knownDeckTopCount).toBe(2);
+    state.draw(1);
+    expect(state.knownDeckTopCount).toBe(1);
+    state.placeHandCardsOnDeckTop([STAGE1]);
+    expect(state.knownDeckTopCount).toBe(2);
+    state.shuffleDeck();
+    expect(state.knownDeckTopCount).toBe(0);
+  });
+
+  test("山札から探して取り出したカードが分かっている上のカードなら、分かっている数が減る", () => {
+    const state = stateWith([STAGE1], [BASIC]);
+    state.placeHandCardsOnDeckTop([STAGE1]);
+    state.takeFromDeckToHand(BASIC);
+    expect(state.knownDeckTopCount).toBe(1);
+    state.takeFromDeckToHand(STAGE1);
+    expect(state.knownDeckTopCount).toBe(0);
+  });
 });
 
 describe("対戦の準備", () => {

@@ -632,7 +632,8 @@ export const AttackSchema = strictObject({
   usesAttackOfBenchedPokemon: optional(CardFilterSchema),
   /**
    * 山札の上から 1 枚トラッシュし、それが条件に合うポケモンなら、そのポケモンが持つワザを 1 つ選び、このワザとして
-   * 使う(ヤドキングの「ひらめきチャレンジ」)。選んだワザは、このワザに必要なエネルギーで使える。
+   * 使う(ヤドキングの「ひらめきチャレンジ」)。選んだワザは、このワザに必要なエネルギーで使える。山札の上が
+   * 何のカードか分かっているときだけ使えるワザに出す(continuous-effects.ts の listDeckTopAttacksUsedAs)。
    */
   usesAttackOfDiscardedDeckTop: optional(CardFilterSchema),
 });

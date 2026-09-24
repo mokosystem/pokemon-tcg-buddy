@@ -2262,11 +2262,13 @@ describeTranslation("ヤドン", () => {
 });
 
 describeTranslation("ヤドキング", () => {
-  test("ひらめきチャレンジは、山札の上がルールを持たないポケモンなら、そのワザをひらめきチャレンジのエネルギーで使える", () => {
+  test("ひらめきチャレンジは、自分で山札の上に置いたカードがルールを持たないポケモンなら、そのワザをひらめきチャレンジのエネルギーで使える", () => {
     const state = buildState({
       active: SLOWKING,
-      deck: [METAGROSS, PSYCHIC_ENERGY],
+      deck: [PSYCHIC_ENERGY],
+      hand: [METAGROSS],
     });
+    state.placeHandCardsOnDeckTop([METAGROSS]);
     activeOf(state).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
     const context = buildContext(state);
     const usable = listUsableAttacksOfActive(context);
@@ -2287,11 +2289,13 @@ describeTranslation("ヤドキング", () => {
     expect(namesOf(state.deck)).toEqual(["基本超エネルギー"]);
   });
 
-  test("山札の上がポケモンでないとき(ルールを持つポケモンのときも)は、山札の上をトラッシュするだけのワザになる", () => {
+  test("自分で置いた山札の上がポケモンでないとき(ルールを持つポケモンのときも)は、山札の上をトラッシュするだけのワザになる", () => {
     const energyOnTop = buildState({
       active: SLOWKING,
-      deck: [PSYCHIC_ENERGY, METAGROSS],
+      deck: [METAGROSS],
+      hand: [PSYCHIC_ENERGY],
     });
+    energyOnTop.placeHandCardsOnDeckTop([PSYCHIC_ENERGY]);
     activeOf(energyOnTop).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
     const context = buildContext(energyOnTop);
     expect(
@@ -2300,13 +2304,38 @@ describeTranslation("ヤドキング", () => {
     useAttack(context, "ひらめきチャレンジ");
     expect(namesOf(energyOnTop.discard)).toEqual(["基本超エネルギー"]);
 
-    const ruleBoxOnTop = buildState({ active: SLOWKING, deck: [MEOWTH] });
+    const ruleBoxOnTop = buildState({ active: SLOWKING, hand: [MEOWTH] });
+    ruleBoxOnTop.placeHandCardsOnDeckTop([MEOWTH]);
     activeOf(ruleBoxOnTop).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
     expect(
       listUsableAttacksOfActive(buildContext(ruleBoxOnTop)).map(
         ({ attack }) => attack.name
       )
     ).toEqual(["ひらめきチャレンジ"]);
+  });
+
+  test("山札の上が何のカードか分からないとき(置いた後に切ったときも)は、ひらめきチャレンジを使えない", () => {
+    const unknownTop = buildState({
+      active: SLOWKING,
+      deck: [METAGROSS, PSYCHIC_ENERGY],
+    });
+    activeOf(unknownTop).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    expect(listUsableAttacksOfActive(buildContext(unknownTop))).toEqual([]);
+
+    const shuffledAfterPlacing = buildState({
+      active: SLOWKING,
+      deck: [PSYCHIC_ENERGY],
+      hand: [METAGROSS],
+    });
+    shuffledAfterPlacing.placeHandCardsOnDeckTop([METAGROSS]);
+    shuffledAfterPlacing.shuffleDeck();
+    activeOf(shuffledAfterPlacing).energies.push(
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY
+    );
+    expect(
+      listUsableAttacksOfActive(buildContext(shuffledAfterPlacing))
+    ).toEqual([]);
   });
 });
 

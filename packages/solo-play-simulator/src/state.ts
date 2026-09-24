@@ -142,6 +142,12 @@ export class PokemonInPlay {
 export class GameState {
   readonly random: RandomSource;
   deck: Card[];
+  /**
+   * 山札の上から何枚が、自分の効果で置いたために何のカードか分かっているか(夜のアカデミー、暗号マニアの解読)。
+   * 山札を切ると 0 に戻り、上から引く・トラッシュする・見るたびに減る。山札の上のカードで決まるワザ
+   * (ヤドキングの「ひらめきチャレンジ」)を、上のカードが分かっているときだけ使えるようにするために持つ。
+   */
+  knownDeckTopCount = 0;
   hand: Card[] = [];
   readonly prizes: Card[] = [];
   readonly discard: Card[] = [];
@@ -270,6 +276,26 @@ export class GameState {
 
   shuffleDeck(): void {
     this.shuffleCards(this.deck);
+    this.knownDeckTopCount = 0;
+  }
+
+  /** 山札の上から count 枚を取り出す。分かっている上のカードの数もその分だけ減る。 */
+  private spliceDeckTop(count: number): Card[] {
+    const removed = this.deck.splice(0, count);
+    this.knownDeckTopCount = Math.max(
+      0,
+      this.knownDeckTopCount - removed.length
+    );
+    return removed;
+  }
+
+  /** 山札から card を 1 枚取り出す(山札から探す)。分かっている上のカードの 1 枚なら、その数を減らす。 */
+  private removeFromDeck(card: Card): void {
+    const index = this.deck.indexOf(card);
+    removeCard(this.deck, card, "山札");
+    if (index < this.knownDeckTopCount) {
+      this.knownDeckTopCount -= 1;
+    }
   }
 
   private shuffleCards(cards: Card[]): void {
@@ -286,19 +312,19 @@ export class GameState {
   }
 
   draw(count: number): Card[] {
-    const drawn = this.deck.splice(0, count);
+    const drawn = this.spliceDeckTop(count);
     this.hand.push(...drawn);
     return drawn;
   }
 
   takeFromDeckToHand(card: Card): void {
-    removeCard(this.deck, card, "山札");
+    this.removeFromDeck(card);
     this.hand.push(card);
   }
 
   /** 山札の上から count 枚をトラッシュする。山札が足りなければある分だけ。 */
   discardFromDeckTop(count: number): Card[] {
-    const discarded = this.deck.splice(0, count);
+    const discarded = this.spliceDeckTop(count);
     this.discard.push(...discarded);
     this.record(
       `山札の上から ${discarded.map((card) => card.name).join("、")} をトラッシュ`
@@ -312,6 +338,7 @@ export class GameState {
       removeCard(this.hand, card, "手札");
     }
     this.deck.unshift(...chosen);
+    this.knownDeckTopCount += chosen.length;
     this.record(
       `手札の ${chosen.map((card) => card.name).join("、")} を山札の上に置く`
     );
@@ -323,10 +350,11 @@ export class GameState {
    */
   placeOnDeckTopAfterShuffle(chosen: readonly Card[]): void {
     for (const card of chosen) {
-      removeCard(this.deck, card, "山札");
+      this.removeFromDeck(card);
     }
     this.shuffleDeck();
     this.deck.unshift(...chosen);
+    this.knownDeckTopCount = chosen.length;
     this.record(
       `山札の上に ${chosen.map((card) => card.name).join("、")} を置く`
     );
@@ -390,7 +418,7 @@ export class GameState {
     chosen: readonly Card[],
     restPlacement: DeckTopRestPlacement
   ): Card[] {
-    const looked = this.deck.splice(0, lookCount);
+    const looked = this.spliceDeckTop(lookCount);
     for (const card of chosen) {
       removeCard(looked, card, "山札の上から見たカード");
     }
@@ -460,7 +488,7 @@ export class GameState {
 
   /** 山札の上から 6 枚をサイドに置く。 */
   placePrizesFromDeck(): void {
-    this.prizes.push(...this.deck.splice(0, PRIZE_COUNT));
+    this.prizes.push(...this.spliceDeckTop(PRIZE_COUNT));
   }
 
   // ---- 手札からの操作 ----
@@ -695,7 +723,11 @@ export class GameState {
   }
 
   private removeFrom(source: CardSource, card: Card): void {
-    const zones = { deck: this.deck, discard: this.discard, hand: this.hand };
+    if (source === "deck") {
+      this.removeFromDeck(card);
+      return;
+    }
+    const zones = { discard: this.discard, hand: this.hand };
     removeCard(zones[source], card, sourceZoneName[source]);
   }
 
