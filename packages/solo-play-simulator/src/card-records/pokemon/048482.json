@@ -1,0 +1,60 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"],
+              "stages": ["たね"]
+            },
+            "maxCount": 2,
+            "operation": "searchDeckOntoBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "なかまをよぶ"
+    },
+    {
+      "cost": ["dark", "colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "やんちゃげり"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "使えない。手札からベンチに出したときの特性は、ワザで山札からベンチに出したときには起きない",
+      "question": "ワザ「なかまをよぶ」で山札からベンチに出したニャースex の特性「おくのてキャッチ」を使えるか",
+      "reflectedIn": "山札からベンチに出す操作(searchDeckOntoBench)は、手札からベンチに出したときのきっかけを問い合わせない",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "エレズンのなかまをよぶで山札からベンチに出したニャースexの「おくのてキャッチ」を使えるか、という質問に、手札から出したときの特性のため使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A8%E3%83%AC%E3%82%BA%E3%83%B3&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "エレズン",
+  "cardIds": ["048482", "048396"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

@@ -154,6 +154,8 @@ export class GameState {
   // 真偽値の欄の初期値を宣言に書かず constructor で代入しているのは、Biome が `= false` を
   // false 型と推論し、この欄を条件に使う箇所を noUnnecessaryConditions で誤検出するため。
   hasUsedSupporter: boolean;
+  /** この番に手札から使ったサポート。名前に文字列を含むかの条件(ロケット団のファクトリー)に使う。 */
+  supporterUsedThisTurn: Card | null = null;
   hasAttachedEnergy: boolean;
   hasPlayedStadium: boolean;
   /** 今場にあるスタジアムの効果を、この番に使ったか。スタジアムが入れ替わったら戻す(`playStadium`)。 */
@@ -512,6 +514,7 @@ export class GameState {
       throw new IllegalMove("この番はサポートを使えない");
     }
     this.hasUsedSupporter = true;
+    this.supporterUsedThisTurn = card;
     this.discardFromHand([card]);
     this.record(`サポート ${card.name}`);
   }
@@ -749,6 +752,7 @@ export class GameState {
   beginTurn(): void {
     this.turn += 1;
     this.hasUsedSupporter = false;
+    this.supporterUsedThisTurn = null;
     this.hasAttachedEnergy = false;
     this.hasPlayedStadium = false;
     this.hasUsedStadiumEffect = false;

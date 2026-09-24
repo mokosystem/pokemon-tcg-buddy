@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark", "colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "デスピリオド"
+    },
+    {
+      "cost": ["dark", "dark", "colorless"],
+      "damage": {
+        "amount": 200,
+        "kind": "fixed"
+      },
+      "name": "あくのかぎづめ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「デスピリオド」の、相手のバトルポケモンのダメカンが 6 個ならきぜつさせる効果",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「あくのかぎづめ」の、相手の手札を見て 1 枚トラッシュする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "メガアブソルex",
+  "cardIds": ["048446"],
+  "stage": "たね",
+  "hp": 280,
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "exRule": "megaEvolutionEx",
+  "translationStatus": "notTranslatable"
+}

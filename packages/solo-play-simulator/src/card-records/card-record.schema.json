@@ -1018,6 +1018,20 @@
           "type": "object",
           "properties": {
             "condition": {
+              "const": "supporterUsedThisTurnNameIncludes"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["condition", "text"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
               "const": "handHasNoOtherCards"
             }
           },
@@ -2021,6 +2035,20 @@
             }
           },
           "required": ["abilityName", "condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "supporterUsedThisTurnNameIncludes"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["condition", "text"],
           "additionalProperties": false
         },
         {

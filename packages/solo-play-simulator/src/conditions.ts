@@ -97,6 +97,8 @@ const conditionEvaluators: {
     source.pokemon !== null && source.pokemon === state.active,
   stadiumInPlayNamed: (condition, state) =>
     state.stadium?.name === condition.name,
+  supporterUsedThisTurnNameIncludes: (condition, state) =>
+    state.supporterUsedThisTurn?.name.includes(condition.text) ?? false,
 };
 
 function isConditionMet<Name extends Condition["condition"]>(

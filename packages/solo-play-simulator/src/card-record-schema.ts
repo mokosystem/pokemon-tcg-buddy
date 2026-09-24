@@ -169,6 +169,11 @@ const basicConditionOptions = [
     abilityName: nonEmptyText,
     condition: literal("activePokemonHasAbilityNamed"),
   }),
+  /** この番に手札から使ったサポートの名前に、この文字列を含む(ロケット団のファクトリー: 「ロケット団」)。 */
+  strictObject({
+    condition: literal("supporterUsedThisTurnNameIncludes"),
+    text: nonEmptyText,
+  }),
   /** 手札が、使おうとしているこのカード 1 枚だけ(グラジオの決戦)。 */
   strictObject({
     condition: literal("handHasNoOtherCards"),

@@ -60,6 +60,7 @@ import pokemon045978 from "./card-records/pokemon/045978.json";
 import pokemon046247 from "./card-records/pokemon/046247.json";
 import pokemon046248 from "./card-records/pokemon/046248.json";
 import pokemon046372 from "./card-records/pokemon/046372.json";
+import pokemon046415 from "./card-records/pokemon/046415.json";
 import pokemon046470 from "./card-records/pokemon/046470.json";
 import pokemon046500 from "./card-records/pokemon/046500.json";
 import pokemon046518 from "./card-records/pokemon/046518.json";
@@ -95,7 +96,10 @@ import pokemon047988 from "./card-records/pokemon/047988.json";
 import pokemon048351 from "./card-records/pokemon/048351.json";
 import pokemon048353 from "./card-records/pokemon/048353.json";
 import pokemon048358 from "./card-records/pokemon/048358.json";
+import pokemon048446 from "./card-records/pokemon/048446.json";
 import pokemon048464 from "./card-records/pokemon/048464.json";
+import pokemon048482 from "./card-records/pokemon/048482.json";
+import pokemon048495 from "./card-records/pokemon/048495.json";
 import pokemon048533 from "./card-records/pokemon/048533.json";
 import pokemon048534 from "./card-records/pokemon/048534.json";
 import pokemon048543 from "./card-records/pokemon/048543.json";
@@ -123,6 +127,7 @@ import pokemon049093 from "./card-records/pokemon/049093.json";
 import pokemon049123 from "./card-records/pokemon/049123.json";
 import pokemon049185 from "./card-records/pokemon/049185.json";
 import pokemon049197 from "./card-records/pokemon/049197.json";
+import pokemon049203 from "./card-records/pokemon/049203.json";
 import pokemon049205 from "./card-records/pokemon/049205.json";
 import pokemon049207 from "./card-records/pokemon/049207.json";
 import pokemon049212 from "./card-records/pokemon/049212.json";
@@ -181,6 +186,7 @@ import stadiums048703 from "./card-records/stadiums/048703.json";
 import stadiums048706 from "./card-records/stadiums/048706.json";
 import stadiums048710 from "./card-records/stadiums/048710.json";
 import stadiums048711 from "./card-records/stadiums/048711.json";
+import stadiums048712 from "./card-records/stadiums/048712.json";
 import stadiums050076 from "./card-records/stadiums/050076.json";
 import stadiums050164 from "./card-records/stadiums/050164.json";
 import supporters045284 from "./card-records/supporters/045284.json";
@@ -275,6 +281,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon046247, path: "pokemon/046247.json" },
   { content: pokemon046248, path: "pokemon/046248.json" },
   { content: pokemon046372, path: "pokemon/046372.json" },
+  { content: pokemon046415, path: "pokemon/046415.json" },
   { content: pokemon046470, path: "pokemon/046470.json" },
   { content: pokemon046500, path: "pokemon/046500.json" },
   { content: pokemon046518, path: "pokemon/046518.json" },
@@ -310,7 +317,10 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon048351, path: "pokemon/048351.json" },
   { content: pokemon048353, path: "pokemon/048353.json" },
   { content: pokemon048358, path: "pokemon/048358.json" },
+  { content: pokemon048446, path: "pokemon/048446.json" },
   { content: pokemon048464, path: "pokemon/048464.json" },
+  { content: pokemon048482, path: "pokemon/048482.json" },
+  { content: pokemon048495, path: "pokemon/048495.json" },
   { content: pokemon048533, path: "pokemon/048533.json" },
   { content: pokemon048534, path: "pokemon/048534.json" },
   { content: pokemon048543, path: "pokemon/048543.json" },
@@ -338,6 +348,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon049123, path: "pokemon/049123.json" },
   { content: pokemon049185, path: "pokemon/049185.json" },
   { content: pokemon049197, path: "pokemon/049197.json" },
+  { content: pokemon049203, path: "pokemon/049203.json" },
   { content: pokemon049205, path: "pokemon/049205.json" },
   { content: pokemon049207, path: "pokemon/049207.json" },
   { content: pokemon049212, path: "pokemon/049212.json" },
@@ -389,6 +400,7 @@ export const cardRecordTable = buildCardRecordTable([
   { content: stadiums048706, path: "stadiums/048706.json" },
   { content: stadiums048710, path: "stadiums/048710.json" },
   { content: stadiums048711, path: "stadiums/048711.json" },
+  { content: stadiums048712, path: "stadiums/048712.json" },
   { content: stadiums050076, path: "stadiums/050076.json" },
   { content: stadiums050164, path: "stadiums/050164.json" },
   { content: supporters045284, path: "supporters/045284.json" },

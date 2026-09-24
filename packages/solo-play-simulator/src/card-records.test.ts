@@ -193,6 +193,9 @@ const BLAZIKEN_EX = buildRecordedCard("046470");
 const HYDRAPPLE_EX = buildRecordedCard("048780");
 const MEGANIUM = buildRecordedCard("047801");
 const CELEBI = buildRecordedCard("047739");
+const TOXEL = buildRecordedCard("048482");
+const TOXTRICITY = buildRecordedCard("048495");
+const ROCKET_FACTORY = buildRecordedCard("048712");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3206,6 +3209,80 @@ describeTranslation("セレビィ", () => {
       "カジッチュ",
       "メガニウム",
     ]);
+  });
+});
+
+describeTranslation("エレズン", () => {
+  test("なかまをよぶは、山札からたねポケモンを 2 枚までベンチに出す。ニャースex の特性は起きない(公式 Q&A)", () => {
+    const state = buildState({
+      active: TOXEL,
+      deck: [MEOWTH, TOXTRICITY, TOXEL, BOSS],
+    });
+    activeOf(state).energies.push(DARK_ENERGY);
+    useAttack(buildContext(state), "なかまをよぶ");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
+      "ニャースex",
+      "エレズン",
+    ]);
+    expect(state.hand).toEqual([]);
+  });
+});
+
+describeTranslation("ストリンダー", () => {
+  test("バッドアッパーは、ポケモンごとに番に 1 回、山札の基本悪エネルギーを 1 枚ベンチの悪ポケモンにつける", () => {
+    const state = buildState({
+      active: TOXTRICITY,
+      bench: [N_ZEKROM, TOXEL],
+      deck: [PSYCHIC_ENERGY, DARK_ENERGY],
+    });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "バッドアッパー");
+    expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本悪エネルギー"]);
+    expect(benchAt(state, 0).energies).toEqual([]);
+    expect(canUseAbility(context, activeOf(state), "バッドアッパー")).toBe(
+      false
+    );
+  });
+
+  test("ベンチに悪ポケモンがいなければ使えない", () => {
+    const state = buildState({
+      active: TOXTRICITY,
+      bench: [N_ZEKROM],
+      deck: [DARK_ENERGY],
+    });
+    expect(
+      canUseAbility(buildContext(state), activeOf(state), "バッドアッパー")
+    ).toBe(false);
+  });
+});
+
+describeTranslation("ロケット団のファクトリー", () => {
+  test("この番に名前に「ロケット団」とつくサポートを使っていれば、番に 1 回 2 枚引ける", () => {
+    const state = buildState({
+      active: TOXEL,
+      deck: [...repeat(DARK_ENERGY, 3), BOSS],
+      hand: [ARIANA],
+    });
+    state.stadium = ROCKET_FACTORY;
+    const context = buildContext(state);
+    expect(canUseStadiumEffect(context)).toBe(false);
+    playTrainerFromHand(context, ARIANA);
+    useStadiumEffect(context);
+    expect(state.hand).toHaveLength(3);
+    expect(canUseStadiumEffect(context)).toBe(false);
+  });
+
+  test("ほかのサポートを使った番は引けない", () => {
+    const state = buildState({
+      active: TOXEL,
+      bench: [TOXEL],
+      deck: repeat(DARK_ENERGY, 8),
+      hand: [SURFER],
+    });
+    state.stadium = ROCKET_FACTORY;
+    const context = buildContext(state);
+    playTrainerFromHand(context, SURFER);
+    expect(canUseStadiumEffect(context)).toBe(false);
   });
 });
 
