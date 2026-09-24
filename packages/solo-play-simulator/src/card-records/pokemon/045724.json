@@ -1,0 +1,37 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "いてつくとばり"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["water", "colorless"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "フロストスマッシュ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「いてつくとばり」(ポケモンチェックのたびに、おたがいの特性を持つポケモン全員(ユキメノコを除く)にダメカンを 1 個のせる)。相手の特性を持つポケモンを傷めるための効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ユキメノコ",
+  "cardIds": ["045724"],
+  "stage": "1進化",
+  "evolvesFrom": "ユキワラシ",
+  "hp": 90,
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "translationStatus": "notTranslatable"
+}

@@ -158,7 +158,7 @@ README は「コーディングエージェント上で動くスキルとして�
 | 山札 | 引く | 枚数、または「手札が N 枚になるまで」 | 既存(手札の数で決める形は順 6 の 2 セッション目に手直し) | `drawCards`(枚数は `fixed`、`perCardDiscardedEarlierInThisEffect`、`untilHandSize`) | ラルトス、シロナのガブリアスex、サーファー、ジラーチex |
 | 山札 | 探して手札に加えて切る | 条件、上限 | 既存 | `searchDeckIntoHand` | ハイパーボール、ポケパッド、トウコ |
 | 山札 | 探してベンチに出して切る | 条件、上限 | 既存 | `searchDeckOntoBench` | なかよしポフィン |
-| 山札 | 探してつけて切る | 条件、上限、つけ先の条件 | 既存(1 匹にまとめてつける形は順 6 の 2 セッション目に追加) | `searchDeckAndAttachEnergyToEachPokemon`(全員に 1 枚ずつ)、`searchDeckAndAttachEnergyToOnePokemon`(上限まで選び 1 匹にまとめて)、`searchDeckIntoHandAndAttachRest`(アカマツ) | メガサーナイトex、ブースターex、ルリリ、アカマツ |
+| 山札 | 探してつけて切る | 条件、上限、つけ先の条件 | 既存(1 匹にまとめてつける形は順 6 の 2 セッション目に追加) | `searchDeckAndAttachEnergyToEachPokemon`(全員に 1 枚ずつ)、`searchDeckAndAttachEnergyToOnePokemon`(上限まで選び 1 匹にまとめて)、`searchDeckAndAttachEnergyDistributedToPokemon`(上限まで選び好きなように。3 セッション目)、`searchDeckIntoHandAndAttachRest`(アカマツ) | メガサーナイトex、ブースターex、ルリリ、アカマツ |
 | 山札 | 探して進化させて切る | 条件 | 既存 | `evolveFromDeck` | 偉大な大樹 |
 | 山札 | 探して、残りを切ってから山札の上に置く | 枚数(好きなカード。山札が足りなければ全部)、好きな順 | 追加(順 6 の 3 セッション目) | `searchDeckAndPlaceOnTopAfterShuffle`(条件は要るカードが無く持たない) | 暗号マニアの解読 |
 | 山札 | 上から見て取る | 見る枚数、条件、取る上限、取ったカードの先(手札、つける)、残りの扱い(切る、下に戻す、切ってから下に戻す) | 既存(取る上限は既存。先をつける形は順 6 の 2 セッション目に別の操作として追加) | `lookAtDeckTopAndTakeIntoHand`(手札に加える)、`lookAtDeckTopAndAttachEnergyToSelf`(効果の持ち主につける)、`lookAtDeckTopAndAttachEnergyToOwnPokemon`(条件に合う自分のポケモンに好きなように。3 セッション目)。残りの扱い `restPlacement` は `shuffleIntoDeck`、`bottomOfDeck`、`shuffleThenBottomOfDeck` | ポケギア3.0、ドロンチ、メガレックウザex、ジャラランガ(050390)、ウエートレス、むしとりセット |
@@ -559,6 +559,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | ドラパルトex(`niLLgQ-YL6A8Y-gQQn9N`) | 無し(Issue 22 と開発責任者のデッキの記録で 60 枚がそろった) | — | — | — |
 | メガルカリオex(`UR2MXy-P7Pfrq-pMypUy`) | 8 種 | 3(メガルカリオex、ルナトーン、暗号マニアの解読) | 0 | 5(リオル 2 種、ソルロック、ノココッチex、グラビティーマウンテン) |
 | メガレックウザex(`1kvFVF-JDWJKx-k5fkkb`) | 4 種 | 2(ゼイユ、AZの安らぎ) | 0 | 2(テラパゴスex、オーガポン いどのめんex) |
+| マリィのオーロンゲex(`kFkfbb-t1JgQb-5VFfvF`) | 7 種 | 3(マリィのベロバー、マリィのオーロンゲex、スパイクタウンジム) | 2(ユキメノコ、ハンディサーキュレーター) | 2(マリィのギモー、ユキワラシ) |
 | ガルーラボックス(`9iLQQg-IZmSbV-NningL`) | 5 種 | 3(イーユイ、Nの筋書き、プリズムエネルギー) | 0 | 2(カプ・コケコex、ナゲツケサル) |
 | メガドリュウズex(`pppRMX-JZDwG9-XyUSSU`) | 11 種 | 8(モグリュー、メタング、ゲノセクトex、エネルギー転送、プレシャスキャリー、ロケット団のレシーバー、エネルギーリサイクル、基本鋼エネルギー) | 0 | 3(メガドリュウズex、ダンバル、ツールスクラッパー) |
 | フーディン(`MX2Uyp-wLeekg-ppRRMp`) | 13 種 | 7(ケーシィ、ユンゲラー、フーディン、ドデカバシ、スイレンのお世話、夜の鉱山、リッチエネルギー) | 3(ゲノセクト、改造ハンマー、ラッキーメット) | 3(ツツケラ、ケララッパ、コダック) |
@@ -596,6 +597,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | ダメージの数える対象 `energyAttachedToAttackingPokemon` | ワザのダメージの追加 | メガドリュウズex | ワザを使うポケモンについているエネルギーの個数(「マキシマムドリル」は、必要なエネルギー 3 個より 2 個多い 5 個以上で 130 を足す)。個数で数えることは公式 Q&A(イグニッションエネルギーは 3 個)で確かめた。数える関数(`calculateAttackDamage` の中)にワザを使うポケモンを渡すようにした |
 | `moveEnergyFromBenchToActive` | 基本操作の追加 | Nの筋書き | ベンチのポケモンのエネルギーを合計 N 個まで(カードの枚数で数える。公式 Q&A「Nの筋書き」)バトルポケモンにつけ替える。元のポケモンを選んでからエネルギーを選ぶ処理は、テツノイサハex の `moveAnyEnergyFromOwnPokemonToSelf` と共通にした(`moveChosenEnergies`) |
 | `discardStadiumInPlay` と、数える対象 `stadiumsInPlay`、`ownBasicPokemonInPlay` | 基本操作とワザのダメージの追加 | イーユイ、カプ・コケコex、ナゲツケサル | 「グラウンドメルト」は場にスタジアムがあれば 60 を足し、その後スタジアムをトラッシュする。ダメージを計算してからトラッシュする(公式 Q&A「グラウンドメルト」)。ゼロの大空洞をトラッシュしたらベンチを減らす(スタジアムを出したときと同じ `trimBenchToLimit`)。ガルーラボックスはゼロの大空洞を入れているため、トラッシュを含めないとベンチの数が実際と変わる。カプ・コケコex(ベンチの数)とナゲツケサル(場のたねポケモンの数)の上乗せは自分の側の数で、記録に持つ設計のため数える対象を足した |
+| `searchDeckAndAttachEnergyDistributedToPokemon` | 基本操作の追加 | マリィのオーロンゲex | 山札のエネルギーを上限まで選び、条件に合う自分のポケモンに好きなようにつけて切る(「パンクアップ」)。メガルカリオex で足したトラッシュからの形と、元(山札かトラッシュか)だけが違うため、処理を共通にした(`attachEnergyDistributed`)。1 枚も選ばなくてよい(公式 Q&A「パンクアップ」)。順 5 で「裁定のデータで扱う」とした、ふしぎなアメで進化させたときの「パンクアップ」は、フーディンの「サイコドロー」と同じ拠り所で使えるとし、裁定のデータに残した |
 | 含めなかった理由 `firstTurnGoingSecondRestriction` | 理由の追加 | テラパゴスex | 後攻の最初の番にワザを使えない制限(「ユニオンビート」)。翻訳しないカードのワザには使える条件を書けない(効果の操作が 1 つ以上要る)ため、制限を持たずに前提に出す。`ownNextTurnRestriction`(ワザを使った次の番の制限)とはきっかけが違うため分けた。採らなかった案: `ownNextTurnRestriction` に含める(前提を読む人がどちらの制限か取り違える) |
 
 #### 記録で分かったこと

@@ -1211,6 +1211,26 @@
         {
           "type": "object",
           "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckAndAttachEnergyDistributedToPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "count": {
               "type": "integer",
               "minimum": 1
@@ -2635,6 +2655,26 @@
             },
             "operation": {
               "const": "searchDeckAndAttachEnergyToOnePokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "searchDeckAndAttachEnergyDistributedToPokemon"
             },
             "targetFilter": {
               "$ref": "#/$defs/PokemonInPlayFilter"

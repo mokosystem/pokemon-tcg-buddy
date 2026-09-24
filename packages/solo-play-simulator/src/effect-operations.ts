@@ -218,6 +218,9 @@ const firstStepTargetChecks: {
       ? source.pokemon !== null
       : state.listPokemonInPlay().length > 0,
   returnSelfToDeck: alwaysHasTarget,
+  searchDeckAndAttachEnergyDistributedToPokemon: (step, { state }) =>
+    state.deck.length > 0 &&
+    listOwnPokemonMatching(state, step.targetFilter).length > 0,
   searchDeckAndAttachEnergyToEachPokemon: deckHasCards,
   searchDeckAndAttachEnergyToOnePokemon: (step, { state }) =>
     state.deck.length > 0 &&
@@ -613,16 +616,18 @@ function attachFromDiscardToEachChosenPokemon(
 }
 
 /** トラッシュのエネルギーを 0〜maxCount 枚選び、1 枚ずつつける先のポケモンを選ぶ(同じポケモンに何枚つけてもよい)。 */
-function attachFromDiscardDistributed(
+function attachEnergyDistributed(
   run: OperationRun,
-  step: Extract<
-    BasicOperation,
-    { operation: "attachEnergyFromDiscardDistributedToPokemon" }
-  >
+  step: {
+    readonly energyFilter: CardFilter;
+    readonly maxCount: number;
+    readonly targetFilter: PokemonInPlayFilter;
+  },
+  zone: Extract<CardSource, "deck" | "discard">
 ): void {
   const { context, label } = run;
   const { state } = context;
-  const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, "discard");
+  const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, zone);
   for (const energy of chosen) {
     const target = chooseOnePokemon(
       context,
@@ -630,7 +635,7 @@ function attachFromDiscardDistributed(
       `${label}: ${energy.name} をつけるポケモン`
     );
     if (target !== null) {
-      state.attachEnergyByEffect(energy, target, "discard");
+      state.attachEnergyByEffect(energy, target, zone);
     }
   }
 }
@@ -843,7 +848,7 @@ const operationRunners: {
     }
   },
   attachEnergyFromDiscardDistributedToPokemon: (step, run) =>
-    attachFromDiscardDistributed(run, step),
+    attachEnergyDistributed(run, step, "discard"),
   attachEnergyFromDiscardToEachChosenPokemon: (step, run) =>
     attachFromDiscardToEachChosenPokemon(run, step),
   attachEnergyFromHand: (step, run) => attachEnergyChosenFromHand(run, step),
@@ -981,6 +986,10 @@ const operationRunners: {
     ),
   returnSelfToDeck: (_, { context, source }) =>
     returnToZone(context, source.pokemon, "deck"),
+  searchDeckAndAttachEnergyDistributedToPokemon: (step, run) => {
+    attachEnergyDistributed(run, step, "deck");
+    run.context.state.shuffleDeck();
+  },
   searchDeckAndAttachEnergyToEachPokemon: (step, { context, label }) => {
     const { state } = context;
     for (const target of listOwnPokemonMatching(state, step.targetFilter)) {

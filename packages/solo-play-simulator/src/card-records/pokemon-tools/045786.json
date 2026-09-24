@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["045786"],
+  "category": "ポケモンのどうぐ",
+  "excludedEffects": [
+    {
+      "description": "つけているポケモンがバトル場で相手のワザのダメージを受けたとき、ワザを使った相手のポケモンのエネルギーを相手のベンチポケモンにつけ替える",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "ハンディサーキュレーター",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-24"
+}

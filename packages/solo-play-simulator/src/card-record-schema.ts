@@ -272,6 +272,16 @@ const basicOperationOptions = [
     targetFilter: PokemonInPlayFilterSchema,
   }),
   /**
+   * 山札から条件に合うエネルギーを maxCount 枚まで選び、条件に合う自分のポケモンに好きなようにつけて切る
+   * (マリィのオーロンゲex の「パンクアップ」)。1 枚も選ばなくてよい(公式 Q&A「パンクアップ」)。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
+    operation: literal("searchDeckAndAttachEnergyDistributedToPokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /**
    * 山札から好きなカードを count 枚選び、残りの山札を切ってから、選んだカードを好きな順で山札の上に置く
    * (暗号マニアの解読)。山札が count 枚に満たなければ全部を選ぶ(公式 Q&A「マオ」: 2 枚以上あれば必ず 2 枚選ぶ)。
    */

@@ -184,6 +184,10 @@ const STEEL_ENERGY = buildRecordedCard("030578");
 const IRON_JUGULIS_TING_LU = buildRecordedCard("045594");
 const N_SCRIPT = buildRecordedCard("049417");
 const PRISM_ENERGY = buildRecordedCard("049455");
+const MARNIES_IMPIDIMP = buildRecordedCard("047257");
+const MARNIES_MORGREM = buildRecordedCard("047258");
+const MARNIES_GRIMMSNARL = buildRecordedCard("047259");
+const SPIKEMUTH_GYM = buildRecordedCard("047271");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3039,6 +3043,66 @@ describeTranslation("プリズムエネルギー", () => {
     benchAt(state, 0).energies.push(PRISM_ENERGY);
     expect(listEnergyUnits(state, activeOf(state))).toEqual(["any"]);
     expect(listEnergyUnits(state, benchAt(state, 0))).toEqual(["colorless"]);
+  });
+});
+
+describeTranslation("マリィのベロバー", () => {
+  test("くすねるは 1 枚引く", () => {
+    const state = buildState({ active: MARNIES_IMPIDIMP, deck: [DARK_ENERGY] });
+    activeOf(state).energies.push(DARK_ENERGY);
+    useAttack(buildContext(state), "くすねる");
+    expect(namesOf(state.hand)).toEqual(["基本悪エネルギー"]);
+  });
+});
+
+describeTranslation("マリィのオーロンゲex", () => {
+  test("パンクアップは、手札から出して進化させたとき、山札の基本悪エネルギーを 5 枚まで「マリィのポケモン」に好きなようにつける", () => {
+    const state = buildState({
+      active: MARNIES_MORGREM,
+      bench: [MARNIES_IMPIDIMP, YVELTAL],
+      deck: [...repeat(DARK_ENERGY, 6), BOSS],
+      hand: [MARNIES_GRIMMSNARL],
+    });
+    const targets = ["マリィのオーロンゲex", "マリィのベロバー"];
+    evolvePokemonFromHand(
+      buildContext(state, {
+        choosePokemon: (_, request) => {
+          const name = targets.shift() ?? "マリィのオーロンゲex";
+          return request.candidates.filter((pokemon) => pokemon.name === name);
+        },
+      }),
+      activeOf(state),
+      MARNIES_GRIMMSNARL
+    );
+    expect(activeOf(state).energies).toHaveLength(4);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本悪エネルギー"]);
+    expect(benchAt(state, 1).energies).toEqual([]);
+    expect(state.deck).toHaveLength(2);
+  });
+
+  test("ふしぎなアメで進化させたときもパンクアップを使える", () => {
+    const state = buildState({
+      active: MARNIES_IMPIDIMP,
+      deck: repeat(DARK_ENERGY, 3),
+      hand: [RARE_CANDY, MARNIES_GRIMMSNARL],
+    });
+    playTrainerFromHand(buildContext(state), RARE_CANDY);
+    expect(activeOf(state).name).toBe("マリィのオーロンゲex");
+    expect(activeOf(state).energies).toHaveLength(3);
+  });
+});
+
+describeTranslation("スパイクタウンジム", () => {
+  test("自分の番ごとに 1 回、山札から「マリィのポケモン」を 1 枚手札に加える", () => {
+    const state = buildState({
+      active: MARNIES_IMPIDIMP,
+      deck: [YVELTAL, MARNIES_GRIMMSNARL, DARK_ENERGY],
+    });
+    state.stadium = SPIKEMUTH_GYM;
+    const context = buildContext(state);
+    useStadiumEffect(context);
+    expect(namesOf(state.hand)).toEqual(["マリィのオーロンゲex"]);
+    expect(canUseStadiumEffect(context)).toBe(false);
   });
 });
 
