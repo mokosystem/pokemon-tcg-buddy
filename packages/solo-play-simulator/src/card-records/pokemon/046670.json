@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "おまつりおんど"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["grass"],
+      "damage": {
+        "amount": 0,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "ownBenchedPokemon"
+          },
+          "unit": 20
+        },
+        "kind": "fixed"
+      },
+      "name": "ともだちのわ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「おまつりおんど」(場に「お祭り会場」が出ていれば、持っているワザを 2 回連続で使える)。このポケモンのワザは相手にダメージを与えるだけで、2 回目のワザは計算に含めない",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "カミッチュ",
+  "cardIds": ["046670", "045703"],
+  "stage": "1進化",
+  "evolvesFrom": "カジッチュ",
+  "hp": 80,
+  "pokemonType": "grass",
+  "retreatCost": 2,
+  "translationStatus": "irrelevantToCalculation"
+}

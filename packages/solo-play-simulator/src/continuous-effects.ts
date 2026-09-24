@@ -383,6 +383,28 @@ function listBenchedAttacksUsedAs(
 }
 
 /**
+ * 1 回目のワザを使ったあとに、2 回目として使えるワザ(「おまつりおんど」)。2 回目を使える効果が働いていれば、
+ * このポケモンが記録に持つワザ(ほかのワザを「このワザとして使う」ワザを除く)を返す。
+ */
+export function listSecondAttacks(
+  state: GameState,
+  pokemon: PokemonInPlay
+): UsableAttack[] {
+  const allowsSecondAttack = listEffectsApplyingTo(state, pokemon).some(
+    (collected) => collected.effect.change.change === "useAttacksTwice"
+  );
+  if (
+    !allowsSecondAttack ||
+    pokemon.card.record.category !== CardCategory.Pokemon
+  ) {
+    return [];
+  }
+  return pokemon.card.record.attacks
+    .filter((attack) => !usesAnotherAttack(attack))
+    .map((attack) => ({ attack, owner: pokemon }));
+}
+
+/**
  * このポケモンが使えるワザ。自身のワザに、ベンチのポケモンのワザを使えるようにする効果の分を足す。
  * ベンチのポケモンについては、そのポケモン自身が持つワザだけを足し、効果で使えるようになったワザは
  * 足さない(公式 Q&A: 効果で使えるようになったワザは、そのポケモンが持っているワザとして扱わない)。

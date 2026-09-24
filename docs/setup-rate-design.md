@@ -175,7 +175,7 @@ README は「コーディングエージェント上で動くスキルとして�
 | トラッシュ | 手札に加える | 条件、上限 | 追加 | `addFromDiscardToHand` | 夜のタンカ、エネルギー回収、スイレンのお世話 |
 | トラッシュ | ベンチに出す | 条件、上限 | 追加 | `placeFromDiscardOntoBench` | ヨマワル、ボーマンダex |
 | トラッシュ | つける | 条件、上限、つけ先の条件 | 追加 | `attachEnergyFromDiscardToEachChosenPokemon`(選んだポケモンに 1 枚ずつ)、`attachEnergyFromDiscardDistributedToPokemon`(上限まで選び、好きなように。順 6 の 3 セッション目) | メガルカリオex、バシャーモex、ガラスのラッパ |
-| トラッシュ | 山札に戻して切る | 条件、上限 | 追加 | — | せいなるはい、エネルギーリサイクル、ディアルガ |
+| トラッシュ | 山札に戻して切る | 条件、上限 | 追加(順 6 の 3 セッション目) | `returnFromDiscardToDeck` | せいなるはい、エネルギーリサイクル、ディアルガ |
 | 場 | ついているカードごと山札に戻して切る | 対象 | 既存 | `returnSelfToDeck`(自身だけ) | ノココッチ |
 | 場 | ついているカードごと手札に戻す | 対象 | 追加 | `returnPokemonToHand`(自身か、選んだ自分のポケモン) | ポケモン回収サイクロン |
 | 場 | ついているエネルギーを手札に戻す | 対象 | 追加 | —(ミツルの思いやりは順 6 の裁定で翻訳しないことにした。「順 6 で決めたこと」) | ミツルの思いやり |
@@ -420,8 +420,8 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | トレーナーズと特殊エネルギーの効果 | `cardEffects` |
 | きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional`。基本ルールの例外の印「先攻の最初の番でも使える」は `whenPlayed` の `usableOnFirstTurnGoingFirst`(3 セッション目に追加) |
 | 効果 | `useConditions`(使える条件)と `steps`(操作の列)。条件で分かれる歩は `branchOnCondition`(1 段だけ) |
-| 条件 | カードを選ぶ条件は `categories`、`stages`、`names`、`nameIncludes`(名前に文字列を含む)、`pokemonTypes`、`providedEnergyTypes`、`maxHp`、`excludesPokemonWithRuleBox`、`exRules`、`isTerastal`、`excludesNames`(この名前を除く。3 セッション目に追加)、`anyOf`(欄をまたぐ「または」。1 段だけ)。場のポケモンにはこれに `positions` を足す。効果を使える条件は `selfIsActive`、`selfHasNoEnergyAttached`、`attachedPokemonMatches`、`ownPokemonInPlayExists`、`deckHasCards`、`handHasCards`、`noAbilityUsedThisTurnWithNameIncluding`、`ownRemainingPrizesAre`、`anyOf`(または。1 段だけ) |
-| 場にある間ずっと働く効果 | 働く範囲 `scope`(`self`、`attachedPokemon`、`ownPokemon`、`ownPlayer`)、変える項目 `change`(`setRetreatCostToZero`、`reduceRetreatCost`、`allowBenchedPokemonAttacks`、`negateAbilities`、`negateToolEffects`、`setEnergyProvision`、`setBenchLimit`、`allowEvolutionFromHandAsIfNamed`、`increaseAttackDamage`)、働く条件 `conditions` |
+| 条件 | カードを選ぶ条件は `categories`、`stages`、`names`、`nameIncludes`(名前に文字列を含む)、`pokemonTypes`、`providedEnergyTypes`、`maxHp`、`excludesPokemonWithRuleBox`、`exRules`、`isTerastal`、`excludesNames`(この名前を除く。3 セッション目に追加)、`anyOf`(欄をまたぐ「または」。1 段だけ)。場のポケモンにはこれに `positions` を足す。効果を使える条件は `selfIsActive`、`selfHasNoEnergyAttached`、`attachedPokemonMatches`、`ownPokemonInPlayExists`、`deckHasCards`、`handHasCards`、`noAbilityUsedThisTurnWithNameIncluding`、`ownRemainingPrizesAre`、`stadiumInPlayNamed`、`activePokemonHasAbilityNamed`、`handHasNoOtherCards`(この 3 つは 3 セッション目に追加)、`anyOf`(または。1 段だけ) |
+| 場にある間ずっと働く効果 | 働く範囲 `scope`(`self`、`attachedPokemon`、`ownPokemon`、`ownPlayer`)、変える項目 `change`(`setRetreatCostToZero`、`reduceRetreatCost`、`allowBenchedPokemonAttacks`、`negateAbilities`、`negateToolEffects`、`setEnergyProvision`、`setBenchLimit`、`allowEvolutionFromHandAsIfNamed`、`increaseAttackDamage`、`useAttacksTwice`(3 セッション目に追加))、働く条件 `conditions` |
 | 裁定のデータ | `rulings`(論点 `question`、採った解釈 `interpretation`、翻訳への反映 `reflectedIn`、出典 `source`)。出典は `officialQa`(`searchUrl`、`questionSummary`、`checkedOn`)か `noMatchingQa`(`searchTerms`、`basis`、`checkedOn`) |
 | 含めなかった効果 | `excludedEffects`(`description`、`reason`)。理由は `requiresOpponent`、`specialCondition`、`healing`、`damageOrDamageCounters`、`damageBonusNotModeled`、`ownNextTurnRestriction`、`firstTurnGoingSecondRestriction`(3 セッション目に追加)、`noReasonToUseInSoloPlay` |
 
@@ -559,6 +559,7 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | ドラパルトex(`niLLgQ-YL6A8Y-gQQn9N`) | 無し(Issue 22 と開発責任者のデッキの記録で 60 枚がそろった) | — | — | — |
 | メガルカリオex(`UR2MXy-P7Pfrq-pMypUy`) | 8 種 | 3(メガルカリオex、ルナトーン、暗号マニアの解読) | 0 | 5(リオル 2 種、ソルロック、ノココッチex、グラビティーマウンテン) |
 | メガレックウザex(`1kvFVF-JDWJKx-k5fkkb`) | 4 種 | 2(ゼイユ、AZの安らぎ) | 0 | 2(テラパゴスex、オーガポン いどのめんex) |
+| おまつりおんど(`QLLgH9-dlyOhY-Nnging`) | 12 種 | 6(バチンキー、アズマオウ、むしとりセット、せいなるはい、シークレットボックス、グラジオの決戦) | 1(シェイミ) | 5(カジッチュ、カミッチュ、サルノリ、トサキント、お祭り会場) |
 | ヤドキング(`fFkFbk-LG7BwQ-vVF1Vk`) | 12 種 | 6(ヤドン、ヤドキング、ムチュール、ワンダーパッチ、夜のアカデミー、ブーメランエネルギー) | 3(キュレム、コノヨザル、プライムキャッチャー) | 3(メタグロス、ドラピオン、ブレイブバングル) |
 | タケルライコex(`kVdb5F-ZkgmrI-Fkf1V5`) | 4 種 | 4(タケルライコex、オーガポン みどりのめんex、テツノイサハex、基本草エネルギー) | 0 | 0 |
 | Nのゾロアークex(`ppXMUX-Qecj3h-yySRpM`) | 13 種 | 5(Nのゾロアークex、モモワロウex、シャリタツ、Nのポイントアップ、Nの城) | 0 | 8(Nのゾロア、Nのゼクロム、Nのレシラム、Nのダルマッカ、Nのヒヒダルマ、イベルタル、くさりもち、からておうの稽古) |
@@ -579,6 +580,9 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | ダメージの数える対象 `basicEnergyAttachedToOwnPokemon` | ワザのダメージの追加 | タケルライコex | 自分の場の基本エネルギーの枚数(「きょくらいごう」は × 70)。`energyAttachedToOwnPokemon` はタイプの個数を数え、すべてのタイプとして働く特殊エネルギーも数えるため、「基本エネルギー」を表せない。トラッシュする枚数は好きなだけで、インフェルノX と同じく全部トラッシュしたときの値で持ち、トラッシュは含めなかった効果に書いた |
 | ワザの欄 `usesAttackOfDiscardedDeckTop` | ワザの追加 | ヤドキング | 「ひらめきチャレンジ」は山札の上から 1 枚トラッシュし、それがルールを持たないポケモンなら、そのポケモンのワザを 1 つ選んでこのワザとして使う。使えるワザの一覧は山札のいちばん上を見て、条件に合えばそのポケモンのワザを「ひらめきチャレンジ」のエネルギー(超 1 個、無色 1 個)で、合わなければ「ひらめきチャレンジ」そのもの(山札の上をトラッシュするだけ)を返し、使うときに山札の上をトラッシュしてから選んだワザの効果を実行する(`UsableAttack` の `discardsDeckTopFirst`)。選んだワザの条件と効果はヤドキングに当てる(公式 Q&A「ひらめきチャレンジ」)。山札の上は実際には使うまで分からないため、プレイングの判断基準が一覧を見て「使うかどうか」を決めると、知り得ない情報で選ぶことになる。起きることは同じなので計算の数字は変わらないが、順 7 の探索では、山札の上を夜のアカデミーや暗号マニアの解読で置いたとき以外は、この一覧で使うかを決めないようにする必要がある。採らなかった案: 山札の上からトラッシュする操作と「トラッシュしたカードのワザを使う」操作の 2 つに分けて効果の操作の列に書く(ワザの一覧に選べるワザが出ず、狙いの「ワザを N 以上で打てる」を番の終わりの場から判定できない) |
 | `placeHandCardsOnDeckTop` | 基本操作の追加 | 夜のアカデミー | 手札を N 枚選び、山札の上に置く(順 5 の論点 7 の「手札から上に置く」。切らない)。山札が 0 枚でも置ける(公式 Q&A「夜のアカデミー」) |
+| 変える項目 `useAttacksTwice` と、番の終わりの 2 回目のワザ | 場にある間ずっと働く効果の追加 | アズマオウ | 「おまつりおんど」は、場に「お祭り会場」があれば持っているワザを 2 回連続で使える。順 4 の論点(ワザを使う回数を変える場にある間ずっと働く効果)。1 回目のワザのあと、使えるワザの一覧(`listUsableAttacksOfActive`)は 2 回目に使えるワザ(記録のワザ。効果で使えるワザを除く。公式 Q&A「おまつりおんど」)を返し、骨組み(`engine.ts` の `useAttacksOfTurn`)はプレイングの判断基準にもう一度選ばせる。2 回目にもエネルギーの判定を通す(公式 Q&A)。ダメージだけのワザを持つカミッチュとトサキントは、順 4 の決定どおり「計算に関係ない」のまま特性の名前だけを持ち、2 回目のワザを含めなかった効果に書いた。狙いの「ワザを N 以上で打てる」は 1 回分のダメージで判定する |
+| 条件 `stadiumInPlayNamed`、`activePokemonHasAbilityNamed`、`handHasNoOtherCards` | 条件の追加 | アズマオウ、バチンキー、グラジオの決戦 | 場のスタジアムの名前、バトルポケモンの特性の名前、手札がこのカードだけ(順 5 の条件の表にあるもの)。バトルポケモンの特性が無くなっているときは数えない(公式 Q&A「ドンドンだいこ」)が、特性が無くなっているかは場にある間ずっと働く効果を集めないと分からず、条件の判定から効果を集める判定を呼ぶと読み込みが循環する。記録にある特性を無くす効果(ロケット団の監視塔)は無色ポケモンにだけ働き、「おまつりおんど」を持つポケモンに届かないため、今は見ていない(裁定のデータとコードのコメントに書いた) |
+| `returnFromDiscardToDeck` | 基本操作の追加 | せいなるはい | トラッシュから条件に合うカードを選び、山札に戻して切る。1〜5 枚を選ぶ(公式 Q&A「せいなるはい」) |
 | 含めなかった理由 `firstTurnGoingSecondRestriction` | 理由の追加 | テラパゴスex | 後攻の最初の番にワザを使えない制限(「ユニオンビート」)。翻訳しないカードのワザには使える条件を書けない(効果の操作が 1 つ以上要る)ため、制限を持たずに前提に出す。`ownNextTurnRestriction`(ワザを使った次の番の制限)とはきっかけが違うため分けた。採らなかった案: `ownNextTurnRestriction` に含める(前提を読む人がどちらの制限か取り違える) |
 
 #### 記録で分かったこと

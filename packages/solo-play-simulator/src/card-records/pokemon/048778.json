@@ -1,0 +1,27 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "しるをとばす"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "カジッチュ",
+  "cardIds": ["048778"],
+  "stage": "たね",
+  "hp": 40,
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

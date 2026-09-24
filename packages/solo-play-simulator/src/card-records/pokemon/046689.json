@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "おまつりおんど"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "うずしお"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「おまつりおんど」(場に「お祭り会場」が出ていれば、持っているワザを 2 回連続で使える)。このポケモンのワザは相手にダメージを与えるだけで、2 回目のワザは計算に含めない",
+      "reason": "damageOrDamageCounters"
+    },
+    {
+      "description": "ワザ「うずしお」の、コインでオモテなら相手のバトルポケモンのエネルギーを 1 個トラッシュする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "トサキント",
+  "cardIds": ["046689", "045717"],
+  "stage": "たね",
+  "hp": 50,
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

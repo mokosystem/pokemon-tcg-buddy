@@ -164,6 +164,8 @@ export class GameState {
   /** この番に使った、ワザのダメージを増やす効果(パワープロテイン)。番の終わりのワザのダメージの判定に使う。 */
   attackDamageIncreasesThisTurn: AttackDamageIncrease[] = [];
   readonly attacks = new Map<number, string>();
+  /** この番に 2 回目のワザ(「おまつりおんど」)を使ったか。1 回目は attacks に番があるかで分かる。 */
+  hasUsedSecondAttack = false;
   readonly events: string[] = [];
 
   constructor(
@@ -448,6 +450,18 @@ export class GameState {
     }
   }
 
+  /** トラッシュの cards を山札に戻して切る。 */
+  returnFromDiscardToDeck(cards: readonly Card[]): void {
+    for (const card of cards) {
+      removeCard(this.discard, card, "トラッシュ");
+      this.deck.push(card);
+    }
+    this.shuffleDeck();
+    this.record(
+      `トラッシュの ${cards.map((card) => card.name).join("、")} を山札に戻す`
+    );
+  }
+
   takeFromDiscardToHand(card: Card): void {
     removeCard(this.discard, card, "トラッシュ");
     this.hand.push(card);
@@ -709,6 +723,7 @@ export class GameState {
     this.hasPlayedStadium = false;
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
+    this.hasUsedSecondAttack = false;
     this.abilityNamesUsedThisTurn = [];
     this.attackDamageIncreasesThisTurn = [];
     for (const pokemon of this.listPokemonInPlay()) {

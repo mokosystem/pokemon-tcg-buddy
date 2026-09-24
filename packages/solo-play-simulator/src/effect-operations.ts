@@ -200,6 +200,9 @@ const firstStepTargetChecks: {
     listMatching(state.discard, step.filter).some(isBasicPokemon),
   placeHandCardsOnDeckTop: (step, { hand }) => hand.length >= step.count,
   placeSelfOnBenchFromHand: (_, { state }) => countEmptyBenchSlots(state) > 0,
+  returnFromDiscardToDeck: (step, { state }) =>
+    listMatching(state.discard, step.filter).length >=
+    Math.max(step.minCount, 1),
   returnPokemonToHand: (step, { source, state }) =>
     step.target === "self"
       ? source.pokemon !== null
@@ -845,6 +848,15 @@ const operationRunners: {
       byEffect: true,
       from: "hand",
     });
+  },
+  returnFromDiscardToDeck: (step, { context, label }) => {
+    const chosen = chooseCardsWithin(
+      context,
+      listMatching(context.state.discard, step.filter),
+      step,
+      `${label}: トラッシュから山札に戻すカード`
+    );
+    context.state.returnFromDiscardToDeck(chosen);
   },
   returnPokemonToHand: (step, { context, label, source }) =>
     returnToZone(

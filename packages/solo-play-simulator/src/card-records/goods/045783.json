@@ -1,0 +1,55 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "maxCount": 3,
+            "minCount": 3,
+            "operation": "discardFromHand"
+          },
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["グッズ"]
+                },
+                "maxCount": 1
+              },
+              {
+                "filter": {
+                  "categories": ["ポケモンのどうぐ"]
+                },
+                "maxCount": 1
+              },
+              {
+                "filter": {
+                  "categories": ["サポート"]
+                },
+                "maxCount": 1
+              },
+              {
+                "filter": {
+                  "categories": ["スタジアム"]
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["045783"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "シークレットボックス",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "anyOf": [
+                {
+                  "categories": ["ポケモン"],
+                  "pokemonTypes": ["grass"]
+                },
+                {
+                  "categories": ["基本エネルギー"],
+                  "providedEnergyTypes": ["grass"]
+                }
+              ]
+            },
+            "lookCount": 7,
+            "maxTakeCount": 2,
+            "minTakeCount": 0,
+            "operation": "lookAtDeckTopAndTakeIntoHand",
+            "restPlacement": "shuffleIntoDeck"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["049383", "045785"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "むしとりセット",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

@@ -1,0 +1,96 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "おまつりおんど",
+      "translation": {
+        "continuousEffect": {
+          "change": {
+            "change": "useAttacksTwice"
+          },
+          "conditions": [
+            {
+              "condition": "stadiumInPlayNamed",
+              "name": "お祭り会場"
+            }
+          ],
+          "scope": {
+            "scope": "self"
+          }
+        },
+        "kind": "continuous"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 2
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "クイックドロー"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "選べない。2 回目は、このポケモンが自分で持っているワザから選ぶ",
+      "question": "特性「おまつりおんど」の 2 回目のワザに、効果で使えるようになったワザ(進化前のワザ、ポケモンのどうぐのワザ)を選べるか",
+      "reflectedIn": "2 回目に使えるワザ(continuous-effects.ts の listSecondAttacks)は、このポケモンの記録のワザだけにする",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "「おまつりおんど」がはたらくカミッチュの 2 回目のワザとして、進化前のワザやワザマシンのワザを選べるか、という質問に、効果で使えるようになったワザはそのポケモンが持っているワザとして扱わないため選べないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8A%E3%81%BE%E3%81%A4%E3%82%8A%E3%81%8A%E3%82%93%E3%81%A9&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使えない。2 回目は特性を持つポケモン自身がワザを使うときだけ",
+      "question": "ミュウex の「きおくのらせん」で、ベンチの「おまつりおんど」を持つポケモンのワザを使ったとき、2 回目のワザを使えるか",
+      "reflectedIn": "useAttacksTwice の範囲を持ち主自身(self)にし、2 回目はバトルポケモンに働いているときだけ使える",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "「お祭り会場」が出ているとき、ミュウexが「きおくのらせん」でベンチのカミッチュの「ともだちのわ」を使った場合、2 回目のワザを使えるか、という質問に、使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8A%E3%81%BE%E3%81%A4%E3%82%8A%E3%81%8A%E3%82%93%E3%81%A9&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使えない",
+      "question": "1 回目のワザのあとに、2 回目のワザに必要なエネルギーが足りなくなったとき、2 回目を使えるか",
+      "reflectedIn": "2 回目に使えるワザも、エネルギーの判定を通す(card-effects.ts の listUsableAttacksOfActive)",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "カミッチュが 1 回目の「ともだちのわ」を使ったあと、相手のどうぐの効果でエネルギーがつけ替えられた場合、2 回目を使えるか、という質問に、必要なエネルギーがついていないため 2 回目を宣言できないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8A%E3%81%BE%E3%81%A4%E3%82%8A%E3%81%8A%E3%82%93%E3%81%A9&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "アズマオウ",
+  "cardIds": ["046690"],
+  "stage": "1進化",
+  "evolvesFrom": "トサキント",
+  "hp": 110,
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

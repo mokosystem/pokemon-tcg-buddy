@@ -159,6 +159,20 @@ const basicConditionOptions = [
     condition: literal("ownRemainingPrizesAre"),
     count: countFromZero,
   }),
+  /** 場にこの名前のスタジアムが出ている(カミッチュなどの「おまつりおんど」: 「お祭り会場」)。 */
+  strictObject({
+    condition: literal("stadiumInPlayNamed"),
+    name: nonEmptyText,
+  }),
+  /** 自分のバトルポケモンが、この名前の特性を持つ(バチンキーの「ドンドンだいこ」: 「おまつりおんど」)。 */
+  strictObject({
+    abilityName: nonEmptyText,
+    condition: literal("activePokemonHasAbilityNamed"),
+  }),
+  /** 手札が、使おうとしているこのカード 1 枚だけ(グラジオの決戦)。 */
+  strictObject({
+    condition: literal("handHasNoOtherCards"),
+  }),
 ] as const;
 
 export const BasicConditionSchema = variant("condition", basicConditionOptions);
@@ -292,6 +306,13 @@ const basicOperationOptions = [
     filter: CardFilterSchema,
     maxCount: countFromOne,
     operation: literal("placeFromDiscardOntoBench"),
+  }),
+  /** トラッシュから条件に合うカードを minCount〜maxCount 枚選び、山札に戻して切る(せいなるはい)。 */
+  strictObject({
+    filter: CardFilterSchema,
+    maxCount: countFromOne,
+    minCount: countFromZero,
+    operation: literal("returnFromDiscardToDeck"),
   }),
   /** 手札から条件に合うエネルギーを 1〜maxCount 枚選び、条件に合う自分のポケモン 1 匹につける。手札からつける番に 1 回には数えない。 */
   strictObject({
@@ -428,6 +449,11 @@ export const ContinuousChangeSchema = variant("change", [
     change: literal("reduceRetreatCost"),
   }),
   strictObject({ change: literal("allowBenchedPokemonAttacks") }),
+  /**
+   * 持っているワザを 2 回連続で使える(アズマオウなどの「おまつりおんど」)。2 回目は、このポケモンが記録に持つワザから
+   * 選び直す。効果で使えるようになったワザは選べない(公式 Q&A「おまつりおんど」)。
+   */
+  strictObject({ change: literal("useAttacksTwice") }),
   strictObject({ change: literal("negateAbilities") }),
   strictObject({ change: literal("negateToolEffects") }),
   strictObject({

@@ -1,0 +1,68 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ドンドンだいこ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "searchDeckIntoHand",
+              "picks": [
+                {
+                  "filter": {},
+                  "maxCount": 1
+                }
+              ]
+            }
+          ],
+          "useConditions": [
+            {
+              "abilityName": "おまつりおんど",
+              "condition": "activePokemonHasAbilityNamed"
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["grass", "grass"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "たたく"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "使えない。ただし記録の条件は、バトルポケモンの特性が無くなっているかを見ていない",
+      "question": "バトルポケモンのカミッチュの特性「おまつりおんど」が無くなっているとき、特性「ドンドンだいこ」を使えるか",
+      "reflectedIn": "使える条件 activePokemonHasAbilityNamed は記録の特性の名前だけを見る(conditions.ts のコメント)。記録にある特性を無くす効果(ロケット団の監視塔、無色ポケモンだけ)は「おまつりおんど」を持つポケモンに届かないため、今の記録では食い違わない",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "相手のハバタクカミの特性でバトル場のカミッチュの「おまつりおんど」が無くなっているとき、バチンキーの「ドンドンだいこ」を使えるか、という質問に、使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%89%E3%83%B3%E3%83%89%E3%83%B3%E3%81%A0%E3%81%84%E3%81%93&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "バチンキー",
+  "cardIds": ["046668", "045700"],
+  "stage": "1進化",
+  "evolvesFrom": "サルノリ",
+  "hp": 100,
+  "pokemonType": "grass",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

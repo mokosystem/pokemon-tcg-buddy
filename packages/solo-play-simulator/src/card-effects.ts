@@ -15,6 +15,7 @@ import {
   findEvolutionNameAllowedByEffect,
   isAbilityNegated,
   listEnergyUnits,
+  listSecondAttacks,
   listUsableAttacks,
   resolveEnergyProvision,
   toEnergyUnits,
@@ -380,6 +381,7 @@ export function retreatActive(
 
 /**
  * バトルポケモンが今使えるワザ(エネルギーが足り、先攻の最初の番ではなく、効果の使える条件を満たすもの)。
+ * この番にワザを 1 回使ったあとは、2 回目を使える効果(「おまつりおんど」)があるときだけ、2 回目に使えるワザを返す。
  * 効果で自分の場のポケモンがいなくなるワザ(場がニャースex だけのときの「しっぽをまく」)は含めない(wouldLeaveFieldEmpty)。
  */
 export function listUsableAttacksOfActive(
@@ -390,9 +392,15 @@ export function listUsableAttacksOfActive(
   if (active === null || !state.canAttack()) {
     return [];
   }
+  if (state.attacks.has(state.turn) && state.hasUsedSecondAttack) {
+    return [];
+  }
   const units = listEnergyUnits(state, active);
   const source: EffectSource = { card: active.card, pokemon: active };
-  return listUsableAttacks(state, active).filter(
+  const candidates = state.attacks.has(state.turn)
+    ? listSecondAttacks(state, active)
+    : listUsableAttacks(state, active);
+  return candidates.filter(
     ({ attack }) =>
       canPayCost(attack.cost, units) &&
       (attack.effect === undefined ||
@@ -411,8 +419,13 @@ export function useAttack(context: EffectContext, attackName: string): void {
   if (active === null || usable === undefined) {
     throw new IllegalMove(`ワザ ${attackName} は今使えない`);
   }
-  state.attacks.set(state.turn, attackName);
-  state.record(`ワザ ${attackName}`);
+  if (state.attacks.has(state.turn)) {
+    state.hasUsedSecondAttack = true;
+    state.record(`2 回目のワザ ${attackName}`);
+  } else {
+    state.attacks.set(state.turn, attackName);
+    state.record(`ワザ ${attackName}`);
+  }
   if (usable.discardsDeckTopFirst) {
     state.discardFromDeckTop(1);
   }

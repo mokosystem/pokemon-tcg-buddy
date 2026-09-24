@@ -6,7 +6,11 @@
  * Issue 27 の順 7 で「宣言した狙いの成立確率を最大にする手を探索で選ぶ」形に置き換えるため。
  */
 
-import { resolveEndOfTurnTriggers, useAttack } from "./card-effects.ts";
+import {
+  listUsableAttacksOfActive,
+  resolveEndOfTurnTriggers,
+  useAttack,
+} from "./card-effects.ts";
 import type { CardRecord } from "./card-record-schema.ts";
 import { buildCardFromRecord, type Card, isBasicPokemon } from "./cards.ts";
 import {
@@ -131,6 +135,20 @@ function countCards(decklist: Decklist): number {
 }
 
 /**
+ * 番の終わりにワザを使う。使えるワザがある間だけ選ばせ、1 回使ったあとは 2 回目を使える効果(「おまつりおんど」)が
+ * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。
+ */
+function useAttacksOfTurn(context: EffectContext, policy: PlayingPolicy): void {
+  while (listUsableAttacksOfActive(context).length > 0) {
+    const attack = policy.chooseAttack(context);
+    if (attack === null) {
+      return;
+    }
+    useAttack(context, attack);
+  }
+}
+
+/**
  * 対戦の準備。たねポケモンが無ければ引き直す。相手の引き直しによる追加の 1 枚は扱わない。
  * 準備でベンチに出したポケモンの「手札からベンチに出したとき」の特性は使えない(公式 Q&A「ニャースex」)
  * ため、card-effects.ts を通さずに基本操作で出す。
@@ -205,12 +223,7 @@ export function runGame(options: RunGameOptions): GameResult {
         );
       }
     }
-    if (state.canAttack()) {
-      const attack = policy.chooseAttack(context);
-      if (attack !== null) {
-        useAttack(context, attack);
-      }
-    }
+    useAttacksOfTurn(context, policy);
     resolveEndOfTurnTriggers(context);
   }
   return {

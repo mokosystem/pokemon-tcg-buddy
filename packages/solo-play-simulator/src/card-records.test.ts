@@ -145,6 +145,15 @@ const SMOOCHUM = buildRecordedCard("046247");
 const WONDER_PATCH = buildRecordedCard("048299");
 const NIGHT_ACADEMY = buildRecordedCard("045939");
 const BOOMERANG_ENERGY = buildRecordedCard("049454");
+const APPLIN = buildRecordedCard("048778");
+const DIPPLIN = buildRecordedCard("046670");
+const THWACKEY = buildRecordedCard("046668");
+const SEAKING = buildRecordedCard("046690");
+const BUG_CATCHING_SET = buildRecordedCard("049383");
+const SACRED_ASH = buildRecordedCard("048672");
+const SECRET_BOX = buildRecordedCard("045783");
+const GLADION = buildRecordedCard("050295");
+const FESTIVAL_GROUNDS = buildRecordedCard("046841");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -2324,6 +2333,158 @@ describeTranslation("ブーメランエネルギー", () => {
     const state = buildState({ active: SLOWKING });
     activeOf(state).energies.push(BOOMERANG_ENERGY);
     expect(listEnergyUnits(state, activeOf(state))).toEqual(["colorless"]);
+  });
+});
+
+describeTranslation("バチンキー", () => {
+  test("ドンドンだいこは、バトルポケモンが特性「おまつりおんど」を持てば、山札から好きなカードを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: DIPPLIN,
+      bench: [THWACKEY],
+      deck: [PSYCHIC_ENERGY, BOSS],
+    });
+    useAbility(
+      buildContext(state, { chooseCards: pickCardsByName(["ボスの指令"]) }),
+      benchAt(state, 0),
+      "ドンドンだいこ"
+    );
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+  });
+
+  test("バトルポケモンが特性「おまつりおんど」を持たなければ使えない", () => {
+    const state = buildState({
+      active: APPLIN,
+      bench: [THWACKEY, DIPPLIN],
+      deck: [PSYCHIC_ENERGY],
+    });
+    expect(
+      canUseAbility(buildContext(state), benchAt(state, 0), "ドンドンだいこ")
+    ).toBe(false);
+  });
+});
+
+describeTranslation("アズマオウ", () => {
+  test("場に「お祭り会場」があれば、クイックドローを 2 回連続で使い、2 枚ずつ引く", () => {
+    const state = buildState({
+      active: SEAKING,
+      deck: repeat(PSYCHIC_ENERGY, 6),
+    });
+    state.stadium = FESTIVAL_GROUNDS;
+    activeOf(state).energies.push(GRASS_ENERGY);
+    const context = buildContext(state);
+    useAttack(context, "クイックドロー");
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["クイックドロー"]);
+    useAttack(context, "クイックドロー");
+    expect(state.hand).toHaveLength(4);
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+  });
+
+  test("場に「お祭り会場」が無ければ、2 回目は使えない", () => {
+    const state = buildState({
+      active: SEAKING,
+      deck: repeat(PSYCHIC_ENERGY, 6),
+    });
+    activeOf(state).energies.push(GRASS_ENERGY);
+    const context = buildContext(state);
+    useAttack(context, "クイックドロー");
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+    expect(state.hand).toHaveLength(2);
+  });
+});
+
+describeTranslation("むしとりセット", () => {
+  test("山札の上から 7 枚を見て、草ポケモンと基本草エネルギーを合計 2 枚まで手札に加え、残りを切る", () => {
+    const state = buildState({
+      active: DIPPLIN,
+      deck: [
+        PSYCHIC_ENERGY,
+        GRASS_ENERGY,
+        SEAKING,
+        APPLIN,
+        THWACKEY,
+        PSYCHIC_ENERGY,
+        PSYCHIC_ENERGY,
+        GRASS_ENERGY,
+      ],
+      hand: [BUG_CATCHING_SET],
+    });
+    playTrainerFromHand(buildContext(state), BUG_CATCHING_SET);
+    expect(namesOf(state.hand)).toEqual(["基本草エネルギー", "カジッチュ"]);
+    expect(state.deck).toHaveLength(6);
+  });
+});
+
+describeTranslation("せいなるはい", () => {
+  test("トラッシュのポケモンを 5 枚まで山札に戻して切る", () => {
+    const state = buildState({
+      active: DIPPLIN,
+      discard: [...repeat(APPLIN, 6), PSYCHIC_ENERGY],
+      hand: [SACRED_ASH],
+    });
+    playTrainerFromHand(buildContext(state), SACRED_ASH);
+    expect(namesOf(state.deck)).toEqual(repeat("カジッチュ", 5));
+    expect(namesOf(state.discard).sort()).toEqual(
+      ["カジッチュ", "基本超エネルギー", "せいなるはい"].sort()
+    );
+  });
+
+  test("トラッシュにポケモンが無ければ使えない", () => {
+    const state = buildState({
+      active: DIPPLIN,
+      discard: [PSYCHIC_ENERGY],
+      hand: [SACRED_ASH],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), SACRED_ASH)).toBe(false);
+  });
+});
+
+describeTranslation("シークレットボックス", () => {
+  test("手札を 3 枚トラッシュし、山札からグッズ・どうぐ・サポート・スタジアムを 1 枚ずつ手札に加える", () => {
+    const state = buildState({
+      active: DIPPLIN,
+      deck: [PSYCHIC_ENERGY, BALLOON, BOSS, SACRED_ASH, FESTIVAL_GROUNDS],
+      hand: [SECRET_BOX, APPLIN, APPLIN, GRASS_ENERGY],
+    });
+    playTrainerFromHand(buildContext(state), SECRET_BOX);
+    expect(namesOf(state.hand).sort()).toEqual(
+      ["せいなるはい", "ふうせん", "ボスの指令", "お祭り会場"].sort()
+    );
+    expect(state.discard).toHaveLength(4);
+  });
+
+  test("ほかの手札が 3 枚に満たなければ使えない", () => {
+    const state = buildState({
+      active: DIPPLIN,
+      deck: [BOSS],
+      hand: [SECRET_BOX, APPLIN, APPLIN],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), SECRET_BOX)).toBe(false);
+  });
+});
+
+describeTranslation("グラジオの決戦", () => {
+  test("手札がこのカードだけなら使え、この番のルールを持たないポケモンのワザのダメージを 80 増やす", () => {
+    const state = buildState({
+      active: SEAKING,
+      bench: [MEOWTH],
+      hand: [GLADION],
+    });
+    playTrainerFromHand(buildContext(state), GLADION);
+    expect(damageOf(state, activeOf(state), SEAKING, "クイックドロー")).toBe(
+      140
+    );
+    state.switchActive(benchAt(state, 0));
+    expect(damageOf(state, activeOf(state), MEOWTH, "しっぽをまく")).toBe(60);
+  });
+
+  test("ほかに手札があれば使えない", () => {
+    const state = buildState({
+      active: SEAKING,
+      hand: [GLADION, PSYCHIC_ENERGY],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), GLADION)).toBe(false);
   });
 });
 

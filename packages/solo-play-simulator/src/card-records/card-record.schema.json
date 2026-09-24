@@ -972,6 +972,44 @@
           },
           "required": ["condition", "count"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "stadiumInPlayNamed"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["condition", "name"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "abilityName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "condition": {
+              "const": "activePokemonHasAbilityNamed"
+            }
+          },
+          "required": ["abilityName", "condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "handHasNoOtherCards"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
         }
       ]
     },
@@ -1287,6 +1325,27 @@
             }
           },
           "required": ["filter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "returnFromDiscardToDeck"
+            }
+          },
+          "required": ["filter", "maxCount", "minCount", "operation"],
           "additionalProperties": false
         },
         {
@@ -1829,6 +1888,44 @@
           "type": "object",
           "properties": {
             "condition": {
+              "const": "stadiumInPlayNamed"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["condition", "name"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "abilityName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "condition": {
+              "const": "activePokemonHasAbilityNamed"
+            }
+          },
+          "required": ["abilityName", "condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "handHasNoOtherCards"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
               "const": "anyOf"
             },
             "conditions": {
@@ -1875,6 +1972,16 @@
           "properties": {
             "change": {
               "const": "allowBenchedPokemonAttacks"
+            }
+          },
+          "required": ["change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "useAttacksTwice"
             }
           },
           "required": ["change"],
@@ -2518,6 +2625,27 @@
             }
           },
           "required": ["filter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "returnFromDiscardToDeck"
+            }
+          },
+          "required": ["filter", "maxCount", "minCount", "operation"],
           "additionalProperties": false
         },
         {

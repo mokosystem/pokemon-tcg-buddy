@@ -1,0 +1,35 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "けとばす"
+    },
+    {
+      "cost": ["grass", "grass"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "えだづき"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "サルノリ",
+  "cardIds": ["046667"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

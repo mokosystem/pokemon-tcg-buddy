@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["046841", "045790"],
+  "category": "スタジアム",
+  "excludedEffects": [
+    {
+      "description": "エネルギーがついているおたがいのポケモンが特殊状態にならず、受けている特殊状態が回復する",
+      "reason": "specialCondition"
+    }
+  ],
+  "name": "お祭り会場",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-24"
+}

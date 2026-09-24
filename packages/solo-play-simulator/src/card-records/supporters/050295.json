@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "amount": 80,
+            "attackerFilter": {
+              "excludesPokemonWithRuleBox": true
+            },
+            "operation": "increaseAttackDamageThisTurn"
+          }
+        ],
+        "useConditions": [
+          {
+            "condition": "handHasNoOtherCards"
+          }
+        ]
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050295"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "グラジオの決戦",
+  "rulings": [
+    {
+      "interpretation": "増える。使ったあとに手札が増えても、この番のダメージの増加は続く",
+      "question": "グラジオの決戦を使ったあと、同じ番に山札を引いて手札が 0 枚でなくなったとき、ワザのダメージは増えるか",
+      "reflectedIn": "使ったときに increaseAttackDamageThisTurn でこの番の増加を足し、手札の枚数は使うときだけ見る",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "グラジオの決戦を使った番に、ドデカバシの特性で山札を引いて手札が 0 枚でなくなった場合、ルールを持たないポケモンのワザのダメージは増えるか、という質問に、増えると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B0%E3%83%A9%E3%82%B8%E3%82%AA%E3%81%AE%E6%B1%BA%E6%88%A6&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}
