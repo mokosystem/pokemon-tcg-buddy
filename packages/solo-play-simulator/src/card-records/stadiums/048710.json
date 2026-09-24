@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "change": "addColorlessToAttackCost",
+          "count": 1
+        },
+        "conditions": [],
+        "scope": {
+          "filter": {
+            "isTerastal": true
+          },
+          "scope": "ownPokemon"
+        }
+      },
+      "kind": "continuous"
+    }
+  ],
+  "cardIds": ["048710"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "夜の鉱山",
+  "rulings": [
+    {
+      "interpretation": "増えない。ワザを使うポケモンが「テラスタル」のポケモンのときだけ増える",
+      "question": "ミュウex の「きおくのらせん」で「テラスタル」のポケモンのワザを使うとき、必要なエネルギーは増えるか",
+      "reflectedIn": "ワザに必要なエネルギー(continuous-effects.ts の calculateAttackCost)は、ワザを使うポケモンに働く効果で求める",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "夜の鉱山が出ているとき、ミュウexが「きおくのらせん」でベンチのテラスタルのポケモンのワザを使うとき、ワザを使うのはテラスタルのポケモンではないため必要なエネルギーは多くならないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E5%A4%9C%E3%81%AE%E9%89%B1%E5%B1%B1&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

@@ -163,6 +163,14 @@ const NEO_UPPER_ENERGY = buildRecordedCard("045217");
 const ARIANA = buildRecordedCard("047526");
 const SURFER = buildRecordedCard("050009");
 const GRAND_TREE_FOREST = buildRecordedCard("050076");
+const ABRA = buildRecordedCard("047832");
+const KADABRA = buildRecordedCard("047833");
+const ALAKAZAM = buildRecordedCard("047834");
+const TOUCANNON = buildRecordedCard("050285");
+const LILLIES_CARE = buildRecordedCard("045637");
+const NIGHT_MINE = buildRecordedCard("048710");
+const RICH_ENERGY = buildRecordedCard("046293");
+const TERAPAGOS_EX = buildRecordedCard("049346");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -2691,6 +2699,137 @@ describeTranslation("活力の森", () => {
         CYNTHIAS_ROSERADE
       )
     ).toBe(false);
+  });
+});
+
+describeTranslation("ケーシィ", () => {
+  test("テレポートアタックは、このポケモンをベンチポケモンと入れ替える", () => {
+    const state = buildState({ active: ABRA, bench: [KADABRA] });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttack(buildContext(state), "テレポートアタック");
+    expect(activeOf(state).name).toBe("ユンゲラー");
+  });
+});
+
+describeTranslation("ユンゲラー", () => {
+  test("サイコドローは、手札から出して進化させたとき 2 枚引く。山札から進化させたときは起きない", () => {
+    const state = buildState({
+      active: ABRA,
+      deck: repeat(PSYCHIC_ENERGY, 4),
+      hand: [KADABRA],
+    });
+    evolvePokemonFromHand(buildContext(state), activeOf(state), KADABRA);
+    expect(namesOf(state.hand)).toEqual(repeat("基本超エネルギー", 2));
+
+    const declined = buildState({
+      active: ABRA,
+      deck: repeat(PSYCHIC_ENERGY, 4),
+      hand: [KADABRA],
+    });
+    evolvePokemonFromHand(
+      buildContext(declined, { choosesToApplyOptionalEffect: () => false }),
+      activeOf(declined),
+      KADABRA
+    );
+    expect(declined.hand).toEqual([]);
+  });
+});
+
+describeTranslation("フーディン", () => {
+  test("ふしぎなアメで手札から出して進化させたときも、サイコドローで 3 枚引く", () => {
+    const state = buildState({
+      active: ABRA,
+      deck: repeat(PSYCHIC_ENERGY, 4),
+      hand: [RARE_CANDY, ALAKAZAM],
+    });
+    playTrainerFromHand(buildContext(state), RARE_CANDY);
+    expect(activeOf(state).name).toBe("フーディン");
+    expect(namesOf(state.hand)).toEqual(repeat("基本超エネルギー", 3));
+  });
+});
+
+describeTranslation("ドデカバシ", () => {
+  test("スカイドローは、ポケモンごとに番に 1 回、1 枚引く", () => {
+    const state = buildState({
+      active: TOUCANNON,
+      deck: repeat(PSYCHIC_ENERGY, 3),
+    });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "スカイドロー");
+    expect(state.hand).toHaveLength(1);
+    expect(canUseAbility(context, activeOf(state), "スカイドロー")).toBe(false);
+  });
+});
+
+describeTranslation("スイレンのお世話", () => {
+  test("トラッシュのルールを持たないポケモンと基本エネルギーを合計 3 枚まで手札に加える", () => {
+    const state = buildState({
+      active: ABRA,
+      discard: [MEOWTH, KADABRA, PSYCHIC_ENERGY, ROCK_FIGHTING_ENERGY, ABRA],
+      hand: [LILLIES_CARE],
+    });
+    playTrainerFromHand(buildContext(state), LILLIES_CARE);
+    expect(namesOf(state.hand)).toEqual([
+      "ユンゲラー",
+      "基本超エネルギー",
+      "ケーシィ",
+    ]);
+  });
+
+  test("トラッシュがポケモンex だけのときは使えない(公式 Q&A)", () => {
+    const state = buildState({
+      active: ABRA,
+      discard: [MEOWTH],
+      hand: [LILLIES_CARE],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), LILLIES_CARE)).toBe(
+      false
+    );
+  });
+});
+
+describeTranslation("夜の鉱山", () => {
+  test("「テラスタル」のポケモンのワザに必要なエネルギーが無色 1 個ぶん多くなる", () => {
+    const state = buildState({ active: TERAPAGOS_EX });
+    activeOf(state).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    const context = buildContext(state);
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["ユニオンビート"]);
+    state.stadium = NIGHT_MINE;
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["ユニオンビート"]);
+  });
+
+  test("「テラスタル」でないポケモンのワザには働かない", () => {
+    const state = buildState({ active: ABRA });
+    state.stadium = NIGHT_MINE;
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    expect(
+      listUsableAttacksOfActive(buildContext(state)).map(
+        ({ attack }) => attack.name
+      )
+    ).toEqual(["テレポートアタック"]);
+  });
+});
+
+describeTranslation("リッチエネルギー", () => {
+  test("手札からつけたとき 4 枚引き、無色エネルギー 1 個ぶんとして働く", () => {
+    const state = buildState({
+      active: ABRA,
+      deck: repeat(PSYCHIC_ENERGY, 5),
+      hand: [RICH_ENERGY],
+    });
+    attachEnergyFromHandToPokemon(
+      buildContext(state),
+      RICH_ENERGY,
+      activeOf(state)
+    );
+    expect(state.hand).toHaveLength(4);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual(["colorless"]);
   });
 });
 

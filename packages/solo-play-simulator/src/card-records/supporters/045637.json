@@ -1,0 +1,49 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "anyOf": [
+                {
+                  "categories": ["ポケモン"],
+                  "excludesPokemonWithRuleBox": true
+                },
+                {
+                  "categories": ["基本エネルギー"]
+                }
+              ]
+            },
+            "maxCount": 3,
+            "minCount": 1,
+            "operation": "addFromDiscardToHand"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["045637", "049428"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "スイレンのお世話",
+  "rulings": [
+    {
+      "interpretation": "使えない。ルールを持つポケモンは選べる候補に入らない",
+      "question": "トラッシュのカードがポケモンex だけのときに使えるか",
+      "reflectedIn": "選ぶ条件でルールを持つポケモンを除き、最初の操作に対象が無ければ使えない(骨組みの決まり)",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "トラッシュのカードがポケモンex 1 枚だけのとき、スイレンのお世話を使えるか、という質問に、使えないと回答。基本エネルギーが 3 枚あるとき 1 枚だけを選べるとも回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B9%E3%82%A4%E3%83%AC%E3%83%B3%E3%81%AE%E3%81%8A%E4%B8%96%E8%A9%B1&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

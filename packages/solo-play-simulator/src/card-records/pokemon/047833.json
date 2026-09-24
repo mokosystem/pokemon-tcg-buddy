@@ -1,0 +1,48 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "サイコドロー",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "count": {
+                "kind": "fixed",
+                "value": 2
+              },
+              "operation": "drawCards"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "triggeredWhenEvolvedFromHand"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "ちょうねんりき"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ユンゲラー",
+  "cardIds": ["047833"],
+  "stage": "1進化",
+  "evolvesFrom": "ケーシィ",
+  "hp": 80,
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

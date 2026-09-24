@@ -297,6 +297,25 @@ export function isFreshEvolutionAllowedByEffect(
   );
 }
 
+/** pokemon がワザを使うときに必要なエネルギー。ワザのエネルギーを増やす効果(夜の鉱山)の分の無色を足す。 */
+export function calculateAttackCost(
+  state: GameState,
+  pokemon: PokemonInPlay,
+  attack: Attack
+): PokemonType[] {
+  const added = listEffectsApplyingTo(state, pokemon).reduce(
+    (total, collected) =>
+      collected.effect.change.change === "addColorlessToAttackCost"
+        ? total + collected.effect.change.count
+        : total,
+    0
+  );
+  return [
+    ...attack.cost,
+    ...Array.from({ length: added }, (): PokemonType => "colorless"),
+  ];
+}
+
 export interface UsableAttack {
   readonly attack: Attack;
   /** 使う前に山札の上から 1 枚トラッシュする(ヤドキングの「ひらめきチャレンジ」)。 */

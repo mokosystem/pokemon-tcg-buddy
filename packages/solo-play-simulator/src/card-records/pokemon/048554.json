@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "しめりけ"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "ぶつかる"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「しめりけ」(おたがいのポケモンの、自身をきぜつさせる効果の特性を無くす)。無くす対象の特性は相手の場が要るもので一人回しでは使わないため、無くしても成立率は変わらない",
+      "reason": "noReasonToUseInSoloPlay"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "コダック",
+  "cardIds": ["048554"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

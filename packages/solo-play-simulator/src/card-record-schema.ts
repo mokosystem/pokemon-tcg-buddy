@@ -456,6 +456,11 @@ export const ContinuousChangeSchema = variant("change", [
     change: literal("reduceRetreatCost"),
   }),
   strictObject({ change: literal("allowBenchedPokemonAttacks") }),
+  /** 範囲のポケモンが使うワザに必要なエネルギーを、無色 count 個ぶん多くする(夜の鉱山)。ワザを使うポケモンに当てる。 */
+  strictObject({
+    change: literal("addColorlessToAttackCost"),
+    count: countFromOne,
+  }),
   /**
    * 持っているワザを 2 回連続で使える(アズマオウなどの「おまつりおんど」)。2 回目は、このポケモンが記録に持つワザから
    * 選び直す。効果で使えるようになったワザは選べない(公式 Q&A「おまつりおんど」)。
@@ -596,6 +601,11 @@ export const AbilityTranslationSchema = variant("kind", [
   strictObject({
     effect: EffectSchema,
     kind: literal("triggeredWhenPlacedOnBenchFromHand"),
+  }),
+  /** 手札から出して進化させたとき(ふしぎなアメで進化させたときを含む)。山札から進化させたときは起きない。 */
+  strictObject({
+    effect: EffectSchema,
+    kind: literal("triggeredWhenEvolvedFromHand"),
   }),
   strictObject({
     continuousEffect: ContinuousEffectSchema,

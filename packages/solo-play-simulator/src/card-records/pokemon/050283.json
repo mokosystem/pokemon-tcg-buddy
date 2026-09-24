@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "にどづき"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「にどづき」のダメージは、コインを 2 回投げたオモテの数 × 10 で決まる。コインで決まるため持たず、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ツツケラ",
+  "cardIds": ["050283"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

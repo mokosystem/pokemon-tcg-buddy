@@ -1,0 +1,68 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "サイコドロー",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "count": {
+                "kind": "fixed",
+                "value": 3
+              },
+              "operation": "drawCards"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "triggeredWhenEvolvedFromHand"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "ハンドパワー"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ハンドパワー」の、手札の枚数 × 2 個のダメカンを相手のバトルポケモンにのせる効果(ダメージではないため、ワザのダメージは無しとして持つ)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "使える。ふしぎなアメで手札から出して進化させたときも、このきっかけに当たる",
+      "question": "ふしぎなアメで進化させたときに、特性「サイコドロー」を使えるか",
+      "reflectedIn": "ふしぎなアメの操作(effect-operations.ts の evolveWithRareCandy)の後にも triggeredWhenEvolvedFromHand の特性を問い合わせる",
+      "source": {
+        "basis": "「サイコドロー」の公式 Q&A は無かった(検索語「サイコドロー」は 0 件)。同じ書き方(このカードを手札から出して進化させたとき、1 回使える)のポケパワーについて、公式 Q&A(検索語「手札から出して進化させたとき ふしぎなアメ」、https://www.pokemon-card.com/rules/faq/search.php?freeword=%E6%89%8B%E6%9C%AD%E3%81%8B%E3%82%89%E5%87%BA%E3%81%97%E3%81%A6%E9%80%B2%E5%8C%96%E3%81%95%E3%81%9B%E3%81%9F%E3%81%A8%E3%81%8D+%E3%81%B5%E3%81%97%E3%81%8E%E3%81%AA%E3%82%A2%E3%83%A1&regulation_faq_main_item1=all )が、ふしぎなアメで進化させた場合も手札からポケモンのカードを出して進化しているため使えると回答している",
+        "checkedOn": "2026-09-24",
+        "kind": "noMatchingQa",
+        "searchTerms": [
+          "サイコドロー",
+          "手札から出して進化させたとき ふしぎなアメ"
+        ]
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "フーディン",
+  "cardIds": ["047834"],
+  "stage": "2進化",
+  "evolvesFrom": "ユンゲラー",
+  "basicPokemonOfEvolutionLine": "ケーシィ",
+  "hp": 140,
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

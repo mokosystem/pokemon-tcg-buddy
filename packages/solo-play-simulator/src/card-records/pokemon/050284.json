@@ -1,0 +1,37 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "そらをとぶ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「そらをとぶ」は、コインでウラならワザが失敗する(ダメージを与えない)。ダメージはコインを見ずに 30 で求める",
+      "reason": "damageBonusNotModeled"
+    },
+    {
+      "description": "ワザ「そらをとぶ」の、コインでオモテなら次の相手の番にワザのダメージや効果を受けなくなる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ケララッパ",
+  "cardIds": ["050284"],
+  "stage": "1進化",
+  "evolvesFrom": "ツツケラ",
+  "hp": 90,
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

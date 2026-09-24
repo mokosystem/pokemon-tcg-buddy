@@ -6,6 +6,7 @@
 
 import {
   type BasicOperation,
+  CardCategory,
   type CardEffect,
   type CardFilter,
   type DrawCount,
@@ -30,6 +31,7 @@ import {
 import {
   calculateBenchLimit,
   countEmptyBenchSlots,
+  isAbilityNegated,
 } from "./continuous-effects.ts";
 import {
   chooseCards,
@@ -761,6 +763,9 @@ function evolveWithRareCandy(run: OperationRun): void {
         );
   if (stage2 !== undefined && target !== null) {
     context.state.evolveSkippingStage1(target, stage2);
+    // ふしぎなアメで手札から出した 2進化ポケモンも「手札から出して進化させたとき」に当たる(公式 Q&A「ふしぎなアメ」:
+    // 手札からポケモンのカードを出して進化していれば、そのときに使える特性を使える。2026-09-24 確認)
+    resolveAbilityTriggers(context, target, "triggeredWhenEvolvedFromHand");
   }
 }
 
@@ -1003,6 +1008,46 @@ export function runEffect(
       }
     } else {
       runOperation(step, run);
+    }
+  }
+}
+
+// ---- 特性を使った記録と、場に出したとき・進化させたときのきっかけ ----
+
+export function markAbilityUsed(
+  state: GameState,
+  pokemon: PokemonInPlay | null,
+  abilityName: string
+): void {
+  pokemon?.abilitiesUsedThisTurn.add(abilityName);
+  state.abilityNamesUsedThisTurn.push(abilityName);
+  state.record(`特性 ${abilityName}`);
+}
+
+/**
+ * 「手札からベンチに出したとき」「手札から出して進化させたとき」の特性で、使えるものを、使うかを問い合わせてから使う。
+ * 対戦の準備でベンチに出したときと、山札から進化させたときは呼ばない(公式 Q&A「ニャースex」)。
+ */
+export function resolveAbilityTriggers(
+  context: EffectContext,
+  pokemon: PokemonInPlay,
+  kind: "triggeredWhenPlacedOnBenchFromHand" | "triggeredWhenEvolvedFromHand"
+): void {
+  const { state } = context;
+  const { card } = pokemon;
+  if (card.record.category !== CardCategory.Pokemon) {
+    return;
+  }
+  for (const ability of card.record.abilities) {
+    const { translation } = ability;
+    if (
+      translation?.kind === kind &&
+      !isAbilityNegated(state, pokemon) &&
+      canStartEffect(state, translation.effect, { card, pokemon }, null) &&
+      context.choices.choosesToApplyOptionalEffect(state, ability.name)
+    ) {
+      markAbilityUsed(state, pokemon, ability.name);
+      runEffect(context, translation.effect, { card, pokemon }, ability.name);
     }
   }
 }

@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 4
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "triggeredWhenAttachedFromHand"
+    }
+  ],
+  "cardIds": ["046293", "049456"],
+  "category": "特殊エネルギー",
+  "excludedEffects": [],
+  "name": "リッチエネルギー",
+  "provision": {
+    "kind": "type",
+    "type": "colorless",
+    "units": 1
+  },
+  "rulings": [
+    {
+      "interpretation": "引かない。手札からつけたときだけ引く",
+      "question": "ワザの効果でトラッシュからつけたときも 4 枚引くか",
+      "reflectedIn": "きっかけを triggeredWhenAttachedFromHand にし、手札からつける操作だけが実行する",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "ランドロスのワザでトラッシュからリッチエネルギーをつけたとき 4 枚引けるか、という質問に、引けないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AA%E3%83%83%E3%83%81%E3%82%A8%E3%83%8D%E3%83%AB%E3%82%AE%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

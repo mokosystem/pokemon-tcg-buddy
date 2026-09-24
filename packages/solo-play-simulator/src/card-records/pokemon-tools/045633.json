@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["045633"],
+  "category": "ポケモンのどうぐ",
+  "excludedEffects": [
+    {
+      "description": "つけているポケモンがバトル場で相手のワザのダメージを受けたとき、2 枚引く",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "ラッキーメット",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-24"
+}

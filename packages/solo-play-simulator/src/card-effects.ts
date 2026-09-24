@@ -10,6 +10,7 @@ import { CardCategory } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { areConditionsMet, type EffectSource } from "./conditions.ts";
 import {
+  calculateAttackCost,
   calculateBenchLimit,
   calculateRetreatCost,
   findEvolutionNameAllowedByEffect,
@@ -26,6 +27,8 @@ import type { EffectContext } from "./effect-choices.ts";
 import {
   canStartEffect,
   findCardEffects,
+  markAbilityUsed,
+  resolveAbilityTriggers,
   resolveAttachedFromHandTriggers,
   runEffect,
   trimBenchToLimit,
@@ -158,16 +161,6 @@ function findAbilityTranslation(card: Card, abilityName: string) {
     ?.translation;
 }
 
-function markAbilityUsed(
-  state: GameState,
-  pokemon: PokemonInPlay | null,
-  abilityName: string
-): void {
-  pokemon?.abilitiesUsedThisTurn.add(abilityName);
-  state.abilityNamesUsedThisTurn.push(abilityName);
-  state.record(`特性 ${abilityName}`);
-}
-
 /** 場のポケモンの、使うことを選ぶ特性(番に 1 回など)を今使えるか。 */
 export function canUseAbility(
   context: EffectContext,
@@ -271,21 +264,11 @@ export function placeBasicPokemonOnBenchFromHand(
     benchLimit: calculateBenchLimit(state),
     from: "hand",
   });
-  if (card.record.category !== CardCategory.Pokemon) {
-    return pokemon;
-  }
-  for (const ability of card.record.abilities) {
-    const { translation } = ability;
-    if (
-      translation?.kind === "triggeredWhenPlacedOnBenchFromHand" &&
-      !isAbilityNegated(state, pokemon) &&
-      canStartEffect(state, translation.effect, { card, pokemon }, null) &&
-      context.choices.choosesToApplyOptionalEffect(state, ability.name)
-    ) {
-      markAbilityUsed(state, pokemon, ability.name);
-      runEffect(context, translation.effect, { card, pokemon }, ability.name);
-    }
-  }
+  resolveAbilityTriggers(
+    context,
+    pokemon,
+    "triggeredWhenPlacedOnBenchFromHand"
+  );
   return pokemon;
 }
 
@@ -354,6 +337,7 @@ export function evolvePokemonFromHand(
       ? { from: "hand", ignoreFreshness }
       : { asIfNamed, from: "hand", ignoreFreshness }
   );
+  resolveAbilityTriggers(context, target, "triggeredWhenEvolvedFromHand");
 }
 
 function sumEnergyUnits(
@@ -421,7 +405,7 @@ export function listUsableAttacksOfActive(
     : listUsableAttacks(state, active);
   return candidates.filter(
     ({ attack }) =>
-      canPayCost(attack.cost, units) &&
+      canPayCost(calculateAttackCost(state, active, attack), units) &&
       (attack.effect === undefined ||
         (areConditionsMet(state, attack.effect.useConditions, source) &&
           !wouldLeaveFieldEmpty(state, attack.effect)))

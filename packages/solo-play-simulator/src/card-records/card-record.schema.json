@@ -794,6 +794,19 @@
         {
           "type": "object",
           "properties": {
+            "effect": {
+              "$ref": "#/$defs/Effect"
+            },
+            "kind": {
+              "const": "triggeredWhenEvolvedFromHand"
+            }
+          },
+          "required": ["effect", "kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "continuousEffect": {
               "$ref": "#/$defs/ContinuousEffect"
             },
@@ -1985,6 +1998,20 @@
             }
           },
           "required": ["change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
+              "const": "addColorlessToAttackCost"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["change", "count"],
           "additionalProperties": false
         },
         {
