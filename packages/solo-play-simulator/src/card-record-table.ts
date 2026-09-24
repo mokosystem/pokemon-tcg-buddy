@@ -50,7 +50,9 @@ import pokemon045203 from "./card-records/pokemon/045203.json";
 import pokemon045519 from "./card-records/pokemon/045519.json";
 import pokemon045594 from "./card-records/pokemon/045594.json";
 import pokemon045621 from "./card-records/pokemon/045621.json";
+import pokemon045702 from "./card-records/pokemon/045702.json";
 import pokemon045724 from "./card-records/pokemon/045724.json";
+import pokemon045881 from "./card-records/pokemon/045881.json";
 import pokemon045915 from "./card-records/pokemon/045915.json";
 import pokemon045922 from "./card-records/pokemon/045922.json";
 import pokemon045977 from "./card-records/pokemon/045977.json";
@@ -78,10 +80,13 @@ import pokemon047381 from "./card-records/pokemon/047381.json";
 import pokemon047411 from "./card-records/pokemon/047411.json";
 import pokemon047412 from "./card-records/pokemon/047412.json";
 import pokemon047663 from "./card-records/pokemon/047663.json";
+import pokemon047739 from "./card-records/pokemon/047739.json";
 import pokemon047759 from "./card-records/pokemon/047759.json";
 import pokemon047760 from "./card-records/pokemon/047760.json";
 import pokemon047761 from "./card-records/pokemon/047761.json";
 import pokemon047762 from "./card-records/pokemon/047762.json";
+import pokemon047800 from "./card-records/pokemon/047800.json";
+import pokemon047801 from "./card-records/pokemon/047801.json";
 import pokemon047832 from "./card-records/pokemon/047832.json";
 import pokemon047833 from "./card-records/pokemon/047833.json";
 import pokemon047834 from "./card-records/pokemon/047834.json";
@@ -99,8 +104,11 @@ import pokemon048557 from "./card-records/pokemon/048557.json";
 import pokemon048634 from "./card-records/pokemon/048634.json";
 import pokemon048651 from "./card-records/pokemon/048651.json";
 import pokemon048657 from "./card-records/pokemon/048657.json";
+import pokemon048732 from "./card-records/pokemon/048732.json";
+import pokemon048733 from "./card-records/pokemon/048733.json";
 import pokemon048748 from "./card-records/pokemon/048748.json";
 import pokemon048778 from "./card-records/pokemon/048778.json";
+import pokemon048780 from "./card-records/pokemon/048780.json";
 import pokemon048798 from "./card-records/pokemon/048798.json";
 import pokemon048810 from "./card-records/pokemon/048810.json";
 import pokemon048834 from "./card-records/pokemon/048834.json";
@@ -257,7 +265,9 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon045519, path: "pokemon/045519.json" },
   { content: pokemon045594, path: "pokemon/045594.json" },
   { content: pokemon045621, path: "pokemon/045621.json" },
+  { content: pokemon045702, path: "pokemon/045702.json" },
   { content: pokemon045724, path: "pokemon/045724.json" },
+  { content: pokemon045881, path: "pokemon/045881.json" },
   { content: pokemon045915, path: "pokemon/045915.json" },
   { content: pokemon045922, path: "pokemon/045922.json" },
   { content: pokemon045977, path: "pokemon/045977.json" },
@@ -285,10 +295,13 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon047411, path: "pokemon/047411.json" },
   { content: pokemon047412, path: "pokemon/047412.json" },
   { content: pokemon047663, path: "pokemon/047663.json" },
+  { content: pokemon047739, path: "pokemon/047739.json" },
   { content: pokemon047759, path: "pokemon/047759.json" },
   { content: pokemon047760, path: "pokemon/047760.json" },
   { content: pokemon047761, path: "pokemon/047761.json" },
   { content: pokemon047762, path: "pokemon/047762.json" },
+  { content: pokemon047800, path: "pokemon/047800.json" },
+  { content: pokemon047801, path: "pokemon/047801.json" },
   { content: pokemon047832, path: "pokemon/047832.json" },
   { content: pokemon047833, path: "pokemon/047833.json" },
   { content: pokemon047834, path: "pokemon/047834.json" },
@@ -306,8 +319,11 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon048634, path: "pokemon/048634.json" },
   { content: pokemon048651, path: "pokemon/048651.json" },
   { content: pokemon048657, path: "pokemon/048657.json" },
+  { content: pokemon048732, path: "pokemon/048732.json" },
+  { content: pokemon048733, path: "pokemon/048733.json" },
   { content: pokemon048748, path: "pokemon/048748.json" },
   { content: pokemon048778, path: "pokemon/048778.json" },
+  { content: pokemon048780, path: "pokemon/048780.json" },
   { content: pokemon048798, path: "pokemon/048798.json" },
   { content: pokemon048810, path: "pokemon/048810.json" },
   { content: pokemon048834, path: "pokemon/048834.json" },

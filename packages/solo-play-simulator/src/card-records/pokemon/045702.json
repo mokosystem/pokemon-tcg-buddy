@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "ローリングアタック"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ローリングアタック」の、コインでオモテなら 20 を足す上乗せ。ダメージは上乗せを除いた 10 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "カジッチュ",
+  "cardIds": ["045702"],
+  "stage": "たね",
+  "hp": 40,
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

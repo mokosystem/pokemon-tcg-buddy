@@ -1,0 +1,78 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "おいしげる",
+      "translation": {
+        "continuousEffect": {
+          "change": {
+            "change": "setAttachedEnergyProvision",
+            "energyFilter": {
+              "categories": ["基本エネルギー"],
+              "providedEnergyTypes": ["grass"]
+            },
+            "provision": {
+              "kind": "type",
+              "type": "grass",
+              "units": 2
+            }
+          },
+          "conditions": [],
+          "scope": {
+            "filter": {},
+            "scope": "ownPokemon"
+          }
+        },
+        "kind": "continuous"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["grass", "grass", "colorless", "colorless"],
+      "damage": {
+        "amount": 140,
+        "kind": "fixed"
+      },
+      "name": "ソーラービーム"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "重ならない。メガニウムが 2 匹いても、基本草エネルギー 1 枚は草 2 個ぶん",
+      "question": "特性「おいしげる」(と同じ内容の特性)が 2 つ働くとき、基本草エネルギー 1 枚は草 4 個ぶんになるか",
+      "reflectedIn": "エネルギーの供給(continuous-effects.ts の resolveEnergyProvision)は、働いている setAttachedEnergyProvision のうち最初の 1 つだけを使う",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "おいしげるのメガニウムと、同じ内容の特性のフシギバナがいるとき、基本草エネルギー 1 枚が 4 個ぶんになるか、という質問に、ならないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8A%E3%81%84%E3%81%97%E3%81%92%E3%82%8B&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "数える。基本草エネルギー 1 枚を草エネルギー 2 個として、ワザのエネルギーの判定とエネルギーの数で決まるダメージに数える",
+      "question": "特性「おいしげる」で 2 個ぶんになった基本草エネルギーを、エネルギーの数で決まる効果に 2 個として数えるか",
+      "reflectedIn": "供給を草 2 個ぶんにし、ダメージの数える対象 energyAttachedToOwnPokemon も個数で数える",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "おいしげるが働いているとき、基本草エネルギー 3 枚のアローラ ナッシーの特性や、基本草エネルギー 2 枚のメガメガニウムexのワザのダメージを問う質問に、6 個・4 個として数えた値で回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8A%E3%81%84%E3%81%97%E3%81%92%E3%82%8B&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "メガニウム",
+  "cardIds": ["047801"],
+  "stage": "2進化",
+  "evolvesFrom": "ベイリーフ",
+  "basicPokemonOfEvolutionLine": "チコリータ",
+  "hp": 160,
+  "pokemonType": "grass",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

@@ -504,6 +504,15 @@ export const ContinuousChangeSchema = variant("change", [
     change: literal("setEnergyProvision"),
     provision: EnergyProvisionSchema,
   }),
+  /**
+   * 範囲のポケモンについている、energyFilter に合うエネルギーの供給を provision にする(メガニウムの「おいしげる」:
+   * 基本草エネルギーが草 2 個ぶん)。同じ項目の効果が複数働いても重ならない。
+   */
+  strictObject({
+    change: literal("setAttachedEnergyProvision"),
+    energyFilter: CardFilterSchema,
+    provision: EnergyProvisionSchema,
+  }),
   /** ベンチに出せるポケモンの数。範囲は ownPlayer にする(card-record-validation.ts が検査する)。 */
   strictObject({
     change: literal("setBenchLimit"),

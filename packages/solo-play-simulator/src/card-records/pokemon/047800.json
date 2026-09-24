@@ -1,0 +1,33 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "つきとばす"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「つきとばす」の、相手のバトルポケモンをベンチポケモンと入れ替える効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ベイリーフ",
+  "cardIds": ["047800"],
+  "stage": "1進化",
+  "evolvesFrom": "チコリータ",
+  "hp": 110,
+  "pokemonType": "grass",
+  "retreatCost": 2,
+  "translationStatus": "irrelevantToCalculation"
+}

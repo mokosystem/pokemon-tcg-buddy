@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "なきごえ"
+    },
+    {
+      "cost": ["grass", "grass"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "タネばくだん"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「なきごえ」の、次の相手の番にワザを受けたポケモンが使うワザのダメージを減らす効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "チコリータ",
+  "cardIds": ["048732"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "translationStatus": "notTranslatable"
+}

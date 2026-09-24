@@ -190,6 +190,9 @@ const MARNIES_GRIMMSNARL = buildRecordedCard("047259");
 const SPIKEMUTH_GYM = buildRecordedCard("047271");
 const TORCHIC = buildRecordedCard("047411");
 const BLAZIKEN_EX = buildRecordedCard("046470");
+const HYDRAPPLE_EX = buildRecordedCard("048780");
+const MEGANIUM = buildRecordedCard("047801");
+const CELEBI = buildRecordedCard("047739");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3140,6 +3143,69 @@ describeTranslation("バシャーモex", () => {
     expect(
       canUseAbility(buildContext(state), activeOf(state), "たぎるとうし")
     ).toBe(false);
+  });
+});
+
+describeTranslation("カミツオロチex", () => {
+  test("じゅくせいチャージは、ポケモンごとに番に 1 回、手札の基本草エネルギーを 1 枚自分のポケモンにつける", () => {
+    const state = buildState({
+      active: HYDRAPPLE_EX,
+      bench: [DIPPLIN],
+      hand: [GRASS_ENERGY, GRASS_ENERGY],
+    });
+    const context = buildContext(state, {
+      choosePokemon: (_, request) =>
+        request.candidates.filter((pokemon) => pokemon.name === "カミッチュ"),
+    });
+    useAbility(context, activeOf(state), "じゅくせいチャージ");
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本草エネルギー"]);
+    expect(state.hasAttachedEnergy).toBe(false);
+    expect(canUseAbility(context, activeOf(state), "じゅくせいチャージ")).toBe(
+      false
+    );
+  });
+
+  test("みつあめストームは 30 に、自分のポケモン全員の草エネルギーの数×30 を足す(おいしげるで 2 個ぶんになった分も数える)", () => {
+    const state = buildState({ active: HYDRAPPLE_EX, bench: [DIPPLIN] });
+    activeOf(state).energies.push(GRASS_ENERGY, PSYCHIC_ENERGY);
+    benchAt(state, 0).energies.push(GRASS_ENERGY);
+    expect(
+      damageOf(state, activeOf(state), HYDRAPPLE_EX, "みつあめストーム")
+    ).toBe(30 + 2 * 30);
+    state.bench.push(new PokemonInPlay(MEGANIUM, 0));
+    expect(
+      damageOf(state, activeOf(state), HYDRAPPLE_EX, "みつあめストーム")
+    ).toBe(30 + 4 * 30);
+  });
+});
+
+describeTranslation("メガニウム", () => {
+  test("おいしげるは、自分のポケモン全員の基本草エネルギーを草 2 個ぶんにし、2 匹いても重ならない(公式 Q&A)", () => {
+    const state = buildState({ active: HYDRAPPLE_EX, bench: [MEGANIUM] });
+    activeOf(state).energies.push(GRASS_ENERGY, PRISM_ENERGY);
+    expect(listEnergyUnits(state, activeOf(state))).toEqual([
+      "grass",
+      "grass",
+      "colorless",
+    ]);
+    state.bench.push(new PokemonInPlay(MEGANIUM, 0));
+    expect(listEnergyUnits(state, activeOf(state))).toHaveLength(3);
+  });
+});
+
+describeTranslation("セレビィ", () => {
+  test("ときをめぐるは、山札から草ポケモンとスタジアムを合計 3 枚まで手札に加える", () => {
+    const state = buildState({
+      active: CELEBI,
+      deck: [FROAKIE, GRAND_TREE_FOREST, APPLIN, GRASS_ENERGY, MEGANIUM],
+    });
+    activeOf(state).energies.push(GRASS_ENERGY);
+    useAttack(buildContext(state), "ときをめぐる");
+    expect(namesOf(state.hand)).toEqual([
+      "活力の森",
+      "カジッチュ",
+      "メガニウム",
+    ]);
   });
 });
 

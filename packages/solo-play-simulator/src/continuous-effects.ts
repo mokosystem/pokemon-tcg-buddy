@@ -191,6 +191,17 @@ export function resolveEnergyProvision(
   if (override?.effect.change.change === "setEnergyProvision") {
     return override.effect.change.provision;
   }
+  // ついているポケモンに働く効果(メガニウムの「おいしげる」)。同じ効果が複数あっても重ならないため、最初の 1 つを使う
+  // (公式 Q&A「おいしげる」: 同じ内容の特性が 2 つ働いても 2 個ぶんのまま、2026-09-24 確認)
+  for (const collected of listEffectsApplyingTo(state, pokemon)) {
+    const { change } = collected.effect;
+    if (
+      change.change === "setAttachedEnergyProvision" &&
+      matchesCardFilter(energy, change.energyFilter)
+    ) {
+      return change.provision;
+    }
+  }
   return base;
 }
 

@@ -1,0 +1,28 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass", "grass"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "リーフステップ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ベイリーフ",
+  "cardIds": ["048733"],
+  "stage": "1進化",
+  "evolvesFrom": "チコリータ",
+  "hp": 100,
+  "pokemonType": "grass",
+  "retreatCost": 2,
+  "translationStatus": "irrelevantToCalculation"
+}

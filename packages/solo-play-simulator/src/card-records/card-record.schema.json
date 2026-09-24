@@ -2149,6 +2149,22 @@
           "type": "object",
           "properties": {
             "change": {
+              "const": "setAttachedEnergyProvision"
+            },
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "provision": {
+              "$ref": "#/$defs/EnergyProvision"
+            }
+          },
+          "required": ["change", "energyFilter", "provision"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "change": {
               "const": "setBenchLimit"
             },
             "limit": {
