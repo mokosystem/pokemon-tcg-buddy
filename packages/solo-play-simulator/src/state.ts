@@ -665,6 +665,20 @@ export class GameState {
     this.record(`エネルギー ${energy.name} を ${from.name} → ${to.name}`);
   }
 
+  /**
+   * 場のポケモン target のカードを、山札の card と入れ替える(メタモンの「どっきりへんしん」)。ついているカードと
+   * 場に出た番はそのまま引き継ぎ、元のカードは山札に戻す。山札は呼び出し側が切る。
+   */
+  replacePokemonWithDeckCard(target: PokemonInPlay, card: Card): void {
+    if (!isPokemon(card)) {
+      throw new IllegalMove(`${card.name} はポケモンではない`);
+    }
+    this.removeFromDeck(card);
+    this.deck.push(target.card);
+    this.record(`${target.name} を山札の ${card.name} と入れ替える`);
+    target.card = card;
+  }
+
   /** ベンチのポケモンを、ついているカードごとトラッシュする(ベンチの上限を超えたとき。きぜつではない)。 */
   discardBenchedPokemon(target: PokemonInPlay): void {
     removeFirst(this.bench, target, "ベンチ");

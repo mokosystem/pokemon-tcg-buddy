@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "ひっかく"
+    },
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "えんさのうず"
+    }
+  ],
+  "cardIds": ["050711"],
+  "category": "ポケモン",
+  "evolvesFrom": "ヒスイ ゾロア",
+  "excludedEffects": [
+    {
+      "description": "ワザ「えんさのうず」の、相手のバトルポケモンの残り HP が 50 になるようにダメカンをのせる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "ヒスイ ゾロアーク",
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

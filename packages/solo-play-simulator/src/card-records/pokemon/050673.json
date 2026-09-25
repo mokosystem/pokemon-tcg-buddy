@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "まいあがる"
+    }
+  ],
+  "cardIds": ["050673"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「まいあがる」の、のぞむなら自身をついているカードごと山札に戻して切る効果。相手のワザを避けるための効果で、一人回しでは使う理由が無い",
+      "reason": "noReasonToUseInSoloPlay"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "フワンテ",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

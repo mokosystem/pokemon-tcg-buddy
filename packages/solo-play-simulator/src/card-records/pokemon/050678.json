@@ -1,0 +1,47 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 20,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "discardCardsMatching",
+            "filter": {
+              "categories": ["基本エネルギー", "特殊エネルギー"]
+            }
+          },
+          "unit": 20
+        },
+        "kind": "fixed"
+      },
+      "name": "ミッドナイトレイ"
+    },
+    {
+      "cost": ["psychic", "colorless", "colorless"],
+      "damage": {
+        "amount": 120,
+        "kind": "fixed"
+      },
+      "name": "ルナブラスト"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "コスモッグ",
+  "cardIds": ["050678"],
+  "category": "ポケモン",
+  "evolvesFrom": "コスモウム",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 160,
+  "isTerastal": false,
+  "name": "ルナアーラ",
+  "pokemonType": "psychic",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

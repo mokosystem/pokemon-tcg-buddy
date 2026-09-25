@@ -1,0 +1,46 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "branchOnCoinFlip",
+            "stepsWhenHeads": [
+              {
+                "operation": "searchDeckIntoHand",
+                "picks": [
+                  {
+                    "filter": {},
+                    "maxCount": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "たくさんあるく"
+    }
+  ],
+  "cardIds": ["050679"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "コレクレー",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

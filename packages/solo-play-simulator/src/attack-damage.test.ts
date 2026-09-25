@@ -46,6 +46,12 @@ const ZEKROM = buildRecordedCard("050662");
 const WATER_ENERGY = buildRecordedCard("050479");
 const LIGHTNING_ENERGY = buildRecordedCard("050480");
 const PRISM_ENERGY = buildRecordedCard("049455");
+const SYLVEON_EX = buildRecordedCard("050671");
+const LUNALA = buildRecordedCard("050678");
+const ZACIAN = buildRecordedCard("050697");
+const IGGLYBUFF = buildRecordedCard("050708");
+const BALLOON = buildRecordedCard("050464");
+const BOSS = buildRecordedCard("050467");
 
 describe("ワザのダメージ", () => {
   test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
@@ -147,6 +153,55 @@ describe("ワザのダメージ", () => {
         findAttack(ZEKROM, "ニトロサンダー")
       )
     ).toBe(160);
+  });
+
+  test("カラフルハーモニーは、自分のポケモン全員の基本エネルギーのタイプの種類の数×50(特殊エネルギーは数えない)", () => {
+    const state = buildState({ active: SYLVEON_EX, bench: [RALTS] });
+    state.active?.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY, PRISM_ENERGY);
+    state.bench[0]?.energies.push(FIRE_ENERGY, WATER_ENERGY);
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(SYLVEON_EX, "カラフルハーモニー")
+      )
+    ).toBe(3 * 50);
+  });
+
+  test("ミッドナイトレイは 20 に、トラッシュのエネルギーの枚数×20 を足す", () => {
+    const state = buildState({
+      active: LUNALA,
+      discard: [PSYCHIC_ENERGY, BOSS, PRISM_ENERGY, RALTS],
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(LUNALA, "ミッドナイトレイ")
+      )
+    ).toBe(20 + 2 * 20);
+  });
+
+  test("ハードブレードは、このポケモンにどうぐがついていれば 40 を足す", () => {
+    const state = buildState({ active: ZACIAN });
+    const attack = findAttack(ZACIAN, "ハードブレード");
+    expect(calculateAttackDamage(state, activeOf(state), attack)).toBe(20);
+    activeOf(state).tool = BALLOON;
+    expect(calculateAttackDamage(state, activeOf(state), attack)).toBe(60);
+  });
+
+  test("ぷにぷにサークルは、最大 HP が 30 のベンチポケモンの数×30(バトル場のププリンは数えない)", () => {
+    const state = buildState({
+      active: IGGLYBUFF,
+      bench: [IGGLYBUFF, IGGLYBUFF, RALTS],
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(IGGLYBUFF, "ぷにぷにサークル")
+      )
+    ).toBe(2 * 30);
   });
 
   test("ユニオンビートは、自分のベンチポケモンの数×30", () => {

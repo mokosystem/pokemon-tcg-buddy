@@ -1,0 +1,61 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"],
+              "pokemonTypes": ["dragon"]
+            },
+            "maxCount": 3,
+            "operation": "placeFromDiscardOntoBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "とどろくよびごえ"
+    },
+    {
+      "cost": ["fire", "water"],
+      "damage": {
+        "amount": 240,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": 2,
+            "operation": "discardFromDeckTop"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "りゅうのはどう"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "タツベイ",
+  "cardIds": ["050700"],
+  "category": "ポケモン",
+  "evolvesFrom": "コモルー",
+  "exRule": "pokemonEx",
+  "excludedEffects": [],
+  "hasRuleBox": true,
+  "hp": 330,
+  "isTerastal": false,
+  "name": "ボーマンダex",
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

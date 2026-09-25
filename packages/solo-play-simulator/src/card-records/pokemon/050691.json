@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ライフバインド"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["dark", "colorless", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "ダークカッター"
+    }
+  ],
+  "cardIds": ["050691"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「ライフバインド」(場にいる間、相手のバトルポケモンの HP が回復しなくなる)",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "イベルタル",
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

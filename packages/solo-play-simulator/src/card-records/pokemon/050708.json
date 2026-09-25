@@ -1,0 +1,50 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": [],
+      "damage": {
+        "amount": 0,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "ownPokemonInPlay",
+            "filter": {
+              "maxHp": 30,
+              "positions": ["bench"]
+            }
+          },
+          "unit": 30
+        },
+        "kind": "fixed"
+      },
+      "name": "ぷにぷにサークル"
+    }
+  ],
+  "cardIds": ["050708"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 30,
+  "isTerastal": false,
+  "name": "ププリン",
+  "pokemonType": "colorless",
+  "retreatCost": 0,
+  "rulings": [
+    {
+      "interpretation": "最大 HP で数える。ダメカンがのっていても最大 HP が 30 なら数え、最大 HP を変える効果(エキサイトスタジアム)で 30 でなくなったポケモンは数えない。記録は最大 HP を変える効果を持たないため、詳細ページの HP が 30 以下のベンチポケモンを数える(2026-09-25 時点の記録の HP は 30 が最小で、30 以下は 30 と同じ)",
+      "question": "最大 HP が「30」のポケモンは、残り HP と最大 HP のどちらで数えるか",
+      "reflectedIn": "ワザのダメージの数える対象 ownPokemonInPlay の条件を positions ベンチ、maxHp 30 にした",
+      "source": {
+        "checkedOn": "2026-09-25",
+        "kind": "officialQa",
+        "questionSummary": "ダメカンがのった最大 HP 30 のポケモン、最大 HP 60 で残り HP 30 のポケモン、エキサイトスタジアムで最大 HP が 60 になったププリンを数えるか、という 3 つの質問に、残り HP ではなく最大 HP が 30 のポケモンを数えると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%B7%E3%81%AB%E3%81%B7%E3%81%AB%E3%82%B5%E3%83%BC%E3%82%AF%E3%83%AB&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

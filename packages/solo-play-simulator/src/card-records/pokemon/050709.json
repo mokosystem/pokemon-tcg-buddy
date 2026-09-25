@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "water", "electric"],
+      "damage": {
+        "amount": 250,
+        "kind": "fixed"
+      },
+      "name": "エレメンタルブラスト"
+    }
+  ],
+  "cardIds": ["050709"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「エレメンタルブラスト」は、相手のバトルポケモンに 250 ダメージを与えたあと、自身の炎・水・雷エネルギーを 1 個ずつトラッシュする。250 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "ルギア",
+  "pokemonType": "colorless",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

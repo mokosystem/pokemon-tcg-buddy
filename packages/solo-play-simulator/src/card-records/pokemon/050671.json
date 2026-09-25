@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "colorless", "colorless"],
+      "damage": {
+        "amount": 0,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "basicEnergyTypesAttachedToOwnPokemon"
+          },
+          "unit": 50
+        },
+        "kind": "fixed"
+      },
+      "name": "カラフルハーモニー"
+    }
+  ],
+  "cardIds": ["050671"],
+  "category": "ポケモン",
+  "evolvesFrom": "イーブイ",
+  "exRule": "pokemonEx",
+  "excludedEffects": [],
+  "hasRuleBox": true,
+  "hp": 270,
+  "isTerastal": false,
+  "name": "ニンフィアex",
+  "pokemonType": "psychic",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

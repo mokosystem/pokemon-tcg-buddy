@@ -1,0 +1,34 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "psychic"],
+      "damage": {
+        "amount": 130,
+        "kind": "fixed"
+      },
+      "name": "あやしいともしび"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ヒトモシ",
+  "cardIds": ["050674"],
+  "category": "ポケモン",
+  "evolvesFrom": "ランプラー",
+  "excludedEffects": [
+    {
+      "description": "ワザ「あやしいともしび」の、相手のバトルポケモンをやけどとこんらんにする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 140,
+  "isTerastal": false,
+  "name": "シャンデラ",
+  "pokemonType": "psychic",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

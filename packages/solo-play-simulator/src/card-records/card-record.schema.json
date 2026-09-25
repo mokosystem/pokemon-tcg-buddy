@@ -1828,6 +1828,19 @@
         {
           "type": "object",
           "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "replaceSelfWithPokemonFromDeck"
+            }
+          },
+          "required": ["filter", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "operation": {
               "const": "discardStadiumInPlay"
             }
@@ -2609,6 +2622,49 @@
           "properties": {
             "count": {
               "const": "basicEnergyAttachedToOwnPokemon"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "const": "basicEnergyTypesAttachedToOwnPokemon"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "const": "discardCardsMatching"
+            },
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            }
+          },
+          "required": ["count", "filter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "const": "cardsInHand"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "const": "toolAttachedToAttackingPokemon"
             }
           },
           "required": ["count"],
@@ -3443,6 +3499,19 @@
             }
           },
           "required": ["maxCount", "minCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "replaceSelfWithPokemonFromDeck"
+            }
+          },
+          "required": ["filter", "operation"],
           "additionalProperties": false
         },
         {

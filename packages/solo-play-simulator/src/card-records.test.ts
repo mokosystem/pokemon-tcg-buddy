@@ -226,6 +226,17 @@ const ARTICUNO = buildRecordedCard("050624");
 const PALKIA = buildRecordedCard("050626");
 const ZAPDOS = buildRecordedCard("050661");
 const MORPEKO = buildRecordedCard("050664");
+const XERNEAS = buildRecordedCard("050675");
+const GIMMIGHOUL = buildRecordedCard("050679");
+const ALOLAN_MEOWTH = buildRecordedCard("050687");
+const GALARIAN_MEOWTH = buildRecordedCard("050692");
+const JIRACHI_EX = buildRecordedCard("050693");
+const DIALGA = buildRecordedCard("050694");
+const COSMOEM = buildRecordedCard("050677");
+const SOLGALEO = buildRecordedCard("050696");
+const SALAMENCE_EX = buildRecordedCard("050700");
+const MEOWTH_30TH = buildRecordedCard("050704");
+const DITTO = buildRecordedCard("050705");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -4013,6 +4024,177 @@ describeTranslation("モルペコ", () => {
       "おやつをえらぶ"
     );
     expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+  });
+});
+
+describeTranslation("ゼルネアス", () => {
+  test("ジオナビゲートは、山札からスタジアムを 2 枚まで手札に加える", () => {
+    const state = buildState({
+      active: XERNEAS,
+      deck: [NIGHT_ACADEMY, BOSS, ZERO_CAVERN, GRAND_TREE_FOREST],
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "ジオナビゲート");
+    expect(namesOf(state.hand)).toEqual(["夜のアカデミー", "ゼロの大空洞"]);
+  });
+});
+
+describeTranslation("コレクレー", () => {
+  test("たくさんあるくは、コインでオモテなら山札から好きなカードを 1 枚手札に加え、ウラなら何もしない", () => {
+    const heads = buildState({
+      active: GIMMIGHOUL,
+      deck: [BOSS, RALTS],
+      random: randomSequence([0.3]),
+    });
+    heads.active?.energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(heads), "たくさんあるく");
+    expect(namesOf(heads.hand)).toEqual(["ボスの指令"]);
+    const tails = buildState({
+      active: GIMMIGHOUL,
+      deck: [BOSS, RALTS],
+      random: randomSequence([0.6]),
+    });
+    tails.active?.energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(tails), "たくさんあるく");
+    expect(tails.hand).toEqual([]);
+  });
+});
+
+describe("ニャースの「ネコにこばん」", () => {
+  for (const [label, card, energies] of [
+    ["アローラ ニャース", ALOLAN_MEOWTH, []],
+    ["ガラル ニャース", GALARIAN_MEOWTH, [STEEL_ENERGY]],
+    ["ニャース", MEOWTH_30TH, [STEEL_ENERGY, STEEL_ENERGY]],
+  ] as const) {
+    describeTranslation(label, () => {
+      test("ネコにこばんは 1 枚引く", () => {
+        const state = buildState({ active: card, deck: [BOSS, RALTS] });
+        activeOf(state).energies.push(...energies);
+        useAttackNamed(buildContext(state), "ネコにこばん");
+        expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+      });
+    });
+  }
+
+  test("おたからラッシュは、手札の枚数×10", () => {
+    const state = buildState({
+      active: GALARIAN_MEOWTH,
+      hand: [BOSS, RALTS, KIRLIA],
+    });
+    expect(
+      damageOf(state, activeOf(state), GALARIAN_MEOWTH, "おたからラッシュ")
+    ).toBe(3 * 10);
+  });
+});
+
+describeTranslation("ジラーチex", () => {
+  test("ねがいをかなえるは、手札が 7 枚になるように引く", () => {
+    const state = buildState({
+      active: JIRACHI_EX,
+      deck: repeat(STEEL_ENERGY, 10),
+      hand: [BOSS, RALTS],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    useAttackNamed(buildContext(state), "ねがいをかなえる");
+    expect(state.hand).toHaveLength(7);
+  });
+});
+
+describeTranslation("ディアルガ", () => {
+  test("リバースクロックは、トラッシュのポケモンと基本エネルギーを合計 3 枚まで山札に戻す", () => {
+    const state = buildState({
+      active: DIALGA,
+      discard: [BOSS, PRISM_ENERGY, RALTS, STEEL_ENERGY, KIRLIA, RALTS],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    useAttackNamed(buildContext(state), "リバースクロック");
+    expect(namesOf(state.discard)).toEqual([
+      "ボスの指令",
+      "プリズムエネルギー",
+      "ラルトス",
+    ]);
+    expect(state.deck).toHaveLength(3);
+  });
+});
+
+describeTranslation("ソルガレオ", () => {
+  test("サンライズは、ベンチにいれば番に 1 回、山札の基本鋼エネルギーを 2 枚までこのポケモンにつける", () => {
+    const state = buildState({
+      active: COSMOEM,
+      bench: [SOLGALEO],
+      deck: [STEEL_ENERGY, BOSS, STEEL_ENERGY, STEEL_ENERGY],
+    });
+    const context = buildContext(state);
+    useAbility(context, benchAt(state, 0), "サンライズ");
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本鋼エネルギー",
+      "基本鋼エネルギー",
+    ]);
+    expect(canUseAbility(context, benchAt(state, 0), "サンライズ")).toBe(false);
+  });
+
+  test("バトル場にいるときは使えない", () => {
+    const state = buildState({ active: SOLGALEO, deck: [STEEL_ENERGY] });
+    expect(
+      canUseAbility(buildContext(state), activeOf(state), "サンライズ")
+    ).toBe(false);
+  });
+});
+
+describeTranslation("ボーマンダex", () => {
+  test("とどろくよびごえは、トラッシュのドラゴンタイプのたねポケモンを 3 枚までベンチに出す", () => {
+    const state = buildState({
+      active: SALAMENCE_EX,
+      discard: [DRATINI, KOMMO_O, RALTS, DREEPY, DRATINI, DRATINI],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY);
+    useAttackNamed(buildContext(state), "とどろくよびごえ");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
+      "ミニリュウ",
+      "ドラメシヤ",
+      "ミニリュウ",
+    ]);
+  });
+
+  test("りゅうのはどうは、山札の上から 2 枚トラッシュする", () => {
+    const state = buildState({
+      active: SALAMENCE_EX,
+      deck: [BOSS, RALTS, KIRLIA],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY, WATER_ENERGY);
+    useAttackNamed(buildContext(state), "りゅうのはどう");
+    expect(namesOf(state.discard)).toEqual(["ボスの指令", "ラルトス"]);
+    expect(namesOf(state.deck)).toEqual(["キルリア"]);
+  });
+});
+
+describeTranslation("メタモン", () => {
+  test("どっきりへんしんは、コインでオモテなら山札のポケモンと入れ替え、ついているカードを引き継ぎ、このカードを山札に戻す", () => {
+    const state = buildState({
+      active: DITTO,
+      bench: [RALTS],
+      deck: [BOSS, GARDEVOIR, RALTS],
+      random: randomSequence([0.2]),
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "どっきりへんしん");
+    expect(activeOf(state).name).toBe("メガサーナイトex");
+    expect(activeOf(state).energies).toHaveLength(2);
+    expect(namesOf(state.deck).sort()).toEqual(
+      ["ボスの指令", "メタモン", "ラルトス"].sort()
+    );
+  });
+
+  test("コインがウラなら入れ替えない", () => {
+    const state = buildState({
+      active: DITTO,
+      deck: [GARDEVOIR],
+      random: randomSequence([0.8]),
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "どっきりへんしん");
+    expect(activeOf(state).name).toBe("メタモン");
+    expect(namesOf(state.deck)).toEqual(["メガサーナイトex"]);
   });
 });
 

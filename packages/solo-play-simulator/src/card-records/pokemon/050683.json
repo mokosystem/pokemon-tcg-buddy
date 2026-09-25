@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fighting"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "カウンター"
+    },
+    {
+      "cost": ["fighting", "fighting"],
+      "damage": {
+        "amount": 80,
+        "kind": "fixed"
+      },
+      "name": "ロックスマッシュ"
+    }
+  ],
+  "cardIds": ["050683"],
+  "category": "ポケモン",
+  "evolvesFrom": "イワンコ",
+  "excludedEffects": [
+    {
+      "description": "ワザ「カウンター」の、前の相手の番にこのポケモンが受けたワザのダメージと同じだけ足す上乗せ。相手の側で決まるため持たず、ダメージは上乗せを除いた 10 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ルガルガン",
+  "pokemonType": "fighting",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

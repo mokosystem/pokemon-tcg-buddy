@@ -12,6 +12,7 @@ import {
   CardCategory,
   type DamageBonus,
 } from "./card-record-schema.ts";
+import { type Card, matchesCardFilter } from "./cards.ts";
 import { matchesPokemonFilter } from "./conditions.ts";
 import {
   countEnergyUnitsOfTypes,
@@ -20,57 +21,80 @@ import {
 } from "./continuous-effects.ts";
 import type { GameState, PokemonInPlay } from "./state.ts";
 
-function countDamageTarget(
+type DamageCountTarget = DamageBonus["target"];
+
+type DamageTargetCounter<Name extends DamageCountTarget["count"]> = (
+  target: Extract<DamageCountTarget, { count: Name }>,
+  state: GameState,
+  attacker: PokemonInPlay
+) => number;
+
+function listAttachedBasicEnergies(state: GameState): Card[] {
+  return state
+    .listPokemonInPlay()
+    .flatMap((pokemon) =>
+      pokemon.energies.filter(
+        (energy) => energy.category === CardCategory.BasicEnergy
+      )
+    );
+}
+
+/** 数える対象の部品ごとの数え方。記法の部品の一覧と 1 対 1 に対応させる(部品を足すときはここにも 1 行足す)。 */
+const damageTargetCounters: {
+  readonly [Name in DamageCountTarget["count"]]: DamageTargetCounter<Name>;
+} = {
+  basicEnergyAttachedToOwnPokemon: (_, state) =>
+    listAttachedBasicEnergies(state).length,
+  basicEnergyTypesAttachedToOwnPokemon: (_, state) =>
+    new Set(
+      listAttachedBasicEnergies(state).flatMap((energy) =>
+        energy.provision?.kind === "type" ? [energy.provision.type] : []
+      )
+    ).size,
+  cardsInHand: (_, state) => state.hand.length,
+  discardCardsMatching: (target, state) =>
+    state.discard.filter((card) => matchesCardFilter(card, target.filter))
+      .length,
+  discardPokemonWithAbilityName: (target, state) =>
+    state.discard.filter(
+      (card) =>
+        card.record.category === CardCategory.Pokemon &&
+        card.record.abilities.some(
+          (ability) => ability.name === target.abilityName
+        )
+    ).length,
+  energyAttachedToAttackingPokemon: (target, state, attacker) =>
+    target.energyTypes === undefined
+      ? listEnergyUnits(state, attacker).length
+      : countEnergyUnitsOfTypes(state, attacker, target.energyTypes),
+  energyAttachedToOwnPokemon: (target, state) =>
+    state
+      .listPokemonInPlay()
+      .reduce(
+        (total, pokemon) =>
+          total + countEnergyUnitsOfTypes(state, pokemon, target.energyTypes),
+        0
+      ),
+  ownPokemonInPlay: (target, state) =>
+    state
+      .listPokemonInPlay()
+      .filter(
+        (pokemon) =>
+          target.filter === undefined ||
+          matchesPokemonFilter(state, pokemon, target.filter)
+      ).length,
+  stadiumsInPlay: (_, state) => (state.stadium === null ? 0 : 1),
+  toolAttachedToAttackingPokemon: (_, __, attacker) =>
+    attacker.tool === null ? 0 : 1,
+};
+
+function countDamageTarget<Name extends DamageCountTarget["count"]>(
   state: GameState,
   attacker: PokemonInPlay,
-  target: DamageBonus["target"]
+  target: Extract<DamageCountTarget, { count: Name }>
 ): number {
-  switch (target.count) {
-    case "energyAttachedToAttackingPokemon":
-      return target.energyTypes === undefined
-        ? listEnergyUnits(state, attacker).length
-        : countEnergyUnitsOfTypes(state, attacker, target.energyTypes);
-    case "energyAttachedToOwnPokemon":
-      return state
-        .listPokemonInPlay()
-        .reduce(
-          (total, pokemon) =>
-            total + countEnergyUnitsOfTypes(state, pokemon, target.energyTypes),
-          0
-        );
-    case "discardPokemonWithAbilityName":
-      return state.discard.filter(
-        (card) =>
-          card.record.category === CardCategory.Pokemon &&
-          card.record.abilities.some(
-            (ability) => ability.name === target.abilityName
-          )
-      ).length;
-    case "basicEnergyAttachedToOwnPokemon":
-      return state
-        .listPokemonInPlay()
-        .reduce(
-          (total, pokemon) =>
-            total +
-            pokemon.energies.filter(
-              (energy) => energy.category === CardCategory.BasicEnergy
-            ).length,
-          0
-        );
-    case "stadiumsInPlay":
-      return state.stadium === null ? 0 : 1;
-    case "ownPokemonInPlay": {
-      const { filter } = target;
-      return state
-        .listPokemonInPlay()
-        .filter(
-          (pokemon) =>
-            filter === undefined || matchesPokemonFilter(state, pokemon, filter)
-        ).length;
-    }
-    default:
-      return 0;
-  }
+  const count: DamageTargetCounter<Name> = damageTargetCounters[target.count];
+  return count(target, state, attacker);
 }
 
 function calculateBonus(

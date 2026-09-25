@@ -1,0 +1,42 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fighting"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "ゆさぶるこぶし"
+    },
+    {
+      "cost": ["fighting", "colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 180,
+        "kind": "fixed"
+      },
+      "name": "メガトンパンチ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "オタマロ",
+  "cardIds": ["050682"],
+  "category": "ポケモン",
+  "evolvesFrom": "ガマガル",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ゆさぶるこぶし」の、次の相手の番に相手がトレーナーズを使うたびコインを投げさせ、ウラなら使えなくする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 160,
+  "isTerastal": false,
+  "name": "ガマゲロゲ",
+  "pokemonType": "fighting",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

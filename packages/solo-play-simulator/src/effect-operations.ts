@@ -232,6 +232,8 @@ const firstStepTargetChecks: {
     listMatching(state.discard, step.filter).some(isBasicPokemon),
   placeHandCardsOnDeckTop: (step, { hand }) => hand.length >= step.count,
   placeSelfOnBenchFromHand: (_, { state }) => countEmptyBenchSlots(state) > 0,
+  replaceSelfWithPokemonFromDeck: (_, { source, state }) =>
+    state.deck.length > 0 && source.pokemon !== null,
   returnFromDiscardToDeck: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
@@ -1129,6 +1131,23 @@ const operationRunners: {
       byEffect: true,
       from: "hand",
     });
+  },
+  replaceSelfWithPokemonFromDeck: (step, { context, label, source }) => {
+    const { state } = context;
+    const holder = source.pokemon;
+    const [card] =
+      holder === null
+        ? []
+        : chooseCardsWithin(
+            context,
+            listMatching(state.deck, step.filter).filter(isPokemon),
+            { maxCount: 1, minCount: 0 },
+            `${label}: ${holder.name} と入れ替える山札のポケモン`
+          );
+    if (holder !== null && card !== undefined) {
+      state.replacePokemonWithDeckCard(holder, card);
+    }
+    state.shuffleDeck();
   },
   returnFromDiscardToDeck: (step, { context, label }) => {
     const chosen = chooseCardsWithin(

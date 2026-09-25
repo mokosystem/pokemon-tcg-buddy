@@ -500,6 +500,14 @@ const basicOperationOptions = [
     minCount: countFromZero,
     operation: literal("addCardsDiscardedFromDeckTopInThisEffectToHand"),
   }),
+  /**
+   * 山札から条件に合うポケモンを 1 枚選び、このポケモン(効果の持ち主)と入れ替える。ついているカードや場に出た番は
+   * 引き継ぎ、入れ替えたこのポケモンのカードは山札に戻して切る(メタモンの「どっきりへんしん」)。
+   */
+  strictObject({
+    filter: CardFilterSchema,
+    operation: literal("replaceSelfWithPokemonFromDeck"),
+  }),
   /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
   strictObject({
     operation: literal("discardStadiumInPlay"),
@@ -666,6 +674,17 @@ export const DamageCountTargetSchema = variant("count", [
   }),
   /** 自分のポケモン全員についている基本エネルギーの枚数(タケルライコex の「きょくらいごう」)。 */
   strictObject({ count: literal("basicEnergyAttachedToOwnPokemon") }),
+  /** 自分のポケモン全員についている基本エネルギーのタイプの種類の数(ニンフィアex の「カラフルハーモニー」)。 */
+  strictObject({ count: literal("basicEnergyTypesAttachedToOwnPokemon") }),
+  /** 自分のトラッシュの、条件に合うカードの枚数(ルナアーラの「ミッドナイトレイ」: エネルギー)。 */
+  strictObject({
+    count: literal("discardCardsMatching"),
+    filter: CardFilterSchema,
+  }),
+  /** 自分の手札の枚数(ガラル ニャースの「おたからラッシュ」)。 */
+  strictObject({ count: literal("cardsInHand") }),
+  /** ワザを使うポケモンについているポケモンのどうぐの数(0 か 1。ザシアンの「ハードブレード」)。 */
+  strictObject({ count: literal("toolAttachedToAttackingPokemon") }),
   /** 場に出ているスタジアムの数(0 か 1。イーユイの「グラウンドメルト」)。 */
   strictObject({ count: literal("stadiumsInPlay") }),
   /**

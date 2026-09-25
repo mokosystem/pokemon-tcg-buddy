@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "psychic"],
+      "damage": {
+        "amount": 40,
+        "kind": "fixed"
+      },
+      "name": "ミステリーシグナル"
+    }
+  ],
+  "cardIds": ["050672"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ミステリーシグナル」の、このワザのダメージで相手のポケモンをきぜつさせたときにサイドを 1 枚多くとる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "アンノーン",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

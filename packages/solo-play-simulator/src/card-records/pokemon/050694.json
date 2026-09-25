@@ -1,0 +1,55 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "anyOf": [
+                {
+                  "categories": ["ポケモン"]
+                },
+                {
+                  "categories": ["基本エネルギー"]
+                }
+              ]
+            },
+            "maxCount": 3,
+            "minCount": 1,
+            "operation": "returnFromDiscardToDeck"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "リバースクロック"
+    },
+    {
+      "cost": ["steel", "steel", "colorless"],
+      "damage": {
+        "amount": 110,
+        "kind": "fixed"
+      },
+      "name": "ヘビーインパクト"
+    }
+  ],
+  "cardIds": ["050694"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ディアルガ",
+  "pokemonType": "steel",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}
