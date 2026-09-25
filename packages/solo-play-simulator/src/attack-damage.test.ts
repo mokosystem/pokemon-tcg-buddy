@@ -38,6 +38,8 @@ const STEEL_ENERGY = buildRecordedCard("030578");
 const TAPU_KOKO_EX = buildRecordedCard("046500");
 const PASSIMIAN = buildRecordedCard("049123");
 const ESPEON_EX = buildRecordedCard("050577");
+const PIKACHU_CHAIN = buildRecordedCard("050640");
+const PIKACHU_EX = buildRecordedCard("050659");
 
 describe("ワザのダメージ", () => {
   test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
@@ -90,6 +92,20 @@ describe("ワザのダメージ", () => {
         findAttack(ESPEON_EX, "サンシャインビート")
       )
     ).toBe(3 * 30);
+  });
+
+  test("ピカれんさは、自分の場のピカチュウとピカチュウex の数×40(公式 Q&A)", () => {
+    const state = buildState({
+      active: PIKACHU_CHAIN,
+      bench: [PIKACHU_EX, RALTS, PIKACHU_CHAIN],
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(PIKACHU_CHAIN, "ピカれんさ")
+      )
+    ).toBe(3 * 40);
   });
 
   test("ユニオンビートは、自分のベンチポケモンの数×30", () => {

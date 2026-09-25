@@ -1,0 +1,54 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"],
+              "stages": ["たね"]
+            },
+            "maxCount": 8,
+            "operation": "searchDeckOntoBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "ピカピカパレード"
+    },
+    {
+      "cost": ["electric", "electric", "colorless"],
+      "damage": {
+        "amount": 200,
+        "kind": "fixed"
+      },
+      "name": "10まんボルト"
+    }
+  ],
+  "cardIds": ["050659"],
+  "category": "ポケモン",
+  "exRule": "pokemonEx",
+  "excludedEffects": [
+    {
+      "description": "ワザ「10まんボルト」は、相手のバトルポケモンに 200 ダメージを与えたあと、自身のエネルギーをすべてトラッシュする。200 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 190,
+  "isTerastal": false,
+  "name": "ピカチュウex",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

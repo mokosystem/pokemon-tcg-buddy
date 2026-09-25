@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "electric", "electric"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "かみなりおとし"
+    }
+  ],
+  "cardIds": ["050657"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「かみなりおとし」は、自身の雷エネルギーをすべてトラッシュし、相手のポケモン 1 匹に 90 ダメージを与える。90 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

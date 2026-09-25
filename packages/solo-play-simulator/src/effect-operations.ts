@@ -5,6 +5,7 @@
  */
 
 import {
+  type AttachCount,
   type BasicOperation,
   CardCategory,
   type CardEffect,
@@ -184,6 +185,9 @@ const firstStepTargetChecks: {
   attachEnergyFromHand: (step, { hand, state }) =>
     listMatching(hand, step.energyFilter).some(isEnergy) &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
+  attachEnergyFromHandDistributedToPokemon: (step, { hand, state }) =>
+    listMatching(hand, step.energyFilter).some(isEnergy) &&
+    listOwnPokemonMatching(state, step.targetFilter).length > 0,
   attachEnergyFromHandToSelf: (step, { hand, source }) =>
     listMatching(hand, step.energyFilter).some(isEnergy) &&
     source.pokemon !== null,
@@ -236,6 +240,8 @@ const firstStepTargetChecks: {
   searchDeckAndAttachEnergyToOnePokemon: (step, { state }) =>
     state.deck.length > 0 &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
+  searchDeckAndAttachEnergyToSelf: (_, { source, state }) =>
+    state.deck.length > 0 && source.pokemon !== null,
   searchDeckAndPlaceOnTopAfterShuffle: deckHasCards,
   searchDeckIntoHand: deckHasCards,
   searchDeckIntoHandAndAttachRest: deckHasCards,
@@ -675,6 +681,78 @@ function attachEnergyFromHandToHolder(
   }
 }
 
+/** 手札からエネルギーを 0 枚以上選び、1 枚ずつつける先のポケモンを選ぶ(同じポケモンに何枚つけてもよい)。 */
+function attachEnergyFromHandDistributed(
+  run: OperationRun,
+  step: Extract<
+    BasicOperation,
+    { operation: "attachEnergyFromHandDistributedToPokemon" }
+  >
+): void {
+  const { context, label } = run;
+  const { state } = context;
+  const energies = listMatching(state.hand, step.energyFilter).filter(isEnergy);
+  const chosen = chooseCardsWithin(
+    context,
+    energies,
+    { maxCount: energies.length, minCount: 0 },
+    `${label}: 手札からつけるエネルギー`
+  );
+  const targets = listOwnPokemonMatching(state, step.targetFilter);
+  for (const energy of chosen) {
+    const target = chooseOnePokemon(
+      context,
+      targets,
+      `${label}: ${energy.name} をつけるポケモン`
+    );
+    if (target !== null) {
+      state.attachEnergyByEffect(energy, target, "hand");
+      resolveAttachedFromHandTriggers(context, energy, target);
+    }
+  }
+}
+
+/** つけるエネルギーの上限。コインで決まるときは、ここでウラが出るまで投げる(オモテとウラは 1/2 ずつ)。 */
+function calculateAttachCount(
+  count: AttachCount,
+  { context, label }: OperationRun
+): number {
+  if (count.kind === "fixed") {
+    return count.value;
+  }
+  let heads = 0;
+  while (context.state.random.nextFloat() < 0.5) {
+    heads += 1;
+  }
+  context.state.record(`${label}: コインのオモテ ${heads} 回`);
+  return heads;
+}
+
+/** 山札からエネルギーを 0〜上限枚選び、効果の持ち主につけて切る。 */
+function searchDeckAndAttachToHolder(
+  run: OperationRun,
+  step: Extract<
+    BasicOperation,
+    { operation: "searchDeckAndAttachEnergyToSelf" }
+  >
+): void {
+  const { context, label, source } = run;
+  const { state } = context;
+  const holder = source.pokemon;
+  const maxCount = calculateAttachCount(step.maxCount, run);
+  if (holder !== null && maxCount > 0) {
+    for (const energy of chooseCardsWithin(
+      context,
+      listMatching(state.deck, step.energyFilter).filter(isEnergy),
+      { maxCount, minCount: 0 },
+      `${label}: 山札から ${holder.name} につけるエネルギー`
+    )) {
+      state.attachEnergyByEffect(energy, holder, "deck");
+    }
+  }
+  state.shuffleDeck();
+}
+
 /** つけ替える元のポケモンを 0 匹以上選び、それぞれからエネルギーを 0 枚以上選んで、効果の持ち主につけ替える。 */
 function moveEnergyToHolder(run: OperationRun): void {
   const holder = run.source.pokemon;
@@ -903,6 +981,8 @@ const operationRunners: {
   attachEnergyFromDiscardToOnePokemon: (step, run) =>
     attachEnergyToOnePokemon(run, step, "discard"),
   attachEnergyFromHand: (step, run) => attachEnergyChosenFromHand(run, step),
+  attachEnergyFromHandDistributedToPokemon: (step, run) =>
+    attachEnergyFromHandDistributed(run, step),
   attachEnergyFromHandToSelf: (step, run) =>
     attachEnergyFromHandToHolder(run, step),
   discardFromHand: (step, { context, label, progress }) => {
@@ -1060,6 +1140,8 @@ const operationRunners: {
     attachEnergyToOnePokemon(run, step, "deck");
     run.context.state.shuffleDeck();
   },
+  searchDeckAndAttachEnergyToSelf: (step, run) =>
+    searchDeckAndAttachToHolder(run, step),
   searchDeckAndPlaceOnTopAfterShuffle: (step, run) =>
     searchDeckAndPlaceOnTop(run, step.count),
   searchDeckIntoHand: (step, { context, label }) => {

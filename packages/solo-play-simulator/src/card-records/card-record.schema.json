@@ -819,6 +819,34 @@
         }
       ]
     },
+    "AttachCount": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "fixed"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["kind", "value"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "coinFlipsUntilTails"
+            }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        }
+      ]
+    },
     "Attack": {
       "type": "object",
       "properties": {
@@ -1508,6 +1536,38 @@
             }
           },
           "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "attachEnergyFromHandDistributedToPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "$ref": "#/$defs/AttachCount"
+            },
+            "operation": {
+              "const": "searchDeckAndAttachEnergyToSelf"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation"],
           "additionalProperties": false
         },
         {
@@ -3057,6 +3117,38 @@
             }
           },
           "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "operation": {
+              "const": "attachEnergyFromHandDistributedToPokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "$ref": "#/$defs/AttachCount"
+            },
+            "operation": {
+              "const": "searchDeckAndAttachEnergyToSelf"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation"],
           "additionalProperties": false
         },
         {

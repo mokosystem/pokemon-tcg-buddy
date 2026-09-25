@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "さびしいめせん"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["electric", "colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "ピカボール"
+    }
+  ],
+  "cardIds": ["050634"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「さびしいめせん」(バトル場にいる間、相手のバトルポケモンが使うワザのダメージを 20 減らす)",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

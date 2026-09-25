@@ -202,6 +202,38 @@ import pokemon050586 from "./card-records/pokemon/050586.json";
 import pokemon050587 from "./card-records/pokemon/050587.json";
 import pokemon050588 from "./card-records/pokemon/050588.json";
 import pokemon050590 from "./card-records/pokemon/050590.json";
+import pokemon050629 from "./card-records/pokemon/050629.json";
+import pokemon050630 from "./card-records/pokemon/050630.json";
+import pokemon050631 from "./card-records/pokemon/050631.json";
+import pokemon050632 from "./card-records/pokemon/050632.json";
+import pokemon050633 from "./card-records/pokemon/050633.json";
+import pokemon050634 from "./card-records/pokemon/050634.json";
+import pokemon050635 from "./card-records/pokemon/050635.json";
+import pokemon050636 from "./card-records/pokemon/050636.json";
+import pokemon050637 from "./card-records/pokemon/050637.json";
+import pokemon050638 from "./card-records/pokemon/050638.json";
+import pokemon050639 from "./card-records/pokemon/050639.json";
+import pokemon050640 from "./card-records/pokemon/050640.json";
+import pokemon050641 from "./card-records/pokemon/050641.json";
+import pokemon050642 from "./card-records/pokemon/050642.json";
+import pokemon050643 from "./card-records/pokemon/050643.json";
+import pokemon050644 from "./card-records/pokemon/050644.json";
+import pokemon050645 from "./card-records/pokemon/050645.json";
+import pokemon050646 from "./card-records/pokemon/050646.json";
+import pokemon050647 from "./card-records/pokemon/050647.json";
+import pokemon050648 from "./card-records/pokemon/050648.json";
+import pokemon050649 from "./card-records/pokemon/050649.json";
+import pokemon050650 from "./card-records/pokemon/050650.json";
+import pokemon050651 from "./card-records/pokemon/050651.json";
+import pokemon050652 from "./card-records/pokemon/050652.json";
+import pokemon050653 from "./card-records/pokemon/050653.json";
+import pokemon050654 from "./card-records/pokemon/050654.json";
+import pokemon050655 from "./card-records/pokemon/050655.json";
+import pokemon050656 from "./card-records/pokemon/050656.json";
+import pokemon050657 from "./card-records/pokemon/050657.json";
+import pokemon050658 from "./card-records/pokemon/050658.json";
+import pokemon050659 from "./card-records/pokemon/050659.json";
+import pokemon050660 from "./card-records/pokemon/050660.json";
 import pokemon050669 from "./card-records/pokemon/050669.json";
 import pokemonTools045281 from "./card-records/pokemon-tools/045281.json";
 import pokemonTools045633 from "./card-records/pokemon-tools/045633.json";
@@ -462,6 +494,38 @@ export const cardRecordTable = buildCardRecordTable([
   { content: pokemon050587, path: "pokemon/050587.json" },
   { content: pokemon050588, path: "pokemon/050588.json" },
   { content: pokemon050590, path: "pokemon/050590.json" },
+  { content: pokemon050629, path: "pokemon/050629.json" },
+  { content: pokemon050630, path: "pokemon/050630.json" },
+  { content: pokemon050631, path: "pokemon/050631.json" },
+  { content: pokemon050632, path: "pokemon/050632.json" },
+  { content: pokemon050633, path: "pokemon/050633.json" },
+  { content: pokemon050634, path: "pokemon/050634.json" },
+  { content: pokemon050635, path: "pokemon/050635.json" },
+  { content: pokemon050636, path: "pokemon/050636.json" },
+  { content: pokemon050637, path: "pokemon/050637.json" },
+  { content: pokemon050638, path: "pokemon/050638.json" },
+  { content: pokemon050639, path: "pokemon/050639.json" },
+  { content: pokemon050640, path: "pokemon/050640.json" },
+  { content: pokemon050641, path: "pokemon/050641.json" },
+  { content: pokemon050642, path: "pokemon/050642.json" },
+  { content: pokemon050643, path: "pokemon/050643.json" },
+  { content: pokemon050644, path: "pokemon/050644.json" },
+  { content: pokemon050645, path: "pokemon/050645.json" },
+  { content: pokemon050646, path: "pokemon/050646.json" },
+  { content: pokemon050647, path: "pokemon/050647.json" },
+  { content: pokemon050648, path: "pokemon/050648.json" },
+  { content: pokemon050649, path: "pokemon/050649.json" },
+  { content: pokemon050650, path: "pokemon/050650.json" },
+  { content: pokemon050651, path: "pokemon/050651.json" },
+  { content: pokemon050652, path: "pokemon/050652.json" },
+  { content: pokemon050653, path: "pokemon/050653.json" },
+  { content: pokemon050654, path: "pokemon/050654.json" },
+  { content: pokemon050655, path: "pokemon/050655.json" },
+  { content: pokemon050656, path: "pokemon/050656.json" },
+  { content: pokemon050657, path: "pokemon/050657.json" },
+  { content: pokemon050658, path: "pokemon/050658.json" },
+  { content: pokemon050659, path: "pokemon/050659.json" },
+  { content: pokemon050660, path: "pokemon/050660.json" },
   { content: pokemon050669, path: "pokemon/050669.json" },
   { content: stadiums045939, path: "stadiums/045939.json" },
   { content: stadiums046040, path: "stadiums/046040.json" },

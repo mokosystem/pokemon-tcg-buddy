@@ -1,0 +1,50 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"],
+              "providedEnergyTypes": ["electric"]
+            },
+            "maxCount": {
+              "kind": "coinFlipsUntilTails"
+            },
+            "operation": "searchDeckAndAttachEnergyToSelf"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "じゅうでんダッシュ"
+    },
+    {
+      "cost": ["electric", "electric", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "ピカボルト"
+    }
+  ],
+  "cardIds": ["050648"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

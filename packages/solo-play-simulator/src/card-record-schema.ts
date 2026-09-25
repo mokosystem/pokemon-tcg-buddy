@@ -228,6 +228,16 @@ const DeckTopRestPlacementSchema = picklist([
   "shuffleThenBottomOfDeck",
 ]);
 
+/**
+ * 効果でつけるエネルギーの上限。fixed は決まった枚数、coinFlipsUntilTails はウラが出るまでコインを投げたオモテの数
+ * (ピカチュウ 050648 の「じゅうでんダッシュ」)。コインはオモテとウラを 1/2 ずつとする。
+ */
+export const AttachCountSchema = variant("kind", [
+  strictObject({ kind: literal("fixed"), value: countFromOne }),
+  strictObject({ kind: literal("coinFlipsUntilTails") }),
+]);
+export type AttachCount = InferOutput<typeof AttachCountSchema>;
+
 /** 山札から探す 1 回分。条件に合うカードを最大 maxCount 枚選ぶ。 */
 export const DeckSearchPickSchema = strictObject({
   filter: CardFilterSchema,
@@ -369,6 +379,24 @@ const basicOperationOptions = [
     maxCount: countFromOne,
     operation: literal("attachEnergyFromHand"),
     targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /**
+   * 手札から条件に合うエネルギーを好きなだけ選び、条件に合う自分のポケモンに好きなようにつける(ピカチュウex 050660 の
+   * 「ビリビリフィーバー」)。手札からつける番に 1 回には数えない。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    operation: literal("attachEnergyFromHandDistributedToPokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /**
+   * 山札から条件に合うエネルギーを maxCount 枚まで選び、このポケモン(効果の持ち主)につけて切る(ソルガレオの
+   * 「サンライズ」、ピカチュウ 050648 の「じゅうでんダッシュ」)。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: AttachCountSchema,
+    operation: literal("searchDeckAndAttachEnergyToSelf"),
   }),
   /** 手札から条件に合うエネルギーを 1〜maxCount 枚選び、このポケモン(効果の持ち主)につける。手札からつける番に 1 回には数えない。 */
   strictObject({
@@ -904,6 +932,7 @@ export type PokemonRecord = InferOutput<typeof PokemonRecordSchema>;
 export const CARD_RECORD_SCHEMA_DEFINITIONS = {
   Ability: AbilitySchema,
   AbilityTranslation: AbilityTranslationSchema,
+  AttachCount: AttachCountSchema,
   Attack: AttackSchema,
   AttackDamage: AttackDamageSchema,
   BasicCondition: BasicConditionSchema,

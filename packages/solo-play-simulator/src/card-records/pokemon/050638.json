@@ -1,0 +1,35 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "switchActiveWithBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "にげまわる"
+    }
+  ],
+  "cardIds": ["050638"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 50,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

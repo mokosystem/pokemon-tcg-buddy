@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "うわがきボルト"
+    }
+  ],
+  "cardIds": ["050646"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「うわがきボルト」の、次の自分の番の終わりまでワザを受けたポケモンの弱点を雷タイプにする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

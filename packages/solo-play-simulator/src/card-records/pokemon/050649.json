@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "handSize": 6,
+              "kind": "untilHandSize"
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "なんごくきぶん"
+    }
+  ],
+  "cardIds": ["050649"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「なんごくきぶん」の、このポケモンをねむりにする効果",
+      "reason": "specialCondition"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

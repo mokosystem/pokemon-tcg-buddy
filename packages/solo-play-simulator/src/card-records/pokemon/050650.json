@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "こうそくいどう"
+    }
+  ],
+  "cardIds": ["050650"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「こうそくいどう」の、コインでオモテなら次の相手の番にこのポケモンがワザのダメージや効果を受けなくなる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

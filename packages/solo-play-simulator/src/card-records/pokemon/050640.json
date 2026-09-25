@@ -1,0 +1,49 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "electric", "electric"],
+      "damage": {
+        "amount": 0,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "ownPokemonInPlay",
+            "filter": {
+              "names": ["ピカチュウ", "ピカチュウex"]
+            }
+          },
+          "unit": 40
+        },
+        "kind": "fixed"
+      },
+      "name": "ピカれんさ"
+    }
+  ],
+  "cardIds": ["050640"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 2,
+  "rulings": [
+    {
+      "interpretation": "名前が「ピカチュウ」と「ピカチュウex」のポケモンだけを数える。トウホクのピカチュウのように名前の違うポケモンは数えない",
+      "question": "「ピカチュウ(『ポケモンex』をふくむ)」として数えるのはどのポケモンか",
+      "reflectedIn": "ワザのダメージの数える対象 ownPokemonInPlay の条件 names に「ピカチュウ」「ピカチュウex」を書いた",
+      "source": {
+        "checkedOn": "2026-09-25",
+        "kind": "officialQa",
+        "questionSummary": "ベンチにトウホクのピカチュウだけがいるときにピカれんさを使うとダメージはいくつか、という質問に、自分の場のピカチュウとピカチュウexの数を数えるため 40 と回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%94%E3%82%AB%E3%82%8C%E3%82%93%E3%81%95&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

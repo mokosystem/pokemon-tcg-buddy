@@ -1,0 +1,51 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["基本エネルギー", "特殊エネルギー"]
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "エナジーテール"
+    },
+    {
+      "cost": ["electric", "colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "ピカパンチ"
+    }
+  ],
+  "cardIds": ["050643"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

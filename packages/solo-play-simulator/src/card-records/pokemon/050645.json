@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "アイアンテール"
+    }
+  ],
+  "cardIds": ["050645"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「アイアンテール」のダメージは、ウラが出るまでコインを投げたオモテの数 × 20 で決まる。コインで決まるため持たず、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

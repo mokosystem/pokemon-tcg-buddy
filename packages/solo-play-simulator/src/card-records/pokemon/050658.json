@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "アンガーボルト"
+    }
+  ],
+  "cardIds": ["050658"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「アンガーボルト」の、このポケモンにのっているダメカンの数 × 10 を足す上乗せ。ダメカンを扱わないため持たず、ダメージは上乗せを除いた 10 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

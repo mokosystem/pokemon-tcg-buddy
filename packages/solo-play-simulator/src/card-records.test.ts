@@ -210,6 +210,15 @@ const IRIS = buildRecordedCard("050601");
 const WAITRESS = buildRecordedCard("050602");
 const GUY = buildRecordedCard("050603");
 const BROCKS_SCOUTING = buildRecordedCard("050605");
+const PIKACHU_FIND_A_FRIEND = buildRecordedCard("050635");
+const PIKACHU_RUN_AROUND = buildRecordedCard("050638");
+const PIKACHU_ENERGY_TAIL = buildRecordedCard("050643");
+const PIKACHU_CHARGE_DASH = buildRecordedCard("050648");
+const PIKACHU_TROPICAL = buildRecordedCard("050649");
+const PIKACHU_NIGHT_WALK = buildRecordedCard("050651");
+const PIKACHU_STOCKPILE = buildRecordedCard("050654");
+const PIKACHU_EX_PARADE = buildRecordedCard("050659");
+const PIKACHU_EX_FEVER = buildRecordedCard("050660");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3673,6 +3682,170 @@ describeTranslation("タケシのスカウト", () => {
     playTrainerFromHand(buildContext(state), BROCKS_SCOUTING);
     expect(namesOf(state.hand)).toEqual(["キルリア"]);
     expect(state.deck).toHaveLength(4);
+  });
+});
+
+/** 並びの順に値を返す乱数。コインは 0.5 未満がオモテ。 */
+function randomSequence(values: readonly number[]) {
+  let index = 0;
+  return {
+    nextFloat: () => {
+      const value = values[index % values.length] ?? 0;
+      index += 1;
+      return value;
+    },
+  };
+}
+
+describeTranslation("ピカチュウ(050635)", () => {
+  test("ともだちをさがすは、山札からポケモンを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: PIKACHU_FIND_A_FRIEND,
+      deck: [BOSS, KIRLIA, RALTS],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "ともだちをさがす");
+    expect(namesOf(state.hand)).toEqual(["キルリア"]);
+  });
+});
+
+describeTranslation("ピカチュウ(050638)", () => {
+  test("にげまわるは、このポケモンをベンチポケモンと入れ替える", () => {
+    const state = buildState({ active: PIKACHU_RUN_AROUND, bench: [RALTS] });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "にげまわる");
+    expect(activeOf(state).name).toBe("ラルトス");
+  });
+});
+
+describeTranslation("ピカチュウ(050643)", () => {
+  test("エナジーテールは、山札からエネルギーを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: PIKACHU_ENERGY_TAIL,
+      deck: [BOSS, PRISM_ENERGY, LIGHTNING_ENERGY],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "エナジーテール");
+    expect(namesOf(state.hand)).toEqual(["プリズムエネルギー"]);
+  });
+});
+
+describeTranslation("ピカチュウ(050648)", () => {
+  test("じゅうでんダッシュは、ウラが出るまで投げたオモテの数まで、山札の基本雷エネルギーをこのポケモンにつける", () => {
+    const state = buildState({
+      active: PIKACHU_CHARGE_DASH,
+      deck: repeat(LIGHTNING_ENERGY, 4),
+      random: randomSequence([0.1, 0.4, 0.9]),
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "じゅうでんダッシュ");
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本超エネルギー",
+      "基本雷エネルギー",
+      "基本雷エネルギー",
+    ]);
+  });
+
+  test("最初にウラが出たらつけない", () => {
+    const state = buildState({
+      active: PIKACHU_CHARGE_DASH,
+      deck: repeat(LIGHTNING_ENERGY, 4),
+      random: randomSequence([0.9]),
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "じゅうでんダッシュ");
+    expect(activeOf(state).energies).toHaveLength(1);
+    expect(state.deck).toHaveLength(4);
+  });
+});
+
+describeTranslation("ピカチュウ(050649)", () => {
+  test("なんごくきぶんは、手札が 6 枚になるように引く", () => {
+    const state = buildState({
+      active: PIKACHU_TROPICAL,
+      deck: repeat(LIGHTNING_ENERGY, 8),
+      hand: [BOSS, RALTS],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY, LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "なんごくきぶん");
+    expect(state.hand).toHaveLength(6);
+  });
+});
+
+describeTranslation("ピカチュウ(050651)", () => {
+  test("よるのさんぽは 1 枚引く", () => {
+    const state = buildState({
+      active: PIKACHU_NIGHT_WALK,
+      deck: [BOSS, RALTS],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "よるのさんぽ");
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+  });
+});
+
+describeTranslation("ピカチュウ(050654)", () => {
+  test("ためこむは、トラッシュの基本エネルギーを 2 枚まで手札に加える", () => {
+    const state = buildState({
+      active: PIKACHU_STOCKPILE,
+      discard: [
+        PRISM_ENERGY,
+        LIGHTNING_ENERGY,
+        BOSS,
+        PSYCHIC_ENERGY,
+        FIRE_ENERGY,
+      ],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "ためこむ");
+    expect(namesOf(state.hand)).toEqual([
+      "基本雷エネルギー",
+      "基本超エネルギー",
+    ]);
+  });
+});
+
+describeTranslation("ピカチュウex(050659)", () => {
+  test("ピカピカパレードは、山札のたねポケモンを好きなだけ、ベンチの空きまでベンチに出す", () => {
+    const state = buildState({
+      active: PIKACHU_EX_PARADE,
+      bench: [RALTS, RALTS],
+      deck: [...repeat(RALTS, 3), KIRLIA, MEOWTH, BOSS],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "ピカピカパレード");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual(
+      repeat("ラルトス", 5)
+    );
+    expect(state.deck).toHaveLength(3);
+  });
+});
+
+describeTranslation("ピカチュウex(050660)", () => {
+  test("ビリビリフィーバーは、手札の基本エネルギーを好きなだけ、自分のポケモンに好きなようにつける", () => {
+    const state = buildState({
+      active: PIKACHU_EX_FEVER,
+      bench: [RALTS],
+      hand: [LIGHTNING_ENERGY, PRISM_ENERGY, PSYCHIC_ENERGY, FIRE_ENERGY],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    const targets = [activeOf(state), benchAt(state, 0), benchAt(state, 0)];
+    useAttackNamed(
+      buildContext(state, {
+        choosePokemon: (_, request) => {
+          const next = targets.shift();
+          return request.candidates.filter((pokemon) => pokemon === next);
+        },
+      }),
+      "ビリビリフィーバー"
+    );
+    expect(activeOf(state).energies).toHaveLength(2);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本超エネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(namesOf(state.hand)).toEqual(["プリズムエネルギー"]);
+    expect(state.hasAttachedEnergy).toBe(false);
   });
 });
 
