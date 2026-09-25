@@ -206,6 +206,10 @@ const VICTINI = buildRecordedCard("050569");
 const ZERAORA = buildRecordedCard("050570");
 const MEWTWO = buildRecordedCard("050573");
 const ZOROARK = buildRecordedCard("050583");
+const IRIS = buildRecordedCard("050601");
+const WAITRESS = buildRecordedCard("050602");
+const GUY = buildRecordedCard("050603");
+const BROCKS_SCOUTING = buildRecordedCard("050605");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3558,6 +3562,117 @@ describeTranslation("ゾロアーク", () => {
   test("バトル場にいるゾロアーク自身のにげるエネルギーは減らない", () => {
     const state = buildState({ active: ZOROARK, bench: [RALTS] });
     expect(calculateRetreatCost(state, activeOf(state))).toBe(1);
+  });
+});
+
+describeTranslation("アイリスの闘志", () => {
+  test("手札を 1 枚トラッシュし、手札が 6 枚になるように引く", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 8),
+      hand: [IRIS, BOSS, RALTS],
+    });
+    playTrainerFromHand(buildContext(state), IRIS);
+    expect(namesOf(state.discard)).toEqual(["アイリスの闘志", "ボスの指令"]);
+    expect(state.hand).toHaveLength(6);
+  });
+
+  test("このカードを除いた手札が 7 枚以上なら使えない(公式 Q&A)。6 枚なら使える", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 8),
+      hand: [IRIS, ...repeat(BOSS, 7)],
+    });
+    const context = buildContext(state);
+    expect(canPlayTrainerFromHand(context, IRIS)).toBe(false);
+    state.hand.pop();
+    expect(canPlayTrainerFromHand(context, IRIS)).toBe(true);
+  });
+
+  test("このカードのほかに手札が無ければ使えない", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 8),
+      hand: [IRIS],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), IRIS)).toBe(false);
+  });
+});
+
+describeTranslation("ウエートレス", () => {
+  test("山札の上から 6 枚の基本エネルギーを 1 枚、自分のポケモンにつけ、残りを山札に戻す", () => {
+    const state = buildState({
+      active: RALTS,
+      bench: [KIRLIA],
+      deck: [
+        BOSS,
+        PRISM_ENERGY,
+        RALTS,
+        RALTS,
+        RALTS,
+        PSYCHIC_ENERGY,
+        FIRE_ENERGY,
+      ],
+      hand: [WAITRESS],
+    });
+    playTrainerFromHand(
+      buildContext(state, {
+        choosePokemon: (_, request) => request.candidates.slice(-1),
+      }),
+      WAITRESS
+    );
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本超エネルギー"]);
+    expect(state.deck).toHaveLength(6);
+  });
+
+  test("山札が 6 枚に満たなくても使える(公式 Q&A)", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: [BOSS, PSYCHIC_ENERGY],
+      hand: [WAITRESS],
+    });
+    playTrainerFromHand(buildContext(state), WAITRESS);
+    expect(namesOf(activeOf(state).energies)).toEqual(["基本超エネルギー"]);
+  });
+});
+
+describeTranslation("ガイ", () => {
+  test("3 枚引く", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 5),
+      hand: [GUY],
+    });
+    playTrainerFromHand(buildContext(state), GUY);
+    expect(state.hand).toHaveLength(3);
+  });
+});
+
+describeTranslation("タケシのスカウト", () => {
+  test("山札からたねポケモンを 2 枚まで手札に加える", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: [KIRLIA, RALTS, GARDEVOIR, MEOWTH, BOSS],
+      hand: [BROCKS_SCOUTING],
+    });
+    playTrainerFromHand(
+      buildContext(state, {
+        chooseCards: pickCardsByName(["ラルトス", "ニャースex"]),
+      }),
+      BROCKS_SCOUTING
+    );
+    expect(namesOf(state.hand)).toEqual(["ラルトス", "ニャースex"]);
+  });
+
+  test("進化ポケモンを選んだら、その 1 枚だけを手札に加える", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: [KIRLIA, RALTS, GARDEVOIR, MEOWTH, BOSS],
+      hand: [BROCKS_SCOUTING],
+    });
+    playTrainerFromHand(buildContext(state), BROCKS_SCOUTING);
+    expect(namesOf(state.hand)).toEqual(["キルリア"]);
+    expect(state.deck).toHaveLength(4);
   });
 });
 

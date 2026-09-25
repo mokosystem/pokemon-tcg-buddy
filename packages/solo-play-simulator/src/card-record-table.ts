@@ -46,6 +46,9 @@ import goods050402 from "./card-records/goods/050402.json";
 import goods050424 from "./card-records/goods/050424.json";
 import goods050461 from "./card-records/goods/050461.json";
 import goods050462 from "./card-records/goods/050462.json";
+import goods050595 from "./card-records/goods/050595.json";
+import goods050596 from "./card-records/goods/050596.json";
+import goods050600 from "./card-records/goods/050600.json";
 import pokemon045203 from "./card-records/pokemon/045203.json";
 import pokemon045519 from "./card-records/pokemon/045519.json";
 import pokemon045594 from "./card-records/pokemon/045594.json";
@@ -245,6 +248,10 @@ import supporters050297 from "./card-records/supporters/050297.json";
 import supporters050407 from "./card-records/supporters/050407.json";
 import supporters050428 from "./card-records/supporters/050428.json";
 import supporters050467 from "./card-records/supporters/050467.json";
+import supporters050601 from "./card-records/supporters/050601.json";
+import supporters050602 from "./card-records/supporters/050602.json";
+import supporters050603 from "./card-records/supporters/050603.json";
+import supporters050605 from "./card-records/supporters/050605.json";
 
 /** カード ID(どの印刷の ID からも)→ カードの記録。読み込み時に全記録を検査し、誤りがあれば止める。 */
 export const cardRecordTable = buildCardRecordTable([
@@ -292,6 +299,9 @@ export const cardRecordTable = buildCardRecordTable([
   { content: goods050424, path: "goods/050424.json" },
   { content: goods050461, path: "goods/050461.json" },
   { content: goods050462, path: "goods/050462.json" },
+  { content: goods050595, path: "goods/050595.json" },
+  { content: goods050596, path: "goods/050596.json" },
+  { content: goods050600, path: "goods/050600.json" },
   { content: pokemonTools045281, path: "pokemon-tools/045281.json" },
   { content: pokemonTools045633, path: "pokemon-tools/045633.json" },
   { content: pokemonTools045786, path: "pokemon-tools/045786.json" },
@@ -491,4 +501,8 @@ export const cardRecordTable = buildCardRecordTable([
   { content: supporters050407, path: "supporters/050407.json" },
   { content: supporters050428, path: "supporters/050428.json" },
   { content: supporters050467, path: "supporters/050467.json" },
+  { content: supporters050601, path: "supporters/050601.json" },
+  { content: supporters050602, path: "supporters/050602.json" },
+  { content: supporters050603, path: "supporters/050603.json" },
+  { content: supporters050605, path: "supporters/050605.json" },
 ]);

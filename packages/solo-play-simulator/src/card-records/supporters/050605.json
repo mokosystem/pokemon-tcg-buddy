@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHandFromOneOfPicks",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["ポケモン"],
+                  "stages": ["たね"]
+                },
+                "maxCount": 2
+              },
+              {
+                "filter": {
+                  "categories": ["ポケモン"],
+                  "stages": ["1進化", "2進化"]
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050605"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "タケシのスカウト",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

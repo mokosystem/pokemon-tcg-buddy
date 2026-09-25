@@ -71,6 +71,9 @@ const conditionEvaluators: {
     source.pokemon !== null &&
     matchesPokemonFilter(state, source.pokemon, condition.filter),
   deckHasCards: (condition, state) => state.deck.length >= condition.minCount,
+  handHasAtMostCards: (condition, state, source) =>
+    listHandExcludingOneCopy(state, source.card).length <=
+    condition.maxCountExcludingThisCard,
   handHasCards: (condition, state, source) =>
     listHandExcludingOneCopy(state, source.card).filter(
       (card) =>

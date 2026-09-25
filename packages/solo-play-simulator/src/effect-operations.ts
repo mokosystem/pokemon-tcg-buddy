@@ -239,6 +239,7 @@ const firstStepTargetChecks: {
   searchDeckAndPlaceOnTopAfterShuffle: deckHasCards,
   searchDeckIntoHand: deckHasCards,
   searchDeckIntoHandAndAttachRest: deckHasCards,
+  searchDeckIntoHandFromOneOfPicks: deckHasCards,
   searchDeckOntoBench: (_, { state }) =>
     state.deck.length > 0 && countEmptyBenchSlots(state) > 0,
   shuffleHandIntoDeck: alwaysHasTarget,
@@ -818,6 +819,42 @@ function searchIntoHandAndAttachRest(
   state.shuffleDeck();
 }
 
+/**
+ * 山札から、picks のうち 1 つの条件に合うカードを上限まで手札に加えて切る。1 枚目を全部の条件の候補から選ばせ、
+ * それが合う最初の条件で残りを選ぶ(どの条件にするかを、選ぶカードで決める)。条件の付いた選び方なので 0 枚でもよい。
+ */
+function searchDeckIntoHandFromOneOfPicks(
+  run: OperationRun,
+  picks: readonly { readonly filter: CardFilter; readonly maxCount: number }[]
+): void {
+  const { context, label } = run;
+  const { state } = context;
+  const [first] = chooseCardsWithin(
+    context,
+    state.deck.filter((card) =>
+      picks.some((candidate) => matchesCardFilter(card, candidate.filter))
+    ),
+    { maxCount: 1, minCount: 0 },
+    `${label}: 山札から手札に加える 1 枚目のカード`
+  );
+  const pick =
+    first === undefined
+      ? undefined
+      : picks.find((candidate) => matchesCardFilter(first, candidate.filter));
+  if (first !== undefined && pick !== undefined) {
+    state.takeFromDeckToHand(first);
+    for (const card of chooseCardsWithin(
+      context,
+      listMatching(state.deck, pick.filter),
+      { maxCount: pick.maxCount - 1, minCount: 0 },
+      `${label}: 山札から続けて手札に加えるカード`
+    )) {
+      state.takeFromDeckToHand(card);
+    }
+  }
+  state.shuffleDeck();
+}
+
 function evolveWithRareCandy(run: OperationRun): void {
   const { context, label } = run;
   const pairs = listRareCandyPairs(context.state);
@@ -1046,6 +1083,8 @@ const operationRunners: {
   },
   searchDeckIntoHandAndAttachRest: (step, run) =>
     searchIntoHandAndAttachRest(run, step),
+  searchDeckIntoHandFromOneOfPicks: (step, run) =>
+    searchDeckIntoHandFromOneOfPicks(run, step.picks),
   searchDeckOntoBench: (step, run) => {
     placeOntoBenchFrom(run, "deck", step);
     run.context.state.shuffleDeck();

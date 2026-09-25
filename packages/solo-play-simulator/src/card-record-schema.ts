@@ -159,6 +159,11 @@ const basicConditionOptions = [
     /** 使おうとしているこのカードを除いた手札で数える。 */
     minCountExcludingThisCard: countFromOne,
   }),
+  /** 使おうとしているこのカードを除いた手札が、maxCountExcludingThisCard 枚以下(アイリスの闘志)。 */
+  strictObject({
+    condition: literal("handHasAtMostCards"),
+    maxCountExcludingThisCard: countFromZero,
+  }),
   strictObject({
     condition: literal("noAbilityUsedThisTurnWithNameIncluding"),
     text: nonEmptyText,
@@ -255,6 +260,14 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("searchDeckIntoHand"),
     picks: pipe(array(DeckSearchPickSchema), minLength(1)),
+  }),
+  /**
+   * 山札から、picks のうち 1 つを選んで、その条件に合うカードを上限まで手札に加えて切る(タケシのスカウト:
+   * たねポケモンを 2 枚まで、または進化ポケモンを 1 枚)。どの 1 つにするかはプレイングの判断基準が決める。
+   */
+  strictObject({
+    operation: literal("searchDeckIntoHandFromOneOfPicks"),
+    picks: pipe(array(DeckSearchPickSchema), minLength(2)),
   }),
   strictObject({
     filter: CardFilterSchema,

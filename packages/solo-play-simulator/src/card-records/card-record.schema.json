@@ -982,6 +982,20 @@
           "type": "object",
           "properties": {
             "condition": {
+              "const": "handHasAtMostCards"
+            },
+            "maxCountExcludingThisCard": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["condition", "maxCountExcludingThisCard"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
               "const": "noAbilityUsedThisTurnWithNameIncluding"
             },
             "text": {
@@ -1142,6 +1156,23 @@
                 "$ref": "#/$defs/DeckSearchPick"
               },
               "minItems": 1
+            }
+          },
+          "required": ["operation", "picks"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "searchDeckIntoHandFromOneOfPicks"
+            },
+            "picks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/DeckSearchPick"
+              },
+              "minItems": 2
             }
           },
           "required": ["operation", "picks"],
@@ -2045,6 +2076,20 @@
           "type": "object",
           "properties": {
             "condition": {
+              "const": "handHasAtMostCards"
+            },
+            "maxCountExcludingThisCard": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["condition", "maxCountExcludingThisCard"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
               "const": "noAbilityUsedThisTurnWithNameIncluding"
             },
             "text": {
@@ -2660,6 +2705,23 @@
                 "$ref": "#/$defs/DeckSearchPick"
               },
               "minItems": 1
+            }
+          },
+          "required": ["operation", "picks"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "searchDeckIntoHandFromOneOfPicks"
+            },
+            "picks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/DeckSearchPick"
+              },
+              "minItems": 2
             }
           },
           "required": ["operation", "picks"],

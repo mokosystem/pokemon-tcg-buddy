@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["基本エネルギー"]
+            },
+            "lookCount": 6,
+            "maxAttachCount": 1,
+            "minAttachCount": 0,
+            "operation": "lookAtDeckTopAndAttachEnergyToOwnPokemon",
+            "restPlacement": "shuffleIntoDeck",
+            "targetFilter": {}
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050602", "049416"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "ウエートレス",
+  "rulings": [
+    {
+      "interpretation": "使える。山札をある分だけ見て、基本エネルギーを 1 枚つける",
+      "question": "山札が 6 枚に満たないときに使えるか",
+      "reflectedIn": "lookAtDeckTopAndAttachEnergyToOwnPokemon は山札が 1 枚以上あれば使え、見る枚数は山札の枚数までになる",
+      "source": {
+        "checkedOn": "2026-09-25",
+        "kind": "officialQa",
+        "questionSummary": "山札が 1〜5 枚のときにウエートレスを使えるか、という質問に、使え、ある分だけ見て基本エネルギーを 1 枚選んでつけると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A6%E3%82%A8%E3%83%BC%E3%83%88%E3%83%AC%E3%82%B9&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

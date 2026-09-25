@@ -1,0 +1,28 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 3
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050603"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "ガイ",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}
