@@ -1,0 +1,67 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "いてつくはばたき",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["water"]
+              },
+              "maxCount": 1,
+              "operation": "attachEnergyFromHandToSelf"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "names": ["ファイヤー"]
+              }
+            },
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "names": ["サンダー"]
+              }
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["water", "water", "colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "あられ"
+    }
+  ],
+  "cardIds": ["050624"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「あられ」の、相手のベンチポケモンにもそれぞれ 30 ダメージを与える効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "フリーザー",
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

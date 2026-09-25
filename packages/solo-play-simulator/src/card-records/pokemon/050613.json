@@ -1,0 +1,31 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "さいみんじゅつ"
+    }
+  ],
+  "cardIds": ["050613"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「さいみんじゅつ」の、相手のバトルポケモンをねむりにする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "タマタマ",
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

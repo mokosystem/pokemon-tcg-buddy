@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "こがす"
+    },
+    {
+      "cost": ["fire", "fire", "colorless"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "ごきげんフレイム"
+    }
+  ],
+  "cardIds": ["050621"],
+  "category": "ポケモン",
+  "exRule": "pokemonEx",
+  "excludedEffects": [
+    {
+      "description": "ワザ「こがす」の、相手のバトルポケモンをやけどにする効果",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「ごきげんフレイム」のダメージは、自分がすでにとったサイドの枚数 × 70 で決まる。サイドは相手のポケモンをきぜつさせてとるもので、相手の側で決まるため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 210,
+  "isTerastal": false,
+  "name": "ホゲータex",
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

@@ -176,6 +176,7 @@ function discardHasEnergyForOwnPokemon(
 const firstStepTargetChecks: {
   readonly [Name in EffectStep["operation"]]: TargetCheck<Name>;
 } = {
+  addCardsDiscardedFromDeckTopInThisEffectToHand: alwaysHasTarget,
   addFromDiscardToHand: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
@@ -191,7 +192,13 @@ const firstStepTargetChecks: {
   attachEnergyFromHandToSelf: (step, { hand, source }) =>
     listMatching(hand, step.energyFilter).some(isEnergy) &&
     source.pokemon !== null,
+  branchOnCoinFlip: (step, input) => {
+    // コインを投げる前に、オモテのときの最初の操作に対象があるかで決める(対象が無ければ効果を使えない決まりと同じ)
+    const [first] = step.stepsWhenHeads;
+    return first !== undefined && hasTargetForStep(first, input);
+  },
   branchOnCondition: alwaysHasTarget,
+  discardFromDeckTop: deckHasCards,
   discardFromHand: (step, { hand }) =>
     listMatchingOrAll(hand, step.filter).length >= Math.max(step.minCount, 1),
   // 手札が 0 枚でも使える(公式 Q&A「ゼイユ」: 手札がゼイユだけのときも使える、2026-09-24 確認)
@@ -317,6 +324,8 @@ interface OperationRun {
    * 入れ替えでベンチに下がったポケモン(ヒガナの信頼の「ベンチに入れ替えたポケモン」)。
    */
   readonly progress: {
+    /** 山札の上からトラッシュしたカード(モルペコの「その中から」)。 */
+    cardsDiscardedFromDeckTop: Card[];
     discardedCount: number;
     switchedOutPokemon: PokemonInPlay | null;
   };
@@ -712,6 +721,11 @@ function attachEnergyFromHandDistributed(
   }
 }
 
+/** コインを 1 回投げる。オモテとウラは 1/2 ずつとする(docs/setup-rate-design.md「順 4 から送られた論点の決定」の 1)。 */
+function flipsHeads(state: GameState): boolean {
+  return state.random.nextFloat() < 0.5;
+}
+
 /** つけるエネルギーの上限。コインで決まるときは、ここでウラが出るまで投げる(オモテとウラは 1/2 ずつ)。 */
 function calculateAttachCount(
   count: AttachCount,
@@ -721,7 +735,7 @@ function calculateAttachCount(
     return count.value;
   }
   let heads = 0;
-  while (context.state.random.nextFloat() < 0.5) {
+  while (flipsHeads(context.state)) {
     heads += 1;
   }
   context.state.record(`${label}: コインのオモテ ${heads} 回`);
@@ -963,6 +977,23 @@ function evolveWithRareCandy(run: OperationRun): void {
 const operationRunners: {
   readonly [Name in BasicOperation["operation"]]: OperationRunner<Name>;
 } = {
+  addCardsDiscardedFromDeckTopInThisEffectToHand: (
+    step,
+    { context, label, progress }
+  ) => {
+    const { state } = context;
+    const available = progress.cardsDiscardedFromDeckTop.filter((card) =>
+      state.discard.includes(card)
+    );
+    for (const card of chooseCardsWithin(
+      context,
+      available,
+      step,
+      `${label}: 山札の上からトラッシュしたカードから手札に加えるカード`
+    )) {
+      state.takeFromDiscardToHand(card);
+    }
+  },
   addFromDiscardToHand: (step, { context, label }) => {
     const chosen = chooseCardsWithin(
       context,
@@ -985,6 +1016,11 @@ const operationRunners: {
     attachEnergyFromHandDistributed(run, step),
   attachEnergyFromHandToSelf: (step, run) =>
     attachEnergyFromHandToHolder(run, step),
+  discardFromDeckTop: (step, { context, progress }) => {
+    progress.cardsDiscardedFromDeckTop.push(
+      ...context.state.discardFromDeckTop(step.count)
+    );
+  },
   discardFromHand: (step, { context, label, progress }) => {
     const chosen = chooseCardsWithin(
       context,
@@ -1202,6 +1238,24 @@ function runOperation<Name extends BasicOperation["operation"]>(
   runner(step, run);
 }
 
+/** 操作の列の 1 歩を、実行する基本操作の並びにする。条件やコインで分かれる歩は、ここで条件を判定し、コインを投げる。 */
+function resolveBranch(step: EffectStep, run: OperationRun): BasicOperation[] {
+  const { context, label, source } = run;
+  switch (step.operation) {
+    case "branchOnCondition":
+      return areConditionsMet(context.state, [step.condition], source)
+        ? step.stepsWhenMet
+        : step.stepsOtherwise;
+    case "branchOnCoinFlip": {
+      const isHeads = flipsHeads(context.state);
+      context.state.record(`${label}: コインは${isHeads ? "オモテ" : "ウラ"}`);
+      return isHeads ? step.stepsWhenHeads : [];
+    }
+    default:
+      return [step];
+  }
+}
+
 /** 効果を実行する。「のぞむなら」の効果は、起こすかを問い合わせてから実行する。 */
 export function runEffect(
   context: EffectContext,
@@ -1218,19 +1272,16 @@ export function runEffect(
   const run: OperationRun = {
     context,
     label,
-    progress: { discardedCount: 0, switchedOutPokemon: null },
+    progress: {
+      cardsDiscardedFromDeckTop: [],
+      discardedCount: 0,
+      switchedOutPokemon: null,
+    },
     source,
   };
   for (const step of effect.steps) {
-    if (step.operation === "branchOnCondition") {
-      const branch = areConditionsMet(context.state, [step.condition], source)
-        ? step.stepsWhenMet
-        : step.stepsOtherwise;
-      for (const inner of branch) {
-        runOperation(inner, run);
-      }
-    } else {
-      runOperation(step, run);
+    for (const inner of resolveBranch(step, run)) {
+      runOperation(inner, run);
     }
   }
 }

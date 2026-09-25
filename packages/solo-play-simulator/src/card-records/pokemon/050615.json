@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "さそうひかり"
+    },
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "むしのさざめき"
+    }
+  ],
+  "cardIds": ["050615"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「さそうひかり」の、相手のベンチポケモンをバトルポケモンと入れ替える効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "バルビート",
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

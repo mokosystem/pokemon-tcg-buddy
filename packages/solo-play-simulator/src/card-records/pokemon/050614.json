@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "スケールアップ"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["grass", "colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 150,
+        "kind": "fixed"
+      },
+      "name": "メガドレイン"
+    }
+  ],
+  "cardIds": ["050614"],
+  "category": "ポケモン",
+  "evolvesFrom": "タマタマ",
+  "excludedEffects": [
+    {
+      "description": "特性「スケールアップ」(草エネルギーが 6 個以上ついていれば最大 HP が増える)。相手がいないためワザのダメージを受けず、最大 HP は成立率に影響しない",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「メガドレイン」の、このポケモンの HP を 50 回復する効果",
+      "reason": "healing"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 150,
+  "isTerastal": false,
+  "name": "アローラ ナッシー",
+  "pokemonType": "grass",
+  "retreatCost": 4,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

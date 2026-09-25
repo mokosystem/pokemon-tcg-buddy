@@ -40,6 +40,12 @@ const PASSIMIAN = buildRecordedCard("049123");
 const ESPEON_EX = buildRecordedCard("050577");
 const PIKACHU_CHAIN = buildRecordedCard("050640");
 const PIKACHU_EX = buildRecordedCard("050659");
+const KYOGRE = buildRecordedCard("050625");
+const RESHIRAM = buildRecordedCard("050620");
+const ZEKROM = buildRecordedCard("050662");
+const WATER_ENERGY = buildRecordedCard("050479");
+const LIGHTNING_ENERGY = buildRecordedCard("050480");
+const PRISM_ENERGY = buildRecordedCard("049455");
 
 describe("ワザのダメージ", () => {
   test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
@@ -106,6 +112,41 @@ describe("ワザのダメージ", () => {
         findAttack(PIKACHU_CHAIN, "ピカれんさ")
       )
     ).toBe(3 * 40);
+  });
+
+  test("ハイドロポンプは 60 に、このポケモンの水エネルギーの数×30 を足す(すべてのタイプとして働くものも数える)", () => {
+    const state = buildState({ active: KYOGRE, bench: [RALTS] });
+    state.active?.energies.push(WATER_ENERGY, FIRE_ENERGY, LEGACY_ENERGY);
+    state.bench[0]?.energies.push(WATER_ENERGY);
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(KYOGRE, "ハイドロポンプ")
+      )
+    ).toBe(60 + 2 * 30);
+  });
+
+  test("レーザーフレイムは雷エネルギー、ニトロサンダーは炎エネルギーがついていれば 80 を足す(プリズムエネルギーも数える。公式 Q&A)", () => {
+    const reshiram = buildState({ active: RESHIRAM });
+    const laserFlare = findAttack(RESHIRAM, "レーザーフレイム");
+    reshiram.active?.energies.push(FIRE_ENERGY, FIRE_ENERGY);
+    expect(
+      calculateAttackDamage(reshiram, activeOf(reshiram), laserFlare)
+    ).toBe(80);
+    reshiram.active?.energies.push(PRISM_ENERGY);
+    expect(
+      calculateAttackDamage(reshiram, activeOf(reshiram), laserFlare)
+    ).toBe(160);
+    const zekrom = buildState({ active: ZEKROM });
+    zekrom.active?.energies.push(LIGHTNING_ENERGY, FIRE_ENERGY);
+    expect(
+      calculateAttackDamage(
+        zekrom,
+        activeOf(zekrom),
+        findAttack(ZEKROM, "ニトロサンダー")
+      )
+    ).toBe(160);
   });
 
   test("ユニオンビートは、自分のベンチポケモンの数×30", () => {

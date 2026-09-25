@@ -1796,6 +1796,38 @@
         {
           "type": "object",
           "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "discardFromDeckTop"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "addCardsDiscardedFromDeckTopInThisEffectToHand"
+            }
+          },
+          "required": ["maxCount", "minCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "operation": {
               "const": "discardStadiumInPlay"
             }
@@ -2560,6 +2592,13 @@
           "properties": {
             "count": {
               "const": "energyAttachedToAttackingPokemon"
+            },
+            "energyTypes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/PokemonType"
+              },
+              "minItems": 1
             }
           },
           "required": ["count"],
@@ -3377,6 +3416,38 @@
         {
           "type": "object",
           "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "discardFromDeckTop"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operation": {
+              "const": "addCardsDiscardedFromDeckTopInThisEffectToHand"
+            }
+          },
+          "required": ["maxCount", "minCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "operation": {
               "const": "discardStadiumInPlay"
             }
@@ -3412,6 +3483,23 @@
             "stepsOtherwise",
             "stepsWhenMet"
           ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "branchOnCoinFlip"
+            },
+            "stepsWhenHeads": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/BasicOperation"
+              },
+              "minItems": 1
+            }
+          },
+          "required": ["operation", "stepsWhenHeads"],
           "additionalProperties": false
         }
       ]

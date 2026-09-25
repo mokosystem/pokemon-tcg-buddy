@@ -486,6 +486,20 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("discardSelf"),
   }),
+  /** 山札の上から count 枚トラッシュする(ボーマンダex の「りゅうのはどう」)。山札が足りなければある分だけ。 */
+  strictObject({
+    count: countFromOne,
+    operation: literal("discardFromDeckTop"),
+  }),
+  /**
+   * この効果の中で山札の上からトラッシュしたカードから、minCount〜maxCount 枚を選んで手札に加える
+   * (モルペコの「おやつをえらぶ」)。
+   */
+  strictObject({
+    maxCount: countFromOne,
+    minCount: countFromZero,
+    operation: literal("addCardsDiscardedFromDeckTopInThisEffectToHand"),
+  }),
   /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
   strictObject({
     operation: literal("discardStadiumInPlay"),
@@ -503,6 +517,15 @@ export const EffectStepSchema = variant("operation", [
     operation: literal("branchOnCondition"),
     stepsOtherwise: array(BasicOperationSchema),
     stepsWhenMet: array(BasicOperationSchema),
+  }),
+  /**
+   * コインを 1 回投げ、オモテなら stepsWhenHeads を行う(ビビヨンの「みちびきのまい」、メタモンの「どっきりへんしん」)。
+   * コインはオモテとウラを 1/2 ずつとする。使えるかの判定(状態を変えない)で乱数を引かないよう、条件ではなく操作の列の
+   * 1 歩にしている。
+   */
+  strictObject({
+    operation: literal("branchOnCoinFlip"),
+    stepsWhenHeads: pipe(array(BasicOperationSchema), minLength(1)),
   }),
 ]);
 export type EffectStep = InferOutput<typeof EffectStepSchema>;
@@ -632,8 +655,15 @@ export const DamageCountTargetSchema = variant("count", [
     abilityName: nonEmptyText,
     count: literal("discardPokemonWithAbilityName"),
   }),
-  /** ワザを使うポケモンについているエネルギーの数(メガドリュウズex の「マキシマムドリル」)。 */
-  strictObject({ count: literal("energyAttachedToAttackingPokemon") }),
+  /**
+   * ワザを使うポケモンについているエネルギーの数(メガドリュウズex の「マキシマムドリル」)。energyTypes を書けば、
+   * そのいずれかのタイプとして数えられる個数(カイオーガの「ハイドロポンプ」: 水エネルギーの数)。すべてのタイプとして
+   * 働く 1 個は 1 つと数える。
+   */
+  strictObject({
+    count: literal("energyAttachedToAttackingPokemon"),
+    energyTypes: optional(pipe(array(PokemonTypeSchema), minLength(1))),
+  }),
   /** 自分のポケモン全員についている基本エネルギーの枚数(タケルライコex の「きょくらいごう」)。 */
   strictObject({ count: literal("basicEnergyAttachedToOwnPokemon") }),
   /** 場に出ているスタジアムの数(0 か 1。イーユイの「グラウンドメルト」)。 */

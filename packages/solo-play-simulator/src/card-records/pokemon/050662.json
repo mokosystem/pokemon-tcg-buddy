@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "きりさく"
+    },
+    {
+      "cost": ["electric", "colorless", "colorless"],
+      "damage": {
+        "amount": 80,
+        "bonus": {
+          "add": 80,
+          "atLeast": 1,
+          "kind": "whenCountAtLeast",
+          "target": {
+            "count": "energyAttachedToAttackingPokemon",
+            "energyTypes": ["fire"]
+          }
+        },
+        "kind": "fixed"
+      },
+      "name": "ニトロサンダー"
+    }
+  ],
+  "cardIds": ["050662"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ゼクロム",
+  "pokemonType": "electric",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

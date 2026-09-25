@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "いどにかくれる"
+    },
+    {
+      "cost": ["water", "colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "みずでっぽう"
+    }
+  ],
+  "cardIds": ["050622"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「いどにかくれる」の、コインでオモテなら次の相手の番にこのポケモンがワザのダメージや効果を受けなくなる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "ヤドン",
+  "pokemonType": "water",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

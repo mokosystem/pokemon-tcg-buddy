@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "psychic"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "フォトンバレット"
+    },
+    {
+      "cost": ["psychic", "psychic", "psychic"],
+      "damage": {
+        "amount": 230,
+        "kind": "fixed"
+      },
+      "name": "サイキックフォース"
+    }
+  ],
+  "cardIds": ["050667"],
+  "category": "ポケモン",
+  "exRule": "pokemonEx",
+  "excludedEffects": [
+    {
+      "description": "ワザ「フォトンバレット」は、相手のポケモンex 全員にそれぞれ 50 ダメージを与える。与えるかは相手のポケモンで決まるため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    },
+    {
+      "description": "ワザ「サイキックフォース」を使った次の自分の番に、このポケモンがワザを使えなくなる制限",
+      "reason": "ownNextTurnRestriction"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 230,
+  "isTerastal": false,
+  "name": "ミュウツーex",
+  "pokemonType": "psychic",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric"],
+      "damage": {
+        "amount": 40,
+        "kind": "fixed"
+      },
+      "name": "なぐる"
+    },
+    {
+      "cost": ["electric", "colorless", "colorless"],
+      "damage": {
+        "amount": 150,
+        "kind": "fixed"
+      },
+      "name": "サンダーボルト"
+    }
+  ],
+  "cardIds": ["050663"],
+  "category": "ポケモン",
+  "evolvesFrom": "エレズン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「サンダーボルト」を使った次の自分の番に、このポケモンがワザを使えなくなる制限",
+      "reason": "ownNextTurnRestriction"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 140,
+  "isTerastal": false,
+  "name": "ストリンダー",
+  "pokemonType": "electric",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

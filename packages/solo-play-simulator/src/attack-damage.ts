@@ -27,7 +27,9 @@ function countDamageTarget(
 ): number {
   switch (target.count) {
     case "energyAttachedToAttackingPokemon":
-      return listEnergyUnits(state, attacker).length;
+      return target.energyTypes === undefined
+        ? listEnergyUnits(state, attacker).length
+        : countEnergyUnitsOfTypes(state, attacker, target.energyTypes);
     case "energyAttachedToOwnPokemon":
       return state
         .listPokemonInPlay()

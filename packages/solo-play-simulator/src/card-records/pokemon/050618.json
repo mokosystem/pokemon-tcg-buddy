@@ -1,0 +1,79 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "もえるはばたき",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["fire"]
+              },
+              "maxCount": 1,
+              "operation": "attachEnergyFromHandToSelf"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "names": ["フリーザー"]
+              }
+            },
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "names": ["サンダー"]
+              }
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fire", "fire", "colorless"],
+      "damage": {
+        "amount": 130,
+        "kind": "fixed"
+      },
+      "name": "ほのおのうず"
+    }
+  ],
+  "cardIds": ["050618"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ほのおのうず」は、相手のバトルポケモンに 130 ダメージを与えたあと、自身のエネルギーを 2 個トラッシュする。130 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "ファイヤー",
+  "pokemonType": "fire",
+  "retreatCost": 1,
+  "rulings": [
+    {
+      "interpretation": "使えない。名前が違うポケモンとして扱う",
+      "question": "場に「ロケット団のフリーザー」「ロケット団のサンダー」がいるとき、「フリーザー」「サンダー」がいるとみなして使えるか",
+      "reflectedIn": "使える条件 ownPokemonInPlayExists の条件 names に、名前の完全一致で「フリーザー」「サンダー」を書いた",
+      "source": {
+        "checkedOn": "2026-09-25",
+        "kind": "officialQa",
+        "questionSummary": "場にファイヤーとロケット団のフリーザー、ロケット団のサンダーだけがいるときにもえるはばたきを使えるか、という質問に、別の名前のポケモンとして扱うため使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%82%E3%81%88%E3%82%8B%E3%81%AF%E3%81%B0%E3%81%9F%E3%81%8D&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "はじけるはばたき",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["electric"]
+              },
+              "maxCount": 1,
+              "operation": "attachEnergyFromHandToSelf"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "names": ["ファイヤー"]
+              }
+            },
+            {
+              "condition": "ownPokemonInPlayExists",
+              "filter": {
+                "names": ["フリーザー"]
+              }
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["electric", "electric", "electric", "colorless"],
+      "damage": {
+        "amount": 210,
+        "kind": "fixed"
+      },
+      "name": "らいごう"
+    }
+  ],
+  "cardIds": ["050661"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「らいごう」の、このポケモンにも 60 ダメージを与える効果",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "サンダー",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

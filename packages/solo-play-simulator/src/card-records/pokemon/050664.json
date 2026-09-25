@@ -1,0 +1,49 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": 3,
+            "operation": "discardFromDeckTop"
+          },
+          {
+            "maxCount": 1,
+            "minCount": 1,
+            "operation": "addCardsDiscardedFromDeckTopInThisEffectToHand"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "おやつをえらぶ"
+    },
+    {
+      "cost": ["electric"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "ビンタ"
+    }
+  ],
+  "cardIds": ["050664"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "モルペコ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}
