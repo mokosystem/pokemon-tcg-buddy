@@ -507,7 +507,14 @@ export class GameState {
   }
 
   /** トラッシュの cards を山札に戻して切る。 */
+  /**
+   * トラッシュの cards を山札に戻して切る。戻すカードが 0 枚なら山札を切らない(上級プレイヤー用ルールガイド Ver. 3.4
+   * E-36、71 ページ、2026-09-25 確認: 選んで山札にもどすカードが 1 枚もないときは山札を切らない)。
+   */
   returnFromDiscardToDeck(cards: readonly Card[]): void {
+    if (cards.length === 0) {
+      return;
+    }
     for (const card of cards) {
       removeCard(this.discard, card, "トラッシュ");
       this.deck.push(card);

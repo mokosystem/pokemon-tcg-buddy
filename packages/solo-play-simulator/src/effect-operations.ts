@@ -16,13 +16,7 @@ import {
   EvolutionStage,
   type PokemonInPlayFilter,
 } from "./card-record-schema.ts";
-import {
-  type Card,
-  isBasicPokemon,
-  isEnergy,
-  isPokemon,
-  matchesCardFilter,
-} from "./cards.ts";
+import { type Card, isEnergy, isPokemon, matchesCardFilter } from "./cards.ts";
 import {
   areConditionsMet,
   type EffectSource,
@@ -229,7 +223,7 @@ const firstStepTargetChecks: {
     listPokemonWithEnergyMatching(state, step.energyFilter).length > 0,
   placeFromDiscardOntoBench: (step, { state }) =>
     countEmptyBenchSlots(state) > 0 &&
-    listMatching(state.discard, step.filter).some(isBasicPokemon),
+    listMatching(state.discard, step.filter).some(isPokemon),
   placeHandCardsOnDeckTop: (step, { hand }) => hand.length >= step.count,
   placeSelfOnBenchFromHand: (_, { state }) => countEmptyBenchSlots(state) > 0,
   replaceSelfWithPokemonFromDeck: (_, { source, state }) =>
@@ -409,7 +403,11 @@ function returnToZone(
   promoteIfActiveIsEmpty(context);
 }
 
-/** 山札かトラッシュのたねポケモンを、ベンチの空きの範囲でベンチに出す。どちらも条件の付いた選び方なので 0 枚でもよい。 */
+/**
+ * 山札かトラッシュの条件に合うポケモンを、ベンチの空きの範囲でベンチに出す。どちらも条件の付いた選び方なので 0 枚でもよい。
+ * 進化段階は記録の条件で決める。効果が進化段階を指定しなければ進化ポケモンも出せる(公式 Q&A「おうのごうれい」
+ * 「さいきのいのり」、検索語「トラッシュから進化ポケモンをベンチ」、2026-09-25 確認)。
+ */
 function placeOntoBenchFrom(
   run: OperationRun,
   zone: Extract<CardSource, "deck" | "discard">,
@@ -417,7 +415,7 @@ function placeOntoBenchFrom(
 ): void {
   const { state } = run.context;
   const cards = zone === "deck" ? state.deck : state.discard;
-  const candidates = listMatching(cards, step.filter).filter(isBasicPokemon);
+  const candidates = listMatching(cards, step.filter).filter(isPokemon);
   const chosen = chooseCardsWithin(
     run.context,
     candidates,
@@ -425,11 +423,12 @@ function placeOntoBenchFrom(
       maxCount: Math.min(step.maxCount, countEmptyBenchSlots(state)),
       minCount: 0,
     },
-    `${run.label}: ベンチに出すたねポケモン`
+    `${run.label}: ベンチに出すポケモン`
   );
   for (const card of chosen) {
     state.placeOnBench(card, {
       benchLimit: calculateBenchLimit(state),
+      byEffect: true,
       from: zone,
     });
   }

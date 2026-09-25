@@ -361,12 +361,16 @@ const basicOperationOptions = [
     minCount: countFromZero,
     operation: literal("addFromDiscardToHand"),
   }),
+  /** トラッシュから条件に合うポケモンを maxCount 枚まで選び、ベンチに出す。進化段階は filter で決める(ボーマンダex は進化ポケモンも出せる)。 */
   strictObject({
     filter: CardFilterSchema,
     maxCount: countFromOne,
     operation: literal("placeFromDiscardOntoBench"),
   }),
-  /** トラッシュから条件に合うカードを minCount〜maxCount 枚選び、山札に戻して切る(せいなるはい)。 */
+  /**
+   * トラッシュから条件に合うカードを minCount〜maxCount 枚選び、山札に戻して切る(せいなるはい)。戻すカードが 0 枚なら切らない。
+   * ワザの「〜枚まで」は minCount を 0 にする(ディアルガ。上級プレイヤー用ルールガイド D-05)。
+   */
   strictObject({
     filter: CardFilterSchema,
     maxCount: countFromOne,

@@ -4115,6 +4115,33 @@ describeTranslation("ディアルガ", () => {
     ]);
     expect(state.deck).toHaveLength(3);
   });
+
+  test("ワザの「3枚まで」なので、トラッシュに対象があっても 1 枚も戻さなくてよい", () => {
+    const state = buildState({
+      active: DIALGA,
+      discard: [FIRE_ENERGY],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    useAttackNamed(
+      buildContext(state, { chooseCards: () => [] }),
+      "リバースクロック"
+    );
+    expect(namesOf(state.discard)).toEqual(["基本炎エネルギー"]);
+    expect(state.deck).toHaveLength(0);
+  });
+
+  test("戻すカードが無いときは山札を切らない", () => {
+    const state = buildState({
+      active: DIALGA,
+      deck: [RALTS, KIRLIA],
+      hand: [BOSS],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    state.placeHandCardsOnDeckTop([...state.hand]);
+    useAttackNamed(buildContext(state), "リバースクロック");
+    expect(namesOf(state.deck)).toEqual(["ボスの指令", "ラルトス", "キルリア"]);
+    expect(state.knownDeckTopCount).toBe(1);
+  });
 });
 
 describeTranslation("ソルガレオ", () => {
@@ -4142,7 +4169,7 @@ describeTranslation("ソルガレオ", () => {
 });
 
 describeTranslation("ボーマンダex", () => {
-  test("とどろくよびごえは、トラッシュのドラゴンタイプのたねポケモンを 3 枚までベンチに出す", () => {
+  test("とどろくよびごえは、トラッシュのドラゴンタイプのポケモンを進化ポケモンも含めて 3 枚までベンチに出す", () => {
     const state = buildState({
       active: SALAMENCE_EX,
       discard: [DRATINI, KOMMO_O, RALTS, DREEPY, DRATINI, DRATINI],
@@ -4151,7 +4178,12 @@ describeTranslation("ボーマンダex", () => {
     useAttackNamed(buildContext(state), "とどろくよびごえ");
     expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
       "ミニリュウ",
+      "ジャラランガ",
       "ドラメシヤ",
+    ]);
+    expect(namesOf(state.discard)).toEqual([
+      "ラルトス",
+      "ミニリュウ",
       "ミニリュウ",
     ]);
   });

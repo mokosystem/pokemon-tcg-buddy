@@ -22,7 +22,7 @@
               ]
             },
             "maxCount": 3,
-            "minCount": 1,
+            "minCount": 0,
             "operation": "returnFromDiscardToDeck"
           }
         ],
