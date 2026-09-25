@@ -1,0 +1,15 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardIds": ["047903", "042944", "050608", "050745"],
+  "category": "基本エネルギー",
+  "excludedEffects": [],
+  "name": "基本草エネルギー",
+  "provision": {
+    "kind": "type",
+    "type": "grass",
+    "units": 1
+  },
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

@@ -1,0 +1,59 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "anyOf": [
+                    {
+                      "categories": ["ポケモン"],
+                      "pokemonTypes": ["grass"]
+                    },
+                    {
+                      "categories": ["スタジアム"]
+                    }
+                  ]
+                },
+                "maxCount": 3
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "ときをめぐる"
+    },
+    {
+      "cost": ["grass"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "ソーラーカッター"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "セレビィ",
+  "cardIds": ["047739"],
+  "stage": "たね",
+  "hp": 80,
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

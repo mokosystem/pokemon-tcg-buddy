@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["基本エネルギー"]
+            },
+            "maxCount": 5,
+            "minCount": 1,
+            "operation": "returnFromDiscardToDeck"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050068", "039192"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "エネルギーリサイクル",
+  "rulings": [
+    {
+      "interpretation": "選べる。1〜5 枚を選ぶ",
+      "question": "トラッシュに基本エネルギーが 3 枚あるとき、1 枚だけを山札に戻せるか",
+      "reflectedIn": "returnFromDiscardToDeck の minCount を 1、maxCount を 5 にした",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "トラッシュに基本エネルギーが 3 枚あるとき、エネルギーリサイクルで 1 枚だけ山札に戻せるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A8%E3%83%8D%E3%83%AB%E3%82%AE%E3%83%BC%E3%83%AA%E3%82%B5%E3%82%A4%E3%82%AF%E3%83%AB&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "スケイルビート",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "filter": {
+                "categories": ["基本エネルギー"]
+              },
+              "lookCount": 6,
+              "maxAttachCount": 6,
+              "minAttachCount": 0,
+              "operation": "lookAtDeckTopAndAttachEnergyToOwnPokemon",
+              "restPlacement": "shuffleIntoDeck",
+              "targetFilter": {
+                "pokemonTypes": ["dragon"]
+              }
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["electric", "fighting", "colorless"],
+      "damage": {
+        "amount": 170,
+        "kind": "fixed"
+      },
+      "name": "ぶちかます"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ジャラランガ",
+  "cardIds": ["050390"],
+  "stage": "2進化",
+  "evolvesFrom": "ジャランゴ",
+  "basicPokemonOfEvolutionLine": "ジャラコ",
+  "hp": 160,
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

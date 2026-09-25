@@ -1,0 +1,49 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "すすりなく"
+    },
+    {
+      "cost": ["water", "colorless", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "げきりゅうポンプ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「すすりなく」の、次の相手の番にワザを受けたポケモンがにげられなくなる効果",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「げきりゅうポンプ」の、のぞむなら自身のエネルギーを 3 個山札に戻して切り、相手のベンチポケモン 1 匹にもダメージを与える効果。エネルギーを戻すのは相手のベンチにダメージを与えるためで、一人回しでは使う理由が無い",
+      "reason": "noReasonToUseInSoloPlay"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": true,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "オーガポン いどのめんex",
+  "cardIds": ["048940", "047129"],
+  "stage": "たね",
+  "hp": 210,
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "exRule": "pokemonEx",
+  "translationStatus": "irrelevantToCalculation"
+}

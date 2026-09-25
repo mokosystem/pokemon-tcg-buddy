@@ -1,0 +1,50 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "switchActiveWithBench"
+          },
+          {
+            "operation": "moveEnergyFromSwitchedOutPokemonToActive"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050407"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "ヒガナの信頼",
+  "rulings": [
+    {
+      "interpretation": "選べない。ベンチに下がったポケモンにエネルギーがあれば、1 個をつけ替える",
+      "question": "入れ替えたあと、エネルギーをつけ替えないことを選べるか",
+      "reflectedIn": "moveEnergyFromSwitchedOutPokemonToActive で選ぶ枚数を 1(下限も 1)にする",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "ヒガナの信頼で入れ替えたとき、ベンチに入れ替えたポケモンのエネルギーをつけ替えないことはできるか、という質問に、できないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%92%E3%82%AC%E3%83%8A%E3%81%AE%E4%BF%A1%E9%A0%BC&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "使える。入れ替えだけが起きる",
+      "question": "バトルポケモンにエネルギーがついていないときに使えるか",
+      "reflectedIn": "最初の操作は入れ替えで、つけ替えはエネルギーが無ければ何もしない",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "バトル場のポケモンにエネルギーが 1 枚もついていないとき、ヒガナの信頼で入れ替えられるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%92%E3%82%AC%E3%83%8A%E3%81%AE%E4%BF%A1%E9%A0%BC&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

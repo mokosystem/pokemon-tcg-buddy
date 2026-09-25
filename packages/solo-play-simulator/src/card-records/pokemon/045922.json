@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "アンチプラズマ"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["water", "water", "steel", "steel", "colorless"],
+      "damage": {
+        "amount": 110,
+        "kind": "fixed"
+      },
+      "name": "トライフロスト"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「アンチプラズマ」(相手のトラッシュに名前に「アクロマ」とつくカードがあれば、ワザ「トライフロスト」に必要なエネルギーが無色 1 個になる)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「トライフロスト」は、自身のエネルギーをすべてトラッシュし、相手のポケモン 3 匹にそれぞれ 110 ダメージを与える。110 はワザのダメージに持ち、エネルギーのトラッシュとベンチへのダメージは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "キュレム",
+  "cardIds": ["045922"],
+  "stage": "たね",
+  "hp": 130,
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "translationStatus": "notTranslatable"
+}

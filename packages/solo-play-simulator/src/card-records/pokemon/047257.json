@@ -1,0 +1,47 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "くすねる"
+    },
+    {
+      "cost": ["dark"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "どつく"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "マリィのベロバー",
+  "cardIds": ["047257"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

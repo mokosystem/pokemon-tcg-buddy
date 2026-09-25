@@ -1,0 +1,37 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": 2,
+            "operation": "searchDeckAndPlaceOnTopAfterShuffle"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["045284", "049414"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "暗号マニアの解読",
+  "rulings": [
+    {
+      "interpretation": "山札が 2 枚以上あれば必ず 2 枚選ぶ。山札が 1 枚なら、その 1 枚を選ぶ",
+      "question": "山札から好きなカードを 1 枚だけ選んで山札の上に置けるか",
+      "reflectedIn": "searchDeckAndPlaceOnTopAfterShuffle の count を 2 にし、選ぶ枚数の下限と上限を 2(山札が足りなければ山札の枚数)にする(effect-operations.ts の searchDeckAndPlaceOnTop)",
+      "source": {
+        "basis": "同じ書き方(山札から好きなカードを 2 枚選び、残りを切って、選んだカードを好きな順で山札の上に戻す)のサポート「マオ」の公式 Q&A(検索語「好きなカードを2枚」、https://www.pokemon-card.com/rules/faq/search.php?freeword=%E5%A5%BD%E3%81%8D%E3%81%AA%E3%82%AB%E3%83%BC%E3%83%89%E3%82%922%E6%9E%9A&regulation_faq_main_item1=all )が、山札が 2 枚以上あるときは必ず 2 枚選ぶと回答している",
+        "checkedOn": "2026-09-24",
+        "kind": "noMatchingQa",
+        "searchTerms": ["暗号マニアの解読", "暗号マニア", "好きなカードを2枚"]
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

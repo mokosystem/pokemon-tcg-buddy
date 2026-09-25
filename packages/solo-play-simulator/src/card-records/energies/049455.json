@@ -1,0 +1,63 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "change": "setEnergyProvision",
+          "provision": {
+            "kind": "anyType",
+            "units": 1
+          }
+        },
+        "conditions": [
+          {
+            "condition": "attachedPokemonMatches",
+            "filter": {
+              "stages": ["たね"]
+            }
+          }
+        ],
+        "scope": {
+          "scope": "self"
+        }
+      },
+      "kind": "continuous"
+    }
+  ],
+  "cardIds": ["049455", "047622", "048166", "048714", "047902", "027552"],
+  "category": "特殊エネルギー",
+  "excludedEffects": [],
+  "name": "プリズムエネルギー",
+  "provision": {
+    "kind": "type",
+    "type": "colorless",
+    "units": 1
+  },
+  "rulings": [
+    {
+      "interpretation": "「たねポケモン」はカードの種類がたねポケモンであることを指す",
+      "question": "効果で場に出た 2進化ポケモンなど、たねポケモンとして扱われる別の種類のカードについているとき、すべてのタイプとして働くか",
+      "reflectedIn": "働く条件 attachedPokemonMatches を、つけているポケモンのカードの進化の段階(たね)で判定する",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "効果で場に出た 2進化ポケモンや、たねポケモンとして出ている化石のトレーナーにつけたプリズムエネルギーは、すべてのタイプとして働くか、という質問に、カードの種類がたねポケモンであることを指すため働かないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%97%E3%83%AA%E3%82%BA%E3%83%A0%E3%82%A8%E3%83%8D%E3%83%AB%E3%82%AE%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "数える。たねポケモンについている間は、すべてのタイプのエネルギーとして数える",
+      "question": "たねポケモンについているプリズムエネルギーを、特定のタイプのエネルギーの数(メガサーナイトex の「メガシンフォニア」の超エネルギー)として数えるか",
+      "reflectedIn": "供給を anyType にし、ダメージの数える対象 energyAttachedToOwnPokemon が 1 個として数える",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "ベンチのたねポケモンにプリズムエネルギーが 1 枚ついているとき、メガサーナイトexのメガシンフォニアで超エネルギーとして数えられるか、という質問に、数えられると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%97%E3%83%AA%E3%82%BA%E3%83%A0%E3%82%A8%E3%83%8D%E3%83%AB%E3%82%AE%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

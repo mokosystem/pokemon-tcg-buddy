@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "あんやのはばたき"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "たたりとばす"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「あんやのはばたき」(バトル場にいる間、相手のバトルポケモンの特性を無くす)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「たたりとばす」の、相手のベンチポケモンにダメカンを 2 個のせる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ハバタクカミ",
+  "cardIds": ["045519"],
+  "stage": "たね",
+  "hp": 90,
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "translationStatus": "notTranslatable"
+}

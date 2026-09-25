@@ -1,0 +1,67 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "きゃくよせ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "filter": {
+                "categories": ["サポート"]
+              },
+              "lookCount": 6,
+              "maxTakeCount": 1,
+              "minTakeCount": 0,
+              "operation": "lookAtDeckTopAndTakeIntoHand",
+              "restPlacement": "shuffleIntoDeck"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "selfIsActive"
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["fire", "water"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "なみのり"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "使える。山札にある分だけを見る",
+      "question": "山札が 6 枚に満たないときに特性「きゃくよせ」を使えるか",
+      "reflectedIn": "lookAtDeckTopAndTakeIntoHand は山札の上からある分だけ見る(最初の操作は山札が 1 枚以上あれば対象がある)",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "山札が 5 枚以下のとき「きゃくよせ」を使えるか、という質問に、使えると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8D%E3%82%83%E3%81%8F%E3%82%88%E3%81%9B&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "シャリタツ",
+  "cardIds": ["048657", "047178", "045773"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "dragon",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

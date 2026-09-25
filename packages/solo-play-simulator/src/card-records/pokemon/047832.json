@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "switchActiveWithBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "テレポートアタック"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ケーシィ",
+  "cardIds": ["047832"],
+  "stage": "たね",
+  "hp": 50,
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "translationStatus": "translated"
+}

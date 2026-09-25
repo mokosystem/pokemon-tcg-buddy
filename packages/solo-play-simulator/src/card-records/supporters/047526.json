@@ -1,0 +1,37 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": [
+                    "グッズ",
+                    "ポケモンのどうぐ",
+                    "サポート",
+                    "スタジアム"
+                  ]
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["047526", "049450", "047487", "048701"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "ロケット団のラムダ",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

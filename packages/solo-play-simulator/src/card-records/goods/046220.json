@@ -1,0 +1,29 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"],
+              "stages": ["たね"]
+            },
+            "maxCount": 8,
+            "operation": "searchDeckOntoBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["046220"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "プレシャスキャリー",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

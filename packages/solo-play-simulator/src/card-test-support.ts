@@ -2,6 +2,7 @@
  * カードの記録を骨組みで実行するテストの準備。記録の表から実在のカードを作り、小さな場を組む。
  */
 
+import { listUsableAttacksOfActive, useAttack } from "./card-effects.ts";
 import { cardRecordTable } from "./card-record-table.ts";
 import { buildCardFromRecord, type Card } from "./cards.ts";
 import type {
@@ -10,7 +11,7 @@ import type {
   EffectContext,
 } from "./effect-choices.ts";
 import { firstCandidateChoices, neverShuffled } from "./sample-cards.ts";
-import { GameState, PokemonInPlay } from "./state.ts";
+import { GameState, IllegalMove, PokemonInPlay } from "./state.ts";
 
 /** カード ID から、記録の表にあるカードを作る。 */
 export function buildRecordedCard(cardId: string): Card {
@@ -58,6 +59,24 @@ export function buildContext(
   overrides: Partial<EffectChoices> = {}
 ): EffectContext {
   return { choices: { ...firstCandidateChoices, ...overrides }, state };
+}
+
+/**
+ * 使えるワザの一覧から名前で 1 つ選んで使う。一覧に無ければ IllegalMove を投げる。同じ名前の候補が複数あるときは
+ * どれを使うか決められないため、useAttack に候補を直接渡す。
+ */
+export function useAttackNamed(context: EffectContext, name: string): void {
+  const candidates = listUsableAttacksOfActive(context).filter(
+    ({ attack }) => attack.name === name
+  );
+  const [only] = candidates;
+  if (only === undefined) {
+    throw new IllegalMove(`ワザ ${name} は今使えない`);
+  }
+  if (candidates.length > 1) {
+    throw new Error(`ワザ ${name} の候補が複数ある`);
+  }
+  useAttack(context, only);
 }
 
 /** カード名の並びの順に、候補から 1 枚ずつ選ぶ。並びに無い名前は選ばない。 */

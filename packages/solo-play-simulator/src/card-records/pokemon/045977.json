@@ -1,0 +1,48 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"]
+            },
+            "maxCount": 1,
+            "minCount": 1,
+            "operation": "addFromDiscardToHand"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "しっぽをたらす"
+    },
+    {
+      "cost": ["psychic", "colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "たいあたり"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ヤドン",
+  "cardIds": ["045977"],
+  "stage": "たね",
+  "hp": 80,
+  "pokemonType": "psychic",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

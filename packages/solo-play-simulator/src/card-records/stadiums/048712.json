@@ -1,0 +1,33 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 2
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": [
+          {
+            "condition": "supporterUsedThisTurnNameIncludes",
+            "text": "ロケット団"
+          }
+        ]
+      },
+      "kind": "activatedOncePerTurn"
+    }
+  ],
+  "cardIds": ["048712", "047490"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "ロケット団のファクトリー",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

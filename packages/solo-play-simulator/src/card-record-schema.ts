@@ -87,6 +87,8 @@ export type ExRule = InferOutput<typeof ExRuleSchema>;
 
 const cardFilterEntries = {
   categories: optional(array(CardCategorySchema)),
+  /** この名前のカードを除く(モモワロウex の「しはいのくさり」: 「モモワロウex」をのぞく)。 */
+  excludesNames: optional(array(nonEmptyText)),
   excludesPokemonWithRuleBox: optional(literal(true)),
   exRules: optional(array(ExRuleSchema)),
   /** 「テラスタル」のポケモンだけ(ガラスのラッパ、ゼロの大空洞)。 */
@@ -131,6 +133,10 @@ const basicConditionOptions = [
   strictObject({
     condition: literal("selfHasNoEnergyAttached"),
   }),
+  /** このポケモンにエネルギーがついている(ハクリューの「しんかのみちびき」)。 */
+  strictObject({
+    condition: literal("selfHasEnergyAttached"),
+  }),
   strictObject({
     condition: literal("attachedPokemonMatches"),
     filter: PokemonInPlayFilterSchema,
@@ -156,6 +162,25 @@ const basicConditionOptions = [
   strictObject({
     condition: literal("ownRemainingPrizesAre"),
     count: countFromZero,
+  }),
+  /** 場にこの名前のスタジアムが出ている(カミッチュなどの「おまつりおんど」: 「お祭り会場」)。 */
+  strictObject({
+    condition: literal("stadiumInPlayNamed"),
+    name: nonEmptyText,
+  }),
+  /** 自分のバトルポケモンが、この名前の特性を持つ(バチンキーの「ドンドンだいこ」: 「おまつりおんど」)。 */
+  strictObject({
+    abilityName: nonEmptyText,
+    condition: literal("activePokemonHasAbilityNamed"),
+  }),
+  /** この番に手札から使ったサポートの名前に、この文字列を含む(ロケット団のファクトリー: 「ロケット団」)。 */
+  strictObject({
+    condition: literal("supporterUsedThisTurnNameIncludes"),
+    text: nonEmptyText,
+  }),
+  /** 手札が、使おうとしているこのカード 1 枚だけ(グラジオの決戦)。 */
+  strictObject({
+    condition: literal("handHasNoOtherCards"),
   }),
 ] as const;
 
@@ -208,6 +233,15 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("shuffleHandIntoDeck"),
   }),
+  /** 手札を count 枚選び、山札の上に置く(夜のアカデミー)。山札は切らない。山札が 0 枚でも置ける(公式 Q&A「夜のアカデミー」)。 */
+  strictObject({
+    count: countFromOne,
+    operation: literal("placeHandCardsOnDeckTop"),
+  }),
+  /** 手札をすべてトラッシュする。手札が 0 枚でも使える(公式 Q&A「ゼイユ」)。 */
+  strictObject({
+    operation: literal("discardHand"),
+  }),
   strictObject({
     filter: optional(CardFilterSchema),
     maxCount: countFromOne,
@@ -246,6 +280,24 @@ const basicOperationOptions = [
     operation: literal("searchDeckAndAttachEnergyToOnePokemon"),
     targetFilter: PokemonInPlayFilterSchema,
   }),
+  /**
+   * 山札から条件に合うエネルギーを maxCount 枚まで選び、条件に合う自分のポケモンに好きなようにつけて切る
+   * (マリィのオーロンゲex の「パンクアップ」)。1 枚も選ばなくてよい(公式 Q&A「パンクアップ」)。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
+    operation: literal("searchDeckAndAttachEnergyDistributedToPokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /**
+   * 山札から好きなカードを count 枚選び、残りの山札を切ってから、選んだカードを好きな順で山札の上に置く
+   * (暗号マニアの解読)。山札が count 枚に満たなければ全部を選ぶ(公式 Q&A「マオ」: 2 枚以上あれば必ず 2 枚選ぶ)。
+   */
+  strictObject({
+    count: countFromOne,
+    operation: literal("searchDeckAndPlaceOnTopAfterShuffle"),
+  }),
   strictObject({
     filter: CardFilterSchema,
     lookCount: countFromOne,
@@ -263,6 +315,19 @@ const basicOperationOptions = [
     operation: literal("lookAtDeckTopAndAttachEnergyToSelf"),
     restPlacement: DeckTopRestPlacementSchema,
   }),
+  /**
+   * 山札の上から lookCount 枚を見て、条件に合うエネルギーを選び、条件に合う自分のポケモンに好きなようにつける
+   * (メタングの「メタルメーカー」)。
+   */
+  strictObject({
+    filter: CardFilterSchema,
+    lookCount: countFromOne,
+    maxAttachCount: countFromOne,
+    minAttachCount: countFromZero,
+    operation: literal("lookAtDeckTopAndAttachEnergyToOwnPokemon"),
+    restPlacement: DeckTopRestPlacementSchema,
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
   strictObject({
     filter: CardFilterSchema,
     maxCount: countFromOne,
@@ -274,6 +339,13 @@ const basicOperationOptions = [
     maxCount: countFromOne,
     operation: literal("placeFromDiscardOntoBench"),
   }),
+  /** トラッシュから条件に合うカードを minCount〜maxCount 枚選び、山札に戻して切る(せいなるはい)。 */
+  strictObject({
+    filter: CardFilterSchema,
+    maxCount: countFromOne,
+    minCount: countFromZero,
+    operation: literal("returnFromDiscardToDeck"),
+  }),
   /** 手札から条件に合うエネルギーを 1〜maxCount 枚選び、条件に合う自分のポケモン 1 匹につける。手札からつける番に 1 回には数えない。 */
   strictObject({
     energyFilter: CardFilterSchema,
@@ -281,12 +353,44 @@ const basicOperationOptions = [
     operation: literal("attachEnergyFromHand"),
     targetFilter: PokemonInPlayFilterSchema,
   }),
+  /** 手札から条件に合うエネルギーを 1〜maxCount 枚選び、このポケモン(効果の持ち主)につける。手札からつける番に 1 回には数えない。 */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
+    operation: literal("attachEnergyFromHandToSelf"),
+  }),
   /** 条件に合う自分のポケモンを maxPokemonCount 匹まで選び、トラッシュから条件に合うエネルギーを 1 枚ずつつける。 */
   strictObject({
     energyFilter: CardFilterSchema,
     maxPokemonCount: countFromOne,
     operation: literal("attachEnergyFromDiscardToEachChosenPokemon"),
     targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /**
+   * トラッシュから条件に合うエネルギーを maxCount 枚まで選び、条件に合う自分のポケモンに好きなようにつける
+   * (1 匹に何枚つけてもよい。メガルカリオex の「はどうづき」)。1 枚も選ばなくてよい(公式 Q&A「はどうづき」)。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
+    operation: literal("attachEnergyFromDiscardDistributedToPokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /** 自分のベンチポケモンについているエネルギーを合計 maxCount 個まで選び、バトルポケモンにつけ替える(Nの筋書き)。 */
+  strictObject({
+    maxCount: countFromOne,
+    operation: literal("moveEnergyFromBenchToActive"),
+  }),
+  /**
+   * この効果の中の入れ替え(switchActiveWithBench)でベンチに下がったポケモンのエネルギーを 1 個選び、新しいバトルポケモンに
+   * つけ替える(ヒガナの信頼)。
+   */
+  strictObject({
+    operation: literal("moveEnergyFromSwitchedOutPokemonToActive"),
+  }),
+  /** 自分の場のほかのポケモンについているエネルギーを好きなだけ選び、このポケモン(効果の持ち主)につけ替える。 */
+  strictObject({
+    operation: literal("moveAnyEnergyFromOwnPokemonToSelf"),
   }),
   /** 自分の場のポケモンについている条件に合うエネルギーを 1 枚選び、自分の別のポケモンにつけ替える。 */
   strictObject({
@@ -305,11 +409,17 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("evolveBasicToStage2FromHand"),
   }),
+  /** バトルポケモンをベンチポケモンと入れ替える。benchFilter はバトル場に出すベンチポケモンの条件。 */
   strictObject({
+    benchFilter: optional(CardFilterSchema),
     operation: literal("switchActiveWithBench"),
   }),
   strictObject({
     operation: literal("returnSelfToDeck"),
+  }),
+  /** ベンチにいるこのポケモン(効果の持ち主)を、バトルポケモンと入れ替える(テツノイサハex の「ラピッドバーニア」)。 */
+  strictObject({
+    operation: literal("switchSelfWithActive"),
   }),
   strictObject({
     operation: literal("returnPokemonToHand"),
@@ -320,6 +430,10 @@ const basicOperationOptions = [
   }),
   strictObject({
     operation: literal("discardSelf"),
+  }),
+  /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
+  strictObject({
+    operation: literal("discardStadiumInPlay"),
   }),
 ] as const;
 
@@ -383,10 +497,29 @@ export const ContinuousChangeSchema = variant("change", [
     change: literal("reduceRetreatCost"),
   }),
   strictObject({ change: literal("allowBenchedPokemonAttacks") }),
+  /** 範囲のポケモンが使うワザに必要なエネルギーを、無色 count 個ぶん多くする(夜の鉱山)。ワザを使うポケモンに当てる。 */
+  strictObject({
+    change: literal("addColorlessToAttackCost"),
+    count: countFromOne,
+  }),
+  /**
+   * 持っているワザを 2 回連続で使える(アズマオウなどの「おまつりおんど」)。2 回目は、このポケモンが記録に持つワザから
+   * 選び直す。効果で使えるようになったワザは選べない(公式 Q&A「おまつりおんど」)。
+   */
+  strictObject({ change: literal("useAttacksTwice") }),
   strictObject({ change: literal("negateAbilities") }),
   strictObject({ change: literal("negateToolEffects") }),
   strictObject({
     change: literal("setEnergyProvision"),
+    provision: EnergyProvisionSchema,
+  }),
+  /**
+   * 範囲のポケモンについている、energyFilter に合うエネルギーの供給を provision にする(メガニウムの「おいしげる」:
+   * 基本草エネルギーが草 2 個ぶん)。同じ項目の効果が複数働いても重ならない。
+   */
+  strictObject({
+    change: literal("setAttachedEnergyProvision"),
+    energyFilter: CardFilterSchema,
     provision: EnergyProvisionSchema,
   }),
   /** ベンチに出せるポケモンの数。範囲は ownPlayer にする(card-record-validation.ts が検査する)。 */
@@ -402,6 +535,14 @@ export const ContinuousChangeSchema = variant("change", [
     change: literal("allowEvolutionFromHandAsIfNamed"),
     evolutionFilter: CardFilterSchema,
     name: nonEmptyText,
+  }),
+  /**
+   * 範囲のポケモンを、出したばかりの番(最初の自分の番を除く)でも、evolutionFilter に合う手札の進化ポケモンに進化させられる
+   * (活力の森)。手札から進化させるときだけ働き、ふしぎなアメには働かない(公式 Q&A「活力の森」)。
+   */
+  strictObject({
+    change: literal("allowEvolvingFreshPokemon"),
+    evolutionFilter: CardFilterSchema,
   }),
   /**
    * 範囲のポケモンが使うワザの、相手のバトルポケモンへのダメージを amount 増やす(シロナのロズレイドの
@@ -436,6 +577,16 @@ export const DamageCountTargetSchema = variant("count", [
     abilityName: nonEmptyText,
     count: literal("discardPokemonWithAbilityName"),
   }),
+  /** ワザを使うポケモンについているエネルギーの数(メガドリュウズex の「マキシマムドリル」)。 */
+  strictObject({ count: literal("energyAttachedToAttackingPokemon") }),
+  /** 自分のポケモン全員についている基本エネルギーの枚数(タケルライコex の「きょくらいごう」)。 */
+  strictObject({ count: literal("basicEnergyAttachedToOwnPokemon") }),
+  /** 場に出ているスタジアムの数(0 か 1。イーユイの「グラウンドメルト」)。 */
+  strictObject({ count: literal("stadiumsInPlay") }),
+  /** 自分の場のたねポケモンの数(ナゲツケサルの「れんけいスロー」)。 */
+  strictObject({ count: literal("ownBasicPokemonInPlay") }),
+  /** 自分のベンチポケモンの数(テラパゴスex の「ユニオンビート」)。 */
+  strictObject({ count: literal("ownBenchedPokemon") }),
 ]);
 
 export const DamageBonusSchema = variant("kind", [
@@ -474,6 +625,17 @@ export const AttackSchema = strictObject({
   /** ダメージ以外の効果の翻訳。ダメージだけのワザ、翻訳しない効果のワザは持たない。 */
   effect: optional(EffectSchema),
   name: nonEmptyText,
+  /**
+   * 自分のベンチの条件に合うポケモンが持つワザを 1 つ選び、このワザとして使う(Nのゾロアークex の
+   * 「ナイトジョーカー」)。選んだワザは、このワザに必要なエネルギーで使える(continuous-effects.ts の listUsableAttacks)。
+   */
+  usesAttackOfBenchedPokemon: optional(CardFilterSchema),
+  /**
+   * 山札の上から 1 枚トラッシュし、それが条件に合うポケモンなら、そのポケモンが持つワザを 1 つ選び、このワザとして
+   * 使う(ヤドキングの「ひらめきチャレンジ」)。選んだワザは、このワザに必要なエネルギーで使える。山札の上が
+   * 何のカードか分かっているときだけ使えるワザに出す(continuous-effects.ts の listDeckTopAttacksUsedAs)。
+   */
+  usesAttackOfDiscardedDeckTop: optional(CardFilterSchema),
 });
 export type Attack = InferOutput<typeof AttackSchema>;
 
@@ -497,6 +659,11 @@ export const AbilityTranslationSchema = variant("kind", [
     effect: EffectSchema,
     kind: literal("triggeredWhenPlacedOnBenchFromHand"),
   }),
+  /** 手札から出して進化させたとき(ふしぎなアメで進化させたときを含む)。山札から進化させたときは起きない。 */
+  strictObject({
+    effect: EffectSchema,
+    kind: literal("triggeredWhenEvolvedFromHand"),
+  }),
   strictObject({
     continuousEffect: ContinuousEffectSchema,
     kind: literal("continuous"),
@@ -514,8 +681,15 @@ export type Ability = InferOutput<typeof AbilitySchema>;
 // ---- トレーナーズと特殊エネルギーの効果 ----
 
 export const CardEffectSchema = variant("kind", [
-  /** グッズ・サポートを使ったとき。 */
-  strictObject({ effect: EffectSchema, kind: literal("whenPlayed") }),
+  /**
+   * グッズ・サポートを使ったとき。usableOnFirstTurnGoingFirst は基本ルールの例外の印で、先攻の最初の番でも
+   * サポートを使える(ゼイユ)。例外はカード自身に書かれている(docs/pokemon-tcg/basic-rules.md)。
+   */
+  strictObject({
+    effect: EffectSchema,
+    kind: literal("whenPlayed"),
+    usableOnFirstTurnGoingFirst: optional(literal(true)),
+  }),
   /** スタジアムの「自分の番ごとに 1 回」。 */
   strictObject({
     effect: EffectSchema,
@@ -573,7 +747,8 @@ export type Ruling = InferOutput<typeof RulingSchema>;
 
 /**
  * 含めなかった理由。相手の側に働く、特殊状態、回復、ダメージやダメカンを与える処理、ダメージの上乗せのうち
- * 記録に持たないもの(コイン、相手の側、追加のコストで決まるもの)、自分の次の番の制限、一人回しでは使う理由が無い。
+ * 記録に持たないもの(コイン、相手の側、追加のコストで決まるもの)、自分の次の番の制限、後攻の最初の番に使えない制限、
+ * 一人回しでは使う理由が無い。
  */
 export const ExclusionReasonSchema = picklist([
   "requiresOpponent",
@@ -582,6 +757,7 @@ export const ExclusionReasonSchema = picklist([
   "damageOrDamageCounters",
   "damageBonusNotModeled",
   "ownNextTurnRestriction",
+  "firstTurnGoingSecondRestriction",
   "noReasonToUseInSoloPlay",
 ]);
 export type ExclusionReason = InferOutput<typeof ExclusionReasonSchema>;

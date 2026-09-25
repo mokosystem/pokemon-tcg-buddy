@@ -1,0 +1,37 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": 1,
+            "operation": "placeHandCardsOnDeckTop"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "activatedOncePerTurn"
+    }
+  ],
+  "cardIds": ["045939"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "夜のアカデミー",
+  "rulings": [
+    {
+      "interpretation": "置ける",
+      "question": "山札が 0 枚のときに、手札を山札の上に置けるか",
+      "reflectedIn": "placeHandCardsOnDeckTop の対象は手札だけで判定し、山札の枚数を見ない",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "山札が 0 枚のとき、「夜のアカデミー」の効果で手札を 1 枚山札の上にもどせるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E5%A4%9C%E3%81%AE%E3%82%A2%E3%82%AB%E3%83%87%E3%83%9F%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

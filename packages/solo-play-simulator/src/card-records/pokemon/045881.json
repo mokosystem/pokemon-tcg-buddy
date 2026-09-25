@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass", "grass", "colorless", "colorless"],
+      "damage": {
+        "amount": 220,
+        "kind": "fixed"
+      },
+      "name": "ウッドハンマー"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ウッドハンマー」の、このポケモンにも 30 ダメージを与える効果",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "カプ・ブルル",
+  "cardIds": ["045881"],
+  "stage": "たね",
+  "hp": 140,
+  "pokemonType": "grass",
+  "retreatCost": 3,
+  "translationStatus": "irrelevantToCalculation"
+}

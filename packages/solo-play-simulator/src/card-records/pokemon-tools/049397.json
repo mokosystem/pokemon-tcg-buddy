@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["049397"],
+  "category": "ポケモンのどうぐ",
+  "excludedEffects": [
+    {
+      "description": "つけているポケモンがどくのとき、そのポケモンが使うワザのダメージを増やす。特殊状態を含めないため、つけているポケモンがどくになることが無く、ダメージは増えない",
+      "reason": "specialCondition"
+    }
+  ],
+  "name": "くさりもち",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-24"
+}

@@ -11,19 +11,24 @@ import {
   type Attack,
   CardCategory,
   type DamageBonus,
+  EvolutionStage,
 } from "./card-record-schema.ts";
 import { matchesPokemonFilter } from "./conditions.ts";
 import {
   countEnergyUnitsOfTypes,
+  listEnergyUnits,
   sumAttackDamageIncrease,
 } from "./continuous-effects.ts";
 import type { GameState, PokemonInPlay } from "./state.ts";
 
 function countDamageTarget(
   state: GameState,
+  attacker: PokemonInPlay,
   target: DamageBonus["target"]
 ): number {
   switch (target.count) {
+    case "energyAttachedToAttackingPokemon":
+      return listEnergyUnits(state, attacker).length;
     case "energyAttachedToOwnPokemon":
       return state
         .listPokemonInPlay()
@@ -40,13 +45,37 @@ function countDamageTarget(
             (ability) => ability.name === target.abilityName
           )
       ).length;
+    case "basicEnergyAttachedToOwnPokemon":
+      return state
+        .listPokemonInPlay()
+        .reduce(
+          (total, pokemon) =>
+            total +
+            pokemon.energies.filter(
+              (energy) => energy.category === CardCategory.BasicEnergy
+            ).length,
+          0
+        );
+    case "stadiumsInPlay":
+      return state.stadium === null ? 0 : 1;
+    case "ownBasicPokemonInPlay":
+      return state
+        .listPokemonInPlay()
+        .filter((pokemon) => pokemon.card.stage === EvolutionStage.Basic)
+        .length;
+    case "ownBenchedPokemon":
+      return state.bench.length;
     default:
       return 0;
   }
 }
 
-function calculateBonus(state: GameState, bonus: DamageBonus): number {
-  const count = countDamageTarget(state, bonus.target);
+function calculateBonus(
+  state: GameState,
+  attacker: PokemonInPlay,
+  bonus: DamageBonus
+): number {
+  const count = countDamageTarget(state, attacker, bonus.target);
   if (bonus.kind === "perCount") {
     return count * bonus.unit;
   }
@@ -86,7 +115,9 @@ export function calculateAttackDamage(
   }
   const base =
     damage.amount +
-    (damage.bonus === undefined ? 0 : calculateBonus(state, damage.bonus));
+    (damage.bonus === undefined
+      ? 0
+      : calculateBonus(state, attacker, damage.bonus));
   if (base === 0) {
     return 0;
   }

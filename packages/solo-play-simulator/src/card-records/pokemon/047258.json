@@ -1,0 +1,28 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark", "dark"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "どつく"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "マリィのギモー",
+  "cardIds": ["047258"],
+  "stage": "1進化",
+  "evolvesFrom": "マリィのベロバー",
+  "hp": 100,
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

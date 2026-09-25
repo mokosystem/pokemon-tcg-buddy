@@ -1,0 +1,89 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "みどりのまい",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["grass"]
+              },
+              "maxCount": 1,
+              "operation": "attachEnergyFromHandToSelf"
+            },
+            {
+              "count": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "operation": "drawCards"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["grass", "grass", "grass"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "まんようしぐれ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「まんようしぐれ」の、おたがいのバトルポケモンについているエネルギーの数 × 30 を足す上乗せ。相手のバトルポケモンの数を含むため持たず、ダメージは上乗せを除いた 30 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": true,
+  "rulings": [
+    {
+      "interpretation": "使える。基本草エネルギーをつけ、山札を引かずに終える",
+      "question": "山札が 0 枚のときに特性「みどりのまい」を使えるか",
+      "reflectedIn": "特性の使える条件に山札の枚数を書かない(最初の操作 attachEnergyFromHandToSelf の対象は手札の基本草エネルギー)",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "山札が 1 枚も無いとき、「みどりのまい」で手札の基本草エネルギーをつけられるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%BF%E3%81%A9%E3%82%8A%E3%81%AE%E3%81%BE%E3%81%84&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "引かないことは選べない。山札が 1 枚以上あれば必ず引く",
+      "question": "特性「みどりのまい」でエネルギーをつけたあと、山札を引かないことを選べるか",
+      "reflectedIn": "drawCards を選択なしで続けて実行する",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "「みどりのまい」で基本草エネルギーをつけたとき山札を引かないことはできるか、という質問に、山札が 1 枚以上あれば必ず引くと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%BF%E3%81%A9%E3%82%8A%E3%81%AE%E3%81%BE%E3%81%84&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "オーガポン みどりのめんex",
+  "cardIds": ["048798", "045707"],
+  "stage": "たね",
+  "hp": 210,
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "exRule": "pokemonEx",
+  "translationStatus": "translated"
+}

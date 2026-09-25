@@ -1,0 +1,66 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "じゅくせいチャージ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["grass"]
+              },
+              "maxCount": 1,
+              "operation": "attachEnergyFromHand",
+              "targetFilter": {}
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 30,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "energyAttachedToOwnPokemon",
+            "energyTypes": ["grass"]
+          },
+          "unit": 30
+        },
+        "kind": "fixed"
+      },
+      "name": "みつあめストーム"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「じゅくせいチャージ」の、エネルギーをつけたポケモンの HP を 30 回復する効果",
+      "reason": "healing"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "カミツオロチex",
+  "cardIds": ["048780"],
+  "stage": "2進化",
+  "evolvesFrom": "カミッチュ",
+  "basicPokemonOfEvolutionLine": "カジッチュ",
+  "hp": 330,
+  "pokemonType": "grass",
+  "retreatCost": 3,
+  "exRule": "pokemonEx",
+  "translationStatus": "translated"
+}

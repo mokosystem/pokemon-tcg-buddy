@@ -1,0 +1,43 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ひっさつしゅりけん"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["water", "water"],
+      "damage": {
+        "amount": 120,
+        "kind": "fixed"
+      },
+      "name": "ニンジャスピナー"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「ひっさつしゅりけん」(バトル場にいて、手札の基本水エネルギーを 1 枚トラッシュすれば、相手のポケモン 1 匹にダメカンを 6 個のせる)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「ニンジャスピナー」の、のぞむなら自身の水エネルギーを 1 個手札に戻して 80 を足す上乗せ。追加のコストで決まるため持たず、ダメージは上乗せを除いた 120 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "メガゲッコウガex",
+  "cardIds": ["050106"],
+  "stage": "2進化",
+  "evolvesFrom": "ゲコガシラ",
+  "basicPokemonOfEvolutionLine": "ケロマツ",
+  "hp": 350,
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "exRule": "megaEvolutionEx",
+  "translationStatus": "notTranslatable"
+}

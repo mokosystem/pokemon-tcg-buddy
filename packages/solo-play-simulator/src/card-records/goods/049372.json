@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["049372"],
+  "category": "グッズ",
+  "excludedEffects": [
+    {
+      "description": "相手のベンチポケモンをバトルポケモンと入れ替え、その後、自分のバトルポケモンをベンチポケモンと入れ替える。相手の側の効果が主で、ACE SPEC で 1 枚のため自分の入れ替えのためだけに使う場面が現実に無く、自分の入れ替えも含めない",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "プライムキャッチャー",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-24"
+}

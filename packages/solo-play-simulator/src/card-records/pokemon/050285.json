@@ -1,0 +1,55 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "スカイドロー",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "count": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "operation": "drawCards"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "フェザーロンド"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「フェザーロンド」の、おたがいのベンチポケモンの数 × 20 を足す上乗せ。相手のベンチの数を含むため持たず、ダメージは上乗せを除いた 60 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ドデカバシ",
+  "cardIds": ["050285"],
+  "stage": "2進化",
+  "evolvesFrom": "ケララッパ",
+  "basicPokemonOfEvolutionLine": "ツツケラ",
+  "hp": 150,
+  "pokemonType": "colorless",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

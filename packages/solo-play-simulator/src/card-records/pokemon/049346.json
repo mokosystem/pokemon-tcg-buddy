@@ -1,0 +1,56 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 0,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "ownBenchedPokemon"
+          },
+          "unit": 30
+        },
+        "kind": "fixed"
+      },
+      "name": "ユニオンビート"
+    },
+    {
+      "cost": ["grass", "water", "electric"],
+      "damage": {
+        "amount": 180,
+        "kind": "fixed"
+      },
+      "name": "クラウンオパール"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「ユニオンビート」は、後攻の最初の番には使えない。記録ではこの制限を持たず、後攻の最初の番にも使えるワザとして扱う",
+      "reason": "firstTurnGoingSecondRestriction"
+    },
+    {
+      "description": "ワザ「クラウンオパール」の、次の相手の番にたねポケモン(無色ポケモンを除く)からワザのダメージを受けなくなる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": true,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "テラパゴスex",
+  "cardIds": ["049346"],
+  "stage": "たね",
+  "hp": 230,
+  "pokemonType": "colorless",
+  "retreatCost": 2,
+  "exRule": "pokemonEx",
+  "translationStatus": "irrelevantToCalculation"
+}

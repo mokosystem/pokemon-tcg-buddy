@@ -1,0 +1,43 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "switchActiveWithBench"
+          },
+          {
+            "count": {
+              "handSize": 5,
+              "kind": "untilHandSize"
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050009", "046290"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "サーファー",
+  "rulings": [
+    {
+      "interpretation": "使える。入れ替え、手札が 5 枚以上なら引かない(山札が無ければ引けない)",
+      "question": "山札が 0 枚のときや、手札が 6 枚以上あるときに使えるか",
+      "reflectedIn": "最初の操作は入れ替えで、引く枚数は untilHandSize(手札がすでに 5 枚以上なら 0 枚)",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "山札が無いときと、手札が 6 枚以上あるときに、サーファーで入れ替えられるか、という質問に、どちらもできると回答。ベンチにポケモンがいないときは使えないとも回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B5%E3%83%BC%E3%83%95%E3%82%A1%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

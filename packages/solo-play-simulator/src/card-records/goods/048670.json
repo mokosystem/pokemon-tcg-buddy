@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["048670"],
+  "category": "グッズ",
+  "excludedEffects": [
+    {
+      "description": "相手の場のポケモンについている特殊エネルギーを 1 個トラッシュする",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "改造ハンマー",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-24"
+}

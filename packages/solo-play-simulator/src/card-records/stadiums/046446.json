@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["046446", "048705", "046661"],
+  "category": "スタジアム",
+  "excludedEffects": [
+    {
+      "description": "おたがいの場の 2進化ポケモン全員の最大 HP を減らす。相手がいないためワザのダメージを受けず、最大 HP は成立率に影響しない",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "グラビティーマウンテン",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-24"
+}

@@ -10,11 +10,14 @@ import { CardCategory } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { areConditionsMet, type EffectSource } from "./conditions.ts";
 import {
+  calculateAttackCost,
   calculateBenchLimit,
   calculateRetreatCost,
   findEvolutionNameAllowedByEffect,
   isAbilityNegated,
+  isFreshEvolutionAllowedByEffect,
   listEnergyUnits,
+  listSecondAttacks,
   listUsableAttacks,
   resolveEnergyProvision,
   toEnergyUnits,
@@ -24,6 +27,8 @@ import type { EffectContext } from "./effect-choices.ts";
 import {
   canStartEffect,
   findCardEffects,
+  markAbilityUsed,
+  resolveAbilityTriggers,
   resolveAttachedFromHandTriggers,
   runEffect,
   trimBenchToLimit,
@@ -37,6 +42,17 @@ import {
 } from "./state.ts";
 
 // ---- トレーナーズ ----
+
+/** サポートの基本ルールの例外の印(先攻の最初の番でも使える)。 */
+function supporterOptionsOf(card: Card): {
+  usableOnFirstTurnGoingFirst: boolean;
+} {
+  return {
+    usableOnFirstTurnGoingFirst: findCardEffects(card, "whenPlayed").some(
+      (cardEffect) => cardEffect.usableOnFirstTurnGoingFirst === true
+    ),
+  };
+}
 
 /** グッズ・サポート・スタジアムを手札から使えるか。基本ルールの制限と、翻訳の使える条件の両方を見る。 */
 export function canPlayTrainerFromHand(
@@ -55,7 +71,9 @@ export function canPlayTrainerFromHand(
     case CardCategory.Goods:
       return effectsAreUsable;
     case CardCategory.Supporter:
-      return state.canUseSupporter() && effectsAreUsable;
+      return (
+        state.canUseSupporter(supporterOptionsOf(card)) && effectsAreUsable
+      );
     case CardCategory.Stadium:
       return !state.hasPlayedStadium && state.stadium?.name !== card.name;
     default:
@@ -74,7 +92,7 @@ export function playTrainerFromHand(context: EffectContext, card: Card): void {
       state.useGoods(card);
       break;
     case CardCategory.Supporter:
-      state.useSupporter(card);
+      state.useSupporter(card, supporterOptionsOf(card));
       break;
     default:
       state.playStadium(card);
@@ -141,16 +159,6 @@ function findAbilityTranslation(card: Card, abilityName: string) {
   }
   return card.record.abilities.find((ability) => ability.name === abilityName)
     ?.translation;
-}
-
-function markAbilityUsed(
-  state: GameState,
-  pokemon: PokemonInPlay | null,
-  abilityName: string
-): void {
-  pokemon?.abilitiesUsedThisTurn.add(abilityName);
-  state.abilityNamesUsedThisTurn.push(abilityName);
-  state.record(`特性 ${abilityName}`);
 }
 
 /** 場のポケモンの、使うことを選ぶ特性(番に 1 回など)を今使えるか。 */
@@ -256,21 +264,11 @@ export function placeBasicPokemonOnBenchFromHand(
     benchLimit: calculateBenchLimit(state),
     from: "hand",
   });
-  if (card.record.category !== CardCategory.Pokemon) {
-    return pokemon;
-  }
-  for (const ability of card.record.abilities) {
-    const { translation } = ability;
-    if (
-      translation?.kind === "triggeredWhenPlacedOnBenchFromHand" &&
-      !isAbilityNegated(state, pokemon) &&
-      canStartEffect(state, translation.effect, { card, pokemon }, null) &&
-      context.choices.choosesToApplyOptionalEffect(state, ability.name)
-    ) {
-      markAbilityUsed(state, pokemon, ability.name);
-      runEffect(context, translation.effect, { card, pokemon }, ability.name);
-    }
-  }
+  resolveAbilityTriggers(
+    context,
+    pokemon,
+    "triggeredWhenPlacedOnBenchFromHand"
+  );
   return pokemon;
 }
 
@@ -300,7 +298,22 @@ export function canEvolvePokemonFromHand(
     state.hand.includes(card) &&
     (state.canEvolve(target, card) ||
       (state.canEvolveThisTurn(target) &&
-        findEvolutionNameAllowedByEffect(state, target, card) !== undefined))
+        findEvolutionNameAllowedByEffect(state, target, card) !== undefined) ||
+      canEvolveFreshPokemonByEffect(state, target, card))
+  );
+}
+
+/** 出したばかりのポケモンを、進化させられる効果(活力の森)で進化させられるか。最初の自分の番は除く。 */
+function canEvolveFreshPokemonByEffect(
+  state: GameState,
+  target: PokemonInPlay,
+  card: Card
+): boolean {
+  return (
+    state.turn >= 2 &&
+    target.isFresh(state.turn) &&
+    card.evolvesFrom === target.name &&
+    isFreshEvolutionAllowedByEffect(state, target, card)
   );
 }
 
@@ -316,11 +329,15 @@ export function evolvePokemonFromHand(
   const asIfNamed = state.canEvolve(target, card)
     ? undefined
     : findEvolutionNameAllowedByEffect(state, target, card);
+  const ignoreFreshness = canEvolveFreshPokemonByEffect(state, target, card);
   state.evolve(
     target,
     card,
-    asIfNamed === undefined ? { from: "hand" } : { asIfNamed, from: "hand" }
+    asIfNamed === undefined
+      ? { from: "hand", ignoreFreshness }
+      : { asIfNamed, from: "hand", ignoreFreshness }
   );
+  resolveAbilityTriggers(context, target, "triggeredWhenEvolvedFromHand");
 }
 
 function sumEnergyUnits(
@@ -367,6 +384,8 @@ export function retreatActive(
 
 /**
  * バトルポケモンが今使えるワザ(エネルギーが足り、先攻の最初の番ではなく、効果の使える条件を満たすもの)。
+ * この番にワザを 1 回使ったあとは、1 回目を使ったポケモンがバトル場に残っていて、2 回目を使える効果(「おまつりおんど」)が
+ * あるときだけ、2 回目に使えるワザを返す。
  * 効果で自分の場のポケモンがいなくなるワザ(場がニャースex だけのときの「しっぽをまく」)は含めない(wouldLeaveFieldEmpty)。
  */
 export function listUsableAttacksOfActive(
@@ -377,29 +396,67 @@ export function listUsableAttacksOfActive(
   if (active === null || !state.canAttack()) {
     return [];
   }
+  if (
+    state.attacks.has(state.turn) &&
+    (state.hasUsedSecondAttack || state.firstAttackerThisTurn !== active)
+  ) {
+    return [];
+  }
   const units = listEnergyUnits(state, active);
   const source: EffectSource = { card: active.card, pokemon: active };
-  return listUsableAttacks(state, active).filter(
+  const candidates = state.attacks.has(state.turn)
+    ? listSecondAttacks(state, active)
+    : listUsableAttacks(state, active);
+  return candidates.filter(
     ({ attack }) =>
-      canPayCost(attack.cost, units) &&
+      canPayCost(calculateAttackCost(state, active, attack), units) &&
       (attack.effect === undefined ||
         (areConditionsMet(state, attack.effect.useConditions, source) &&
           !wouldLeaveFieldEmpty(state, attack.effect)))
   );
 }
 
-/** バトルポケモンでワザを使い、ダメージ以外の効果の翻訳を実行する。ダメージは相手がいないため与えない。 */
-export function useAttack(context: EffectContext, attackName: string): void {
+/**
+ * 使えるワザの一覧の 2 つの候補が、同じワザを同じ経路で使うものか。名前だけでは、ヤドキングの「ひらめきチャレンジ」で
+ * 山札の上のヤドキングの「ちょうねんりき」を使う候補と、自身の「ちょうねんりき」を直接使う候補を区別できない。
+ */
+function isSameUsableAttack(left: UsableAttack, right: UsableAttack): boolean {
+  return (
+    left.attack.name === right.attack.name &&
+    left.owner === right.owner &&
+    left.usedAs?.name === right.usedAs?.name &&
+    left.discardsDeckTopFirst === right.discardsDeckTopFirst
+  );
+}
+
+/**
+ * バトルポケモンでワザを使い、ダメージ以外の効果の翻訳を実行する。ダメージは相手がいないため与えない。
+ * 使うワザは、使えるワザの一覧(listUsableAttacksOfActive)の候補の 1 つで受け取る。
+ */
+export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   const { state } = context;
   const { active } = state;
-  const usable = listUsableAttacksOfActive(context).find(
-    (candidate) => candidate.attack.name === attackName
+  const usable = listUsableAttacksOfActive(context).find((candidate) =>
+    isSameUsableAttack(candidate, chosen)
   );
+  const attackName =
+    chosen.usedAs === undefined
+      ? chosen.attack.name
+      : `${chosen.usedAs.name}(${chosen.attack.name})`;
   if (active === null || usable === undefined) {
     throw new IllegalMove(`ワザ ${attackName} は今使えない`);
   }
-  state.attacks.set(state.turn, attackName);
-  state.record(`ワザ ${attackName}`);
+  if (state.attacks.has(state.turn)) {
+    state.hasUsedSecondAttack = true;
+    state.record(`2 回目のワザ ${attackName}`);
+  } else {
+    state.attacks.set(state.turn, usable.attack.name);
+    state.firstAttackerThisTurn = active;
+    state.record(`ワザ ${attackName}`);
+  }
+  if (usable.discardsDeckTopFirst) {
+    state.discardFromDeckTop(1);
+  }
   const { effect } = usable.attack;
   if (effect !== undefined) {
     runEffect(

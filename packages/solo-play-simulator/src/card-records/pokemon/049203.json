@@ -1,0 +1,43 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "どくをとばす"
+    },
+    {
+      "cost": ["dark", "dark", "dark"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "まくしなぐる"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「どくをとばす」の、相手のバトルポケモンをどくにする効果",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「まくしなぐる」の、相手のバトルポケモンのダメカンの数 × 50 を足す上乗せ。相手の側で決まるため持たず、ダメージは上乗せを除いた 50 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "アラブルタケ",
+  "cardIds": ["049203"],
+  "stage": "たね",
+  "hp": 120,
+  "pokemonType": "dark",
+  "retreatCost": 3,
+  "translationStatus": "notTranslatable"
+}

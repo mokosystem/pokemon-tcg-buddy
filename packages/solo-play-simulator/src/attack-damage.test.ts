@@ -32,8 +32,67 @@ const FIRE_ENERGY = buildRecordedCard("050746");
 const IGNITION_ENERGY = buildRecordedCard("049452");
 const CYNTHIAS_SPIRITOMB = buildRecordedCard("049968");
 const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
+const TERAPAGOS = buildRecordedCard("049346");
+const MEGA_EXCADRILL = buildRecordedCard("050321");
+const STEEL_ENERGY = buildRecordedCard("030578");
+const TAPU_KOKO_EX = buildRecordedCard("046500");
+const PASSIMIAN = buildRecordedCard("049123");
 
 describe("ワザのダメージ", () => {
+  test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
+    const state = buildState({
+      active: TAPU_KOKO_EX,
+      bench: [RALTS, GARDEVOIR, PASSIMIAN],
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(TAPU_KOKO_EX, "サンダーコネクト")
+      )
+    ).toBe(60 + 3 * 20);
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(PASSIMIAN, "れんけいスロー")
+      )
+    ).toBe(3 * 20);
+  });
+
+  test("マキシマムドリルは、ワザを使うポケモンのエネルギーが 5 個以上なら 200 に 130 を足す(個数で数える)", () => {
+    const attack = findAttack(MEGA_EXCADRILL, "マキシマムドリル");
+    const four = buildState({ active: MEGA_EXCADRILL, bench: [RALTS] });
+    four.active?.energies.push(
+      ...Array.from({ length: 4 }, () => STEEL_ENERGY)
+    );
+    four.bench[0]?.energies.push(STEEL_ENERGY);
+    expect(calculateAttackDamage(four, activeOf(four), attack)).toBe(200);
+    const withIgnition = buildState({ active: MEGA_EXCADRILL });
+    withIgnition.active?.energies.push(
+      STEEL_ENERGY,
+      STEEL_ENERGY,
+      STEEL_ENERGY,
+      IGNITION_ENERGY
+    );
+    expect(
+      calculateAttackDamage(withIgnition, activeOf(withIgnition), attack)
+    ).toBe(330);
+  });
+
+  test("ユニオンビートは、自分のベンチポケモンの数×30", () => {
+    const attack = findAttack(TERAPAGOS, "ユニオンビート");
+    const threeOnBench = buildState({
+      active: TERAPAGOS,
+      bench: [RALTS, RALTS, GARDEVOIR],
+    });
+    expect(
+      calculateAttackDamage(threeOnBench, activeOf(threeOnBench), attack)
+    ).toBe(3 * 30);
+    const noBench = buildState({ active: TERAPAGOS });
+    expect(calculateAttackDamage(noBench, activeOf(noBench), attack)).toBe(0);
+  });
+
   test("メガシンフォニアは、自分のポケモン全員についている超エネルギーの数×50(すべてのタイプとして働くものも数える)", () => {
     const state = buildState({ active: GARDEVOIR, bench: [RALTS, RALTS] });
     const [first, second] = state.bench;

@@ -1,0 +1,27 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["water"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "ひんやり"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ユキワラシ",
+  "cardIds": ["048557"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

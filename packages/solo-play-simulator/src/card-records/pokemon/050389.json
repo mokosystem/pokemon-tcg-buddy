@@ -1,0 +1,33 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "fighting"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "ダブルスマッシュ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ダブルスマッシュ」のダメージは、コインを 2 回投げたオモテの数 × 70 で決まる。コインで決まるため持たず、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ジャランゴ",
+  "cardIds": ["050389"],
+  "stage": "1進化",
+  "evolvesFrom": "ジャラコ",
+  "hp": 100,
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "translationStatus": "irrelevantToCalculation"
+}

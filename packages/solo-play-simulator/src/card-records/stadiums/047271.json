@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["ポケモン"],
+                  "nameIncludes": "マリィの"
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "activatedOncePerTurn"
+    }
+  ],
+  "cardIds": ["047271"],
+  "category": "スタジアム",
+  "excludedEffects": [],
+  "name": "スパイクタウンジム",
+  "rulings": [
+    {
+      "interpretation": "名前に「マリィの」とつくポケモンを「マリィのポケモン」として扱う",
+      "question": "「マリィのポケモン」はどのポケモンか",
+      "reflectedIn": "探す条件を nameIncludes「マリィの」で書いた",
+      "source": {
+        "basis": "「マリィのポケモン」を定める公式 Q&A は見つからなかった(検索語「マリィのポケモン」の結果は、個別のカードの効果の処理を問うものだけ)。同じ書き方の「ロケット団のポケモン」について、公式 Q&A(ロケット団エネルギーとロケット団のミミッキュGX、ロケット団のアテナ、ロケット団のワナイダー。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&regulation_faq_main_item1=all )が、名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱うと回答している",
+        "checkedOn": "2026-09-24",
+        "kind": "noMatchingQa",
+        "searchTerms": ["スパイクタウンジム", "マリィのポケモン"]
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

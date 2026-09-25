@@ -1,0 +1,33 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"],
+              "providedEnergyTypes": ["psychic"]
+            },
+            "maxPokemonCount": 1,
+            "operation": "attachEnergyFromDiscardToEachChosenPokemon",
+            "targetFilter": {
+              "pokemonTypes": ["psychic"],
+              "positions": ["bench"]
+            }
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["048299"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "ワンダーパッチ",
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

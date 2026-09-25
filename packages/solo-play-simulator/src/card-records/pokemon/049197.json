@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "わしづかみ"
+    },
+    {
+      "cost": ["dark", "dark", "colorless"],
+      "damage": {
+        "amount": 110,
+        "kind": "fixed"
+      },
+      "name": "ダークフェザー"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「わしづかみ」の、次の相手の番にワザを受けたポケモンがにげられなくなる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "イベルタル",
+  "cardIds": ["049197", "047773"],
+  "stage": "たね",
+  "hp": 110,
+  "pokemonType": "dark",
+  "retreatCost": 0,
+  "translationStatus": "irrelevantToCalculation"
+}

@@ -8,6 +8,7 @@
 import {
   type Attack,
   CardCategory,
+  type CardFilter,
   type ContinuousEffect,
   type EnergyProvision,
   type PokemonType,
@@ -190,6 +191,17 @@ export function resolveEnergyProvision(
   if (override?.effect.change.change === "setEnergyProvision") {
     return override.effect.change.provision;
   }
+  // ついているポケモンに働く効果(メガニウムの「おいしげる」)。同じ効果が複数あっても重ならないため、最初の 1 つを使う
+  // (公式 Q&A「おいしげる」: 同じ内容の特性が 2 つ働いても 2 個ぶんのまま、2026-09-24 確認)
+  for (const collected of listEffectsApplyingTo(state, pokemon)) {
+    const { change } = collected.effect;
+    if (
+      change.change === "setAttachedEnergyProvision" &&
+      matchesCardFilter(energy, change.energyFilter)
+    ) {
+      return change.provision;
+    }
+  }
   return base;
 }
 
@@ -283,16 +295,185 @@ export function findEvolutionNameAllowedByEffect(
   }
 }
 
+/** 出したばかりの target を、手札の card に進化させられる効果(活力の森)が働いているか。 */
+export function isFreshEvolutionAllowedByEffect(
+  state: GameState,
+  target: PokemonInPlay,
+  card: Card
+): boolean {
+  return listEffectsApplyingTo(state, target).some(
+    (collected) =>
+      collected.effect.change.change === "allowEvolvingFreshPokemon" &&
+      matchesCardFilter(card, collected.effect.change.evolutionFilter)
+  );
+}
+
+/** pokemon がワザを使うときに必要なエネルギー。ワザのエネルギーを増やす効果(夜の鉱山)の分の無色を足す。 */
+export function calculateAttackCost(
+  state: GameState,
+  pokemon: PokemonInPlay,
+  attack: Attack
+): PokemonType[] {
+  const added = listEffectsApplyingTo(state, pokemon).reduce(
+    (total, collected) =>
+      collected.effect.change.change === "addColorlessToAttackCost"
+        ? total + collected.effect.change.count
+        : total,
+    0
+  );
+  return [
+    ...attack.cost,
+    ...Array.from({ length: added }, (): PokemonType => "colorless"),
+  ];
+}
+
 export interface UsableAttack {
   readonly attack: Attack;
-  /** ワザを持っているポケモン。ミュウex の「きおくのらせん」ではベンチのポケモン。 */
+  /** 使う前に山札の上から 1 枚トラッシュする(ヤドキングの「ひらめきチャレンジ」)。 */
+  readonly discardsDeckTopFirst?: true;
+  /**
+   * ワザを持っているポケモン。ミュウex の「きおくのらせん」ではベンチのポケモン。ヤドキングの「ひらめきチャレンジ」で
+   * 山札の上のポケモンのワザを使うときは、「ひらめきチャレンジ」を持っているポケモン。
+   */
   readonly owner: PokemonInPlay;
+  /**
+   * ほかのワザを「このワザとして使う」とき、その元のワザ(「ひらめきチャレンジ」、「ナイトジョーカー」)。
+   * 同じ名前のワザを直接使う候補と、元のワザを通して使う候補を区別する(card-effects.ts の isSameUsableAttack)。
+   */
+  readonly usedAs?: Attack;
+}
+
+/**
+ * 山札の上から 1 枚トラッシュしたポケモンのワザを「このワザとして使う」ワザ(ヤドキングの「ひらめきチャレンジ」)で
+ * 使えるワザ。山札の上を自分の効果で置いて何のカードか分かっているときだけ返す(GameState の knownDeckTopCount)。
+ * ルールでは上が分からないままでも使えるが、実際の対戦では夜のアカデミーや暗号マニアの解読で目当てのポケモンを
+ * 山札の上に置いてから使い、運に任せて使うことはほぼ無い。分からないときも入れると、判断基準がこの一覧から
+ * 山札の上を知ることになるため、分からないときは使えるワザに入れない。上が分かっていれば、それが条件に合うポケモンなら
+ * そのワザを元のワザに必要なエネルギーで使えるワザとして、合わなければ元のワザをトラッシュだけが起きるワザとして返す。
+ * トラッシュするのは使うとき。ほかのワザを「このワザとして使う」ワザ(ヤドキング自身の「ひらめきチャレンジ」)は
+ * 選ぶワザに入れない。
+ */
+function listDeckTopAttacksUsedAs(
+  state: GameState,
+  owner: PokemonInPlay,
+  usedAs: Attack,
+  filter: CardFilter
+): UsableAttack[] {
+  const [top] = state.deck;
+  if (state.knownDeckTopCount === 0 || top === undefined) {
+    return [];
+  }
+  if (
+    top.record.category !== CardCategory.Pokemon ||
+    !matchesCardFilter(top, filter)
+  ) {
+    return [{ attack: usedAs, discardsDeckTopFirst: true, owner }];
+  }
+  return top.record.attacks
+    .filter((attack) => !usesAnotherAttack(attack))
+    .map((attack) => ({
+      attack: { ...attack, cost: usedAs.cost },
+      discardsDeckTopFirst: true,
+      owner,
+      usedAs,
+    }));
+}
+
+function usesAnotherAttack(attack: Attack): boolean {
+  return (
+    attack.usesAttackOfBenchedPokemon !== undefined ||
+    attack.usesAttackOfDiscardedDeckTop !== undefined
+  );
+}
+
+/**
+ * owner の記録のワザ 1 つから、user(ワザを使うバトルポケモン)が使えるワザを返す。ほかのワザを「このワザとして使う」ワザは、
+ * 選べるワザに置き換える。ミュウex の「きおくのらせん」でベンチのポケモンのワザを使うときは、user がミュウex、owner が
+ * ベンチのポケモンになる。
+ */
+function listAttacksUsedAs(
+  state: GameState,
+  user: PokemonInPlay,
+  owner: PokemonInPlay,
+  attack: Attack
+): UsableAttack[] {
+  if (attack.usesAttackOfBenchedPokemon !== undefined) {
+    return listBenchedAttacksUsedAs(state, user, attack);
+  }
+  if (attack.usesAttackOfDiscardedDeckTop !== undefined) {
+    return listDeckTopAttacksUsedAs(
+      state,
+      owner,
+      attack,
+      attack.usesAttackOfDiscardedDeckTop
+    );
+  }
+  return [{ attack, owner }];
+}
+
+/**
+ * ベンチのポケモンが持つワザを「このワザとして使う」ワザ(Nのゾロアークex の「ナイトジョーカー」)で使えるワザ。
+ * 選んだワザは、元のワザに必要なエネルギーで使う(公式 Q&A にこの点を問う質問は無く、カードテキスト「このワザとして
+ * 使う」による)。ベンチのポケモンが自分で持っているワザだけを選べる(公式 Q&A「ナイトジョーカー」、2026-09-24 確認)。
+ * 元のワザ自体はダメージも効果も持たないため、一覧に入れない。ベンチの別の Nのゾロアークex の「ナイトジョーカー」も
+ * 入れない(選んでも、同じベンチのほかのポケモンのワザを選ぶことになり、一覧に既にある)。
+ */
+function listBenchedAttacksUsedAs(
+  state: GameState,
+  user: PokemonInPlay,
+  usedAs: Attack
+): UsableAttack[] {
+  const filter = usedAs.usesAttackOfBenchedPokemon;
+  if (filter === undefined) {
+    return [];
+  }
+  return state.bench
+    .filter(
+      (benched) => benched !== user && matchesCardFilter(benched.card, filter)
+    )
+    .flatMap((benched) =>
+      benched.card.record.category === CardCategory.Pokemon
+        ? benched.card.record.attacks
+            .filter((attack) => !usesAnotherAttack(attack))
+            .map((attack) => ({
+              attack: { ...attack, cost: usedAs.cost },
+              owner: benched,
+              usedAs,
+            }))
+        : []
+    );
+}
+
+/**
+ * 1 回目のワザを使ったあとに、2 回目として使えるワザ(「おまつりおんど」)。2 回目を使える効果が働いていれば、
+ * このポケモンが記録に持つワザ(ほかのワザを「このワザとして使う」ワザを除く)を返す。
+ */
+export function listSecondAttacks(
+  state: GameState,
+  pokemon: PokemonInPlay
+): UsableAttack[] {
+  const allowsSecondAttack = listEffectsApplyingTo(state, pokemon).some(
+    (collected) => collected.effect.change.change === "useAttacksTwice"
+  );
+  if (
+    !allowsSecondAttack ||
+    pokemon.card.record.category !== CardCategory.Pokemon
+  ) {
+    return [];
+  }
+  return pokemon.card.record.attacks
+    .filter((attack) => !usesAnotherAttack(attack))
+    .map((attack) => ({ attack, owner: pokemon }));
 }
 
 /**
  * このポケモンが使えるワザ。自身のワザに、ベンチのポケモンのワザを使えるようにする効果の分を足す。
  * ベンチのポケモンについては、そのポケモン自身が持つワザだけを足し、効果で使えるようになったワザは
  * 足さない(公式 Q&A: 効果で使えるようになったワザは、そのポケモンが持っているワザとして扱わない)。
+ * ベンチのポケモンが持つワザがほかのワザを「このワザとして使う」ワザ(ヤドキングの「ひらめきチャレンジ」、
+ * Nのゾロアークex の「ナイトジョーカー」)なら、自身のワザと同じく選べるワザに置き換える。そのワザ自体は
+ * ベンチのポケモンが持っているワザなので、ミュウex の「きおくのらせん」で使える(カードテキスト「ベンチポケモンが
+ * 持つワザを、すべて使える」による。この組み合わせを問う公式 Q&A は無い、2026-09-24 確認)。
  */
 export function listUsableAttacks(
   state: GameState,
@@ -300,10 +481,9 @@ export function listUsableAttacks(
 ): UsableAttack[] {
   const own =
     pokemon.card.record.category === CardCategory.Pokemon
-      ? pokemon.card.record.attacks.map((attack) => ({
-          attack,
-          owner: pokemon,
-        }))
+      ? pokemon.card.record.attacks.flatMap((attack) =>
+          listAttacksUsedAs(state, pokemon, pokemon, attack)
+        )
       : [];
   const allowsBenchAttacks = listEffectsApplyingTo(state, pokemon).some(
     (collected) =>
@@ -316,10 +496,9 @@ export function listUsableAttacks(
     .filter((benched) => benched !== pokemon)
     .flatMap((benched) =>
       benched.card.record.category === CardCategory.Pokemon
-        ? benched.card.record.attacks.map((attack) => ({
-            attack,
-            owner: benched,
-          }))
+        ? benched.card.record.attacks.flatMap((attack) =>
+            listAttacksUsedAs(state, pokemon, benched, attack)
+          )
         : []
     );
   return [...own, ...fromBench];

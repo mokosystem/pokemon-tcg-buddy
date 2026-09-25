@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "continuousEffect": {
+        "change": {
+          "change": "setEnergyProvision",
+          "provision": {
+            "kind": "anyType",
+            "units": 2
+          }
+        },
+        "conditions": [
+          {
+            "condition": "attachedPokemonMatches",
+            "filter": {
+              "stages": ["2進化"]
+            }
+          }
+        ],
+        "scope": {
+          "scope": "self"
+        }
+      },
+      "kind": "continuous"
+    }
+  ],
+  "cardIds": ["045217"],
+  "category": "特殊エネルギー",
+  "excludedEffects": [],
+  "name": "ネオアッパーエネルギー",
+  "provision": {
+    "kind": "type",
+    "type": "colorless",
+    "units": 1
+  },
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

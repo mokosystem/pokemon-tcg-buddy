@@ -1,0 +1,15 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardIds": ["030578", "050752"],
+  "category": "基本エネルギー",
+  "excludedEffects": [],
+  "name": "基本鋼エネルギー",
+  "provision": {
+    "kind": "type",
+    "type": "steel",
+    "units": 1
+  },
+  "rulings": [],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

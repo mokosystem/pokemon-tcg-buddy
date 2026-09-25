@@ -1,0 +1,43 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": [],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"],
+              "providedEnergyTypes": ["psychic"]
+            },
+            "maxCount": 2,
+            "operation": "searchDeckAndAttachEnergyToOnePokemon",
+            "targetFilter": {
+              "positions": ["bench"]
+            }
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "るんるんキッス"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ムチュール",
+  "cardIds": ["046247"],
+  "stage": "たね",
+  "hp": 30,
+  "pokemonType": "psychic",
+  "retreatCost": 0,
+  "translationStatus": "translated"
+}

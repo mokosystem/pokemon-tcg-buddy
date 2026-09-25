@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "かえん"
+    },
+    {
+      "cost": ["fire", "colorless"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "にどげり"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「にどげり」のダメージは、コインを 2 回投げたオモテの数 × 40 で決まる。コインで決まるため持たず、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ワカシャモ",
+  "cardIds": ["047412"],
+  "stage": "1進化",
+  "evolvesFrom": "アチャモ",
+  "hp": 100,
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "translationStatus": "irrelevantToCalculation"
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fighting"],
+      "damage": {
+        "amount": 70,
+        "kind": "fixed"
+      },
+      "name": "コスモビーム"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「コスモビーム」は、自分のベンチに「ルナトーン」がいないと失敗する(ダメージを与えない)。ダメージはベンチの「ルナトーン」の有無を見ずに 70 で求める",
+      "reason": "damageBonusNotModeled"
+    },
+    {
+      "description": "ワザ「コスモビーム」の、相手のポケモンの弱点・抵抗力を計算しない効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ソルロック",
+  "cardIds": ["047760"],
+  "stage": "たね",
+  "hp": 110,
+  "pokemonType": "fighting",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 70,
+        "kind": "fixed"
+      },
+      "name": "ひきさく"
+    },
+    {
+      "cost": ["fire", "electric", "electric", "colorless"],
+      "damage": {
+        "amount": 250,
+        "kind": "fixed"
+      },
+      "name": "ランページサンダー"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ひきさく」の、相手のバトルポケモンにかかっている効果を計算しない効果",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「ランページサンダー」を使った次の自分の番に、このポケモンがワザを使えなくなる制限",
+      "reason": "ownNextTurnRestriction"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "Nのゼクロム",
+  "cardIds": ["048651"],
+  "stage": "たね",
+  "hp": 130,
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "translationStatus": "irrelevantToCalculation"
+}

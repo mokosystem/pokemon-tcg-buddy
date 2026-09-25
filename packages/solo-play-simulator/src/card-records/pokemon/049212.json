@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["steel"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "ツメをたてる"
+    },
+    {
+      "cost": ["steel", "colorless", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "アイアンタックル"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「アイアンタックル」の、このポケモンにも 10 ダメージを与える効果",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "ダンバル",
+  "cardIds": ["049212"],
+  "stage": "たね",
+  "hp": 70,
+  "pokemonType": "steel",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

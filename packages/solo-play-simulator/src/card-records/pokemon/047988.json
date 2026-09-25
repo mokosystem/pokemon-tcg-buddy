@@ -1,0 +1,72 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "メタルシグナル",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "searchDeckIntoHand",
+              "picks": [
+                {
+                  "filter": {
+                    "categories": ["ポケモン"],
+                    "pokemonTypes": ["steel"],
+                    "stages": ["1進化", "2進化"]
+                  },
+                  "maxCount": 2
+                }
+              ]
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["steel", "steel", "colorless"],
+      "damage": {
+        "amount": 150,
+        "kind": "fixed"
+      },
+      "name": "プロテクトチャージ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「プロテクトチャージ」の、次の相手の番にこのポケモンが受けるワザのダメージを減らす効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "選べない。進化ポケモンは 1進化・2進化のポケモンで、たねのメガシンカex は含まない",
+      "question": "特性「メタルシグナル」で、たねポケモンのメガシンカex(メガクチートex)を選べるか",
+      "reflectedIn": "探す条件の stages を 1進化と 2進化にした",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "メタルシグナルで山札からメガクチートex(たねポケモン)を選べるか、という質問に、選べないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%A1%E3%82%BF%E3%83%AB%E3%82%B7%E3%82%B0%E3%83%8A%E3%83%AB&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "ゲノセクトex",
+  "cardIds": ["047988", "047605"],
+  "stage": "たね",
+  "hp": 220,
+  "pokemonType": "steel",
+  "retreatCost": 2,
+  "exRule": "pokemonEx",
+  "translationStatus": "translated"
+}

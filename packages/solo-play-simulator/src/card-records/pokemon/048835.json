@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "バックドラフト"
+    },
+    {
+      "cost": ["fire", "fire", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "ひだるまキャノン"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「バックドラフト」のダメージは、相手のトラッシュにある基本エネルギーの枚数 × 30 で決まる。相手の側を扱わないため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    },
+    {
+      "description": "ワザ「ひだるまキャノン」は、自身のエネルギーをすべてトラッシュし、相手のベンチポケモン 1 匹にもダメージを与える。90 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "Nのヒヒダルマ",
+  "cardIds": ["048835"],
+  "stage": "1進化",
+  "evolvesFrom": "Nのダルマッカ",
+  "hp": 140,
+  "pokemonType": "fire",
+  "retreatCost": 3,
+  "translationStatus": "irrelevantToCalculation"
+}

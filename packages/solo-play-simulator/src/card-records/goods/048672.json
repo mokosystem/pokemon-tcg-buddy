@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"]
+            },
+            "maxCount": 5,
+            "minCount": 1,
+            "operation": "returnFromDiscardToDeck"
+          }
+        ],
+        "useConditions": []
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["048672", "047351"],
+  "category": "グッズ",
+  "excludedEffects": [],
+  "name": "せいなるはい",
+  "rulings": [
+    {
+      "interpretation": "選べる。1〜5 枚を選ぶ",
+      "question": "トラッシュにポケモンが 5 枚あるとき、1 枚だけを選んで山札に戻せるか",
+      "reflectedIn": "returnFromDiscardToDeck の minCount を 1、maxCount を 5 にした",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "トラッシュにポケモンが 5 枚あるとき、「せいなるはい」でポケモン 1 枚だけを選べるか、という質問に、できると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%9B%E3%81%84%E3%81%AA%E3%82%8B%E3%81%AF%E3%81%84&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-24"
+}

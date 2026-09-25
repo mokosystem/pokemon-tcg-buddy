@@ -142,6 +142,12 @@ export class PokemonInPlay {
 export class GameState {
   readonly random: RandomSource;
   deck: Card[];
+  /**
+   * 山札の上から何枚が、自分の効果で置いたために何のカードか分かっているか(夜のアカデミー、暗号マニアの解読)。
+   * 山札を切ると 0 に戻り、上から引く・トラッシュする・見るたびに減る。山札の上のカードで決まるワザ
+   * (ヤドキングの「ひらめきチャレンジ」)を、上のカードが分かっているときだけ使えるようにするために持つ。
+   */
+  knownDeckTopCount = 0;
   hand: Card[] = [];
   readonly prizes: Card[] = [];
   readonly discard: Card[] = [];
@@ -154,6 +160,8 @@ export class GameState {
   // 真偽値の欄の初期値を宣言に書かず constructor で代入しているのは、Biome が `= false` を
   // false 型と推論し、この欄を条件に使う箇所を noUnnecessaryConditions で誤検出するため。
   hasUsedSupporter: boolean;
+  /** この番に手札から使ったサポート。名前に文字列を含むかの条件(ロケット団のファクトリー)に使う。 */
+  supporterUsedThisTurn: Card | null = null;
   hasAttachedEnergy: boolean;
   hasPlayedStadium: boolean;
   /** 今場にあるスタジアムの効果を、この番に使ったか。スタジアムが入れ替わったら戻す(`playStadium`)。 */
@@ -164,6 +172,13 @@ export class GameState {
   /** この番に使った、ワザのダメージを増やす効果(パワープロテイン)。番の終わりのワザのダメージの判定に使う。 */
   attackDamageIncreasesThisTurn: AttackDamageIncrease[] = [];
   readonly attacks = new Map<number, string>();
+  /** この番に 2 回目のワザ(「おまつりおんど」)を使ったか。1 回目は attacks に番があるかで分かる。 */
+  hasUsedSecondAttack: boolean;
+  /**
+   * この番に 1 回目のワザを使ったポケモン。2 回目のワザ(「おまつりおんど」)は、1 回目を使ったポケモンが
+   * 続けて使うときだけ使える。1 回目のワザで入れ替わったバトルポケモンには使わせない。
+   */
+  firstAttackerThisTurn: PokemonInPlay | null = null;
   readonly events: string[] = [];
 
   constructor(
@@ -179,6 +194,7 @@ export class GameState {
     this.hasPlayedStadium = false;
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
+    this.hasUsedSecondAttack = false;
   }
 
   // ---- 記録 ----
@@ -234,8 +250,14 @@ export class GameState {
     return this.wentFirst && this.turn === 1;
   }
 
-  canUseSupporter(): boolean {
-    return !(this.hasUsedSupporter || this.isFirstTurnGoingFirst());
+  /** usableOnFirstTurnGoingFirst は、先攻の最初の番でも使える印を持つサポート(ゼイユ)のときに真にする。 */
+  canUseSupporter(
+    options: { usableOnFirstTurnGoingFirst?: boolean } = {}
+  ): boolean {
+    return !(
+      this.hasUsedSupporter ||
+      (this.isFirstTurnGoingFirst() && !options.usableOnFirstTurnGoingFirst)
+    );
   }
 
   /** ワザを使える番か。ワザごとのエネルギーの判定は card-effects.ts が場の効果を集めて行う。 */
@@ -260,6 +282,26 @@ export class GameState {
 
   shuffleDeck(): void {
     this.shuffleCards(this.deck);
+    this.knownDeckTopCount = 0;
+  }
+
+  /** 山札の上から count 枚を取り出す。分かっている上のカードの数もその分だけ減る。 */
+  private spliceDeckTop(count: number): Card[] {
+    const removed = this.deck.splice(0, count);
+    this.knownDeckTopCount = Math.max(
+      0,
+      this.knownDeckTopCount - removed.length
+    );
+    return removed;
+  }
+
+  /** 山札から card を 1 枚取り出す(山札から探す)。分かっている上のカードの 1 枚なら、その数を減らす。 */
+  private removeFromDeck(card: Card): void {
+    const index = this.deck.indexOf(card);
+    removeCard(this.deck, card, "山札");
+    if (index < this.knownDeckTopCount) {
+      this.knownDeckTopCount -= 1;
+    }
   }
 
   private shuffleCards(cards: Card[]): void {
@@ -276,14 +318,52 @@ export class GameState {
   }
 
   draw(count: number): Card[] {
-    const drawn = this.deck.splice(0, count);
+    const drawn = this.spliceDeckTop(count);
     this.hand.push(...drawn);
     return drawn;
   }
 
   takeFromDeckToHand(card: Card): void {
-    removeCard(this.deck, card, "山札");
+    this.removeFromDeck(card);
     this.hand.push(card);
+  }
+
+  /** 山札の上から count 枚をトラッシュする。山札が足りなければある分だけ。 */
+  discardFromDeckTop(count: number): Card[] {
+    const discarded = this.spliceDeckTop(count);
+    this.discard.push(...discarded);
+    this.record(
+      `山札の上から ${discarded.map((card) => card.name).join("、")} をトラッシュ`
+    );
+    return discarded;
+  }
+
+  /** 手札の chosen を、並びの順に山札の上に置く(先頭がいちばん上)。山札は切らない。 */
+  placeHandCardsOnDeckTop(chosen: readonly Card[]): void {
+    for (const card of chosen) {
+      removeCard(this.hand, card, "手札");
+    }
+    this.deck.unshift(...chosen);
+    this.knownDeckTopCount += chosen.length;
+    this.record(
+      `手札の ${chosen.map((card) => card.name).join("、")} を山札の上に置く`
+    );
+  }
+
+  /**
+   * 山札から chosen を取り出し、残りを切ってから、chosen を並びの順に山札の上に置く(先頭がいちばん上)。
+   * 切ってから置くので、次に引くカードは chosen の順で決まる。
+   */
+  placeOnDeckTopAfterShuffle(chosen: readonly Card[]): void {
+    for (const card of chosen) {
+      this.removeFromDeck(card);
+    }
+    this.shuffleDeck();
+    this.deck.unshift(...chosen);
+    this.knownDeckTopCount = chosen.length;
+    this.record(
+      `山札の上に ${chosen.map((card) => card.name).join("、")} を置く`
+    );
   }
 
   /** 山札の上から lookCount 枚のうち chosen を手札に加え、残りを restPlacement の通りに山札に戻す。 */
@@ -315,6 +395,26 @@ export class GameState {
     }
   }
 
+  /** 山札の上から lookCount 枚のうち、エネルギーをそれぞれの target につけ、残りを restPlacement の通りに山札に戻す。 */
+  attachFromDeckTopToEach(
+    lookCount: number,
+    assignments: readonly { energy: Card; target: PokemonInPlay }[],
+    restPlacement: DeckTopRestPlacement
+  ): void {
+    if (!assignments.every(({ energy }) => isEnergy(energy))) {
+      throw new IllegalMove("エネルギーではないカードをつけようとした");
+    }
+    this.removeFromDeckTop(
+      lookCount,
+      assignments.map(({ energy }) => energy),
+      restPlacement
+    );
+    for (const { energy, target } of assignments) {
+      target.energies.push(energy);
+      this.record(`エネルギー ${energy.name} → ${target.name}(山札の上から)`);
+    }
+  }
+
   /**
    * 山札の上から lookCount 枚を見て chosen を取り出し、残りを山札に戻す(切る、下に置く、切ってから下に置く)。
    * 同じカードは同じ参照を枚数分並べているため、参照ではなく位置で 1 枚ずつ除く。
@@ -324,7 +424,7 @@ export class GameState {
     chosen: readonly Card[],
     restPlacement: DeckTopRestPlacement
   ): Card[] {
-    const looked = this.deck.splice(0, lookCount);
+    const looked = this.spliceDeckTop(lookCount);
     for (const card of chosen) {
       removeCard(looked, card, "山札の上から見たカード");
     }
@@ -364,6 +464,11 @@ export class GameState {
     }
   }
 
+  discardHand(): void {
+    this.discard.push(...this.hand);
+    this.hand = [];
+  }
+
   returnHandToDeck(): void {
     this.deck.push(...this.hand);
     this.hand = [];
@@ -389,7 +494,7 @@ export class GameState {
 
   /** 山札の上から 6 枚をサイドに置く。 */
   placePrizesFromDeck(): void {
-    this.prizes.push(...this.deck.splice(0, PRIZE_COUNT));
+    this.prizes.push(...this.spliceDeckTop(PRIZE_COUNT));
   }
 
   // ---- 手札からの操作 ----
@@ -399,6 +504,18 @@ export class GameState {
       removeCard(this.hand, card, "手札");
       this.discard.push(card);
     }
+  }
+
+  /** トラッシュの cards を山札に戻して切る。 */
+  returnFromDiscardToDeck(cards: readonly Card[]): void {
+    for (const card of cards) {
+      removeCard(this.discard, card, "トラッシュ");
+      this.deck.push(card);
+    }
+    this.shuffleDeck();
+    this.record(
+      `トラッシュの ${cards.map((card) => card.name).join("、")} を山札に戻す`
+    );
   }
 
   takeFromDiscardToHand(card: Card): void {
@@ -420,16 +537,30 @@ export class GameState {
   }
 
   /** サポートを使う基本処理。効果の扱いは useGoods と同じ。 */
-  useSupporter(card: Card): void {
+  useSupporter(
+    card: Card,
+    options: { usableOnFirstTurnGoingFirst?: boolean } = {}
+  ): void {
     if (!isSupporter(card)) {
       throw new IllegalMove(`${card.name} はサポートではない`);
     }
-    if (!this.canUseSupporter()) {
+    if (!this.canUseSupporter(options)) {
       throw new IllegalMove("この番はサポートを使えない");
     }
     this.hasUsedSupporter = true;
+    this.supporterUsedThisTurn = card;
     this.discardFromHand([card]);
     this.record(`サポート ${card.name}`);
+  }
+
+  /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
+  discardStadium(): void {
+    if (this.stadium === null) {
+      return;
+    }
+    this.discard.push(this.stadium);
+    this.record(`スタジアム ${this.stadium.name} をトラッシュ`);
+    this.stadium = null;
   }
 
   playStadium(card: Card): void {
@@ -598,7 +729,11 @@ export class GameState {
   }
 
   private removeFrom(source: CardSource, card: Card): void {
-    const zones = { deck: this.deck, discard: this.discard, hand: this.hand };
+    if (source === "deck") {
+      this.removeFromDeck(card);
+      return;
+    }
+    const zones = { discard: this.discard, hand: this.hand };
     removeCard(zones[source], card, sourceZoneName[source]);
   }
 
@@ -655,10 +790,13 @@ export class GameState {
   beginTurn(): void {
     this.turn += 1;
     this.hasUsedSupporter = false;
+    this.supporterUsedThisTurn = null;
     this.hasAttachedEnergy = false;
     this.hasPlayedStadium = false;
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
+    this.hasUsedSecondAttack = false;
+    this.firstAttackerThisTurn = null;
     this.abilityNamesUsedThisTurn = [];
     this.attackDamageIncreasesThisTurn = [];
     for (const pokemon of this.listPokemonInPlay()) {

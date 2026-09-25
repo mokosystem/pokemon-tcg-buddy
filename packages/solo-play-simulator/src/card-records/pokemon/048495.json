@@ -1,0 +1,71 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "バッドアッパー",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["dark"]
+              },
+              "maxCount": 1,
+              "operation": "searchDeckAndAttachEnergyToOnePokemon",
+              "targetFilter": {
+                "pokemonTypes": ["dark"],
+                "positions": ["bench"]
+              }
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["dark", "dark", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "ひっぱたく"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「バッドアッパー」の、エネルギーをつけたポケモンにダメカンを 2 個のせる効果(残り HP が 20 以下ならきぜつする)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [
+    {
+      "interpretation": "選ばなくてよい。その場合は山札を切って終える",
+      "question": "特性「バッドアッパー」で、山札から基本悪エネルギーを選ばないことはできるか",
+      "reflectedIn": "searchDeckAndAttachEnergyToOnePokemon の選ぶ枚数の下限は 0",
+      "source": {
+        "checkedOn": "2026-09-24",
+        "kind": "officialQa",
+        "questionSummary": "バッドアッパーを使ったとき、山札から基本悪エネルギーを選ばないことはできるか、という質問に、できて、山札を切って終えると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%90%E3%83%83%E3%83%89%E3%82%A2%E3%83%83%E3%83%91%E3%83%BC&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "verifiedOn": "2026-09-24",
+  "name": "ストリンダー",
+  "cardIds": ["048495", "048397"],
+  "stage": "1進化",
+  "evolvesFrom": "エレズン",
+  "hp": 140,
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "translationStatus": "translated"
+}

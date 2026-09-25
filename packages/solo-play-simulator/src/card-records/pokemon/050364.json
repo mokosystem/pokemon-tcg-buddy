@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "エナジークラッシュ"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「エナジークラッシュ」のダメージは、相手のポケモン全員についているエネルギーの数 × 20 で決まる。相手の側を扱わないため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "バチンウニ",
+  "cardIds": ["050364"],
+  "stage": "たね",
+  "hp": 80,
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "translationStatus": "irrelevantToCalculation"
+}

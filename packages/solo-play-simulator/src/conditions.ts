@@ -2,7 +2,11 @@
  * 効果の記法の「条件」を場の状態に当てて判定する。状態は変えない。
  */
 
-import type { Condition, PokemonInPlayFilter } from "./card-record-schema.ts";
+import {
+  CardCategory,
+  type Condition,
+  type PokemonInPlayFilter,
+} from "./card-record-schema.ts";
 import { type Card, matchesCardFilter } from "./cards.ts";
 import type { GameState, PokemonInPlay } from "./state.ts";
 
@@ -52,6 +56,15 @@ type ConditionEvaluator<Name extends Condition["condition"]> = (
 const conditionEvaluators: {
   readonly [Name in Condition["condition"]]: ConditionEvaluator<Name>;
 } = {
+  // 特性が無くなっているバトルポケモンは数えないはず(公式 Q&A「ドンドンだいこ」)だが、特性が無くなっているかは
+  // 場にある間ずっと働く効果を集めないと分からず、それは条件の判定(このファイル)を使うため循環する。記録にある
+  // 特性を無くす効果(ロケット団の監視塔: 無色ポケモン)は、この条件が見る特性を持つポケモンに届かないため見ない
+  activePokemonHasAbilityNamed: (condition, state) =>
+    state.active !== null &&
+    state.active.card.record.category === CardCategory.Pokemon &&
+    state.active.card.record.abilities.some(
+      (ability) => ability.name === condition.abilityName
+    ),
   anyOf: (condition, state, source) =>
     condition.conditions.some((inner) => isConditionMet(inner, state, source)),
   attachedPokemonMatches: (condition, state, source) =>
@@ -64,6 +77,8 @@ const conditionEvaluators: {
         condition.filter === undefined ||
         matchesCardFilter(card, condition.filter)
     ).length >= condition.minCountExcludingThisCard,
+  handHasNoOtherCards: (_, state, source) =>
+    listHandExcludingOneCopy(state, source.card).length === 0,
   noAbilityUsedThisTurnWithNameIncluding: (condition, state) =>
     !state.abilityNamesUsedThisTurn.some((name) =>
       name.includes(condition.text)
@@ -76,10 +91,16 @@ const conditionEvaluators: {
       ),
   ownRemainingPrizesAre: (condition, state) =>
     state.prizes.length === condition.count,
+  selfHasEnergyAttached: (_, __, source) =>
+    source.pokemon !== null && source.pokemon.energies.length > 0,
   selfHasNoEnergyAttached: (_, __, source) =>
     source.pokemon !== null && source.pokemon.energies.length === 0,
   selfIsActive: (_, state, source) =>
     source.pokemon !== null && source.pokemon === state.active,
+  stadiumInPlayNamed: (condition, state) =>
+    state.stadium?.name === condition.name,
+  supporterUsedThisTurnNameIncludes: (condition, state) =>
+    state.supporterUsedThisTurn?.name.includes(condition.text) ?? false,
 };
 
 function isConditionMet<Name extends Condition["condition"]>(

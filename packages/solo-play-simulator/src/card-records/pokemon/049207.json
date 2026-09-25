@@ -1,0 +1,58 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "しはいのくさり",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "benchFilter": {
+                "excludesNames": ["モモワロウex"],
+                "pokemonTypes": ["dark"]
+              },
+              "operation": "switchActiveWithBench"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerAbilityName"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["dark", "dark"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "イライラバースト"
+    }
+  ],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「しはいのくさり」の、入れ替えて新しくバトルポケモンになったポケモンをどくにする効果",
+      "reason": "specialCondition"
+    },
+    {
+      "description": "ワザ「イライラバースト」のダメージは、相手がすでにとったサイドの枚数 × 60 で決まる。相手の側を扱わないため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": true,
+  "isTerastal": false,
+  "rulings": [],
+  "verifiedOn": "2026-09-24",
+  "name": "モモワロウex",
+  "cardIds": ["049207", "046067", "045914"],
+  "stage": "たね",
+  "hp": 190,
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "exRule": "pokemonEx",
+  "translationStatus": "translated"
+}
