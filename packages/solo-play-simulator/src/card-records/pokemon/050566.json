@@ -1,0 +1,49 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"]
+            },
+            "maxCount": 2,
+            "operation": "searchDeckAndAttachEnergyDistributedToPokemon",
+            "targetFilter": {}
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "エナジーギフト"
+    },
+    {
+      "cost": ["grass", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "このは"
+    }
+  ],
+  "cardIds": ["050566"],
+  "category": "ポケモン",
+  "evolvesFrom": "チェリンボ",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "チェリム",
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

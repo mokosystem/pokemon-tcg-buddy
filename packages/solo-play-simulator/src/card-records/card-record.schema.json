@@ -895,6 +895,16 @@
           "type": "object",
           "properties": {
             "condition": {
+              "const": "selfIsOnBench"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
               "const": "selfHasNoEnergyAttached"
             }
           },
@@ -1492,6 +1502,26 @@
             "energyFilter": {
               "$ref": "#/$defs/CardFilter"
             },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "attachEnergyFromDiscardToOnePokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
             "maxPokemonCount": {
               "type": "integer",
               "minimum": 1
@@ -1919,6 +1949,16 @@
           "properties": {
             "condition": {
               "const": "selfIsActive"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "selfIsOnBench"
             }
           },
           "required": ["condition"],
@@ -2444,17 +2484,10 @@
           "type": "object",
           "properties": {
             "count": {
-              "const": "ownBasicPokemonInPlay"
-            }
-          },
-          "required": ["count"],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "count": {
-              "const": "ownBenchedPokemon"
+              "const": "ownPokemonInPlay"
+            },
+            "filter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
             }
           },
           "required": ["count"],
@@ -2979,6 +3012,26 @@
             }
           },
           "required": ["energyFilter", "maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            },
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "attachEnergyFromDiscardToOnePokemon"
+            },
+            "targetFilter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["energyFilter", "maxCount", "operation", "targetFilter"],
           "additionalProperties": false
         },
         {

@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "みつくびバイト"
+    },
+    {
+      "cost": ["dark", "colorless"],
+      "damage": {
+        "amount": 140,
+        "kind": "fixed"
+      },
+      "name": "しっこくのキバ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "モノズ",
+  "cardIds": ["050586"],
+  "category": "ポケモン",
+  "evolvesFrom": "ジヘッド",
+  "excludedEffects": [
+    {
+      "description": "ワザ「みつくびバイト」の、コインを 3 回投げ、オモテの数ぶん相手のバトルポケモンのエネルギーをトラッシュする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 170,
+  "isTerastal": false,
+  "name": "サザンドラ",
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

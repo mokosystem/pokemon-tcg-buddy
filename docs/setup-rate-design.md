@@ -174,7 +174,7 @@ README は「コーディングエージェント上で動くスキルとして�
 | 手札 | ポケモンのどうぐをつける | つけ先 | 追加 | (基本処理。`attachToolFromHand`) | ふうせん |
 | トラッシュ | 手札に加える | 条件、上限 | 追加 | `addFromDiscardToHand` | 夜のタンカ、エネルギー回収、スイレンのお世話 |
 | トラッシュ | ベンチに出す | 条件、上限 | 追加 | `placeFromDiscardOntoBench` | ヨマワル、ボーマンダex |
-| トラッシュ | つける | 条件、上限、つけ先の条件 | 追加 | `attachEnergyFromDiscardToEachChosenPokemon`(選んだポケモンに 1 枚ずつ)、`attachEnergyFromDiscardDistributedToPokemon`(上限まで選び、好きなように。順 6 の 3 セッション目) | メガルカリオex、バシャーモex、ガラスのラッパ |
+| トラッシュ | つける | 条件、上限、つけ先の条件 | 追加 | `attachEnergyFromDiscardToEachChosenPokemon`(選んだポケモンに 1 枚ずつ)、`attachEnergyFromDiscardDistributedToPokemon`(上限まで選び、好きなように。順 6 の 3 セッション目)、`attachEnergyFromDiscardToOnePokemon`(上限まで選び、1 匹にまとめて。4 セッション目) | メガルカリオex、バシャーモex、ガラスのラッパ、ミュウツー |
 | トラッシュ | 山札に戻して切る | 条件、上限 | 追加(順 6 の 3 セッション目) | `returnFromDiscardToDeck` | せいなるはい、エネルギーリサイクル、ディアルガ |
 | 場 | ついているカードごと山札に戻して切る | 対象 | 既存 | `returnSelfToDeck`(自身だけ) | ノココッチ |
 | 場 | ついているカードごと手札に戻す | 対象 | 追加 | `returnPokemonToHand`(自身か、選んだ自分のポケモン) | ポケモン回収サイクロン |
@@ -415,12 +415,12 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 | 名前、カード ID、確認日 | `name`、`cardIds`、`verifiedOn` |
 | 翻訳の状態(翻訳あり、書けない、計算に関係ない、まだ書いていない) | `translationStatus`(`translated`、`notTranslatable`、`irrelevantToCalculation`、`notYetTranslated`) |
 | 属性 | `category`、`stage`、`evolvesFrom`、`basicPokemonOfEvolutionLine`、`hp`、`pokemonType`、`hasRuleBox`、`exRule`(`pokemonEx`、`megaEvolutionEx`。どちらでもないポケモンは持たない)、`isTerastal`、`retreatCost`、エネルギーは `provision`(`type` と `units`、すべてのタイプとして働くものは `anyType`) |
-| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName`、`ownBenchedPokemon`、`basicEnergyAttachedToOwnPokemon`、`energyAttachedToAttackingPokemon`、`stadiumsInPlay`、`ownBasicPokemonInPlay`(いずれも 3 セッション目に追加)。ベンチのポケモンのワザを「このワザとして使う」ワザは `usesAttackOfBenchedPokemon`(ベンチのポケモンの条件)、山札の上からトラッシュしたポケモンのワザを使うワザは `usesAttackOfDiscardedDeckTop`(トラッシュしたカードの条件。いずれも 3 セッション目に追加) |
+| ワザの一覧 | `attacks`(`name`、`cost`、`damage`、`effect`。ダメージだけのワザ、翻訳しない効果のワザは `effect` を持たない)。ダメージは `none` か `fixed`(`amount` と、上乗せ `bonus` の `perCount` か `whenCountAtLeast`)。数える対象は `energyAttachedToOwnPokemon`(タイプの並び `energyTypes`)、`discardPokemonWithAbilityName`、`basicEnergyAttachedToOwnPokemon`、`energyAttachedToAttackingPokemon`、`stadiumsInPlay`(いずれも 3 セッション目に追加)、`ownPokemonInPlay`(場の条件に合うポケモンの数。3 セッション目の `ownBenchedPokemon` と `ownBasicPokemonInPlay` を 4 セッション目にまとめた)。ベンチのポケモンのワザを「このワザとして使う」ワザは `usesAttackOfBenchedPokemon`(ベンチのポケモンの条件)、山札の上からトラッシュしたポケモンのワザを使うワザは `usesAttackOfDiscardedDeckTop`(トラッシュしたカードの条件。いずれも 3 セッション目に追加) |
 | 特性の一覧 | `abilities`(`name`、`translation`。翻訳しない特性は `translation` を持たない) |
 | トレーナーズと特殊エネルギーの効果 | `cardEffects` |
 | きっかけ | `whenPlayed`(グッズ・サポートを使ったとき)、`activatedOncePerTurn`(スタジアムの番ごとに 1 回)、`activatedInPlay`(特性。`usageLimit` は `oncePerTurnPerPokemon`、`oncePerTurnPerAbilityName`、`unlimited`)、`activatedFromHand`(手札のカードの特性)、`triggeredWhenPlacedOnBenchFromHand`、`triggeredWhenEvolvedFromHand`(3 セッション目に追加)、`triggeredWhenAttachedFromHand`、`triggeredAtEndOfOwnTurn`、`continuous`(場にある間ずっと働く効果)。ワザの「のぞむなら」は効果の `isOptional`。基本ルールの例外の印「先攻の最初の番でも使える」は `whenPlayed` の `usableOnFirstTurnGoingFirst`(3 セッション目に追加) |
 | 効果 | `useConditions`(使える条件)と `steps`(操作の列)。条件で分かれる歩は `branchOnCondition`(1 段だけ) |
-| 条件 | カードを選ぶ条件は `categories`、`stages`、`names`、`nameIncludes`(名前に文字列を含む)、`pokemonTypes`、`providedEnergyTypes`、`maxHp`、`excludesPokemonWithRuleBox`、`exRules`、`isTerastal`、`excludesNames`(この名前を除く。3 セッション目に追加)、`anyOf`(欄をまたぐ「または」。1 段だけ)。場のポケモンにはこれに `positions` を足す。効果を使える条件は `selfIsActive`、`selfHasNoEnergyAttached`、`attachedPokemonMatches`、`ownPokemonInPlayExists`、`deckHasCards`、`handHasCards`、`noAbilityUsedThisTurnWithNameIncluding`、`ownRemainingPrizesAre`、`stadiumInPlayNamed`、`activePokemonHasAbilityNamed`、`handHasNoOtherCards`、`supporterUsedThisTurnNameIncludes`、`selfHasEnergyAttached`(この 5 つは 3 セッション目に追加)、`anyOf`(または。1 段だけ) |
+| 条件 | カードを選ぶ条件は `categories`、`stages`、`names`、`nameIncludes`(名前に文字列を含む)、`pokemonTypes`、`providedEnergyTypes`、`maxHp`、`excludesPokemonWithRuleBox`、`exRules`、`isTerastal`、`excludesNames`(この名前を除く。3 セッション目に追加)、`anyOf`(欄をまたぐ「または」。1 段だけ)。場のポケモンにはこれに `positions` を足す。効果を使える条件は `selfIsActive`、`selfIsOnBench`(4 セッション目に追加)、`selfHasNoEnergyAttached`、`attachedPokemonMatches`、`ownPokemonInPlayExists`、`deckHasCards`、`handHasCards`、`noAbilityUsedThisTurnWithNameIncluding`、`ownRemainingPrizesAre`、`stadiumInPlayNamed`、`activePokemonHasAbilityNamed`、`handHasNoOtherCards`、`supporterUsedThisTurnNameIncludes`、`selfHasEnergyAttached`(この 5 つは 3 セッション目に追加)、`anyOf`(または。1 段だけ) |
 | 場にある間ずっと働く効果 | 働く範囲 `scope`(`self`、`attachedPokemon`、`ownPokemon`、`ownPlayer`)、変える項目 `change`(`setRetreatCostToZero`、`reduceRetreatCost`、`allowBenchedPokemonAttacks`、`negateAbilities`、`negateToolEffects`、`setEnergyProvision`、`setBenchLimit`、`allowEvolutionFromHandAsIfNamed`、`increaseAttackDamage`、`useAttacksTwice`、`allowEvolvingFreshPokemon`、`addColorlessToAttackCost`、`setAttachedEnergyProvision`(この 4 つは 3 セッション目に追加))、働く条件 `conditions` |
 | 裁定のデータ | `rulings`(論点 `question`、採った解釈 `interpretation`、翻訳への反映 `reflectedIn`、出典 `source`)。出典は `officialQa`(`searchUrl`、`questionSummary`、`checkedOn`)か `noMatchingQa`(`searchTerms`、`basis`、`checkedOn`) |
 | 含めなかった効果 | `excludedEffects`(`description`、`reason`)。理由は `requiresOpponent`、`specialCondition`、`healing`、`damageOrDamageCounters`、`damageBonusNotModeled`、`ownNextTurnRestriction`、`firstTurnGoingSecondRestriction`(3 セッション目に追加)、`noReasonToUseInSoloPlay` |
@@ -619,6 +619,20 @@ JSON の欄とスキーマの識別子は、何をして値を得るかが読め
 - 詳細ページの「進化」の欄は、同じ段階のポケモンを 2 つずつ折り返して並べるため、「このカードの 1 つ下の段が進化前」とは限らない(ヤドキング 045978 は、1 つ下の段がヤドキングex とメガヤドランex で、進化前のヤドンはその下の段)。進化前は、自身より下の段のうち進化の段階が 1 つ前のポケモンで確かめた。翻訳手順のスキルの読み方を直した
 - ヤドキングの「ひらめきチャレンジ」は、山札の上を夜のアカデミーや暗号マニアの解読で置いて何のカードか分かっているときだけ使えるワザにした。カードのルールでは上が分からないままでも使えるが、実際の対戦でそう使うことはほぼ無い。分からないときも一覧に出すと、判断基準が一覧から山札の上を知ることになるため(「足した部品」の `usesAttackOfDiscardedDeckTop`)
 - ルナトーンの「ルナサイクル」は、ルナトーンごとに番に 1 回で、別の「ルナサイクル」を使った番は使えない。2 つを合わせると場全体で番に 1 回になるため、`oncePerTurnPerAbilityName` で書いた。公式 Q&A に該当は無かった(検索語「ルナサイクル」、2026-09-24)
+
+### 順 6 で決めたこと(4 セッション目)
+
+2026-09-25。翻訳手順のスキルに従い、30th CELEBRATION の 2 商品(拡張パック「30th CELEBRATION」、「30th CELEBRATION プレミアムデッキセット エーフィ・ブラッキー」)だけに入る棚卸しの 130 行を、棚卸しの一覧の並びの順に記録にした。デッキが無いため、区切りは収録商品とカードの種類にし、区切りごとにコミットした。詳細ページは 130 行のカード ID すべて(137 枚)を読み、スタンダードで使えるかは名前の完全一致の検索で確かめた(2026-09-25)。
+
+#### 足した部品
+
+| 部品 | 種類 | 必要になったカード | 理由と採らなかった案 |
+| --- | --- | --- | --- |
+| ダメージの数える対象 `ownPokemonInPlay`(条件 `filter` は省略できる) | ワザのダメージの手直し | エーフィex | 自分の場の、条件に合うポケモンの数(「サンシャインビート」は条件なしで × 30)。3 セッション目の `ownBenchedPokemon`(ベンチの数)と `ownBasicPokemonInPlay`(場のたねポケモンの数)はこの部品の条件(`positions` にベンチ、`stages` にたね)で書けるため、1 つにまとめて既存の記録(テラパゴスex、カミッチュ、カプ・コケコex、ナゲツケサル)を直した。採らなかった案: 数える対象ごとに部品を足す(場のポケモンを数える部品が条件違いで増え続ける) |
+| 条件 `selfIsOnBench` | 条件の追加 | ゾロアーク | このポケモンがベンチにいる(順 5 の条件の表の「自身がベンチにいる」)。「よるのぬけみち」は、ベンチにいる間、バトルポケモンのにげるエネルギーを 2 個減らす。2 匹いれば 4 個減る(公式 Q&A「よるのぬけみち」)。効果は持ち主ごとに集めて足し合わせるため、既にある `reduceRetreatCost` のまま書けた |
+| `attachEnergyFromDiscardToOnePokemon` | 基本操作の追加 | ミュウツー | トラッシュのエネルギーを上限まで選び、条件に合う自分のポケモン 1 匹にまとめてつける(「ちからをあたえる」)。山札から 1 匹にまとめてつける `searchDeckAndAttachEnergyToOnePokemon` と、元(山札かトラッシュか)だけが違うため、処理を共通にした。既にある `attachEnergyFromDiscardDistributedToPokemon` は 1 枚ずつつける先を選ぶ形で、「1 匹に」を表せない |
+
+## 検証の記録
 
 Issue 22 の完了の定義に対応する記録。いずれも 2026-09-17 に、乱数の種 20260917、試行 20000 回で実行した。枚数を変えたときの比較は同じ種で回すので、差は試行の揺れではなく変更の効果として読める。20000 回のときの割合の揺れはおよそ ±0.7 ポイント(95 % の範囲)。
 

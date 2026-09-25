@@ -1,0 +1,28 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "ほのおのしっぽ"
+    }
+  ],
+  "cardIds": ["050568"],
+  "category": "ポケモン",
+  "evolvesFrom": "ロコン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 110,
+  "isTerastal": false,
+  "name": "キュウコン",
+  "pokemonType": "fire",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

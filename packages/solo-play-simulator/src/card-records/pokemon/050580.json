@@ -1,0 +1,34 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "ルナティッククロー"
+    }
+  ],
+  "cardIds": ["050580", "050594"],
+  "category": "ポケモン",
+  "evolvesFrom": "イーブイ",
+  "exRule": "pokemonEx",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ルナティッククロー」の、相手のバトルポケモンにダメカンがのっていれば 140 を足す上乗せ。相手の側で決まるため持たず、ダメージは上乗せを除いた 100 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 270,
+  "isTerastal": false,
+  "name": "ブラッキーex",
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

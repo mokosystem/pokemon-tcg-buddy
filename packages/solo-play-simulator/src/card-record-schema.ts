@@ -130,6 +130,10 @@ const basicConditionOptions = [
   strictObject({
     condition: literal("selfIsActive"),
   }),
+  /** このポケモンがベンチにいる(ゾロアークの「よるのぬけみち」、ソルガレオの「サンライズ」)。 */
+  strictObject({
+    condition: literal("selfIsOnBench"),
+  }),
   strictObject({
     condition: literal("selfHasNoEnergyAttached"),
   }),
@@ -359,6 +363,16 @@ const basicOperationOptions = [
     maxCount: countFromOne,
     operation: literal("attachEnergyFromHandToSelf"),
   }),
+  /**
+   * トラッシュから条件に合うエネルギーを maxCount 枚まで選び、条件に合う自分のポケモン 1 匹にまとめてつける
+   * (ミュウツーの「ちからをあたえる」)。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
+    operation: literal("attachEnergyFromDiscardToOnePokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
   /** 条件に合う自分のポケモンを maxPokemonCount 匹まで選び、トラッシュから条件に合うエネルギーを 1 枚ずつつける。 */
   strictObject({
     energyFilter: CardFilterSchema,
@@ -583,10 +597,15 @@ export const DamageCountTargetSchema = variant("count", [
   strictObject({ count: literal("basicEnergyAttachedToOwnPokemon") }),
   /** 場に出ているスタジアムの数(0 か 1。イーユイの「グラウンドメルト」)。 */
   strictObject({ count: literal("stadiumsInPlay") }),
-  /** 自分の場のたねポケモンの数(ナゲツケサルの「れんけいスロー」)。 */
-  strictObject({ count: literal("ownBasicPokemonInPlay") }),
-  /** 自分のベンチポケモンの数(テラパゴスex の「ユニオンビート」)。 */
-  strictObject({ count: literal("ownBenchedPokemon") }),
+  /**
+   * 自分の場の、条件に合うポケモンの数。条件が無ければ場のポケモン全員(エーフィex の「サンシャインビート」)。
+   * ベンチの数は positions に bench(テラパゴスex の「ユニオンビート」)、たねポケモンの数は stages にたね
+   * (ナゲツケサルの「れんけいスロー」)を書く。
+   */
+  strictObject({
+    count: literal("ownPokemonInPlay"),
+    filter: optional(PokemonInPlayFilterSchema),
+  }),
 ]);
 
 export const DamageBonusSchema = variant("kind", [

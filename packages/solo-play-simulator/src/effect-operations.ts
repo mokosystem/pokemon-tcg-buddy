@@ -151,6 +151,20 @@ function alwaysHasTarget(): boolean {
   return true;
 }
 
+/** トラッシュに条件に合うエネルギーがあり、つける先の自分のポケモンがいるか。 */
+function discardHasEnergyForOwnPokemon(
+  step: {
+    readonly energyFilter: CardFilter;
+    readonly targetFilter: PokemonInPlayFilter;
+  },
+  { state }: TargetCheckInput
+): boolean {
+  return (
+    listMatching(state.discard, step.energyFilter).some(isEnergy) &&
+    listOwnPokemonMatching(state, step.targetFilter).length > 0
+  );
+}
+
 /**
  * 効果の最初の操作に対象があるか。対象が無いときは、その効果を使えない。公式 Q&A で確かめた例: ベンチに
  * ポケモンがいないときポケモンいれかえは使えない、ベンチが 5 匹のときなかよしポフィンは使えない、山札が 0 枚の
@@ -164,12 +178,9 @@ const firstStepTargetChecks: {
   addFromDiscardToHand: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
-  attachEnergyFromDiscardDistributedToPokemon: (step, { state }) =>
-    listMatching(state.discard, step.energyFilter).some(isEnergy) &&
-    listOwnPokemonMatching(state, step.targetFilter).length > 0,
-  attachEnergyFromDiscardToEachChosenPokemon: (step, { state }) =>
-    listMatching(state.discard, step.energyFilter).some(isEnergy) &&
-    listOwnPokemonMatching(state, step.targetFilter).length > 0,
+  attachEnergyFromDiscardDistributedToPokemon: discardHasEnergyForOwnPokemon,
+  attachEnergyFromDiscardToEachChosenPokemon: discardHasEnergyForOwnPokemon,
+  attachEnergyFromDiscardToOnePokemon: discardHasEnergyForOwnPokemon,
   attachEnergyFromHand: (step, { hand, state }) =>
     listMatching(hand, step.energyFilter).some(isEnergy) &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
@@ -437,18 +448,23 @@ function attachEnergyChosenFromHand(
   }
 }
 
+/** 山札かトラッシュのエネルギーを、条件に合う自分のポケモンにつける操作の引数。 */
+interface EnergyForOwnPokemonStep {
+  readonly energyFilter: CardFilter;
+  readonly maxCount: number;
+  readonly targetFilter: PokemonInPlayFilter;
+}
+
+type EnergySourceZone = Extract<CardSource, "deck" | "discard">;
+
 /**
  * 山札かトラッシュから、条件に合うエネルギーを 0〜maxCount 枚選ぶ。つける先の候補(条件に合う自分のポケモン)が
  * いなければ選ばない。
  */
 function chooseEnergiesForOwnPokemon(
   run: OperationRun,
-  step: {
-    readonly energyFilter: CardFilter;
-    readonly maxCount: number;
-    readonly targetFilter: PokemonInPlayFilter;
-  },
-  zone: Extract<CardSource, "deck" | "discard">
+  step: EnergyForOwnPokemonStep,
+  zone: EnergySourceZone
 ): { chosen: readonly Card[]; targets: PokemonInPlay[] } {
   const { state } = run.context;
   const targets = listOwnPokemonMatching(state, step.targetFilter);
@@ -467,31 +483,31 @@ function chooseEnergiesForOwnPokemon(
 
 const ZONE_NAMES = { deck: "山札", discard: "トラッシュ" } as const;
 
-/** 山札からエネルギーを 0〜maxCount 枚選び、1 匹にまとめてつけて切る(公式 Q&A「バーニングチャージ」: 1 枚も選ばなくてよい)。 */
-function searchDeckAndAttachToOnePokemon(
+/**
+ * 山札かトラッシュからエネルギーを 0〜maxCount 枚選び、1 匹にまとめてつける(公式 Q&A「バーニングチャージ」:
+ * 1 枚も選ばなくてよい)。山札から選んだときは、呼び出し側が山札を切る。
+ */
+function attachEnergyToOnePokemon(
   run: OperationRun,
-  step: Extract<
-    BasicOperation,
-    { operation: "searchDeckAndAttachEnergyToOnePokemon" }
-  >
+  step: EnergyForOwnPokemonStep,
+  zone: EnergySourceZone
 ): void {
   const { context, label } = run;
   const { state } = context;
-  const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, "deck");
+  const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, zone);
   const target =
     chosen.length === 0
       ? null
       : chooseOnePokemon(
           context,
           targets,
-          `${label}: 山札のエネルギーをつけるポケモン`
+          `${label}: ${ZONE_NAMES[zone]}のエネルギーをつけるポケモン`
         );
   if (target !== null) {
     for (const energy of chosen) {
-      state.attachEnergyByEffect(energy, target, "deck");
+      state.attachEnergyByEffect(energy, target, zone);
     }
   }
-  state.shuffleDeck();
 }
 
 /** 山札の上から見て、条件に合うエネルギーを効果の持ち主につけ、残りを山札に戻す。山札が見る枚数に満たなければある分だけ見る。 */
@@ -618,12 +634,8 @@ function attachFromDiscardToEachChosenPokemon(
 /** トラッシュのエネルギーを 0〜maxCount 枚選び、1 枚ずつつける先のポケモンを選ぶ(同じポケモンに何枚つけてもよい)。 */
 function attachEnergyDistributed(
   run: OperationRun,
-  step: {
-    readonly energyFilter: CardFilter;
-    readonly maxCount: number;
-    readonly targetFilter: PokemonInPlayFilter;
-  },
-  zone: Extract<CardSource, "deck" | "discard">
+  step: EnergyForOwnPokemonStep,
+  zone: EnergySourceZone
 ): void {
   const { context, label } = run;
   const { state } = context;
@@ -851,6 +863,8 @@ const operationRunners: {
     attachEnergyDistributed(run, step, "discard"),
   attachEnergyFromDiscardToEachChosenPokemon: (step, run) =>
     attachFromDiscardToEachChosenPokemon(run, step),
+  attachEnergyFromDiscardToOnePokemon: (step, run) =>
+    attachEnergyToOnePokemon(run, step, "discard"),
   attachEnergyFromHand: (step, run) => attachEnergyChosenFromHand(run, step),
   attachEnergyFromHandToSelf: (step, run) =>
     attachEnergyFromHandToHolder(run, step),
@@ -1005,8 +1019,10 @@ const operationRunners: {
     }
     state.shuffleDeck();
   },
-  searchDeckAndAttachEnergyToOnePokemon: (step, run) =>
-    searchDeckAndAttachToOnePokemon(run, step),
+  searchDeckAndAttachEnergyToOnePokemon: (step, run) => {
+    attachEnergyToOnePokemon(run, step, "deck");
+    run.context.state.shuffleDeck();
+  },
   searchDeckAndPlaceOnTopAfterShuffle: (step, run) =>
     searchDeckAndPlaceOnTop(run, step.count),
   searchDeckIntoHand: (step, { context, label }) => {

@@ -201,6 +201,11 @@ const DRATINI = buildRecordedCard("048646");
 const DRAGONAIR = buildRecordedCard("048647");
 const MEGA_DRAGONITE = buildRecordedCard("048648");
 const KOMMO_O = buildRecordedCard("050390");
+const CHERRIM = buildRecordedCard("050566");
+const VICTINI = buildRecordedCard("050569");
+const ZERAORA = buildRecordedCard("050570");
+const MEWTWO = buildRecordedCard("050573");
+const ZOROARK = buildRecordedCard("050583");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3458,6 +3463,104 @@ describeTranslation("ジャラランガ", () => {
   });
 });
 
+describeTranslation("チェリム", () => {
+  test("エナジーギフトは、山札の基本エネルギーを 2 枚まで、自分のポケモンに好きなようにつける", () => {
+    const state = buildState({
+      active: CHERRIM,
+      bench: [RALTS],
+      deck: [BOSS, GRASS_ENERGY, PRISM_ENERGY, PSYCHIC_ENERGY, GRASS_ENERGY],
+    });
+    activeOf(state).energies.push(GRASS_ENERGY);
+    const targets = [activeOf(state), benchAt(state, 0)];
+    useAttackNamed(
+      buildContext(state, {
+        choosePokemon: (_, request) => {
+          const next = targets.shift();
+          return request.candidates.filter((pokemon) => pokemon === next);
+        },
+      }),
+      "エナジーギフト"
+    );
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本草エネルギー",
+      "基本草エネルギー",
+    ]);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本超エネルギー"]);
+    expect(namesOf(state.deck)).toContain("プリズムエネルギー");
+  });
+});
+
+describeTranslation("ビクティニ", () => {
+  test("なかまをよぶは、山札からたねポケモンを 2 枚までベンチに出す", () => {
+    const state = buildState({
+      active: VICTINI,
+      deck: [KIRLIA, RALTS, BOSS, MEOWTH, RALTS],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY);
+    useAttackNamed(buildContext(state), "なかまをよぶ");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
+      "ラルトス",
+      "ニャースex",
+    ]);
+    expect(state.deck).toHaveLength(3);
+  });
+});
+
+describeTranslation("ゼラオラ", () => {
+  test("クイックドローは 1 枚引く", () => {
+    const state = buildState({ active: ZERAORA, deck: [BOSS, RALTS] });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "クイックドロー");
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+  });
+});
+
+describeTranslation("ミュウツー", () => {
+  test("ちからをあたえるは、トラッシュの基本エネルギーを 2 枚まで、自分のポケモン 1 匹にまとめてつける", () => {
+    const state = buildState({
+      active: MEWTWO,
+      bench: [RALTS],
+      discard: [
+        PSYCHIC_ENERGY,
+        PRISM_ENERGY,
+        BOSS,
+        DARK_ENERGY,
+        PSYCHIC_ENERGY,
+      ],
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(
+      buildContext(state, {
+        choosePokemon: (_, request) => request.candidates.slice(-1),
+      }),
+      "ちからをあたえる"
+    );
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本超エネルギー",
+      "基本悪エネルギー",
+    ]);
+    expect(namesOf(state.discard)).toEqual([
+      "プリズムエネルギー",
+      "ボスの指令",
+      "基本超エネルギー",
+    ]);
+  });
+});
+
+describeTranslation("ゾロアーク", () => {
+  test("よるのぬけみちは、ベンチにいる間、バトルポケモンのにげるエネルギーを 2 個減らし、2 匹なら 4 個減らす(公式 Q&A)", () => {
+    const state = buildState({ active: DHELMISE, bench: [ZOROARK] });
+    expect(calculateRetreatCost(state, activeOf(state))).toBe(1);
+    state.bench.push(new PokemonInPlay(ZOROARK, 0));
+    expect(calculateRetreatCost(state, activeOf(state))).toBe(0);
+  });
+
+  test("バトル場にいるゾロアーク自身のにげるエネルギーは減らない", () => {
+    const state = buildState({ active: ZOROARK, bench: [RALTS] });
+    expect(calculateRetreatCost(state, activeOf(state))).toBe(1);
+  });
+});
+
 describe("翻訳の無いカード", () => {
   test("翻訳が無いサポートを使うと、効果は起きずトラッシュされる", () => {
     const state = buildState({ active: RALTS, bench: [KIRLIA], hand: [BOSS] });
@@ -3470,11 +3573,23 @@ describe("翻訳の無いカード", () => {
 
 describe("翻訳ごとのテスト", () => {
   test("翻訳した記録はすべて、このファイルに骨組みで実行するテストを持つ", () => {
-    const translatedNames = [...new Set(cardRecordTable.values())]
-      .filter((record) => record.translationStatus === "translated")
-      .map((record) => record.name);
+    const translated = [...new Set(cardRecordTable.values())].filter(
+      (record) => record.translationStatus === "translated"
+    );
+    // 名前が同じ翻訳が複数あるカード(ピカチュウ)は、名前だけでは記録ごとにテストがあるか分からないため、
+    // 「名前(先頭のカード ID)」でテストを置く
+    const sharedNames = new Set(
+      translated
+        .map((record) => record.name)
+        .filter((name, index, names) => names.indexOf(name) !== index)
+    );
+    const expectedLabels = translated.map((record) =>
+      sharedNames.has(record.name)
+        ? `${record.name}(${record.cardIds[0]})`
+        : record.name
+    );
     expect(
-      translatedNames.filter((name) => !testedTranslations.has(name))
+      expectedLabels.filter((label) => !testedTranslations.has(label))
     ).toEqual([]);
   });
 });

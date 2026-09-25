@@ -37,6 +37,7 @@ const MEGA_EXCADRILL = buildRecordedCard("050321");
 const STEEL_ENERGY = buildRecordedCard("030578");
 const TAPU_KOKO_EX = buildRecordedCard("046500");
 const PASSIMIAN = buildRecordedCard("049123");
+const ESPEON_EX = buildRecordedCard("050577");
 
 describe("ワザのダメージ", () => {
   test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
@@ -78,6 +79,17 @@ describe("ワザのダメージ", () => {
     expect(
       calculateAttackDamage(withIgnition, activeOf(withIgnition), attack)
     ).toBe(330);
+  });
+
+  test("サンシャインビートは、自分の場のポケモンの数(自身を含む)×30", () => {
+    const state = buildState({ active: ESPEON_EX, bench: [RALTS, GARDEVOIR] });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(ESPEON_EX, "サンシャインビート")
+      )
+    ).toBe(3 * 30);
   });
 
   test("ユニオンビートは、自分のベンチポケモンの数×30", () => {

@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "colorless"],
+      "damage": {
+        "amount": 0,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "ownPokemonInPlay"
+          },
+          "unit": 30
+        },
+        "kind": "fixed"
+      },
+      "name": "サンシャインビート"
+    }
+  ],
+  "cardIds": ["050577", "050593"],
+  "category": "ポケモン",
+  "evolvesFrom": "イーブイ",
+  "exRule": "pokemonEx",
+  "excludedEffects": [],
+  "hasRuleBox": true,
+  "hp": 260,
+  "isTerastal": false,
+  "name": "エーフィex",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

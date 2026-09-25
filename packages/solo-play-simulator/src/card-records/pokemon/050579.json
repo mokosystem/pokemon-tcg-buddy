@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "やすらぎアロマ"
+    },
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "マジカルショット"
+    }
+  ],
+  "cardIds": ["050579"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「やすらぎアロマ」の、ベンチポケモン 1 匹の HP を 80 回復する効果。相手がいないためダメージを受けず、回復は成立率に影響しない",
+      "reason": "healing"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "キュワワー",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

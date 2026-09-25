@@ -97,6 +97,8 @@ const conditionEvaluators: {
     source.pokemon !== null && source.pokemon.energies.length === 0,
   selfIsActive: (_, state, source) =>
     source.pokemon !== null && source.pokemon === state.active,
+  selfIsOnBench: (_, state, source) =>
+    source.pokemon !== null && state.bench.includes(source.pokemon),
   stadiumInPlayNamed: (condition, state) =>
     state.stadium?.name === condition.name,
   supporterUsedThisTurnNameIncludes: (condition, state) =>

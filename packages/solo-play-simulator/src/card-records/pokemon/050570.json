@@ -1,0 +1,53 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "クイックドロー"
+    },
+    {
+      "cost": ["electric", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "エレキバレット"
+    }
+  ],
+  "cardIds": ["050570", "050592"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「エレキバレット」の、相手のベンチポケモン 1 匹にも 20 ダメージを与える効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 110,
+  "isTerastal": false,
+  "name": "ゼラオラ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

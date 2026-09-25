@@ -1,0 +1,35 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "かじる"
+    },
+    {
+      "cost": ["dark", "colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "ずつき"
+    }
+  ],
+  "cardIds": ["050584"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "モノズ",
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}
