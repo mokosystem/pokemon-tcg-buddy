@@ -1,0 +1,55 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "branchOnCoinFlip",
+            "stepsWhenHeads": [
+              {
+                "filter": {
+                  "categories": ["ポケモン"]
+                },
+                "operation": "replaceSelfWithPokemonFromDeck"
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "どっきりへんしん"
+    }
+  ],
+  "cardIds": ["050705"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "メタモン",
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "rulings": [
+    {
+      "interpretation": "入れ替えられない。山札にあるときはグッズとして扱うため、ポケモンのカードだけを選べる",
+      "question": "山札のグッズ「古びたたての化石」のように、場ではポケモンとして扱うカードと入れ替えられるか",
+      "reflectedIn": "replaceSelfWithPokemonFromDeck の条件 categories をポケモンにした",
+      "source": {
+        "checkedOn": "2026-09-25",
+        "kind": "officialQa",
+        "questionSummary": "どっきりへんしんで山札のグッズ「古びたたての化石」とメタモンを入れ替えられるか、という質問に、山札にあるときはグッズとして扱うためできないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%A9%E3%81%A3%E3%81%8D%E3%82%8A%E3%81%B8%E3%82%93%E3%81%97%E3%82%93&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

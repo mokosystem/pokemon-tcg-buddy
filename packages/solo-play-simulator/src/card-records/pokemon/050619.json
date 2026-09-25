@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "fire"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "せいなるいぶき"
+    },
+    {
+      "cost": ["fire", "fire", "fire"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "ほのおのつばさ"
+    }
+  ],
+  "cardIds": ["050619"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「せいなるいぶき」(自身のエネルギーをすべてトラッシュし、ベンチポケモン 1 匹の HP をすべて回復する)。回復のためのワザで、相手がいないためダメージを受けず、成立率に影響しない",
+      "reason": "healing"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ホウオウ",
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["water"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "おんみつぎり"
+    },
+    {
+      "cost": ["water", "water"],
+      "damage": {
+        "amount": 160,
+        "kind": "fixed"
+      },
+      "name": "アクアエッジ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ケロマツ",
+  "cardIds": ["050627"],
+  "category": "ポケモン",
+  "evolvesFrom": "ゲコガシラ",
+  "exRule": "pokemonEx",
+  "excludedEffects": [
+    {
+      "description": "ワザ「おんみつぎり」のダメージは、相手のポケモン 1 匹にのっているダメカンの数 × 30 で決まる。相手の側で決まるため、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 300,
+  "isTerastal": false,
+  "name": "ゲッコウガex",
+  "pokemonType": "water",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

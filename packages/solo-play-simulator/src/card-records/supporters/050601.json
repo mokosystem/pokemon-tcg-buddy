@@ -1,0 +1,50 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "maxCount": 1,
+            "minCount": 1,
+            "operation": "discardFromHand"
+          },
+          {
+            "count": {
+              "handSize": 6,
+              "kind": "untilHandSize"
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": [
+          {
+            "condition": "handHasAtMostCards",
+            "maxCountExcludingThisCard": 6
+          }
+        ]
+      },
+      "kind": "whenPlayed"
+    }
+  ],
+  "cardIds": ["050601", "047102"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "アイリスの闘志",
+  "rulings": [
+    {
+      "interpretation": "使えない。このカードを除いた手札が 7 枚以上なら使えない(1 枚トラッシュしても 6 枚以上残り、引けないため)",
+      "question": "手札が多く、1 枚トラッシュしても引く枚数が 0 になるときに使えるか",
+      "reflectedIn": "使える条件 handHasAtMostCards(このカードを除いた手札が 6 枚以下)",
+      "source": {
+        "checkedOn": "2026-09-25",
+        "kind": "officialQa",
+        "questionSummary": "手札が 8 枚のときにアイリスの闘志を使えるか、という質問に、使えないと回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A2%E3%82%A4%E3%83%AA%E3%82%B9%E3%81%AE%E9%97%98%E5%BF%97&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

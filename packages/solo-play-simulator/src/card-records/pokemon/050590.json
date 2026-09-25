@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 120,
+        "kind": "fixed"
+      },
+      "name": "メテオシュート"
+    }
+  ],
+  "cardIds": ["050590"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「メテオシュート」は、自身のエネルギーをすべてトラッシュし、相手のポケモン 1 匹に 120 ダメージを与える。120 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 90,
+  "isTerastal": false,
+  "name": "メテノ",
+  "pokemonType": "colorless",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

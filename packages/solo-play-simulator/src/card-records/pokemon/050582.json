@@ -1,0 +1,27 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark", "dark"],
+      "damage": {
+        "amount": 40,
+        "kind": "fixed"
+      },
+      "name": "やみのキバ"
+    }
+  ],
+  "cardIds": ["050582"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ゾロア",
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

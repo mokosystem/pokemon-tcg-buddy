@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "かたまる"
+    }
+  ],
+  "cardIds": ["050677"],
+  "category": "ポケモン",
+  "evolvesFrom": "コスモッグ",
+  "excludedEffects": [
+    {
+      "description": "ワザ「かたまる」の、次の相手の番にこのポケモンが受けるワザのダメージを 60 減らす効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 100,
+  "isTerastal": false,
+  "name": "コスモウム",
+  "pokemonType": "psychic",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

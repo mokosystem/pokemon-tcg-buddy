@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "ちょっとつかむ"
+    }
+  ],
+  "cardIds": ["050581"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ちょっとつかむ」の、コインでオモテなら次の相手の番にワザを受けたポケモンがにげられなくなる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "ヤミカラス",
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

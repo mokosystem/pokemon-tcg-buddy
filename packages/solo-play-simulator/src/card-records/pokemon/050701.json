@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "いやなおと"
+    },
+    {
+      "cost": ["electric", "fighting"],
+      "damage": {
+        "amount": 40,
+        "kind": "fixed"
+      },
+      "name": "ドラゴンクロー"
+    }
+  ],
+  "cardIds": ["050701"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「いやなおと」の、次の自分の番にワザを受けたポケモンが受けるワザのダメージを 30 増やす効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ジャラコ",
+  "pokemonType": "dragon",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

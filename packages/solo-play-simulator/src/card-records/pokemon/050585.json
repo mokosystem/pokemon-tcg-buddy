@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "かみつく"
+    },
+    {
+      "cost": ["dark", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "ぶちかます"
+    }
+  ],
+  "cardIds": ["050585"],
+  "category": "ポケモン",
+  "evolvesFrom": "モノズ",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 100,
+  "isTerastal": false,
+  "name": "ジヘッド",
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

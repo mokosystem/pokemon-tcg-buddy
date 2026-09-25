@@ -1,0 +1,27 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "electric", "colorless", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "まんぞくスパーク"
+    }
+  ],
+  "cardIds": ["050656"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

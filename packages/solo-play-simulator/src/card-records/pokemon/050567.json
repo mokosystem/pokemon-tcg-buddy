@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "けりつける"
+    }
+  ],
+  "cardIds": ["050567"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「けりつける」は、コインでウラなら失敗する(ダメージを与えない)。ダメージはコインを見ずに 30 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 70,
+  "isTerastal": false,
+  "name": "ロコン",
+  "pokemonType": "fire",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

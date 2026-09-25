@@ -1,0 +1,63 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "サンライズ",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "energyFilter": {
+                "categories": ["基本エネルギー"],
+                "providedEnergyTypes": ["steel"]
+              },
+              "maxCount": {
+                "kind": "fixed",
+                "value": 2
+              },
+              "operation": "searchDeckAndAttachEnergyToSelf"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "selfIsOnBench"
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["steel", "steel", "colorless", "colorless"],
+      "damage": {
+        "amount": 220,
+        "kind": "fixed"
+      },
+      "name": "メテオドライブ"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "コスモッグ",
+  "cardIds": ["050696"],
+  "category": "ポケモン",
+  "evolvesFrom": "コスモウム",
+  "excludedEffects": [
+    {
+      "description": "ワザ「メテオドライブ」は、相手のバトルポケモンに 220 ダメージを与えたあと、自身のエネルギーをすべてトラッシュする。220 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 170,
+  "isTerastal": false,
+  "name": "ソルガレオ",
+  "pokemonType": "steel",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

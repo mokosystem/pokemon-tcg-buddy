@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["050600"],
+  "category": "グッズ",
+  "excludedEffects": [
+    {
+      "description": "コインでオモテなら、相手のベンチポケモンをバトル場に呼ぶ",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "name": "ポケモンキャッチャー",
+  "rulings": [],
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

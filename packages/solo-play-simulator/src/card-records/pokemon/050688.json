@@ -1,0 +1,42 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "しのせんこく"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["dark", "dark"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "カオスペイン"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ゴース",
+  "cardIds": ["050688"],
+  "category": "ポケモン",
+  "evolvesFrom": "ゴースト",
+  "exRule": "pokemonEx",
+  "excludedEffects": [
+    {
+      "description": "特性「しのせんこく」(相手のワザのダメージできぜつしたとき、コインでオモテならワザを使ったポケモンをきぜつさせる)",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「カオスペイン」の、相手のポケモン 1 匹にダメカンを 13 個のせる効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 280,
+  "isTerastal": false,
+  "name": "ゲンガーex",
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

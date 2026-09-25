@@ -71,6 +71,9 @@ const conditionEvaluators: {
     source.pokemon !== null &&
     matchesPokemonFilter(state, source.pokemon, condition.filter),
   deckHasCards: (condition, state) => state.deck.length >= condition.minCount,
+  handHasAtMostCards: (condition, state, source) =>
+    listHandExcludingOneCopy(state, source.card).length <=
+    condition.maxCountExcludingThisCard,
   handHasCards: (condition, state, source) =>
     listHandExcludingOneCopy(state, source.card).filter(
       (card) =>
@@ -97,6 +100,8 @@ const conditionEvaluators: {
     source.pokemon !== null && source.pokemon.energies.length === 0,
   selfIsActive: (_, state, source) =>
     source.pokemon !== null && source.pokemon === state.active,
+  selfIsOnBench: (_, state, source) =>
+    source.pokemon !== null && state.bench.includes(source.pokemon),
   stadiumInPlayNamed: (condition, state) =>
     state.stadium?.name === condition.name,
   supporterUsedThisTurnNameIncludes: (condition, state) =>

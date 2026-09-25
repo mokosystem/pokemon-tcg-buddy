@@ -1,0 +1,53 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"]
+            },
+            "operation": "attachEnergyFromHandDistributedToPokemon",
+            "targetFilter": {}
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "ビリビリフィーバー"
+    },
+    {
+      "cost": ["electric", "electric", "colorless"],
+      "damage": {
+        "amount": 200,
+        "kind": "fixed"
+      },
+      "name": "かみなり"
+    }
+  ],
+  "cardIds": ["050660"],
+  "category": "ポケモン",
+  "exRule": "pokemonEx",
+  "excludedEffects": [
+    {
+      "description": "ワザ「かみなり」の、このポケモンにも 30 ダメージを与える効果",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 190,
+  "isTerastal": false,
+  "name": "ピカチュウex",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "かぜにあたる"
+    },
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "けとばす"
+    }
+  ],
+  "cardIds": ["050652"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「かぜにあたる」の、このポケモンの特殊状態をすべて回復する効果",
+      "reason": "specialCondition"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "ピカチュウ",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

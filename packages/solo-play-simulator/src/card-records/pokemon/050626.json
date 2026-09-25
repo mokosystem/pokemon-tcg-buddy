@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["water", "water", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "switchActiveWithBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "ワームホール"
+    }
+  ],
+  "cardIds": ["050626"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ワームホール」の、自身を入れ替えた後に相手もバトルポケモンをベンチポケモンと入れ替える効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "パルキア",
+  "pokemonType": "water",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

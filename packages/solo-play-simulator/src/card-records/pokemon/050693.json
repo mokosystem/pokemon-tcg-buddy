@@ -1,0 +1,53 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "handSize": 7,
+              "kind": "untilHandSize"
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "ねがいをかなえる"
+    },
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 150,
+        "kind": "fixed"
+      },
+      "name": "スピードスター"
+    }
+  ],
+  "cardIds": ["050693"],
+  "category": "ポケモン",
+  "exRule": "pokemonEx",
+  "excludedEffects": [
+    {
+      "description": "ワザ「スピードスター」の、弱点・抵抗力と相手のバトルポケモンにかかっている効果を計算しない効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": true,
+  "hp": 160,
+  "isTerastal": false,
+  "name": "ジラーチex",
+  "pokemonType": "steel",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "みんなでかじる"
+    },
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 40,
+        "kind": "fixed"
+      },
+      "name": "はたく"
+    }
+  ],
+  "cardIds": ["050712"],
+  "category": "ポケモン",
+  "evolvesFrom": "ワッカネズミ",
+  "excludedEffects": [
+    {
+      "description": "ワザ「みんなでかじる」の、場の「イッカネズミ」の数だけコインを投げ、オモテの数 × 2 枚ぶん相手の山札をトラッシュする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "イッカネズミ",
+  "pokemonType": "colorless",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

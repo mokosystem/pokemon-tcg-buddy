@@ -1,0 +1,53 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"]
+            },
+            "maxCount": 2,
+            "operation": "attachEnergyFromDiscardToOnePokemon",
+            "targetFilter": {}
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "ちからをあたえる"
+    },
+    {
+      "cost": ["psychic", "psychic", "colorless"],
+      "damage": {
+        "amount": 120,
+        "kind": "fixed"
+      },
+      "name": "サイコドライブ"
+    }
+  ],
+  "cardIds": ["050573", "050666"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「サイコドライブ」は、相手のバトルポケモンに 120 ダメージを与えたあと、自身のエネルギーを 1 個トラッシュする。120 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ミュウツー",
+  "pokemonType": "psychic",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

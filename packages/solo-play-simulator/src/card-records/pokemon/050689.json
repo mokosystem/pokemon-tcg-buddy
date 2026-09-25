@@ -1,0 +1,41 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["dark"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "かたきうち"
+    },
+    {
+      "cost": ["dark", "colorless", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "やみのキバ"
+    }
+  ],
+  "cardIds": ["050689"],
+  "category": "ポケモン",
+  "evolvesFrom": "イーブイ",
+  "excludedEffects": [
+    {
+      "description": "ワザ「かたきうち」の、前の相手の番にワザのダメージで自分のポケモンがきぜつしていれば 100 を足す上乗せ。相手の側で決まるため持たず、ダメージは上乗せを除いた 30 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 110,
+  "isTerastal": false,
+  "name": "ブラッキー",
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

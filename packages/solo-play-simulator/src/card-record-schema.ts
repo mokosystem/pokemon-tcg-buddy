@@ -130,6 +130,10 @@ const basicConditionOptions = [
   strictObject({
     condition: literal("selfIsActive"),
   }),
+  /** このポケモンがベンチにいる(ゾロアークの「よるのぬけみち」、ソルガレオの「サンライズ」)。 */
+  strictObject({
+    condition: literal("selfIsOnBench"),
+  }),
   strictObject({
     condition: literal("selfHasNoEnergyAttached"),
   }),
@@ -154,6 +158,11 @@ const basicConditionOptions = [
     filter: optional(CardFilterSchema),
     /** 使おうとしているこのカードを除いた手札で数える。 */
     minCountExcludingThisCard: countFromOne,
+  }),
+  /** 使おうとしているこのカードを除いた手札が、maxCountExcludingThisCard 枚以下(アイリスの闘志)。 */
+  strictObject({
+    condition: literal("handHasAtMostCards"),
+    maxCountExcludingThisCard: countFromZero,
   }),
   strictObject({
     condition: literal("noAbilityUsedThisTurnWithNameIncluding"),
@@ -219,6 +228,16 @@ const DeckTopRestPlacementSchema = picklist([
   "shuffleThenBottomOfDeck",
 ]);
 
+/**
+ * 効果でつけるエネルギーの上限。fixed は決まった枚数、coinFlipsUntilTails はウラが出るまでコインを投げたオモテの数
+ * (ピカチュウ 050648 の「じゅうでんダッシュ」)。コインはオモテとウラを 1/2 ずつとする。
+ */
+export const AttachCountSchema = variant("kind", [
+  strictObject({ kind: literal("fixed"), value: countFromOne }),
+  strictObject({ kind: literal("coinFlipsUntilTails") }),
+]);
+export type AttachCount = InferOutput<typeof AttachCountSchema>;
+
 /** 山札から探す 1 回分。条件に合うカードを最大 maxCount 枚選ぶ。 */
 export const DeckSearchPickSchema = strictObject({
   filter: CardFilterSchema,
@@ -251,6 +270,14 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("searchDeckIntoHand"),
     picks: pipe(array(DeckSearchPickSchema), minLength(1)),
+  }),
+  /**
+   * 山札から、picks のうち 1 つを選んで、その条件に合うカードを上限まで手札に加えて切る(タケシのスカウト:
+   * たねポケモンを 2 枚まで、または進化ポケモンを 1 枚)。どの 1 つにするかはプレイングの判断基準が決める。
+   */
+  strictObject({
+    operation: literal("searchDeckIntoHandFromOneOfPicks"),
+    picks: pipe(array(DeckSearchPickSchema), minLength(2)),
   }),
   strictObject({
     filter: CardFilterSchema,
@@ -334,12 +361,16 @@ const basicOperationOptions = [
     minCount: countFromZero,
     operation: literal("addFromDiscardToHand"),
   }),
+  /** トラッシュから条件に合うポケモンを maxCount 枚まで選び、ベンチに出す。進化段階は filter で決める(ボーマンダex は進化ポケモンも出せる)。 */
   strictObject({
     filter: CardFilterSchema,
     maxCount: countFromOne,
     operation: literal("placeFromDiscardOntoBench"),
   }),
-  /** トラッシュから条件に合うカードを minCount〜maxCount 枚選び、山札に戻して切る(せいなるはい)。 */
+  /**
+   * トラッシュから条件に合うカードを minCount〜maxCount 枚選び、山札に戻して切る(せいなるはい)。戻すカードが 0 枚なら切らない。
+   * ワザの「〜枚まで」は minCount を 0 にする(ディアルガ。上級プレイヤー用ルールガイド D-05)。
+   */
   strictObject({
     filter: CardFilterSchema,
     maxCount: countFromOne,
@@ -353,11 +384,39 @@ const basicOperationOptions = [
     operation: literal("attachEnergyFromHand"),
     targetFilter: PokemonInPlayFilterSchema,
   }),
+  /**
+   * 手札から条件に合うエネルギーを好きなだけ選び、条件に合う自分のポケモンに好きなようにつける(ピカチュウex 050660 の
+   * 「ビリビリフィーバー」)。手札からつける番に 1 回には数えない。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    operation: literal("attachEnergyFromHandDistributedToPokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
+  }),
+  /**
+   * 山札から条件に合うエネルギーを maxCount 枚まで選び、このポケモン(効果の持ち主)につけて切る(ソルガレオの
+   * 「サンライズ」、ピカチュウ 050648 の「じゅうでんダッシュ」)。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: AttachCountSchema,
+    operation: literal("searchDeckAndAttachEnergyToSelf"),
+  }),
   /** 手札から条件に合うエネルギーを 1〜maxCount 枚選び、このポケモン(効果の持ち主)につける。手札からつける番に 1 回には数えない。 */
   strictObject({
     energyFilter: CardFilterSchema,
     maxCount: countFromOne,
     operation: literal("attachEnergyFromHandToSelf"),
+  }),
+  /**
+   * トラッシュから条件に合うエネルギーを maxCount 枚まで選び、条件に合う自分のポケモン 1 匹にまとめてつける
+   * (ミュウツーの「ちからをあたえる」)。
+   */
+  strictObject({
+    energyFilter: CardFilterSchema,
+    maxCount: countFromOne,
+    operation: literal("attachEnergyFromDiscardToOnePokemon"),
+    targetFilter: PokemonInPlayFilterSchema,
   }),
   /** 条件に合う自分のポケモンを maxPokemonCount 匹まで選び、トラッシュから条件に合うエネルギーを 1 枚ずつつける。 */
   strictObject({
@@ -431,6 +490,28 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("discardSelf"),
   }),
+  /** 山札の上から count 枚トラッシュする(ボーマンダex の「りゅうのはどう」)。山札が足りなければある分だけ。 */
+  strictObject({
+    count: countFromOne,
+    operation: literal("discardFromDeckTop"),
+  }),
+  /**
+   * この効果の中で山札の上からトラッシュしたカードから、minCount〜maxCount 枚を選んで手札に加える
+   * (モルペコの「おやつをえらぶ」)。
+   */
+  strictObject({
+    maxCount: countFromOne,
+    minCount: countFromZero,
+    operation: literal("addCardsDiscardedFromDeckTopInThisEffectToHand"),
+  }),
+  /**
+   * 山札から条件に合うポケモンを 1 枚選び、このポケモン(効果の持ち主)と入れ替える。ついているカードや場に出た番は
+   * 引き継ぎ、入れ替えたこのポケモンのカードは山札に戻して切る(メタモンの「どっきりへんしん」)。
+   */
+  strictObject({
+    filter: CardFilterSchema,
+    operation: literal("replaceSelfWithPokemonFromDeck"),
+  }),
   /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
   strictObject({
     operation: literal("discardStadiumInPlay"),
@@ -448,6 +529,15 @@ export const EffectStepSchema = variant("operation", [
     operation: literal("branchOnCondition"),
     stepsOtherwise: array(BasicOperationSchema),
     stepsWhenMet: array(BasicOperationSchema),
+  }),
+  /**
+   * コインを 1 回投げ、オモテなら stepsWhenHeads を行う(ビビヨンの「みちびきのまい」、メタモンの「どっきりへんしん」)。
+   * コインはオモテとウラを 1/2 ずつとする。使えるかの判定(状態を変えない)で乱数を引かないよう、条件ではなく操作の列の
+   * 1 歩にしている。
+   */
+  strictObject({
+    operation: literal("branchOnCoinFlip"),
+    stepsWhenHeads: pipe(array(BasicOperationSchema), minLength(1)),
   }),
 ]);
 export type EffectStep = InferOutput<typeof EffectStepSchema>;
@@ -577,16 +667,39 @@ export const DamageCountTargetSchema = variant("count", [
     abilityName: nonEmptyText,
     count: literal("discardPokemonWithAbilityName"),
   }),
-  /** ワザを使うポケモンについているエネルギーの数(メガドリュウズex の「マキシマムドリル」)。 */
-  strictObject({ count: literal("energyAttachedToAttackingPokemon") }),
+  /**
+   * ワザを使うポケモンについているエネルギーの数(メガドリュウズex の「マキシマムドリル」)。energyTypes を書けば、
+   * そのいずれかのタイプとして数えられる個数(カイオーガの「ハイドロポンプ」: 水エネルギーの数)。すべてのタイプとして
+   * 働く 1 個は 1 つと数える。
+   */
+  strictObject({
+    count: literal("energyAttachedToAttackingPokemon"),
+    energyTypes: optional(pipe(array(PokemonTypeSchema), minLength(1))),
+  }),
   /** 自分のポケモン全員についている基本エネルギーの枚数(タケルライコex の「きょくらいごう」)。 */
   strictObject({ count: literal("basicEnergyAttachedToOwnPokemon") }),
+  /** 自分のポケモン全員についている基本エネルギーのタイプの種類の数(ニンフィアex の「カラフルハーモニー」)。 */
+  strictObject({ count: literal("basicEnergyTypesAttachedToOwnPokemon") }),
+  /** 自分のトラッシュの、条件に合うカードの枚数(ルナアーラの「ミッドナイトレイ」: エネルギー)。 */
+  strictObject({
+    count: literal("discardCardsMatching"),
+    filter: CardFilterSchema,
+  }),
+  /** 自分の手札の枚数(ガラル ニャースの「おたからラッシュ」)。 */
+  strictObject({ count: literal("cardsInHand") }),
+  /** ワザを使うポケモンについているポケモンのどうぐの数(0 か 1。ザシアンの「ハードブレード」)。 */
+  strictObject({ count: literal("toolAttachedToAttackingPokemon") }),
   /** 場に出ているスタジアムの数(0 か 1。イーユイの「グラウンドメルト」)。 */
   strictObject({ count: literal("stadiumsInPlay") }),
-  /** 自分の場のたねポケモンの数(ナゲツケサルの「れんけいスロー」)。 */
-  strictObject({ count: literal("ownBasicPokemonInPlay") }),
-  /** 自分のベンチポケモンの数(テラパゴスex の「ユニオンビート」)。 */
-  strictObject({ count: literal("ownBenchedPokemon") }),
+  /**
+   * 自分の場の、条件に合うポケモンの数。条件が無ければ場のポケモン全員(エーフィex の「サンシャインビート」)。
+   * ベンチの数は positions に bench(テラパゴスex の「ユニオンビート」)、たねポケモンの数は stages にたね
+   * (ナゲツケサルの「れんけいスロー」)を書く。
+   */
+  strictObject({
+    count: literal("ownPokemonInPlay"),
+    filter: optional(PokemonInPlayFilterSchema),
+  }),
 ]);
 
 export const DamageBonusSchema = variant("kind", [
@@ -872,6 +985,7 @@ export type PokemonRecord = InferOutput<typeof PokemonRecordSchema>;
 export const CARD_RECORD_SCHEMA_DEFINITIONS = {
   Ability: AbilitySchema,
   AbilityTranslation: AbilityTranslationSchema,
+  AttachCount: AttachCountSchema,
   Attack: AttackSchema,
   AttackDamage: AttackDamageSchema,
   BasicCondition: BasicConditionSchema,

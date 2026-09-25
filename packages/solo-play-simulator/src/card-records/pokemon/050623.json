@@ -1,0 +1,56 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["サポート"]
+                },
+                "maxCount": 1
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "のせておよぐ"
+    },
+    {
+      "cost": ["water", "colorless", "colorless"],
+      "damage": {
+        "amount": 80,
+        "kind": "fixed"
+      },
+      "name": "れいとうビーム"
+    }
+  ],
+  "cardIds": ["050623"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「れいとうビーム」の、コインでオモテなら相手のバトルポケモンをマヒにする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ラプラス",
+  "pokemonType": "water",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

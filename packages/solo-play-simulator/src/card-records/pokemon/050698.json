@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["steel"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "はじきおとす"
+    },
+    {
+      "cost": ["steel", "steel", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "シールドプレス"
+    }
+  ],
+  "cardIds": ["050698"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「はじきおとす」の、ダメージを与える前に相手のバトルポケモンのどうぐをトラッシュする効果",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「シールドプレス」の、次の相手の番にこのポケモンが受けるワザのダメージを 50 減らす効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ザマゼンタ",
+  "pokemonType": "steel",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

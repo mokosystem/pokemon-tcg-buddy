@@ -201,6 +201,42 @@ const DRATINI = buildRecordedCard("048646");
 const DRAGONAIR = buildRecordedCard("048647");
 const MEGA_DRAGONITE = buildRecordedCard("048648");
 const KOMMO_O = buildRecordedCard("050390");
+const CHERRIM = buildRecordedCard("050566");
+const VICTINI = buildRecordedCard("050569");
+const ZERAORA = buildRecordedCard("050570");
+const MEWTWO = buildRecordedCard("050573");
+const ZOROARK = buildRecordedCard("050583");
+const IRIS = buildRecordedCard("050601");
+const WAITRESS = buildRecordedCard("050602");
+const GUY = buildRecordedCard("050603");
+const BROCKS_SCOUTING = buildRecordedCard("050605");
+const PIKACHU_FIND_A_FRIEND = buildRecordedCard("050635");
+const PIKACHU_RUN_AROUND = buildRecordedCard("050638");
+const PIKACHU_ENERGY_TAIL = buildRecordedCard("050643");
+const PIKACHU_CHARGE_DASH = buildRecordedCard("050648");
+const PIKACHU_TROPICAL = buildRecordedCard("050649");
+const PIKACHU_NIGHT_WALK = buildRecordedCard("050651");
+const PIKACHU_STOCKPILE = buildRecordedCard("050654");
+const PIKACHU_EX_PARADE = buildRecordedCard("050659");
+const PIKACHU_EX_FEVER = buildRecordedCard("050660");
+const VIVILLON = buildRecordedCard("050617");
+const MOLTRES = buildRecordedCard("050618");
+const LAPRAS = buildRecordedCard("050623");
+const ARTICUNO = buildRecordedCard("050624");
+const PALKIA = buildRecordedCard("050626");
+const ZAPDOS = buildRecordedCard("050661");
+const MORPEKO = buildRecordedCard("050664");
+const XERNEAS = buildRecordedCard("050675");
+const GIMMIGHOUL = buildRecordedCard("050679");
+const ALOLAN_MEOWTH = buildRecordedCard("050687");
+const GALARIAN_MEOWTH = buildRecordedCard("050692");
+const JIRACHI_EX = buildRecordedCard("050693");
+const DIALGA = buildRecordedCard("050694");
+const COSMOEM = buildRecordedCard("050677");
+const SOLGALEO = buildRecordedCard("050696");
+const SALAMENCE_EX = buildRecordedCard("050700");
+const MEOWTH_30TH = buildRecordedCard("050704");
+const DITTO = buildRecordedCard("050705");
 
 /** テストを持つ翻訳の名前。describe を読み込む時点で集まる。 */
 const testedTranslations = new Set<string>();
@@ -3458,6 +3494,742 @@ describeTranslation("ジャラランガ", () => {
   });
 });
 
+describeTranslation("チェリム", () => {
+  test("エナジーギフトは、山札の基本エネルギーを 2 枚まで、自分のポケモンに好きなようにつける", () => {
+    const state = buildState({
+      active: CHERRIM,
+      bench: [RALTS],
+      deck: [BOSS, GRASS_ENERGY, PRISM_ENERGY, PSYCHIC_ENERGY, GRASS_ENERGY],
+    });
+    activeOf(state).energies.push(GRASS_ENERGY);
+    const targets = [activeOf(state), benchAt(state, 0)];
+    useAttackNamed(
+      buildContext(state, {
+        choosePokemon: (_, request) => {
+          const next = targets.shift();
+          return request.candidates.filter((pokemon) => pokemon === next);
+        },
+      }),
+      "エナジーギフト"
+    );
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本草エネルギー",
+      "基本草エネルギー",
+    ]);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本超エネルギー"]);
+    expect(namesOf(state.deck)).toContain("プリズムエネルギー");
+  });
+});
+
+describeTranslation("ビクティニ", () => {
+  test("なかまをよぶは、山札からたねポケモンを 2 枚までベンチに出す", () => {
+    const state = buildState({
+      active: VICTINI,
+      deck: [KIRLIA, RALTS, BOSS, MEOWTH, RALTS],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY);
+    useAttackNamed(buildContext(state), "なかまをよぶ");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
+      "ラルトス",
+      "ニャースex",
+    ]);
+    expect(state.deck).toHaveLength(3);
+  });
+});
+
+describeTranslation("ゼラオラ", () => {
+  test("クイックドローは 1 枚引く", () => {
+    const state = buildState({ active: ZERAORA, deck: [BOSS, RALTS] });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "クイックドロー");
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+  });
+});
+
+describeTranslation("ミュウツー", () => {
+  test("ちからをあたえるは、トラッシュの基本エネルギーを 2 枚まで、自分のポケモン 1 匹にまとめてつける", () => {
+    const state = buildState({
+      active: MEWTWO,
+      bench: [RALTS],
+      discard: [
+        PSYCHIC_ENERGY,
+        PRISM_ENERGY,
+        BOSS,
+        DARK_ENERGY,
+        PSYCHIC_ENERGY,
+      ],
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(
+      buildContext(state, {
+        choosePokemon: (_, request) => request.candidates.slice(-1),
+      }),
+      "ちからをあたえる"
+    );
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本超エネルギー",
+      "基本悪エネルギー",
+    ]);
+    expect(namesOf(state.discard)).toEqual([
+      "プリズムエネルギー",
+      "ボスの指令",
+      "基本超エネルギー",
+    ]);
+  });
+});
+
+describeTranslation("ゾロアーク", () => {
+  test("よるのぬけみちは、ベンチにいる間、バトルポケモンのにげるエネルギーを 2 個減らし、2 匹なら 4 個減らす(公式 Q&A)", () => {
+    const state = buildState({ active: DHELMISE, bench: [ZOROARK] });
+    expect(calculateRetreatCost(state, activeOf(state))).toBe(1);
+    state.bench.push(new PokemonInPlay(ZOROARK, 0));
+    expect(calculateRetreatCost(state, activeOf(state))).toBe(0);
+  });
+
+  test("バトル場にいるゾロアーク自身のにげるエネルギーは減らない", () => {
+    const state = buildState({ active: ZOROARK, bench: [RALTS] });
+    expect(calculateRetreatCost(state, activeOf(state))).toBe(1);
+  });
+});
+
+describeTranslation("アイリスの闘志", () => {
+  test("手札を 1 枚トラッシュし、手札が 6 枚になるように引く", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 8),
+      hand: [IRIS, BOSS, RALTS],
+    });
+    playTrainerFromHand(buildContext(state), IRIS);
+    expect(namesOf(state.discard)).toEqual(["アイリスの闘志", "ボスの指令"]);
+    expect(state.hand).toHaveLength(6);
+  });
+
+  test("このカードを除いた手札が 7 枚以上なら使えない(公式 Q&A)。6 枚なら使える", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 8),
+      hand: [IRIS, ...repeat(BOSS, 7)],
+    });
+    const context = buildContext(state);
+    expect(canPlayTrainerFromHand(context, IRIS)).toBe(false);
+    state.hand.pop();
+    expect(canPlayTrainerFromHand(context, IRIS)).toBe(true);
+  });
+
+  test("このカードのほかに手札が無ければ使えない", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 8),
+      hand: [IRIS],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), IRIS)).toBe(false);
+  });
+});
+
+describeTranslation("ウエートレス", () => {
+  test("山札の上から 6 枚の基本エネルギーを 1 枚、自分のポケモンにつけ、残りを山札に戻す", () => {
+    const state = buildState({
+      active: RALTS,
+      bench: [KIRLIA],
+      deck: [
+        BOSS,
+        PRISM_ENERGY,
+        RALTS,
+        RALTS,
+        RALTS,
+        PSYCHIC_ENERGY,
+        FIRE_ENERGY,
+      ],
+      hand: [WAITRESS],
+    });
+    playTrainerFromHand(
+      buildContext(state, {
+        choosePokemon: (_, request) => request.candidates.slice(-1),
+      }),
+      WAITRESS
+    );
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本超エネルギー"]);
+    expect(state.deck).toHaveLength(6);
+  });
+
+  test("山札が 6 枚に満たなくても使える(公式 Q&A)", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: [BOSS, PSYCHIC_ENERGY],
+      hand: [WAITRESS],
+    });
+    playTrainerFromHand(buildContext(state), WAITRESS);
+    expect(namesOf(activeOf(state).energies)).toEqual(["基本超エネルギー"]);
+  });
+});
+
+describeTranslation("ガイ", () => {
+  test("3 枚引く", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 5),
+      hand: [GUY],
+    });
+    playTrainerFromHand(buildContext(state), GUY);
+    expect(state.hand).toHaveLength(3);
+  });
+});
+
+describeTranslation("タケシのスカウト", () => {
+  test("山札からたねポケモンを 2 枚まで手札に加える", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: [KIRLIA, RALTS, GARDEVOIR, MEOWTH, BOSS],
+      hand: [BROCKS_SCOUTING],
+    });
+    playTrainerFromHand(
+      buildContext(state, {
+        chooseCards: pickCardsByName(["ラルトス", "ニャースex"]),
+      }),
+      BROCKS_SCOUTING
+    );
+    expect(namesOf(state.hand)).toEqual(["ラルトス", "ニャースex"]);
+  });
+
+  test("進化ポケモンを選んだら、その 1 枚だけを手札に加える", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: [KIRLIA, RALTS, GARDEVOIR, MEOWTH, BOSS],
+      hand: [BROCKS_SCOUTING],
+    });
+    playTrainerFromHand(buildContext(state), BROCKS_SCOUTING);
+    expect(namesOf(state.hand)).toEqual(["キルリア"]);
+    expect(state.deck).toHaveLength(4);
+  });
+});
+
+/** 並びの順に値を返す乱数。コインは 0.5 未満がオモテ。 */
+function randomSequence(values: readonly number[]) {
+  let index = 0;
+  return {
+    nextFloat: () => {
+      const value = values[index % values.length] ?? 0;
+      index += 1;
+      return value;
+    },
+  };
+}
+
+describeTranslation("ピカチュウ(050635)", () => {
+  test("ともだちをさがすは、山札からポケモンを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: PIKACHU_FIND_A_FRIEND,
+      deck: [BOSS, KIRLIA, RALTS],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "ともだちをさがす");
+    expect(namesOf(state.hand)).toEqual(["キルリア"]);
+  });
+});
+
+describeTranslation("ピカチュウ(050638)", () => {
+  test("にげまわるは、このポケモンをベンチポケモンと入れ替える", () => {
+    const state = buildState({ active: PIKACHU_RUN_AROUND, bench: [RALTS] });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "にげまわる");
+    expect(activeOf(state).name).toBe("ラルトス");
+  });
+});
+
+describeTranslation("ピカチュウ(050643)", () => {
+  test("エナジーテールは、山札からエネルギーを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: PIKACHU_ENERGY_TAIL,
+      deck: [BOSS, PRISM_ENERGY, LIGHTNING_ENERGY],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "エナジーテール");
+    expect(namesOf(state.hand)).toEqual(["プリズムエネルギー"]);
+  });
+});
+
+describeTranslation("ピカチュウ(050648)", () => {
+  test("じゅうでんダッシュは、ウラが出るまで投げたオモテの数まで、山札の基本雷エネルギーをこのポケモンにつける", () => {
+    const state = buildState({
+      active: PIKACHU_CHARGE_DASH,
+      deck: repeat(LIGHTNING_ENERGY, 4),
+      random: randomSequence([0.1, 0.4, 0.9]),
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "じゅうでんダッシュ");
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本超エネルギー",
+      "基本雷エネルギー",
+      "基本雷エネルギー",
+    ]);
+  });
+
+  test("最初にウラが出たらつけない", () => {
+    const state = buildState({
+      active: PIKACHU_CHARGE_DASH,
+      deck: repeat(LIGHTNING_ENERGY, 4),
+      random: randomSequence([0.9]),
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "じゅうでんダッシュ");
+    expect(activeOf(state).energies).toHaveLength(1);
+    expect(state.deck).toHaveLength(4);
+  });
+});
+
+describeTranslation("ピカチュウ(050649)", () => {
+  test("なんごくきぶんは、手札が 6 枚になるように引く", () => {
+    const state = buildState({
+      active: PIKACHU_TROPICAL,
+      deck: repeat(LIGHTNING_ENERGY, 8),
+      hand: [BOSS, RALTS],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY, LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "なんごくきぶん");
+    expect(state.hand).toHaveLength(6);
+  });
+});
+
+describeTranslation("ピカチュウ(050651)", () => {
+  test("よるのさんぽは 1 枚引く", () => {
+    const state = buildState({
+      active: PIKACHU_NIGHT_WALK,
+      deck: [BOSS, RALTS],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "よるのさんぽ");
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+  });
+});
+
+describeTranslation("ピカチュウ(050654)", () => {
+  test("ためこむは、トラッシュの基本エネルギーを 2 枚まで手札に加える", () => {
+    const state = buildState({
+      active: PIKACHU_STOCKPILE,
+      discard: [
+        PRISM_ENERGY,
+        LIGHTNING_ENERGY,
+        BOSS,
+        PSYCHIC_ENERGY,
+        FIRE_ENERGY,
+      ],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "ためこむ");
+    expect(namesOf(state.hand)).toEqual([
+      "基本雷エネルギー",
+      "基本超エネルギー",
+    ]);
+  });
+});
+
+describeTranslation("ピカチュウex(050659)", () => {
+  test("ピカピカパレードは、山札のたねポケモンを好きなだけ、ベンチの空きまでベンチに出す", () => {
+    const state = buildState({
+      active: PIKACHU_EX_PARADE,
+      bench: [RALTS, RALTS],
+      deck: [...repeat(RALTS, 3), KIRLIA, MEOWTH, BOSS],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(buildContext(state), "ピカピカパレード");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual(
+      repeat("ラルトス", 5)
+    );
+    expect(state.deck).toHaveLength(3);
+  });
+});
+
+describeTranslation("ピカチュウex(050660)", () => {
+  test("ビリビリフィーバーは、手札の基本エネルギーを好きなだけ、自分のポケモンに好きなようにつける", () => {
+    const state = buildState({
+      active: PIKACHU_EX_FEVER,
+      bench: [RALTS],
+      hand: [LIGHTNING_ENERGY, PRISM_ENERGY, PSYCHIC_ENERGY, FIRE_ENERGY],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    const targets = [activeOf(state), benchAt(state, 0), benchAt(state, 0)];
+    useAttackNamed(
+      buildContext(state, {
+        choosePokemon: (_, request) => {
+          const next = targets.shift();
+          return request.candidates.filter((pokemon) => pokemon === next);
+        },
+      }),
+      "ビリビリフィーバー"
+    );
+    expect(activeOf(state).energies).toHaveLength(2);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本超エネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(namesOf(state.hand)).toEqual(["プリズムエネルギー"]);
+    expect(state.hasAttachedEnergy).toBe(false);
+  });
+});
+
+describeTranslation("ビビヨン", () => {
+  test("みちびきのまいは、番に 1 回、コインでオモテなら山札からポケモンを 1 枚手札に加える", () => {
+    const state = buildState({
+      active: VIVILLON,
+      deck: [BOSS, KIRLIA],
+      random: randomSequence([0.2]),
+    });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "みちびきのまい");
+    expect(namesOf(state.hand)).toEqual(["キルリア"]);
+    expect(canUseAbility(context, activeOf(state), "みちびきのまい")).toBe(
+      false
+    );
+  });
+
+  test("コインがウラなら何も手札に加えない", () => {
+    const state = buildState({
+      active: VIVILLON,
+      deck: [BOSS, KIRLIA],
+      random: randomSequence([0.7]),
+    });
+    useAbility(buildContext(state), activeOf(state), "みちびきのまい");
+    expect(state.hand).toEqual([]);
+  });
+
+  test("山札が無ければ使えない", () => {
+    const state = buildState({ active: VIVILLON });
+    expect(
+      canUseAbility(buildContext(state), activeOf(state), "みちびきのまい")
+    ).toBe(false);
+  });
+});
+
+describe("ファイヤー、フリーザー、サンダーの「はばたき」の特性", () => {
+  test("ほかの 2 匹が場にいれば、番に 1 回、手札の基本エネルギーを 1 枚自身につける(手札からつける番に 1 回に数えない)", () => {
+    const state = buildState({
+      active: MOLTRES,
+      bench: [ARTICUNO, ZAPDOS],
+      hand: [FIRE_ENERGY, WATER_ENERGY, LIGHTNING_ENERGY, FIRE_ENERGY],
+    });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "もえるはばたき");
+    useAbility(context, benchAt(state, 0), "いてつくはばたき");
+    useAbility(context, benchAt(state, 1), "はじけるはばたき");
+    expect(namesOf(activeOf(state).energies)).toEqual(["基本炎エネルギー"]);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本水エネルギー"]);
+    expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本雷エネルギー"]);
+    expect(canUseAbility(context, activeOf(state), "もえるはばたき")).toBe(
+      false
+    );
+    expect(state.hasAttachedEnergy).toBe(false);
+  });
+
+  test("ほかの 2 匹のどちらかがいなければ使えない", () => {
+    const state = buildState({
+      active: MOLTRES,
+      bench: [ARTICUNO],
+      hand: [FIRE_ENERGY],
+    });
+    expect(
+      canUseAbility(buildContext(state), activeOf(state), "もえるはばたき")
+    ).toBe(false);
+  });
+});
+
+describeTranslation("ファイヤー", () => {
+  test("もえるはばたきは、手札に基本炎エネルギーが無ければ使えない", () => {
+    const state = buildState({
+      active: MOLTRES,
+      bench: [ARTICUNO, ZAPDOS],
+      hand: [WATER_ENERGY],
+    });
+    expect(
+      canUseAbility(buildContext(state), activeOf(state), "もえるはばたき")
+    ).toBe(false);
+  });
+});
+
+describeTranslation("フリーザー", () => {
+  test("いてつくはばたきは、ベンチにいても使える", () => {
+    const state = buildState({
+      active: ZAPDOS,
+      bench: [MOLTRES, ARTICUNO],
+      hand: [WATER_ENERGY],
+    });
+    useAbility(buildContext(state), benchAt(state, 1), "いてつくはばたき");
+    expect(namesOf(benchAt(state, 1).energies)).toEqual(["基本水エネルギー"]);
+  });
+});
+
+describeTranslation("サンダー", () => {
+  test("はじけるはばたきは、手札の基本雷エネルギーを 1 枚だけつける", () => {
+    const state = buildState({
+      active: ZAPDOS,
+      bench: [MOLTRES, ARTICUNO],
+      hand: [LIGHTNING_ENERGY, LIGHTNING_ENERGY],
+    });
+    useAbility(buildContext(state), activeOf(state), "はじけるはばたき");
+    expect(activeOf(state).energies).toHaveLength(1);
+    expect(state.hand).toHaveLength(1);
+  });
+});
+
+describeTranslation("ラプラス", () => {
+  test("のせておよぐは、山札からサポートを 1 枚手札に加える", () => {
+    const state = buildState({ active: LAPRAS, deck: [RALTS, BOSS, GUY] });
+    activeOf(state).energies.push(WATER_ENERGY);
+    useAttackNamed(buildContext(state), "のせておよぐ");
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+  });
+});
+
+describeTranslation("パルキア", () => {
+  test("ワームホールは、このポケモンをベンチポケモンと入れ替える", () => {
+    const state = buildState({ active: PALKIA, bench: [RALTS] });
+    activeOf(state).energies.push(WATER_ENERGY, WATER_ENERGY, WATER_ENERGY);
+    useAttackNamed(buildContext(state), "ワームホール");
+    expect(activeOf(state).name).toBe("ラルトス");
+    expect(benchAt(state, 0).name).toBe("パルキア");
+  });
+});
+
+describeTranslation("モルペコ", () => {
+  test("おやつをえらぶは、山札の上から 3 枚トラッシュし、その中から 1 枚を手札に加える", () => {
+    const state = buildState({
+      active: MORPEKO,
+      deck: [BOSS, RALTS, KIRLIA, GUY],
+      discard: [LILLIE],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(
+      buildContext(state, { chooseCards: pickCardsByName(["キルリア"]) }),
+      "おやつをえらぶ"
+    );
+    expect(namesOf(state.hand)).toEqual(["キルリア"]);
+    expect(namesOf(state.discard)).toEqual([
+      "リーリエの決心",
+      "ボスの指令",
+      "ラルトス",
+    ]);
+    expect(namesOf(state.deck)).toEqual(["ガイ"]);
+  });
+
+  test("もともとトラッシュにあったカードは選べない", () => {
+    const state = buildState({
+      active: MORPEKO,
+      deck: [BOSS],
+      discard: [LILLIE],
+    });
+    activeOf(state).energies.push(LIGHTNING_ENERGY);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickCardsByName(["リーリエの決心", "ボスの指令"]),
+      }),
+      "おやつをえらぶ"
+    );
+    expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+  });
+});
+
+describeTranslation("ゼルネアス", () => {
+  test("ジオナビゲートは、山札からスタジアムを 2 枚まで手札に加える", () => {
+    const state = buildState({
+      active: XERNEAS,
+      deck: [NIGHT_ACADEMY, BOSS, ZERO_CAVERN, GRAND_TREE_FOREST],
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "ジオナビゲート");
+    expect(namesOf(state.hand)).toEqual(["夜のアカデミー", "ゼロの大空洞"]);
+  });
+});
+
+describeTranslation("コレクレー", () => {
+  test("たくさんあるくは、コインでオモテなら山札から好きなカードを 1 枚手札に加え、ウラなら何もしない", () => {
+    const heads = buildState({
+      active: GIMMIGHOUL,
+      deck: [BOSS, RALTS],
+      random: randomSequence([0.3]),
+    });
+    heads.active?.energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(heads), "たくさんあるく");
+    expect(namesOf(heads.hand)).toEqual(["ボスの指令"]);
+    const tails = buildState({
+      active: GIMMIGHOUL,
+      deck: [BOSS, RALTS],
+      random: randomSequence([0.6]),
+    });
+    tails.active?.energies.push(PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(tails), "たくさんあるく");
+    expect(tails.hand).toEqual([]);
+  });
+});
+
+describe("ニャースの「ネコにこばん」", () => {
+  for (const [label, card, energies] of [
+    ["アローラ ニャース", ALOLAN_MEOWTH, []],
+    ["ガラル ニャース", GALARIAN_MEOWTH, [STEEL_ENERGY]],
+    ["ニャース", MEOWTH_30TH, [STEEL_ENERGY, STEEL_ENERGY]],
+  ] as const) {
+    describeTranslation(label, () => {
+      test("ネコにこばんは 1 枚引く", () => {
+        const state = buildState({ active: card, deck: [BOSS, RALTS] });
+        activeOf(state).energies.push(...energies);
+        useAttackNamed(buildContext(state), "ネコにこばん");
+        expect(namesOf(state.hand)).toEqual(["ボスの指令"]);
+      });
+    });
+  }
+
+  test("おたからラッシュは、手札の枚数×10", () => {
+    const state = buildState({
+      active: GALARIAN_MEOWTH,
+      hand: [BOSS, RALTS, KIRLIA],
+    });
+    expect(
+      damageOf(state, activeOf(state), GALARIAN_MEOWTH, "おたからラッシュ")
+    ).toBe(3 * 10);
+  });
+});
+
+describeTranslation("ジラーチex", () => {
+  test("ねがいをかなえるは、手札が 7 枚になるように引く", () => {
+    const state = buildState({
+      active: JIRACHI_EX,
+      deck: repeat(STEEL_ENERGY, 10),
+      hand: [BOSS, RALTS],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    useAttackNamed(buildContext(state), "ねがいをかなえる");
+    expect(state.hand).toHaveLength(7);
+  });
+});
+
+describeTranslation("ディアルガ", () => {
+  test("リバースクロックは、トラッシュのポケモンと基本エネルギーを合計 3 枚まで山札に戻す", () => {
+    const state = buildState({
+      active: DIALGA,
+      discard: [BOSS, PRISM_ENERGY, RALTS, STEEL_ENERGY, KIRLIA, RALTS],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    useAttackNamed(buildContext(state), "リバースクロック");
+    expect(namesOf(state.discard)).toEqual([
+      "ボスの指令",
+      "プリズムエネルギー",
+      "ラルトス",
+    ]);
+    expect(state.deck).toHaveLength(3);
+  });
+
+  test("ワザの「3枚まで」なので、トラッシュに対象があっても 1 枚も戻さなくてよい", () => {
+    const state = buildState({
+      active: DIALGA,
+      discard: [FIRE_ENERGY],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    useAttackNamed(
+      buildContext(state, { chooseCards: () => [] }),
+      "リバースクロック"
+    );
+    expect(namesOf(state.discard)).toEqual(["基本炎エネルギー"]);
+    expect(state.deck).toHaveLength(0);
+  });
+
+  test("戻すカードが無いときは山札を切らない", () => {
+    const state = buildState({
+      active: DIALGA,
+      deck: [RALTS, KIRLIA],
+      hand: [BOSS],
+    });
+    activeOf(state).energies.push(STEEL_ENERGY);
+    state.placeHandCardsOnDeckTop([...state.hand]);
+    useAttackNamed(buildContext(state), "リバースクロック");
+    expect(namesOf(state.deck)).toEqual(["ボスの指令", "ラルトス", "キルリア"]);
+    expect(state.knownDeckTopCount).toBe(1);
+  });
+});
+
+describeTranslation("ソルガレオ", () => {
+  test("サンライズは、ベンチにいれば番に 1 回、山札の基本鋼エネルギーを 2 枚までこのポケモンにつける", () => {
+    const state = buildState({
+      active: COSMOEM,
+      bench: [SOLGALEO],
+      deck: [STEEL_ENERGY, BOSS, STEEL_ENERGY, STEEL_ENERGY],
+    });
+    const context = buildContext(state);
+    useAbility(context, benchAt(state, 0), "サンライズ");
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本鋼エネルギー",
+      "基本鋼エネルギー",
+    ]);
+    expect(canUseAbility(context, benchAt(state, 0), "サンライズ")).toBe(false);
+  });
+
+  test("バトル場にいるときは使えない", () => {
+    const state = buildState({ active: SOLGALEO, deck: [STEEL_ENERGY] });
+    expect(
+      canUseAbility(buildContext(state), activeOf(state), "サンライズ")
+    ).toBe(false);
+  });
+});
+
+describeTranslation("ボーマンダex", () => {
+  test("とどろくよびごえは、トラッシュのドラゴンタイプのポケモンを進化ポケモンも含めて 3 枚までベンチに出す", () => {
+    const state = buildState({
+      active: SALAMENCE_EX,
+      discard: [DRATINI, KOMMO_O, RALTS, DREEPY, DRATINI, DRATINI],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY);
+    useAttackNamed(buildContext(state), "とどろくよびごえ");
+    expect(namesOf(state.bench.map((pokemon) => pokemon.card))).toEqual([
+      "ミニリュウ",
+      "ジャラランガ",
+      "ドラメシヤ",
+    ]);
+    expect(namesOf(state.discard)).toEqual([
+      "ラルトス",
+      "ミニリュウ",
+      "ミニリュウ",
+    ]);
+  });
+
+  test("りゅうのはどうは、山札の上から 2 枚トラッシュする", () => {
+    const state = buildState({
+      active: SALAMENCE_EX,
+      deck: [BOSS, RALTS, KIRLIA],
+    });
+    activeOf(state).energies.push(FIRE_ENERGY, WATER_ENERGY);
+    useAttackNamed(buildContext(state), "りゅうのはどう");
+    expect(namesOf(state.discard)).toEqual(["ボスの指令", "ラルトス"]);
+    expect(namesOf(state.deck)).toEqual(["キルリア"]);
+  });
+});
+
+describeTranslation("メタモン", () => {
+  test("どっきりへんしんは、コインでオモテなら山札のポケモンと入れ替え、ついているカードを引き継ぎ、このカードを山札に戻す", () => {
+    const state = buildState({
+      active: DITTO,
+      bench: [RALTS],
+      deck: [BOSS, GARDEVOIR, RALTS],
+      random: randomSequence([0.2]),
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "どっきりへんしん");
+    expect(activeOf(state).name).toBe("メガサーナイトex");
+    expect(activeOf(state).energies).toHaveLength(2);
+    expect(namesOf(state.deck).sort()).toEqual(
+      ["ボスの指令", "メタモン", "ラルトス"].sort()
+    );
+  });
+
+  test("コインがウラなら入れ替えない", () => {
+    const state = buildState({
+      active: DITTO,
+      deck: [GARDEVOIR],
+      random: randomSequence([0.8]),
+    });
+    activeOf(state).energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "どっきりへんしん");
+    expect(activeOf(state).name).toBe("メタモン");
+    expect(namesOf(state.deck)).toEqual(["メガサーナイトex"]);
+  });
+});
+
 describe("翻訳の無いカード", () => {
   test("翻訳が無いサポートを使うと、効果は起きずトラッシュされる", () => {
     const state = buildState({ active: RALTS, bench: [KIRLIA], hand: [BOSS] });
@@ -3470,11 +4242,23 @@ describe("翻訳の無いカード", () => {
 
 describe("翻訳ごとのテスト", () => {
   test("翻訳した記録はすべて、このファイルに骨組みで実行するテストを持つ", () => {
-    const translatedNames = [...new Set(cardRecordTable.values())]
-      .filter((record) => record.translationStatus === "translated")
-      .map((record) => record.name);
+    const translated = [...new Set(cardRecordTable.values())].filter(
+      (record) => record.translationStatus === "translated"
+    );
+    // 名前が同じ翻訳が複数あるカード(ピカチュウ)は、名前だけでは記録ごとにテストがあるか分からないため、
+    // 「名前(先頭のカード ID)」でテストを置く
+    const sharedNames = new Set(
+      translated
+        .map((record) => record.name)
+        .filter((name, index, names) => names.indexOf(name) !== index)
+    );
+    const expectedLabels = translated.map((record) =>
+      sharedNames.has(record.name)
+        ? `${record.name}(${record.cardIds[0]})`
+        : record.name
+    );
     expect(
-      translatedNames.filter((name) => !testedTranslations.has(name))
+      expectedLabels.filter((label) => !testedTranslations.has(label))
     ).toEqual([]);
   });
 });

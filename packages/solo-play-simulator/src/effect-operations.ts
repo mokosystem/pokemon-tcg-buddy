@@ -5,6 +5,7 @@
  */
 
 import {
+  type AttachCount,
   type BasicOperation,
   CardCategory,
   type CardEffect,
@@ -15,13 +16,7 @@ import {
   EvolutionStage,
   type PokemonInPlayFilter,
 } from "./card-record-schema.ts";
-import {
-  type Card,
-  isBasicPokemon,
-  isEnergy,
-  isPokemon,
-  matchesCardFilter,
-} from "./cards.ts";
+import { type Card, isEnergy, isPokemon, matchesCardFilter } from "./cards.ts";
 import {
   areConditionsMet,
   type EffectSource,
@@ -151,6 +146,20 @@ function alwaysHasTarget(): boolean {
   return true;
 }
 
+/** トラッシュに条件に合うエネルギーがあり、つける先の自分のポケモンがいるか。 */
+function discardHasEnergyForOwnPokemon(
+  step: {
+    readonly energyFilter: CardFilter;
+    readonly targetFilter: PokemonInPlayFilter;
+  },
+  { state }: TargetCheckInput
+): boolean {
+  return (
+    listMatching(state.discard, step.energyFilter).some(isEnergy) &&
+    listOwnPokemonMatching(state, step.targetFilter).length > 0
+  );
+}
+
 /**
  * 効果の最初の操作に対象があるか。対象が無いときは、その効果を使えない。公式 Q&A で確かめた例: ベンチに
  * ポケモンがいないときポケモンいれかえは使えない、ベンチが 5 匹のときなかよしポフィンは使えない、山札が 0 枚の
@@ -161,22 +170,29 @@ function alwaysHasTarget(): boolean {
 const firstStepTargetChecks: {
   readonly [Name in EffectStep["operation"]]: TargetCheck<Name>;
 } = {
+  addCardsDiscardedFromDeckTopInThisEffectToHand: alwaysHasTarget,
   addFromDiscardToHand: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
-  attachEnergyFromDiscardDistributedToPokemon: (step, { state }) =>
-    listMatching(state.discard, step.energyFilter).some(isEnergy) &&
-    listOwnPokemonMatching(state, step.targetFilter).length > 0,
-  attachEnergyFromDiscardToEachChosenPokemon: (step, { state }) =>
-    listMatching(state.discard, step.energyFilter).some(isEnergy) &&
-    listOwnPokemonMatching(state, step.targetFilter).length > 0,
+  attachEnergyFromDiscardDistributedToPokemon: discardHasEnergyForOwnPokemon,
+  attachEnergyFromDiscardToEachChosenPokemon: discardHasEnergyForOwnPokemon,
+  attachEnergyFromDiscardToOnePokemon: discardHasEnergyForOwnPokemon,
   attachEnergyFromHand: (step, { hand, state }) =>
+    listMatching(hand, step.energyFilter).some(isEnergy) &&
+    listOwnPokemonMatching(state, step.targetFilter).length > 0,
+  attachEnergyFromHandDistributedToPokemon: (step, { hand, state }) =>
     listMatching(hand, step.energyFilter).some(isEnergy) &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
   attachEnergyFromHandToSelf: (step, { hand, source }) =>
     listMatching(hand, step.energyFilter).some(isEnergy) &&
     source.pokemon !== null,
+  branchOnCoinFlip: (step, input) => {
+    // コインを投げる前に、オモテのときの最初の操作に対象があるかで決める(対象が無ければ効果を使えない決まりと同じ)
+    const [first] = step.stepsWhenHeads;
+    return first !== undefined && hasTargetForStep(first, input);
+  },
   branchOnCondition: alwaysHasTarget,
+  discardFromDeckTop: deckHasCards,
   discardFromHand: (step, { hand }) =>
     listMatchingOrAll(hand, step.filter).length >= Math.max(step.minCount, 1),
   // 手札が 0 枚でも使える(公式 Q&A「ゼイユ」: 手札がゼイユだけのときも使える、2026-09-24 確認)
@@ -207,9 +223,11 @@ const firstStepTargetChecks: {
     listPokemonWithEnergyMatching(state, step.energyFilter).length > 0,
   placeFromDiscardOntoBench: (step, { state }) =>
     countEmptyBenchSlots(state) > 0 &&
-    listMatching(state.discard, step.filter).some(isBasicPokemon),
+    listMatching(state.discard, step.filter).some(isPokemon),
   placeHandCardsOnDeckTop: (step, { hand }) => hand.length >= step.count,
   placeSelfOnBenchFromHand: (_, { state }) => countEmptyBenchSlots(state) > 0,
+  replaceSelfWithPokemonFromDeck: (_, { source, state }) =>
+    state.deck.length > 0 && source.pokemon !== null,
   returnFromDiscardToDeck: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
@@ -225,9 +243,12 @@ const firstStepTargetChecks: {
   searchDeckAndAttachEnergyToOnePokemon: (step, { state }) =>
     state.deck.length > 0 &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
+  searchDeckAndAttachEnergyToSelf: (_, { source, state }) =>
+    state.deck.length > 0 && source.pokemon !== null,
   searchDeckAndPlaceOnTopAfterShuffle: deckHasCards,
   searchDeckIntoHand: deckHasCards,
   searchDeckIntoHandAndAttachRest: deckHasCards,
+  searchDeckIntoHandFromOneOfPicks: deckHasCards,
   searchDeckOntoBench: (_, { state }) =>
     state.deck.length > 0 && countEmptyBenchSlots(state) > 0,
   shuffleHandIntoDeck: alwaysHasTarget,
@@ -299,6 +320,8 @@ interface OperationRun {
    * 入れ替えでベンチに下がったポケモン(ヒガナの信頼の「ベンチに入れ替えたポケモン」)。
    */
   readonly progress: {
+    /** 山札の上からトラッシュしたカード(モルペコの「その中から」)。 */
+    cardsDiscardedFromDeckTop: Card[];
     discardedCount: number;
     switchedOutPokemon: PokemonInPlay | null;
   };
@@ -380,7 +403,11 @@ function returnToZone(
   promoteIfActiveIsEmpty(context);
 }
 
-/** 山札かトラッシュのたねポケモンを、ベンチの空きの範囲でベンチに出す。どちらも条件の付いた選び方なので 0 枚でもよい。 */
+/**
+ * 山札かトラッシュの条件に合うポケモンを、ベンチの空きの範囲でベンチに出す。どちらも条件の付いた選び方なので 0 枚でもよい。
+ * 進化段階は記録の条件で決める。効果が進化段階を指定しなければ進化ポケモンも出せる(公式 Q&A「おうのごうれい」
+ * 「さいきのいのり」、検索語「トラッシュから進化ポケモンをベンチ」、2026-09-25 確認)。
+ */
 function placeOntoBenchFrom(
   run: OperationRun,
   zone: Extract<CardSource, "deck" | "discard">,
@@ -388,7 +415,7 @@ function placeOntoBenchFrom(
 ): void {
   const { state } = run.context;
   const cards = zone === "deck" ? state.deck : state.discard;
-  const candidates = listMatching(cards, step.filter).filter(isBasicPokemon);
+  const candidates = listMatching(cards, step.filter).filter(isPokemon);
   const chosen = chooseCardsWithin(
     run.context,
     candidates,
@@ -396,11 +423,12 @@ function placeOntoBenchFrom(
       maxCount: Math.min(step.maxCount, countEmptyBenchSlots(state)),
       minCount: 0,
     },
-    `${run.label}: ベンチに出すたねポケモン`
+    `${run.label}: ベンチに出すポケモン`
   );
   for (const card of chosen) {
     state.placeOnBench(card, {
       benchLimit: calculateBenchLimit(state),
+      byEffect: true,
       from: zone,
     });
   }
@@ -437,18 +465,23 @@ function attachEnergyChosenFromHand(
   }
 }
 
+/** 山札かトラッシュのエネルギーを、条件に合う自分のポケモンにつける操作の引数。 */
+interface EnergyForOwnPokemonStep {
+  readonly energyFilter: CardFilter;
+  readonly maxCount: number;
+  readonly targetFilter: PokemonInPlayFilter;
+}
+
+type EnergySourceZone = Extract<CardSource, "deck" | "discard">;
+
 /**
  * 山札かトラッシュから、条件に合うエネルギーを 0〜maxCount 枚選ぶ。つける先の候補(条件に合う自分のポケモン)が
  * いなければ選ばない。
  */
 function chooseEnergiesForOwnPokemon(
   run: OperationRun,
-  step: {
-    readonly energyFilter: CardFilter;
-    readonly maxCount: number;
-    readonly targetFilter: PokemonInPlayFilter;
-  },
-  zone: Extract<CardSource, "deck" | "discard">
+  step: EnergyForOwnPokemonStep,
+  zone: EnergySourceZone
 ): { chosen: readonly Card[]; targets: PokemonInPlay[] } {
   const { state } = run.context;
   const targets = listOwnPokemonMatching(state, step.targetFilter);
@@ -467,31 +500,31 @@ function chooseEnergiesForOwnPokemon(
 
 const ZONE_NAMES = { deck: "山札", discard: "トラッシュ" } as const;
 
-/** 山札からエネルギーを 0〜maxCount 枚選び、1 匹にまとめてつけて切る(公式 Q&A「バーニングチャージ」: 1 枚も選ばなくてよい)。 */
-function searchDeckAndAttachToOnePokemon(
+/**
+ * 山札かトラッシュからエネルギーを 0〜maxCount 枚選び、1 匹にまとめてつける(公式 Q&A「バーニングチャージ」:
+ * 1 枚も選ばなくてよい)。山札から選んだときは、呼び出し側が山札を切る。
+ */
+function attachEnergyToOnePokemon(
   run: OperationRun,
-  step: Extract<
-    BasicOperation,
-    { operation: "searchDeckAndAttachEnergyToOnePokemon" }
-  >
+  step: EnergyForOwnPokemonStep,
+  zone: EnergySourceZone
 ): void {
   const { context, label } = run;
   const { state } = context;
-  const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, "deck");
+  const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, zone);
   const target =
     chosen.length === 0
       ? null
       : chooseOnePokemon(
           context,
           targets,
-          `${label}: 山札のエネルギーをつけるポケモン`
+          `${label}: ${ZONE_NAMES[zone]}のエネルギーをつけるポケモン`
         );
   if (target !== null) {
     for (const energy of chosen) {
-      state.attachEnergyByEffect(energy, target, "deck");
+      state.attachEnergyByEffect(energy, target, zone);
     }
   }
-  state.shuffleDeck();
 }
 
 /** 山札の上から見て、条件に合うエネルギーを効果の持ち主につけ、残りを山札に戻す。山札が見る枚数に満たなければある分だけ見る。 */
@@ -618,12 +651,8 @@ function attachFromDiscardToEachChosenPokemon(
 /** トラッシュのエネルギーを 0〜maxCount 枚選び、1 枚ずつつける先のポケモンを選ぶ(同じポケモンに何枚つけてもよい)。 */
 function attachEnergyDistributed(
   run: OperationRun,
-  step: {
-    readonly energyFilter: CardFilter;
-    readonly maxCount: number;
-    readonly targetFilter: PokemonInPlayFilter;
-  },
-  zone: Extract<CardSource, "deck" | "discard">
+  step: EnergyForOwnPokemonStep,
+  zone: EnergySourceZone
 ): void {
   const { context, label } = run;
   const { state } = context;
@@ -660,6 +689,83 @@ function attachEnergyFromHandToHolder(
     context.state.attachEnergyByEffect(energy, holder, "hand");
     resolveAttachedFromHandTriggers(context, energy, holder);
   }
+}
+
+/** 手札からエネルギーを 0 枚以上選び、1 枚ずつつける先のポケモンを選ぶ(同じポケモンに何枚つけてもよい)。 */
+function attachEnergyFromHandDistributed(
+  run: OperationRun,
+  step: Extract<
+    BasicOperation,
+    { operation: "attachEnergyFromHandDistributedToPokemon" }
+  >
+): void {
+  const { context, label } = run;
+  const { state } = context;
+  const energies = listMatching(state.hand, step.energyFilter).filter(isEnergy);
+  const chosen = chooseCardsWithin(
+    context,
+    energies,
+    { maxCount: energies.length, minCount: 0 },
+    `${label}: 手札からつけるエネルギー`
+  );
+  const targets = listOwnPokemonMatching(state, step.targetFilter);
+  for (const energy of chosen) {
+    const target = chooseOnePokemon(
+      context,
+      targets,
+      `${label}: ${energy.name} をつけるポケモン`
+    );
+    if (target !== null) {
+      state.attachEnergyByEffect(energy, target, "hand");
+      resolveAttachedFromHandTriggers(context, energy, target);
+    }
+  }
+}
+
+/** コインを 1 回投げる。オモテとウラは 1/2 ずつとする(docs/setup-rate-design.md「順 4 から送られた論点の決定」の 1)。 */
+function flipsHeads(state: GameState): boolean {
+  return state.random.nextFloat() < 0.5;
+}
+
+/** つけるエネルギーの上限。コインで決まるときは、ここでウラが出るまで投げる(オモテとウラは 1/2 ずつ)。 */
+function calculateAttachCount(
+  count: AttachCount,
+  { context, label }: OperationRun
+): number {
+  if (count.kind === "fixed") {
+    return count.value;
+  }
+  let heads = 0;
+  while (flipsHeads(context.state)) {
+    heads += 1;
+  }
+  context.state.record(`${label}: コインのオモテ ${heads} 回`);
+  return heads;
+}
+
+/** 山札からエネルギーを 0〜上限枚選び、効果の持ち主につけて切る。 */
+function searchDeckAndAttachToHolder(
+  run: OperationRun,
+  step: Extract<
+    BasicOperation,
+    { operation: "searchDeckAndAttachEnergyToSelf" }
+  >
+): void {
+  const { context, label, source } = run;
+  const { state } = context;
+  const holder = source.pokemon;
+  const maxCount = calculateAttachCount(step.maxCount, run);
+  if (holder !== null && maxCount > 0) {
+    for (const energy of chooseCardsWithin(
+      context,
+      listMatching(state.deck, step.energyFilter).filter(isEnergy),
+      { maxCount, minCount: 0 },
+      `${label}: 山札から ${holder.name} につけるエネルギー`
+    )) {
+      state.attachEnergyByEffect(energy, holder, "deck");
+    }
+  }
+  state.shuffleDeck();
 }
 
 /** つけ替える元のポケモンを 0 匹以上選び、それぞれからエネルギーを 0 枚以上選んで、効果の持ち主につけ替える。 */
@@ -806,6 +912,42 @@ function searchIntoHandAndAttachRest(
   state.shuffleDeck();
 }
 
+/**
+ * 山札から、picks のうち 1 つの条件に合うカードを上限まで手札に加えて切る。1 枚目を全部の条件の候補から選ばせ、
+ * それが合う最初の条件で残りを選ぶ(どの条件にするかを、選ぶカードで決める)。条件の付いた選び方なので 0 枚でもよい。
+ */
+function searchDeckIntoHandFromOneOfPicks(
+  run: OperationRun,
+  picks: readonly { readonly filter: CardFilter; readonly maxCount: number }[]
+): void {
+  const { context, label } = run;
+  const { state } = context;
+  const [first] = chooseCardsWithin(
+    context,
+    state.deck.filter((card) =>
+      picks.some((candidate) => matchesCardFilter(card, candidate.filter))
+    ),
+    { maxCount: 1, minCount: 0 },
+    `${label}: 山札から手札に加える 1 枚目のカード`
+  );
+  const pick =
+    first === undefined
+      ? undefined
+      : picks.find((candidate) => matchesCardFilter(first, candidate.filter));
+  if (first !== undefined && pick !== undefined) {
+    state.takeFromDeckToHand(first);
+    for (const card of chooseCardsWithin(
+      context,
+      listMatching(state.deck, pick.filter),
+      { maxCount: pick.maxCount - 1, minCount: 0 },
+      `${label}: 山札から続けて手札に加えるカード`
+    )) {
+      state.takeFromDeckToHand(card);
+    }
+  }
+  state.shuffleDeck();
+}
+
 function evolveWithRareCandy(run: OperationRun): void {
   const { context, label } = run;
   const pairs = listRareCandyPairs(context.state);
@@ -836,6 +978,23 @@ function evolveWithRareCandy(run: OperationRun): void {
 const operationRunners: {
   readonly [Name in BasicOperation["operation"]]: OperationRunner<Name>;
 } = {
+  addCardsDiscardedFromDeckTopInThisEffectToHand: (
+    step,
+    { context, label, progress }
+  ) => {
+    const { state } = context;
+    const available = progress.cardsDiscardedFromDeckTop.filter((card) =>
+      state.discard.includes(card)
+    );
+    for (const card of chooseCardsWithin(
+      context,
+      available,
+      step,
+      `${label}: 山札の上からトラッシュしたカードから手札に加えるカード`
+    )) {
+      state.takeFromDiscardToHand(card);
+    }
+  },
   addFromDiscardToHand: (step, { context, label }) => {
     const chosen = chooseCardsWithin(
       context,
@@ -851,9 +1010,18 @@ const operationRunners: {
     attachEnergyDistributed(run, step, "discard"),
   attachEnergyFromDiscardToEachChosenPokemon: (step, run) =>
     attachFromDiscardToEachChosenPokemon(run, step),
+  attachEnergyFromDiscardToOnePokemon: (step, run) =>
+    attachEnergyToOnePokemon(run, step, "discard"),
   attachEnergyFromHand: (step, run) => attachEnergyChosenFromHand(run, step),
+  attachEnergyFromHandDistributedToPokemon: (step, run) =>
+    attachEnergyFromHandDistributed(run, step),
   attachEnergyFromHandToSelf: (step, run) =>
     attachEnergyFromHandToHolder(run, step),
+  discardFromDeckTop: (step, { context, progress }) => {
+    progress.cardsDiscardedFromDeckTop.push(
+      ...context.state.discardFromDeckTop(step.count)
+    );
+  },
   discardFromHand: (step, { context, label, progress }) => {
     const chosen = chooseCardsWithin(
       context,
@@ -963,6 +1131,23 @@ const operationRunners: {
       from: "hand",
     });
   },
+  replaceSelfWithPokemonFromDeck: (step, { context, label, source }) => {
+    const { state } = context;
+    const holder = source.pokemon;
+    const [card] =
+      holder === null
+        ? []
+        : chooseCardsWithin(
+            context,
+            listMatching(state.deck, step.filter).filter(isPokemon),
+            { maxCount: 1, minCount: 0 },
+            `${label}: ${holder.name} と入れ替える山札のポケモン`
+          );
+    if (holder !== null && card !== undefined) {
+      state.replacePokemonWithDeckCard(holder, card);
+    }
+    state.shuffleDeck();
+  },
   returnFromDiscardToDeck: (step, { context, label }) => {
     const chosen = chooseCardsWithin(
       context,
@@ -1005,8 +1190,12 @@ const operationRunners: {
     }
     state.shuffleDeck();
   },
-  searchDeckAndAttachEnergyToOnePokemon: (step, run) =>
-    searchDeckAndAttachToOnePokemon(run, step),
+  searchDeckAndAttachEnergyToOnePokemon: (step, run) => {
+    attachEnergyToOnePokemon(run, step, "deck");
+    run.context.state.shuffleDeck();
+  },
+  searchDeckAndAttachEnergyToSelf: (step, run) =>
+    searchDeckAndAttachToHolder(run, step),
   searchDeckAndPlaceOnTopAfterShuffle: (step, run) =>
     searchDeckAndPlaceOnTop(run, step.count),
   searchDeckIntoHand: (step, { context, label }) => {
@@ -1030,6 +1219,8 @@ const operationRunners: {
   },
   searchDeckIntoHandAndAttachRest: (step, run) =>
     searchIntoHandAndAttachRest(run, step),
+  searchDeckIntoHandFromOneOfPicks: (step, run) =>
+    searchDeckIntoHandFromOneOfPicks(run, step.picks),
   searchDeckOntoBench: (step, run) => {
     placeOntoBenchFrom(run, "deck", step);
     run.context.state.shuffleDeck();
@@ -1065,6 +1256,24 @@ function runOperation<Name extends BasicOperation["operation"]>(
   runner(step, run);
 }
 
+/** 操作の列の 1 歩を、実行する基本操作の並びにする。条件やコインで分かれる歩は、ここで条件を判定し、コインを投げる。 */
+function resolveBranch(step: EffectStep, run: OperationRun): BasicOperation[] {
+  const { context, label, source } = run;
+  switch (step.operation) {
+    case "branchOnCondition":
+      return areConditionsMet(context.state, [step.condition], source)
+        ? step.stepsWhenMet
+        : step.stepsOtherwise;
+    case "branchOnCoinFlip": {
+      const isHeads = flipsHeads(context.state);
+      context.state.record(`${label}: コインは${isHeads ? "オモテ" : "ウラ"}`);
+      return isHeads ? step.stepsWhenHeads : [];
+    }
+    default:
+      return [step];
+  }
+}
+
 /** 効果を実行する。「のぞむなら」の効果は、起こすかを問い合わせてから実行する。 */
 export function runEffect(
   context: EffectContext,
@@ -1081,19 +1290,16 @@ export function runEffect(
   const run: OperationRun = {
     context,
     label,
-    progress: { discardedCount: 0, switchedOutPokemon: null },
+    progress: {
+      cardsDiscardedFromDeckTop: [],
+      discardedCount: 0,
+      switchedOutPokemon: null,
+    },
     source,
   };
   for (const step of effect.steps) {
-    if (step.operation === "branchOnCondition") {
-      const branch = areConditionsMet(context.state, [step.condition], source)
-        ? step.stepsWhenMet
-        : step.stepsOtherwise;
-      for (const inner of branch) {
-        runOperation(inner, run);
-      }
-    } else {
-      runOperation(step, run);
+    for (const inner of resolveBranch(step, run)) {
+      runOperation(inner, run);
     }
   }
 }

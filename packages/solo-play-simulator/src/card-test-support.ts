@@ -11,7 +11,12 @@ import type {
   EffectContext,
 } from "./effect-choices.ts";
 import { firstCandidateChoices, neverShuffled } from "./sample-cards.ts";
-import { GameState, IllegalMove, PokemonInPlay } from "./state.ts";
+import {
+  GameState,
+  IllegalMove,
+  PokemonInPlay,
+  type RandomSource,
+} from "./state.ts";
 
 /** カード ID から、記録の表にあるカードを作る。 */
 export function buildRecordedCard(cardId: string): Card {
@@ -28,6 +33,8 @@ export interface FieldSetup {
   readonly deck?: readonly Card[];
   readonly discard?: readonly Card[];
   readonly hand?: readonly Card[];
+  /** 乱数。既定は常に 0 を返す(山札を切っても並びが変わらず、コインは常にオモテ)。 */
+  readonly random?: RandomSource;
   /** 何番目の自分の番か。既定は 2(進化とサポートの制限が外れる番)。 */
   readonly turn?: number;
   readonly wentFirst?: boolean;
@@ -36,7 +43,7 @@ export interface FieldSetup {
 /** 場を組む。場のポケモンは番 0 に出したものとして置く(この番に進化できる)。 */
 export function buildState(setup: FieldSetup): GameState {
   const state = new GameState(
-    neverShuffled,
+    setup.random ?? neverShuffled,
     setup.deck ?? [],
     setup.wentFirst ?? false
   );

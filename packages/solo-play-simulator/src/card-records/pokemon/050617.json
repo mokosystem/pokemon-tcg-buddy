@@ -1,0 +1,64 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "みちびきのまい",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "branchOnCoinFlip",
+              "stepsWhenHeads": [
+                {
+                  "operation": "searchDeckIntoHand",
+                  "picks": [
+                    {
+                      "filter": {
+                        "categories": ["ポケモン"]
+                      },
+                      "maxCount": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["grass", "colorless"],
+      "damage": {
+        "amount": 60,
+        "kind": "fixed"
+      },
+      "name": "どくのこな"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "コフキムシ",
+  "cardIds": ["050617"],
+  "category": "ポケモン",
+  "evolvesFrom": "コフーライ",
+  "excludedEffects": [
+    {
+      "description": "ワザ「どくのこな」の、相手のバトルポケモンをどくにする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "ビビヨン",
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

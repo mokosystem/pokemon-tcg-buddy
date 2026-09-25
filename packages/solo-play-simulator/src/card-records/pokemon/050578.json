@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "オーロラゲイン"
+    },
+    {
+      "cost": ["psychic", "colorless", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "ルナブラスト"
+    }
+  ],
+  "cardIds": ["050578"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「オーロラゲイン」の、このポケモンの HP を 30 回復する効果",
+      "reason": "healing"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "クレセリア",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

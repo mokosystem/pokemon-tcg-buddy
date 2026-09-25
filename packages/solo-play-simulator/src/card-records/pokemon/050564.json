@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["grass", "colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "まきかえす"
+    },
+    {
+      "cost": ["grass", "colorless", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "カッターウインド"
+    }
+  ],
+  "cardIds": ["050564"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「まきかえす」の、前の相手の番にワザのダメージで自分のポケモンがきぜつしていれば 90 を足す上乗せ。相手の側で決まるため持たず、ダメージは上乗せを除いた 30 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "トロピウス",
+  "pokemonType": "grass",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

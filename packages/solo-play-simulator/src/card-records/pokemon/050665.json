@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "マッハボルト"
+    },
+    {
+      "cost": ["electric", "electric", "colorless"],
+      "damage": {
+        "amount": 140,
+        "kind": "fixed"
+      },
+      "name": "イナズマドライブ"
+    }
+  ],
+  "cardIds": ["050665"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「イナズマドライブ」は、相手のバトルポケモンに 140 ダメージを与えたあと、自身の雷エネルギーを 2 個トラッシュする。140 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "ミライドン",
+  "pokemonType": "electric",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

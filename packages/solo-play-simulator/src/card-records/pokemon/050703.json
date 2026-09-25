@@ -1,0 +1,29 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "fighting", "colorless"],
+      "damage": {
+        "amount": 250,
+        "kind": "fixed"
+      },
+      "name": "ブレイジングアッパー"
+    }
+  ],
+  "basicPokemonOfEvolutionLine": "ジャラコ",
+  "cardIds": ["050703"],
+  "category": "ポケモン",
+  "evolvesFrom": "ジャランゴ",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 180,
+  "isTerastal": false,
+  "name": "ジャラランガ",
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "2進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

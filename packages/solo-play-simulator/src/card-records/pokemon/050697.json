@@ -1,0 +1,48 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["steel"],
+      "damage": {
+        "amount": 20,
+        "bonus": {
+          "add": 40,
+          "atLeast": 1,
+          "kind": "whenCountAtLeast",
+          "target": {
+            "count": "toolAttachedToAttackingPokemon"
+          }
+        },
+        "kind": "fixed"
+      },
+      "name": "ハードブレード"
+    },
+    {
+      "cost": ["steel", "steel", "colorless"],
+      "damage": {
+        "amount": 120,
+        "kind": "fixed"
+      },
+      "name": "スラッシュダウン"
+    }
+  ],
+  "cardIds": ["050697"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「スラッシュダウン」を使った次の自分の番に、このポケモンが「スラッシュダウン」を使えなくなる制限",
+      "reason": "ownNextTurnRestriction"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ザシアン",
+  "pokemonType": "steel",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

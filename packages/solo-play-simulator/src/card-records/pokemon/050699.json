@@ -1,0 +1,44 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["steel"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "セレブレイト"
+    },
+    {
+      "cost": ["steel"],
+      "damage": {
+        "amount": 0,
+        "kind": "fixed"
+      },
+      "name": "トリプルスマッシュ"
+    }
+  ],
+  "cardIds": ["050699"],
+  "category": "ポケモン",
+  "evolvesFrom": "コレクレー",
+  "excludedEffects": [
+    {
+      "description": "ワザ「セレブレイト」(手札が 30 枚ならサイドを 2 枚とり、その後手札をすべて山札に戻して切る)。主軸を立てる成立率には関わらず、一人回しでは使う理由が無い",
+      "reason": "noReasonToUseInSoloPlay"
+    },
+    {
+      "description": "ワザ「トリプルスマッシュ」のダメージは、コインを 3 回投げたオモテの数 × 50 で決まる。コインで決まるため持たず、ダメージは 0 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "サーフゴー",
+  "pokemonType": "steel",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

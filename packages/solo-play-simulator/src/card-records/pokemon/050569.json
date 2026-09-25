@@ -1,0 +1,48 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "filter": {
+              "categories": ["ポケモン"],
+              "stages": ["たね"]
+            },
+            "maxCount": 2,
+            "operation": "searchDeckOntoBench"
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "なかまをよぶ"
+    },
+    {
+      "cost": ["fire", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "Vフレイム"
+    }
+  ],
+  "cardIds": ["050569", "050591"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "ビクティニ",
+  "pokemonType": "fire",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

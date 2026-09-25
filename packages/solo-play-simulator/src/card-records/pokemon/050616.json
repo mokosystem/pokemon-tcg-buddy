@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ばつぐんフェロモン"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["grass", "colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "ぶつかる"
+    }
+  ],
+  "cardIds": ["050616"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「ばつぐんフェロモン」(場に「バルビート」がいれば、おたがいのバトルポケモンの弱点を ×3 で計算する)。弱点の計算は相手のワザやダメージが前提",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 80,
+  "isTerastal": false,
+  "name": "イルミーゼ",
+  "pokemonType": "grass",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

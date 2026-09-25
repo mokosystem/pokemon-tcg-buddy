@@ -1,0 +1,36 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "amount": 20,
+        "kind": "fixed"
+      },
+      "name": "するどいキバ"
+    },
+    {
+      "cost": ["electric", "fighting"],
+      "damage": {
+        "amount": 70,
+        "kind": "fixed"
+      },
+      "name": "ドラゴンクロー"
+    }
+  ],
+  "cardIds": ["050702"],
+  "category": "ポケモン",
+  "evolvesFrom": "ジャラコ",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 90,
+  "isTerastal": false,
+  "name": "ジャランゴ",
+  "pokemonType": "dragon",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

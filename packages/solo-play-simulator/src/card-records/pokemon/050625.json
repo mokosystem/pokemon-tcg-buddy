@@ -1,0 +1,35 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 60,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "energyAttachedToAttackingPokemon",
+            "energyTypes": ["water"]
+          },
+          "unit": 30
+        },
+        "kind": "fixed"
+      },
+      "name": "ハイドロポンプ"
+    }
+  ],
+  "cardIds": ["050625"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 140,
+  "isTerastal": false,
+  "name": "カイオーガ",
+  "pokemonType": "water",
+  "retreatCost": 4,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

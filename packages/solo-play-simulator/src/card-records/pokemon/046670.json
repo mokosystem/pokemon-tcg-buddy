@@ -13,7 +13,8 @@
         "bonus": {
           "kind": "perCount",
           "target": {
-            "count": "ownBenchedPokemon"
+            "count": "ownPokemonInPlay",
+            "filter": { "positions": ["bench"] }
           },
           "unit": 20
         },

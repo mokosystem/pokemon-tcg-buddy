@@ -1,0 +1,33 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "psychic", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "のしかかり"
+    }
+  ],
+  "cardIds": ["050576"],
+  "category": "ポケモン",
+  "evolvesFrom": "マリル",
+  "excludedEffects": [
+    {
+      "description": "ワザ「のしかかり」の、コインでオモテなら相手のバトルポケモンをマヒにする効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "マリルリ",
+  "pokemonType": "psychic",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

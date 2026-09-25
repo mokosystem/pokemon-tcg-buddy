@@ -1,0 +1,16 @@
+{
+  "$schema": "../card-record.schema.json",
+  "cardEffects": [],
+  "cardIds": ["050595"],
+  "category": "グッズ",
+  "excludedEffects": [
+    {
+      "description": "自分のポケモン 1 匹の HP を 30 回復する。相手がいないためダメージを受けず、回復は成立率に影響しない",
+      "reason": "healing"
+    }
+  ],
+  "name": "きずぐすり",
+  "rulings": [],
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

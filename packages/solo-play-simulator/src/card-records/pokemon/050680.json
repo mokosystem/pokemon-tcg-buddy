@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fighting", "fighting", "fighting", "fighting", "fighting"],
+      "damage": {
+        "amount": 250,
+        "kind": "fixed"
+      },
+      "name": "グラウンドブレイク"
+    }
+  ],
+  "cardIds": ["050680"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「グラウンドブレイク」の、自分のベンチポケモン全員にもそれぞれ 20 ダメージを与える効果",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 140,
+  "isTerastal": false,
+  "name": "グラードン",
+  "pokemonType": "fighting",
+  "retreatCost": 4,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

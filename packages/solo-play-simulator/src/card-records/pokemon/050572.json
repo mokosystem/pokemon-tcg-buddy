@@ -1,0 +1,28 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["electric", "colorless"],
+      "damage": {
+        "amount": 80,
+        "kind": "fixed"
+      },
+      "name": "マッハボルト"
+    }
+  ],
+  "cardIds": ["050572"],
+  "category": "ポケモン",
+  "evolvesFrom": "エレズン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ストリンダー",
+  "pokemonType": "electric",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

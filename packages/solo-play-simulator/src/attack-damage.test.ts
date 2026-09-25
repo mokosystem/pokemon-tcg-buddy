@@ -37,6 +37,21 @@ const MEGA_EXCADRILL = buildRecordedCard("050321");
 const STEEL_ENERGY = buildRecordedCard("030578");
 const TAPU_KOKO_EX = buildRecordedCard("046500");
 const PASSIMIAN = buildRecordedCard("049123");
+const ESPEON_EX = buildRecordedCard("050577");
+const PIKACHU_CHAIN = buildRecordedCard("050640");
+const PIKACHU_EX = buildRecordedCard("050659");
+const KYOGRE = buildRecordedCard("050625");
+const RESHIRAM = buildRecordedCard("050620");
+const ZEKROM = buildRecordedCard("050662");
+const WATER_ENERGY = buildRecordedCard("050479");
+const LIGHTNING_ENERGY = buildRecordedCard("050480");
+const PRISM_ENERGY = buildRecordedCard("049455");
+const SYLVEON_EX = buildRecordedCard("050671");
+const LUNALA = buildRecordedCard("050678");
+const ZACIAN = buildRecordedCard("050697");
+const IGGLYBUFF = buildRecordedCard("050708");
+const BALLOON = buildRecordedCard("050464");
+const BOSS = buildRecordedCard("050467");
 
 describe("ワザのダメージ", () => {
   test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
@@ -78,6 +93,115 @@ describe("ワザのダメージ", () => {
     expect(
       calculateAttackDamage(withIgnition, activeOf(withIgnition), attack)
     ).toBe(330);
+  });
+
+  test("サンシャインビートは、自分の場のポケモンの数(自身を含む)×30", () => {
+    const state = buildState({ active: ESPEON_EX, bench: [RALTS, GARDEVOIR] });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(ESPEON_EX, "サンシャインビート")
+      )
+    ).toBe(3 * 30);
+  });
+
+  test("ピカれんさは、自分の場のピカチュウとピカチュウex の数×40(公式 Q&A)", () => {
+    const state = buildState({
+      active: PIKACHU_CHAIN,
+      bench: [PIKACHU_EX, RALTS, PIKACHU_CHAIN],
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(PIKACHU_CHAIN, "ピカれんさ")
+      )
+    ).toBe(3 * 40);
+  });
+
+  test("ハイドロポンプは 60 に、このポケモンの水エネルギーの数×30 を足す(すべてのタイプとして働くものも数える)", () => {
+    const state = buildState({ active: KYOGRE, bench: [RALTS] });
+    state.active?.energies.push(WATER_ENERGY, FIRE_ENERGY, LEGACY_ENERGY);
+    state.bench[0]?.energies.push(WATER_ENERGY);
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(KYOGRE, "ハイドロポンプ")
+      )
+    ).toBe(60 + 2 * 30);
+  });
+
+  test("レーザーフレイムは雷エネルギー、ニトロサンダーは炎エネルギーがついていれば 80 を足す(プリズムエネルギーも数える。公式 Q&A)", () => {
+    const reshiram = buildState({ active: RESHIRAM });
+    const laserFlare = findAttack(RESHIRAM, "レーザーフレイム");
+    reshiram.active?.energies.push(FIRE_ENERGY, FIRE_ENERGY);
+    expect(
+      calculateAttackDamage(reshiram, activeOf(reshiram), laserFlare)
+    ).toBe(80);
+    reshiram.active?.energies.push(PRISM_ENERGY);
+    expect(
+      calculateAttackDamage(reshiram, activeOf(reshiram), laserFlare)
+    ).toBe(160);
+    const zekrom = buildState({ active: ZEKROM });
+    zekrom.active?.energies.push(LIGHTNING_ENERGY, FIRE_ENERGY);
+    expect(
+      calculateAttackDamage(
+        zekrom,
+        activeOf(zekrom),
+        findAttack(ZEKROM, "ニトロサンダー")
+      )
+    ).toBe(160);
+  });
+
+  test("カラフルハーモニーは、自分のポケモン全員の基本エネルギーのタイプの種類の数×50(特殊エネルギーは数えない)", () => {
+    const state = buildState({ active: SYLVEON_EX, bench: [RALTS] });
+    state.active?.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY, PRISM_ENERGY);
+    state.bench[0]?.energies.push(FIRE_ENERGY, WATER_ENERGY);
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(SYLVEON_EX, "カラフルハーモニー")
+      )
+    ).toBe(3 * 50);
+  });
+
+  test("ミッドナイトレイは 20 に、トラッシュのエネルギーの枚数×20 を足す", () => {
+    const state = buildState({
+      active: LUNALA,
+      discard: [PSYCHIC_ENERGY, BOSS, PRISM_ENERGY, RALTS],
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(LUNALA, "ミッドナイトレイ")
+      )
+    ).toBe(20 + 2 * 20);
+  });
+
+  test("ハードブレードは、このポケモンにどうぐがついていれば 40 を足す", () => {
+    const state = buildState({ active: ZACIAN });
+    const attack = findAttack(ZACIAN, "ハードブレード");
+    expect(calculateAttackDamage(state, activeOf(state), attack)).toBe(20);
+    activeOf(state).tool = BALLOON;
+    expect(calculateAttackDamage(state, activeOf(state), attack)).toBe(60);
+  });
+
+  test("ぷにぷにサークルは、最大 HP が 30 のベンチポケモンの数×30(バトル場のププリンは数えない)", () => {
+    const state = buildState({
+      active: IGGLYBUFF,
+      bench: [IGGLYBUFF, IGGLYBUFF, RALTS],
+    });
+    expect(
+      calculateAttackDamage(
+        state,
+        activeOf(state),
+        findAttack(IGGLYBUFF, "ぷにぷにサークル")
+      )
+    ).toBe(2 * 30);
   });
 
   test("ユニオンビートは、自分のベンチポケモンの数×30", () => {

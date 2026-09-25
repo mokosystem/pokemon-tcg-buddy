@@ -1,0 +1,51 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "searchDeckIntoHand",
+            "picks": [
+              {
+                "filter": {
+                  "categories": ["スタジアム"]
+                },
+                "maxCount": 2
+              }
+            ]
+          }
+        ],
+        "useConditions": []
+      },
+      "name": "ジオナビゲート"
+    },
+    {
+      "cost": ["psychic", "psychic", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "オーロラホーン"
+    }
+  ],
+  "cardIds": ["050675"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "ゼルネアス",
+  "pokemonType": "psychic",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

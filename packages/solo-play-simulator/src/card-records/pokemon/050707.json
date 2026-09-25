@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "グッドスリープ"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless", "colorless"],
+      "damage": {
+        "amount": 130,
+        "kind": "fixed"
+      },
+      "name": "たおれこむ"
+    }
+  ],
+  "cardIds": ["050707"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "特性「グッドスリープ」(ねむりのとき、ポケモンチェックでねむりから回復しなければ HP をすべて回復する)",
+      "reason": "healing"
+    },
+    {
+      "description": "ワザ「たおれこむ」の、このポケモンをねむりにする効果",
+      "reason": "specialCondition"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 160,
+  "isTerastal": false,
+  "name": "カビゴン",
+  "pokemonType": "colorless",
+  "retreatCost": 4,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

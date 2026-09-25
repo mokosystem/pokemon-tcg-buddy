@@ -1,0 +1,40 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "colorless"],
+      "damage": {
+        "kind": "none"
+      },
+      "name": "ミラクルシャイン"
+    },
+    {
+      "cost": ["psychic", "colorless", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "ちょうねんりき"
+    }
+  ],
+  "cardIds": ["050670"],
+  "category": "ポケモン",
+  "evolvesFrom": "イーブイ",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ミラクルシャイン」の、相手の進化しているポケモン全員を退化させ、はがしたカードを相手の手札に戻す効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 110,
+  "isTerastal": false,
+  "name": "エーフィ",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-09-25"
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["psychic", "psychic"],
+      "damage": {
+        "amount": 10,
+        "kind": "fixed"
+      },
+      "name": "サイコキネシス"
+    }
+  ],
+  "cardIds": ["050574", "050668"],
+  "category": "ポケモン",
+  "excludedEffects": [
+    {
+      "description": "ワザ「サイコキネシス」の、相手のバトルポケモンについているエネルギーの数 × 40 を足す上乗せ。相手の側で決まるため持たず、ダメージは上乗せを除いた 10 で求める",
+      "reason": "damageBonusNotModeled"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 60,
+  "isTerastal": false,
+  "name": "ミュウ",
+  "pokemonType": "psychic",
+  "retreatCost": 1,
+  "rulings": [],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

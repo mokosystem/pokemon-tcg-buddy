@@ -1,0 +1,64 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "よるのぬけみち",
+      "translation": {
+        "continuousEffect": {
+          "change": {
+            "amount": 2,
+            "change": "reduceRetreatCost"
+          },
+          "conditions": [
+            {
+              "condition": "selfIsOnBench"
+            }
+          ],
+          "scope": {
+            "filter": {
+              "positions": ["active"]
+            },
+            "scope": "ownPokemon"
+          }
+        },
+        "kind": "continuous"
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["dark", "dark", "colorless"],
+      "damage": {
+        "amount": 90,
+        "kind": "fixed"
+      },
+      "name": "スラッシュクロー"
+    }
+  ],
+  "cardIds": ["050583"],
+  "category": "ポケモン",
+  "evolvesFrom": "ゾロア",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "ゾロアーク",
+  "pokemonType": "dark",
+  "retreatCost": 1,
+  "rulings": [
+    {
+      "interpretation": "4 個減る。2 匹の特性がそれぞれ働く",
+      "question": "ベンチに「よるのぬけみち」のゾロアークが 2 匹いるとき、バトルポケモンのにげるエネルギーはいくつ減るか",
+      "reflectedIn": "場にある間ずっと働く効果は持ち主ごとに集め、reduceRetreatCost の量を足し合わせる(continuous-effects.ts の calculateRetreatCost)",
+      "source": {
+        "checkedOn": "2026-09-25",
+        "kind": "officialQa",
+        "questionSummary": "ベンチに「よるのぬけみち」のゾロアークが 2 匹いるとき、バトルポケモンのにげるためのエネルギーがいくつ少なくなるか、という質問に、4 個と回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%88%E3%82%8B%E3%81%AE%E3%81%AC%E3%81%91%E3%81%BF%E3%81%A1&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "1進化",
+  "translationStatus": "translated",
+  "verifiedOn": "2026-09-25"
+}

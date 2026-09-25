@@ -1,0 +1,45 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "トゲでさす"
+    },
+    {
+      "cost": ["steel", "steel"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "ドッカンニードル"
+    }
+  ],
+  "cardIds": ["050695"],
+  "category": "ポケモン",
+  "evolvesFrom": "テッシード",
+  "excludedEffects": [
+    {
+      "description": "ワザ「ドッカンニードル」の、相手のベンチポケモンにもそれぞれ 50 ダメージを与える効果",
+      "reason": "requiresOpponent"
+    },
+    {
+      "description": "ワザ「ドッカンニードル」の、このポケモンにも 130 ダメージを与える効果",
+      "reason": "damageOrDamageCounters"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "ナットレイ",
+  "pokemonType": "steel",
+  "retreatCost": 3,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

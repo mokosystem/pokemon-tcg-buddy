@@ -1,0 +1,37 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [
+    {
+      "name": "ハッピーシェア"
+    }
+  ],
+  "attacks": [
+    {
+      "cost": ["colorless", "colorless"],
+      "damage": {
+        "amount": 30,
+        "kind": "fixed"
+      },
+      "name": "かみつく"
+    }
+  ],
+  "cardIds": ["050686"],
+  "category": "ポケモン",
+  "evolvesFrom": "ニドラン♀",
+  "excludedEffects": [
+    {
+      "description": "特性「ハッピーシェア」(番に 1 回、自分のポケモン 1 匹の HP を 30 回復する)。相手がいないためダメージを受けず、回復は成立率に影響しない",
+      "reason": "healing"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 90,
+  "isTerastal": false,
+  "name": "ニドリーナ",
+  "pokemonType": "dark",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

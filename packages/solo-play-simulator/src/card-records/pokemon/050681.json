@@ -1,0 +1,33 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fighting", "fighting", "colorless"],
+      "damage": {
+        "amount": 100,
+        "kind": "fixed"
+      },
+      "name": "はどうだん"
+    }
+  ],
+  "cardIds": ["050681"],
+  "category": "ポケモン",
+  "evolvesFrom": "リオル",
+  "excludedEffects": [
+    {
+      "description": "ワザ「はどうだん」の、相手のベンチポケモン 1 匹にも 60 ダメージを与える効果",
+      "reason": "requiresOpponent"
+    }
+  ],
+  "hasRuleBox": false,
+  "hp": 120,
+  "isTerastal": false,
+  "name": "ルカリオ",
+  "pokemonType": "fighting",
+  "retreatCost": 2,
+  "rulings": [],
+  "stage": "1進化",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

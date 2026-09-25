@@ -1,0 +1,56 @@
+{
+  "$schema": "../card-record.schema.json",
+  "abilities": [],
+  "attacks": [
+    {
+      "cost": ["fire", "colorless"],
+      "damage": {
+        "amount": 50,
+        "kind": "fixed"
+      },
+      "name": "きりさく"
+    },
+    {
+      "cost": ["fire", "colorless", "colorless"],
+      "damage": {
+        "amount": 80,
+        "bonus": {
+          "add": 80,
+          "atLeast": 1,
+          "kind": "whenCountAtLeast",
+          "target": {
+            "count": "energyAttachedToAttackingPokemon",
+            "energyTypes": ["electric"]
+          }
+        },
+        "kind": "fixed"
+      },
+      "name": "レーザーフレイム"
+    }
+  ],
+  "cardIds": ["050620"],
+  "category": "ポケモン",
+  "excludedEffects": [],
+  "hasRuleBox": false,
+  "hp": 130,
+  "isTerastal": false,
+  "name": "レシラム",
+  "pokemonType": "fire",
+  "retreatCost": 2,
+  "rulings": [
+    {
+      "interpretation": "足せる。すべてのタイプとして働くエネルギーも雷エネルギーとして数える",
+      "question": "プリズムエネルギーがついているとき、雷エネルギーがついているとして 80 を足せるか",
+      "reflectedIn": "ワザのダメージの数える対象 energyAttachedToAttackingPokemon(energyTypes は electric)は、すべてのタイプとして働く 1 個も数える",
+      "source": {
+        "checkedOn": "2026-09-25",
+        "kind": "officialQa",
+        "questionSummary": "プリズムエネルギーがついているレシラムがレーザーフレイムを使うと 80 を足せるか、という質問に、足せると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AC%E3%83%BC%E3%82%B6%E3%83%BC%E3%83%95%E3%83%AC%E3%82%A4%E3%83%A0&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "stage": "たね",
+  "translationStatus": "irrelevantToCalculation",
+  "verifiedOn": "2026-09-25"
+}

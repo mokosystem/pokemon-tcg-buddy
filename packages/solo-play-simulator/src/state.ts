@@ -507,7 +507,14 @@ export class GameState {
   }
 
   /** トラッシュの cards を山札に戻して切る。 */
+  /**
+   * トラッシュの cards を山札に戻して切る。戻すカードが 0 枚なら山札を切らない(上級プレイヤー用ルールガイド Ver. 3.4
+   * E-36、71 ページ、2026-09-25 確認: 選んで山札にもどすカードが 1 枚もないときは山札を切らない)。
+   */
   returnFromDiscardToDeck(cards: readonly Card[]): void {
+    if (cards.length === 0) {
+      return;
+    }
     for (const card of cards) {
       removeCard(this.discard, card, "トラッシュ");
       this.deck.push(card);
@@ -663,6 +670,20 @@ export class GameState {
     removeCard(from.energies, energy, `${from.name} のエネルギー`);
     to.energies.push(energy);
     this.record(`エネルギー ${energy.name} を ${from.name} → ${to.name}`);
+  }
+
+  /**
+   * 場のポケモン target のカードを、山札の card と入れ替える(メタモンの「どっきりへんしん」)。ついているカードと
+   * 場に出た番はそのまま引き継ぎ、元のカードは山札に戻す。山札は呼び出し側が切る。
+   */
+  replacePokemonWithDeckCard(target: PokemonInPlay, card: Card): void {
+    if (!isPokemon(card)) {
+      throw new IllegalMove(`${card.name} はポケモンではない`);
+    }
+    this.removeFromDeck(card);
+    this.deck.push(target.card);
+    this.record(`${target.name} を山札の ${card.name} と入れ替える`);
+    target.card = card;
   }
 
   /** ベンチのポケモンを、ついているカードごとトラッシュする(ベンチの上限を超えたとき。きぜつではない)。 */
