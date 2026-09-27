@@ -423,7 +423,8 @@ function placeOntoBenchFrom(
       maxCount: Math.min(step.maxCount, countEmptyBenchSlots(state)),
       minCount: 0,
     },
-    `${run.label}: ベンチに出すポケモン`
+    `${run.label}: ベンチに出すポケモン`,
+    zone === "deck" ? "deck" : undefined
   );
   for (const card of chosen) {
     state.placeOnBench(card, {
@@ -493,7 +494,8 @@ function chooseEnergiesForOwnPokemon(
           run.context,
           listMatching(cards, step.energyFilter).filter(isEnergy),
           { maxCount: step.maxCount, minCount: 0 },
-          `${run.label}: ${ZONE_NAMES[zone]}から選ぶエネルギー`
+          `${run.label}: ${ZONE_NAMES[zone]}から選ぶエネルギー`,
+          zone === "deck" ? "deck" : undefined
         );
   return { chosen, targets };
 }
@@ -542,11 +544,13 @@ function lookAtDeckTopAndAttachToSelf(
     return;
   }
   const looked = state.deck.slice(0, step.lookCount);
+  state.markDeckTopKnown(step.lookCount);
   const chosen = chooseCardsWithin(
     context,
     listMatching(looked, step.filter).filter(isEnergy),
     { maxCount: step.maxAttachCount, minCount: step.minAttachCount },
-    `${label}: 山札の上から見て ${holder.name} につけるエネルギー`
+    `${label}: 山札の上から見て ${holder.name} につけるエネルギー`,
+    "deck"
   );
   state.attachFromDeckTop(step.lookCount, chosen, holder, step.restPlacement);
 }
@@ -562,13 +566,15 @@ function lookAtDeckTopAndAttachToOwnPokemon(
   const { context, label } = run;
   const { state } = context;
   const targets = listOwnPokemonMatching(state, step.targetFilter);
+  state.markDeckTopKnown(step.lookCount);
   const chosen = chooseCardsWithin(
     context,
     listMatching(state.deck.slice(0, step.lookCount), step.filter).filter(
       isEnergy
     ),
     { maxCount: step.maxAttachCount, minCount: step.minAttachCount },
-    `${label}: 山札の上から見てつけるエネルギー`
+    `${label}: 山札の上から見てつけるエネルギー`,
+    "deck"
   );
   const assignments = chosen.flatMap((energy) => {
     const target = chooseOnePokemon(
@@ -724,6 +730,7 @@ function attachEnergyFromHandDistributed(
 
 /** コインを 1 回投げる。オモテとウラは 1/2 ずつとする(docs/setup-rate-design.md「順 4 から送られた論点の決定」の 1)。 */
 function flipsHeads(state: GameState): boolean {
+  state.noteUncertainOutcome();
   return state.random.nextFloat() < 0.5;
 }
 
@@ -760,7 +767,8 @@ function searchDeckAndAttachToHolder(
       context,
       listMatching(state.deck, step.energyFilter).filter(isEnergy),
       { maxCount, minCount: 0 },
-      `${label}: 山札から ${holder.name} につけるエネルギー`
+      `${label}: 山札から ${holder.name} につけるエネルギー`,
+      "deck"
     )) {
       state.attachEnergyByEffect(energy, holder, "deck");
     }
@@ -821,7 +829,8 @@ function searchDeckAndPlaceOnTop(run: OperationRun, count: number): void {
     context,
     state.deck,
     { maxCount: count, minCount: count },
-    `${label}: 山札の上に置くカード(先頭がいちばん上)`
+    `${label}: 山札の上に置くカード(先頭がいちばん上)`,
+    "deck"
   );
   state.placeOnDeckTopAfterShuffle(chosen);
 }
@@ -840,7 +849,8 @@ function evolveFromDeck(run: OperationRun, canContinueToStage2: boolean): void {
         basicNames.has(card.evolvesFrom)
     ),
     { maxCount: 1, minCount: 0 },
-    `${label}: 山札から進化させる 1進化ポケモン`
+    `${label}: 山札から進化させる 1進化ポケモン`,
+    "deck"
   );
   const target =
     stage1 === undefined
@@ -857,7 +867,8 @@ function evolveFromDeck(run: OperationRun, canContinueToStage2: boolean): void {
           context,
           state.deck.filter((card) => card.evolvesFrom === stage1.name),
           { maxCount: 1, minCount: 0 },
-          `${label}: 続けて進化させる 2進化ポケモン`
+          `${label}: 続けて進化させる 2進化ポケモン`,
+          "deck"
         )
       : [];
     if (stage2 !== undefined) {
@@ -879,6 +890,7 @@ function searchIntoHandAndAttachRest(
   const candidates = listMatching(state.deck, step.filter);
   const chosen = chooseCards(context, {
     candidates,
+    fromDeck: true,
     maxCount: Math.min(step.maxCount, candidates.length),
     minCount: 0,
     mustHaveDistinctTypes: step.requiresDistinctTypes,
@@ -892,7 +904,8 @@ function searchIntoHandAndAttachRest(
           context,
           chosen,
           { maxCount: 1, minCount: 1 },
-          `${label}: 手札に加えるエネルギー`
+          `${label}: 手札に加えるエネルギー`,
+          "deck"
         );
   const rest = [...chosen];
   if (toHand !== undefined) {
@@ -928,7 +941,8 @@ function searchDeckIntoHandFromOneOfPicks(
       picks.some((candidate) => matchesCardFilter(card, candidate.filter))
     ),
     { maxCount: 1, minCount: 0 },
-    `${label}: 山札から手札に加える 1 枚目のカード`
+    `${label}: 山札から手札に加える 1 枚目のカード`,
+    "deck"
   );
   const pick =
     first === undefined
@@ -940,7 +954,8 @@ function searchDeckIntoHandFromOneOfPicks(
       context,
       listMatching(state.deck, pick.filter),
       { maxCount: pick.maxCount - 1, minCount: 0 },
-      `${label}: 山札から続けて手札に加えるカード`
+      `${label}: 山札から続けて手札に加えるカード`,
+      "deck"
     )) {
       state.takeFromDeckToHand(card);
     }
@@ -1070,11 +1085,13 @@ const operationRunners: {
     lookAtDeckTopAndAttachToSelf(run, step),
   lookAtDeckTopAndTakeIntoHand: (step, { context, label }) => {
     const looked = context.state.deck.slice(0, step.lookCount);
+    context.state.markDeckTopKnown(step.lookCount);
     const chosen = chooseCardsWithin(
       context,
       listMatching(looked, step.filter),
       { maxCount: step.maxTakeCount, minCount: step.minTakeCount },
-      `${label}: 山札の上から見て手札に加えるカード`
+      `${label}: 山札の上から見て手札に加えるカード`,
+      "deck"
     );
     context.state.takeFromDeckTop(step.lookCount, chosen, step.restPlacement);
   },
@@ -1141,7 +1158,8 @@ const operationRunners: {
             context,
             listMatching(state.deck, step.filter).filter(isPokemon),
             { maxCount: 1, minCount: 0 },
-            `${label}: ${holder.name} と入れ替える山札のポケモン`
+            `${label}: ${holder.name} と入れ替える山札のポケモン`,
+            "deck"
           );
     if (holder !== null && card !== undefined) {
       state.replacePokemonWithDeckCard(holder, card);
@@ -1182,7 +1200,8 @@ const operationRunners: {
         context,
         listMatching(state.deck, step.energyFilter),
         { maxCount: 1, minCount: 0 },
-        `${label}: ${target.name} につけるエネルギー`
+        `${label}: ${target.name} につけるエネルギー`,
+        "deck"
       );
       if (energy !== undefined) {
         state.attachEnergyByEffect(energy, target, "deck");
@@ -1209,7 +1228,8 @@ const operationRunners: {
           maxCount: pick.maxCount,
           minCount: minCountForDeckSearch(pick.filter, candidates.length),
         },
-        `${label}: 山札から手札に加えるカード`
+        `${label}: 山札から手札に加えるカード`,
+        "deck"
       );
       for (const card of chosen) {
         state.takeFromDeckToHand(card);

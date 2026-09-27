@@ -34,6 +34,31 @@ export interface RandomSource {
   nextFloat: () => number;
 }
 
+function compareCardIds(left: Card, right: Card): number {
+  if (left.cardId === right.cardId) {
+    return 0;
+  }
+  return left.cardId < right.cardId ? -1 : 1;
+}
+
+/**
+ * カード ID の順に並べ直した写し。見えていないカードを混ぜ直すとき、同じ組み合わせのカードからは元の並びによらず
+ * 同じ結果にするために使う。同じ参照のカードをまとめてから種類だけを並べるので、枚数が多くても速い。
+ */
+function sortByCardId(cards: readonly Card[]): Card[] {
+  const counts = new Map<Card, number>();
+  for (const card of cards) {
+    counts.set(card, (counts.get(card) ?? 0) + 1);
+  }
+  const sorted: Card[] = [];
+  for (const card of [...counts.keys()].sort(compareCardIds)) {
+    for (let count = counts.get(card) ?? 0; count > 0; count -= 1) {
+      sorted.push(card);
+    }
+  }
+  return sorted;
+}
+
 export type CardSource = "hand" | "deck" | "discard";
 
 /** 山札の上から見たカードのうち、選ばなかった残りの扱い(card-record-schema.ts の restPlacement)。 */
@@ -119,6 +144,19 @@ export class PokemonInPlay {
     this.turnEntered = turnEntered;
   }
 
+  /** 同じカードがついた、別の場のポケモン。GameState の clone が使う。 */
+  copy(): PokemonInPlay {
+    const copied = new PokemonInPlay(this.card, this.turnEntered);
+    copied.turnEvolved = this.turnEvolved;
+    copied.energies.push(...this.energies);
+    copied.underneath.push(...this.underneath);
+    copied.tool = this.tool;
+    for (const abilityName of this.abilitiesUsedThisTurn) {
+      copied.abilitiesUsedThisTurn.add(abilityName);
+    }
+    return copied;
+  }
+
   get name(): string {
     return this.card.name;
   }
@@ -140,7 +178,8 @@ export class PokemonInPlay {
 }
 
 export class GameState {
-  readonly random: RandomSource;
+  /** 探索が状態を複製して先を試すときは、見えていないカードを混ぜ直してから、実際の対戦とは別の乱数に差し替える。 */
+  random: RandomSource;
   deck: Card[];
   /**
    * 山札の上から何枚が、自分の効果で置いたために何のカードか分かっているか(夜のアカデミー、暗号マニアの解読)。
@@ -180,6 +219,11 @@ export class GameState {
    */
   firstAttackerThisTurn: PokemonInPlay | null = null;
   readonly events: string[] = [];
+  /**
+   * 見えていないカード(山札とサイド)の中身や並び、コインの結果で決まることが起きた回数。山札から引く・探す・上から見る、
+   * コインを投げるたびに増える。探索が、行動の結果が混ぜ直しの仕方で変わりうるか(数回試して平均をとるか)を見分けるのに使う。
+   */
+  uncertainOutcomeCount = 0;
 
   constructor(
     random: RandomSource,
@@ -201,6 +245,82 @@ export class GameState {
 
   record(event: string): void {
     this.events.push(`[${this.turn}] ${event}`);
+  }
+
+  noteUncertainOutcome(): void {
+    this.uncertainOutcomeCount += 1;
+  }
+
+  // ---- 複製と混ぜ直し(探索が先を試すため) ----
+
+  /**
+   * 同じ場の、別の状態。カードは読み取り専用の同じ参照を並べて表しているので、並びと場のポケモンを写せば済む。
+   * random は複製が使う乱数。履歴(events)は写さない。
+   */
+  clone(random: RandomSource): GameState {
+    const copied = new GameState(random, this.deck, this.wentFirst);
+    copied.knownDeckTopCount = this.knownDeckTopCount;
+    copied.hand = [...this.hand];
+    copied.prizes.push(...this.prizes);
+    copied.discard.push(...this.discard);
+    const copies = new Map<PokemonInPlay, PokemonInPlay>();
+    const copyPokemon = (pokemon: PokemonInPlay): PokemonInPlay => {
+      const copiedPokemon = pokemon.copy();
+      copies.set(pokemon, copiedPokemon);
+      return copiedPokemon;
+    };
+    copied.active = this.active === null ? null : copyPokemon(this.active);
+    copied.bench.push(...this.bench.map(copyPokemon));
+    copied.stadium = this.stadium;
+    copied.turn = this.turn;
+    copied.mulligans = this.mulligans;
+    copied.hasUsedSupporter = this.hasUsedSupporter;
+    copied.supporterUsedThisTurn = this.supporterUsedThisTurn;
+    copied.hasAttachedEnergy = this.hasAttachedEnergy;
+    copied.hasPlayedStadium = this.hasPlayedStadium;
+    copied.hasUsedStadiumEffect = this.hasUsedStadiumEffect;
+    copied.hasRetreated = this.hasRetreated;
+    copied.abilityNamesUsedThisTurn = [...this.abilityNamesUsedThisTurn];
+    copied.attackDamageIncreasesThisTurn = [
+      ...this.attackDamageIncreasesThisTurn,
+    ];
+    for (const [turn, attackName] of this.attacks) {
+      copied.attacks.set(turn, attackName);
+    }
+    copied.hasUsedSecondAttack = this.hasUsedSecondAttack;
+    copied.firstAttackerThisTurn =
+      this.firstAttackerThisTurn === null
+        ? null
+        : (copies.get(this.firstAttackerThisTurn) ?? null);
+    copied.uncertainOutcomeCount = this.uncertainOutcomeCount;
+    return copied;
+  }
+
+  /**
+   * 見えていないカード(山札のうち何か分かっていない部分とサイド)を合わせて混ぜ直し、同じ枚数ずつ山札とサイドに戻す。
+   * プレイヤーは山札の順とサイドの中身を知らないため、探索が先を試す前にこれを行う。混ぜる前に並びをカード ID の順に
+   * そろえるので、結果は見えていないカードの組み合わせと乱数だけで決まり、元の山札の順とサイドの中身によらない。
+   */
+  remixUnseenCards(): void {
+    const knownTop = this.deck.slice(0, this.knownDeckTopCount);
+    const pool = sortByCardId([
+      ...this.deck.slice(this.knownDeckTopCount),
+      ...this.prizes,
+    ]);
+    this.shuffleCards(pool);
+    const prizeCount = this.prizes.length;
+    this.prizes.splice(0, prizeCount, ...pool.slice(0, prizeCount));
+    this.deck = [...knownTop, ...pool.slice(prizeCount)];
+  }
+
+  /**
+   * 山札のうち何か分かっていない部分の順だけを混ぜ直す。サイドは変えない。山札を探して中身を見た後(山札とサイドの
+   * 分かれ方をプレイヤーが知っている)に使う。並びをそろえてから混ぜる理由は remixUnseenCards と同じ。
+   */
+  shuffleUnknownDeckOrder(): void {
+    const unknown = sortByCardId(this.deck.slice(this.knownDeckTopCount));
+    this.shuffleCards(unknown);
+    this.deck = [...this.deck.slice(0, this.knownDeckTopCount), ...unknown];
   }
 
   // ---- 問い合わせ ----
@@ -285,8 +405,22 @@ export class GameState {
     this.knownDeckTopCount = 0;
   }
 
+  /**
+   * 山札の上から count 枚を見る。見たカードは何か分かっているので、分かっている上のカードの数に含める
+   * (探索が混ぜ直すときに動かさない)。
+   */
+  markDeckTopKnown(count: number): void {
+    this.knownDeckTopCount = Math.max(
+      this.knownDeckTopCount,
+      Math.min(count, this.deck.length)
+    );
+  }
+
   /** 山札の上から count 枚を取り出す。分かっている上のカードの数もその分だけ減る。 */
   private spliceDeckTop(count: number): Card[] {
+    if (count > this.knownDeckTopCount) {
+      this.noteUncertainOutcome();
+    }
     const removed = this.deck.splice(0, count);
     this.knownDeckTopCount = Math.max(
       0,
@@ -297,6 +431,7 @@ export class GameState {
 
   /** 山札から card を 1 枚取り出す(山札から探す)。分かっている上のカードの 1 枚なら、その数を減らす。 */
   private removeFromDeck(card: Card): void {
+    this.noteUncertainOutcome();
     const index = this.deck.indexOf(card);
     removeCard(this.deck, card, "山札");
     if (index < this.knownDeckTopCount) {
@@ -809,6 +944,19 @@ export class GameState {
   // ---- 番の進行 ----
 
   beginTurn(): void {
+    this.advanceToNextTurn();
+    if (this.deck.length === 0) {
+      throw new IllegalMove("山札が無く引けない");
+    }
+    const [drawn] = this.draw(1);
+    this.record(`番の最初に引く: ${drawn?.name ?? ""}`);
+  }
+
+  /**
+   * 次の番に進め、番ごとの制限を戻す。番の最初に引く 1 枚は引かない。探索が、ワザを使った後の場を次の番の側から
+   * 評価するときにも使う(使ったワザの記録が残ったままだと、次の番にワザを打てるかを正しく判定できないため)。
+   */
+  advanceToNextTurn(): void {
     this.turn += 1;
     this.hasUsedSupporter = false;
     this.supporterUsedThisTurn = null;
@@ -823,11 +971,6 @@ export class GameState {
     for (const pokemon of this.listPokemonInPlay()) {
       pokemon.abilitiesUsedThisTurn.clear();
     }
-    if (this.deck.length === 0) {
-      throw new IllegalMove("山札が無く引けない");
-    }
-    const [drawn] = this.draw(1);
-    this.record(`番の最初に引く: ${drawn?.name ?? ""}`);
   }
 }
 

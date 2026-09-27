@@ -8,6 +8,12 @@ import { type GameState, IllegalMove, type PokemonInPlay } from "./state.ts";
 
 export interface CardChoiceRequest {
   readonly candidates: readonly Card[];
+  /**
+   * 候補が山札のカード(山札から探す、山札の上から見る)。候補がどれだけあるかは山札とサイドの分かれ方で決まるため、
+   * 見えていないカードで結果が決まったこととして数える。探索は、この選択を試すときにサイドを混ぜ直さない
+   * (選ぶ候補が山札から消えないようにする)。
+   */
+  readonly fromDeck?: true;
   readonly maxCount: number;
   readonly minCount: number;
   /** 選んだエネルギーのタイプがすべて違う必要がある(アカマツ)。 */
@@ -77,33 +83,44 @@ function listProvidedTypeOrName(card: Card): string {
   return card.provision?.kind === "type" ? card.provision.type : card.name;
 }
 
+/** 選んだエネルギーのタイプがすべて違うか(アカマツ)。 */
+export function hasDistinctProvidedTypes(cards: readonly Card[]): boolean {
+  const types = cards.map(listProvidedTypeOrName);
+  return new Set(types).size === types.length;
+}
+
 export function chooseCards(
   context: EffectContext,
   request: CardChoiceRequest
 ): readonly Card[] {
+  if (request.fromDeck) {
+    context.state.noteUncertainOutcome();
+  }
   if (request.maxCount === 0) {
     return [];
   }
   const chosen = context.choices.chooseCards(context.state, request);
   validateChosen(request, chosen);
-  if (request.mustHaveDistinctTypes) {
-    const types = chosen.map(listProvidedTypeOrName);
-    if (new Set(types).size !== types.length) {
-      throw new IllegalMove(`${request.purpose}: 同じタイプを 2 枚選んだ`);
-    }
+  if (request.mustHaveDistinctTypes && !hasDistinctProvidedTypes(chosen)) {
+    throw new IllegalMove(`${request.purpose}: 同じタイプを 2 枚選んだ`);
   }
   return chosen;
 }
 
-/** 候補から min〜max 枚を選ぶ。候補が足りないときは、ある分までに範囲を縮める。 */
+/**
+ * 候補から min〜max 枚を選ぶ。候補が足りないときは、ある分までに範囲を縮める。candidatesFrom は候補の置き場所で、
+ * 山札のカードなら "deck" を渡す(CardChoiceRequest の fromDeck)。
+ */
 export function chooseCardsWithin(
   context: EffectContext,
   candidates: readonly Card[],
   counts: { readonly maxCount: number; readonly minCount: number },
-  purpose: string
+  purpose: string,
+  candidatesFrom?: "deck"
 ): readonly Card[] {
   return chooseCards(context, {
     candidates,
+    ...(candidatesFrom === "deck" ? { fromDeck: true } : {}),
     maxCount: Math.min(counts.maxCount, candidates.length),
     minCount: Math.min(counts.minCount, candidates.length),
     purpose,
@@ -145,3 +162,31 @@ export function chooseOnePokemon(
   validateChosen(request, chosen);
   return chosen[0] ?? null;
 }
+
+/** タイプの違うエネルギーを選ぶ求め(アカマツ)では、同じタイプの 2 枚目以降を候補から外す。 */
+function listCandidatesToChoose(request: CardChoiceRequest): readonly Card[] {
+  if (!request.mustHaveDistinctTypes) {
+    return request.candidates;
+  }
+  const seenTypes = new Set<string>();
+  return request.candidates.filter((card) => {
+    const type = listProvidedTypeOrName(card);
+    if (seenTypes.has(type)) {
+      return false;
+    }
+    seenTypes.add(type);
+    return true;
+  });
+}
+
+/**
+ * 候補の先頭から選べるだけ選び、「のぞむなら」の効果は必ず起こす。テストの固定の手順と、探索が 1 つの選択を試した後の
+ * 残りの選択に使う。
+ */
+export const firstCandidateChoices: EffectChoices = {
+  chooseCards: (_state, request) =>
+    listCandidatesToChoose(request).slice(0, request.maxCount),
+  choosePokemon: (_state, request) =>
+    request.candidates.slice(0, request.maxCount),
+  choosesToApplyOptionalEffect: () => true,
+};

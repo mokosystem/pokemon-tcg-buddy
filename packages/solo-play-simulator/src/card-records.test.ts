@@ -356,7 +356,7 @@ describeTranslation("ニャースex", () => {
     state.turn = 0;
     setupGame(state, {
       chooseActiveAtSetup: () => RALTS,
-      chooseBenchAtSetup: (basics) =>
+      chooseBenchAtSetup: (_, basics) =>
         basics.filter((card) => card.name === "ニャースex"),
     });
     expect(state.countInPlay("ニャースex")).toBeGreaterThan(0);

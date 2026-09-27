@@ -21,3 +21,14 @@ describe("種を指定できる乱数", () => {
     expect(new Set(values).size).toBeGreaterThan(9900);
   });
 });
+
+describe("乱数の写し", () => {
+  test("写した後は、元と写しが同じ乱数列を出す", () => {
+    const random = createSeededRandom(20_260_926);
+    random.nextFloat();
+    const copied = random.copy();
+    const fromOriginal = Array.from({ length: 50 }, () => random.nextFloat());
+    const fromCopy = Array.from({ length: 50 }, () => copied.nextFloat());
+    expect(fromCopy).toEqual(fromOriginal);
+  });
+});

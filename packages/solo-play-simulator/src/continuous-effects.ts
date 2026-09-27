@@ -9,6 +9,7 @@ import {
   type Attack,
   CardCategory,
   type CardFilter,
+  type CardRecord,
   type ContinuousEffect,
   type EnergyProvision,
   type PokemonType,
@@ -29,24 +30,51 @@ interface CollectedContinuousEffect {
   readonly sourceCard: Card;
 }
 
-function listCardContinuousEffects(card: Card): ContinuousEffect[] {
-  if (!("cardEffects" in card.record)) {
-    return [];
+/**
+ * 記録ごとの、場にある間ずっと働く効果の一覧。記録は変わらないので、判定のたびに記録を読み直さないよう覚えておく
+ * (探索は状態を複製して何度も判定するため)。
+ */
+const continuousEffectsByRecord = new WeakMap<
+  CardRecord,
+  { abilities: ContinuousEffect[]; card: ContinuousEffect[] }
+>();
+
+function listContinuousEffectsOfRecord(record: CardRecord): {
+  abilities: ContinuousEffect[];
+  card: ContinuousEffect[];
+} {
+  const cached = continuousEffectsByRecord.get(record);
+  if (cached !== undefined) {
+    return cached;
   }
-  return card.record.cardEffects.flatMap((cardEffect) =>
-    cardEffect.kind === "continuous" ? [cardEffect.continuousEffect] : []
-  );
+  const listed = {
+    abilities:
+      record.category === CardCategory.Pokemon
+        ? record.abilities.flatMap((ability) =>
+            ability.translation?.kind === "continuous"
+              ? [ability.translation.continuousEffect]
+              : []
+          )
+        : [],
+    card:
+      "cardEffects" in record
+        ? record.cardEffects.flatMap((cardEffect) =>
+            cardEffect.kind === "continuous"
+              ? [cardEffect.continuousEffect]
+              : []
+          )
+        : [],
+  };
+  continuousEffectsByRecord.set(record, listed);
+  return listed;
+}
+
+function listCardContinuousEffects(card: Card): ContinuousEffect[] {
+  return listContinuousEffectsOfRecord(card.record).card;
 }
 
 function listAbilityContinuousEffects(card: Card): ContinuousEffect[] {
-  if (card.record.category !== CardCategory.Pokemon) {
-    return [];
-  }
-  return card.record.abilities.flatMap((ability) =>
-    ability.translation?.kind === "continuous"
-      ? [ability.translation.continuousEffect]
-      : []
-  );
+  return listContinuousEffectsOfRecord(card.record).abilities;
 }
 
 function appliesTo(
@@ -77,12 +105,20 @@ function isEffectConditionMet(
   });
 }
 
-function toCollected(
+/** effects のうち条件を満たすものを、集めた効果として collected に足す。 */
+function collectMet(
+  state: GameState,
+  collected: CollectedContinuousEffect[],
   sourceCard: Card,
   holder: PokemonInPlay | null,
   effects: readonly ContinuousEffect[]
-): CollectedContinuousEffect[] {
-  return effects.map((effect) => ({ effect, holder, sourceCard }));
+): void {
+  for (const effect of effects) {
+    const entry = { effect, holder, sourceCard };
+    if (isEffectConditionMet(state, entry)) {
+      collected.push(entry);
+    }
+  }
 }
 
 /**
@@ -94,53 +130,73 @@ function collectContinuousEffects(
   state: GameState
 ): CollectedContinuousEffect[] {
   const { stadium } = state;
-  const activeStadiumEffects = (
-    stadium === null
-      ? []
-      : toCollected(stadium, null, listCardContinuousEffects(stadium))
-  ).filter((collected) => isEffectConditionMet(state, collected));
+  const collected: CollectedContinuousEffect[] = [];
+  if (stadium !== null) {
+    collectMet(
+      state,
+      collected,
+      stadium,
+      null,
+      listCardContinuousEffects(stadium)
+    );
+  }
+  const stadiumEffectCount = collected.length;
   const isNegatedBy = (
     change: "negateAbilities" | "negateToolEffects",
     pokemon: PokemonInPlay
   ) =>
-    activeStadiumEffects.some(
-      (collected) =>
-        collected.effect.change.change === change &&
-        appliesTo(state, collected, pokemon)
-    );
-  const pokemonEffects = state.listPokemonInPlay().flatMap((pokemon) => {
+    collected
+      .slice(0, stadiumEffectCount)
+      .some(
+        (entry) =>
+          entry.effect.change.change === change &&
+          appliesTo(state, entry, pokemon)
+      );
+  for (const pokemon of state.listPokemonInPlay()) {
+    const abilities = listAbilityContinuousEffects(pokemon.card);
+    if (abilities.length > 0 && !isNegatedBy("negateAbilities", pokemon)) {
+      collectMet(state, collected, pokemon.card, pokemon, abilities);
+    }
     const { tool } = pokemon;
-    return [
-      ...(isNegatedBy("negateAbilities", pokemon)
-        ? []
-        : toCollected(
-            pokemon.card,
-            pokemon,
-            listAbilityContinuousEffects(pokemon.card)
-          )),
-      ...(tool === null || isNegatedBy("negateToolEffects", pokemon)
-        ? []
-        : toCollected(tool, pokemon, listCardContinuousEffects(tool))),
-      ...pokemon.energies.flatMap((energy) =>
-        toCollected(energy, pokemon, listCardContinuousEffects(energy))
-      ),
-    ];
-  });
-  return [
-    ...activeStadiumEffects,
-    ...pokemonEffects.filter((collected) =>
-      isEffectConditionMet(state, collected)
-    ),
-  ];
+    if (tool !== null) {
+      const toolEffects = listCardContinuousEffects(tool);
+      if (
+        toolEffects.length > 0 &&
+        !isNegatedBy("negateToolEffects", pokemon)
+      ) {
+        collectMet(state, collected, tool, pokemon, toolEffects);
+      }
+    }
+    for (const energy of pokemon.energies) {
+      collectMet(
+        state,
+        collected,
+        energy,
+        pokemon,
+        listCardContinuousEffects(energy)
+      );
+    }
+  }
+  return collected;
 }
 
 function listEffectsApplyingTo(
   state: GameState,
   pokemon: PokemonInPlay
 ): CollectedContinuousEffect[] {
-  return collectContinuousEffects(state).filter((collected) =>
-    appliesTo(state, collected, pokemon)
+  return listCollectedApplyingTo(
+    state,
+    collectContinuousEffects(state),
+    pokemon
   );
+}
+
+function listCollectedApplyingTo(
+  state: GameState,
+  all: readonly CollectedContinuousEffect[],
+  pokemon: PokemonInPlay
+): CollectedContinuousEffect[] {
+  return all.filter((collected) => appliesTo(state, collected, pokemon));
 }
 
 export function isAbilityNegated(
@@ -177,11 +233,30 @@ export function resolveEnergyProvision(
   pokemon: PokemonInPlay,
   energy: Card
 ): EnergyProvision {
+  const collected = collectContinuousEffects(state);
+  return resolveEnergyProvisionFrom(
+    collected,
+    listCollectedApplyingTo(state, collected, pokemon),
+    pokemon,
+    energy
+  );
+}
+
+/**
+ * 集めた効果(all)と、そのうち pokemon に働く効果(applying)から、ついているエネルギー 1 枚が供給するものを求める。
+ * 同じポケモンのエネルギーをまとめて求めるとき、効果を 1 回だけ集めるために分けてある。
+ */
+function resolveEnergyProvisionFrom(
+  all: readonly CollectedContinuousEffect[],
+  applying: readonly CollectedContinuousEffect[],
+  pokemon: PokemonInPlay,
+  energy: Card
+): EnergyProvision {
   const base = energy.provision;
   if (base === undefined) {
     throw new Error(`${energy.name} はエネルギーではない`);
   }
-  const override = collectContinuousEffects(state).find(
+  const override = all.find(
     (collected) =>
       collected.sourceCard === energy &&
       collected.holder === pokemon &&
@@ -193,7 +268,7 @@ export function resolveEnergyProvision(
   }
   // ついているポケモンに働く効果(メガニウムの「おいしげる」)。同じ効果が複数あっても重ならないため、最初の 1 つを使う
   // (公式 Q&A「おいしげる」: 同じ内容の特性が 2 つ働いても 2 個ぶんのまま、2026-09-24 確認)
-  for (const collected of listEffectsApplyingTo(state, pokemon)) {
+  for (const collected of applying) {
     const { change } = collected.effect;
     if (
       change.change === "setAttachedEnergyProvision" &&
@@ -215,8 +290,13 @@ export function listEnergyUnits(
   state: GameState,
   pokemon: PokemonInPlay
 ): EnergyUnit[] {
+  if (pokemon.energies.length === 0) {
+    return [];
+  }
+  const all = collectContinuousEffects(state);
+  const applying = listCollectedApplyingTo(state, all, pokemon);
   return pokemon.energies.flatMap((energy) =>
-    toEnergyUnits(resolveEnergyProvision(state, pokemon, energy))
+    toEnergyUnits(resolveEnergyProvisionFrom(all, applying, pokemon, energy))
   );
 }
 
