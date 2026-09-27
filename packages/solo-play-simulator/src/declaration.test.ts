@@ -14,6 +14,9 @@ const KIRLIA = buildRecordedCard("049715");
 const RALTS = buildRecordedCard("049714");
 const MEW = buildRecordedCard("050669");
 const PSYCHIC_ENERGY = buildRecordedCard("049463");
+const N_ZOROARK = buildRecordedCard("048634");
+const N_RESHIRAM = buildRecordedCard("049261");
+const DARK_ENERGY = buildRecordedCard("047909");
 
 function problemsOf(content: unknown): readonly string[] {
   try {
@@ -150,5 +153,40 @@ describe("宣言から導いた狙いの判定", () => {
     const state = buildState({ bench: [MEGA_GARDEVOIR] });
     state.active = withEnergies(MEW, 1);
     expect(attack.isAchieved(state)).toBe(true);
+  });
+});
+
+describe("ほかのワザを「このワザとして使う」主軸のワザの判定", () => {
+  const [stand, attack, damage] = resolveDeclaration(
+    {
+      mainAttacks: [{ attackName: "ナイトジョーカー", cardId: "048634" }],
+      minimumDamage: 150,
+      pathsToMainAttacker: [
+        {
+          name: "Nのゾロアークex の道",
+          requiredCards: [{ cardId: "048634", place: "hand" }],
+        },
+      ],
+    },
+    cardRecordTable
+  ).goals;
+  if (stand === undefined || attack === undefined || damage === undefined) {
+    throw new Error("狙いが 3 段に満たない");
+  }
+
+  test("ナイトジョーカーでベンチの Nのレシラムの「イノセントフレイム」を使えれば、打てて 150 にも届く", () => {
+    const state = buildState({ bench: [N_RESHIRAM] });
+    state.active = new PokemonInPlay(N_ZOROARK, 0);
+    state.active.energies.push(DARK_ENERGY, DARK_ENERGY);
+    expect(stand.isAchieved(state)).toBe(true);
+    expect(attack.isAchieved(state)).toBe(true);
+    expect(damage.isAchieved(state)).toBe(true);
+  });
+
+  test("ベンチに選べるワザが無ければ、ナイトジョーカーは打てない", () => {
+    const state = buildState({});
+    state.active = new PokemonInPlay(N_ZOROARK, 0);
+    state.active.energies.push(DARK_ENERGY, DARK_ENERGY);
+    expect(attack.isAchieved(state)).toBe(false);
   });
 });

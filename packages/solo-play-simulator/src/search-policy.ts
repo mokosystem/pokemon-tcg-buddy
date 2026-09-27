@@ -16,7 +16,10 @@ import {
   useAttack,
 } from "./card-effects.ts";
 import type { Card } from "./cards.ts";
-import type { ResolvedDeclaration } from "./declaration.ts";
+import {
+  isMainAttackCandidate,
+  type ResolvedDeclaration,
+} from "./declaration.ts";
 import {
   type CardChoiceRequest,
   type EffectChoices,
@@ -637,11 +640,7 @@ function isMainAttackOf(
   const candidate = listUsableAttacksOfActive(context)[index];
   return (
     candidate !== undefined &&
-    declaration.mainAttacks.some(
-      (main) =>
-        main.record === candidate.owner.card.record &&
-        main.attack.name === candidate.attack.name
-    )
+    isMainAttackCandidate(candidate, declaration.mainAttacks)
   );
 }
 

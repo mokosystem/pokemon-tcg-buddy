@@ -9,7 +9,7 @@
  */
 
 import { calculateAttackDamage } from "./attack-damage.ts";
-import { resolveEndOfTurnTriggers, useAttack } from "./card-effects.ts";
+import { resolveEndOfTurnTriggers } from "./card-effects.ts";
 import {
   CardCategory,
   type CardFilter,
@@ -24,7 +24,7 @@ import type {
   ResolvedDeclaration,
 } from "./declaration.ts";
 import type { EffectChoices } from "./effect-choices.ts";
-import type { PlayingPolicy } from "./engine.ts";
+import { type PlayingPolicy, useAttacksOfTurn } from "./engine.ts";
 import { SeededRandom } from "./random.ts";
 import {
   createSearchPolicy,
@@ -559,15 +559,15 @@ function playTrialTurns(
   };
 }
 
-/** 試しの番の終わり(ワザ、番の終わりの効果)を行い、次の番を始める。山札が無くて始められなければ偽。 */
+/**
+ * 試しの番の終わり(ワザ、番の終わりの効果)を行い、次の番を始める。山札が無くて始められなければ偽。ワザは runGame と
+ * 同じく、2 回目を使える効果(「おまつりおんど」)があれば 2 回目も選ばせる。
+ */
 function finishTrialTurn(
   context: { readonly choices: EffectChoices; readonly state: GameState },
   rollout: PlayingPolicy
 ): boolean {
-  const attack = rollout.chooseAttack(context);
-  if (attack !== null) {
-    useAttack(context, attack);
-  }
+  useAttacksOfTurn(context, rollout);
   resolveEndOfTurnTriggers(context);
   if (context.state.deck.length === 0) {
     return false;

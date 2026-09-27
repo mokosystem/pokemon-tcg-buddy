@@ -142,9 +142,13 @@ function countCards(decklist: Decklist): number {
 
 /**
  * 番の終わりにワザを使う。使えるワザがある間だけ選ばせ、1 回使ったあとは 2 回目を使える効果(「おまつりおんど」)が
- * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。
+ * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。次の番を試す評価(search-evaluators.ts)も、
+ * 試しの番の終わりに同じ進め方をする。
  */
-function useAttacksOfTurn(context: EffectContext, policy: PlayingPolicy): void {
+export function useAttacksOfTurn(
+  context: EffectContext,
+  policy: PlayingPolicy
+): void {
   while (listUsableAttacksOfActive(context).length > 0) {
     const attack = policy.chooseAttack(context);
     if (attack === null) {

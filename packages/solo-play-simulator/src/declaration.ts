@@ -216,9 +216,24 @@ export function isMainPokemonInPlay(
 }
 
 /**
- * バトルポケモンの使えるワザの一覧のうち、主軸のワザにあたる候補。ワザの持ち主の記録で見るため、ミュウex の
- * 「きおくのらせん」でベンチの主軸のワザを使う候補も含む。狙いの 2 段目。
+ * 使えるワザの候補が主軸のワザにあたるか。ワザの持ち主の記録で見るため、ミュウex の「きおくのらせん」でベンチの
+ * 主軸のワザを使う候補も含む。主軸のワザがほかのワザを「このワザとして使う」ワザ(Nのゾロアークex の「ナイトジョーカー」)
+ * なら、候補は選んだワザになり持ち主もそのワザのポケモンになるため、usedAs で照合する。usedAs は記録のワザそのもの
+ * (continuous-effects.ts の listAttacksUsedAs)。
  */
+export function isMainAttackCandidate(
+  candidate: UsableAttack,
+  mainAttacks: readonly MainAttack[]
+): boolean {
+  return mainAttacks.some(
+    (main) =>
+      main.attack === candidate.usedAs ||
+      (main.record === candidate.owner.card.record &&
+        main.attack.name === candidate.attack.name)
+  );
+}
+
+/** バトルポケモンの使えるワザの一覧のうち、主軸のワザにあたる候補。狙いの 2 段目。 */
 export function listMainAttackCandidates(
   state: GameState,
   mainAttacks: readonly MainAttack[]
@@ -226,13 +241,7 @@ export function listMainAttackCandidates(
   return listUsableAttacksOfActive({
     choices: firstCandidateChoices,
     state,
-  }).filter((candidate) =>
-    mainAttacks.some(
-      (main) =>
-        main.record === candidate.owner.card.record &&
-        main.attack.name === candidate.attack.name
-    )
-  );
+  }).filter((candidate) => isMainAttackCandidate(candidate, mainAttacks));
 }
 
 /** 主軸のワザにあたる候補のうち、いちばん大きいダメージ。候補が無ければ null。狙いの 3 段目に使う。 */
