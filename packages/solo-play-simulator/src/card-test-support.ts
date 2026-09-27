@@ -5,12 +5,13 @@
 import { listUsableAttacksOfActive, useAttack } from "./card-effects.ts";
 import { cardRecordTable } from "./card-record-table.ts";
 import { buildCardFromRecord, type Card } from "./cards.ts";
-import type {
-  CardChoiceRequest,
-  EffectChoices,
-  EffectContext,
+import {
+  type CardChoiceRequest,
+  type EffectChoices,
+  type EffectContext,
+  firstCandidateChoices,
 } from "./effect-choices.ts";
-import { firstCandidateChoices, neverShuffled } from "./sample-cards.ts";
+import { neverShuffled } from "./sample-cards.ts";
 import {
   GameState,
   IllegalMove,

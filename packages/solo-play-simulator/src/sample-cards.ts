@@ -10,8 +10,7 @@ import {
   EvolutionStage,
   type PokemonRecord,
 } from "./card-record-schema.ts";
-import { buildCardFromRecord, type Card } from "./cards.ts";
-import type { CardChoiceRequest, EffectChoices } from "./effect-choices.ts";
+import { buildCardFromRecord } from "./cards.ts";
 import type { CardRecordTable } from "./engine.ts";
 import type { RandomSource } from "./state.ts";
 
@@ -139,28 +138,3 @@ export const STADIUM = buildSampleCard("900007");
 
 /** 山札を切らないテスト用。乱数の値は使われない。 */
 export const neverShuffled: RandomSource = { nextFloat: () => 0 };
-
-/** タイプの違うエネルギーを選ぶ求め(アカマツ)では、同じタイプの 2 枚目以降を候補から外す。 */
-function listCandidatesToChoose(request: CardChoiceRequest): readonly Card[] {
-  if (!request.mustHaveDistinctTypes) {
-    return request.candidates;
-  }
-  const seenTypes = new Set<string>();
-  return request.candidates.filter((card) => {
-    const type = card.provision?.kind === "type" ? card.provision.type : "any";
-    if (seenTypes.has(type)) {
-      return false;
-    }
-    seenTypes.add(type);
-    return true;
-  });
-}
-
-/** 候補の先頭から選べるだけ選び、「のぞむなら」の効果は必ず起こす。 */
-export const firstCandidateChoices: EffectChoices = {
-  chooseCards: (_state, request) =>
-    listCandidatesToChoose(request).slice(0, request.maxCount),
-  choosePokemon: (_state, request) =>
-    request.candidates.slice(0, request.maxCount),
-  choosesToApplyOptionalEffect: () => true,
-};

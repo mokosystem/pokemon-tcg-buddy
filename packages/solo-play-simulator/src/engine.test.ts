@@ -5,6 +5,7 @@ import {
   listUsableAttacksOfActive,
 } from "./card-effects.ts";
 import { countEnergyUnitsOfTypes } from "./continuous-effects.ts";
+import { firstCandidateChoices } from "./effect-choices.ts";
 import {
   applyVariant,
   buildDeck,
@@ -19,7 +20,6 @@ import { createSeededRandom } from "./random.ts";
 import {
   BASIC,
   ENERGY,
-  firstCandidateChoices,
   SAMPLE_RECORD_TABLE,
   STAGE1,
   STAGE2,
@@ -34,9 +34,9 @@ const BASICS_AND_ENERGIES: Decklist = [
 /** 何もしない。対戦の準備では最初のたねをバトル場に出し、残りをベンチに並べる。 */
 const idlePolicy: PlayingPolicy = {
   ...firstCandidateChoices,
-  chooseActiveAtSetup: ([first]) => first ?? BASIC,
+  chooseActiveAtSetup: (_, [first]) => first ?? BASIC,
   chooseAttack: () => null,
-  chooseBenchAtSetup: (basics) => basics,
+  chooseBenchAtSetup: (_, basics) => basics,
   playTurn: () => undefined,
 };
 

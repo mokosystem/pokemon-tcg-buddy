@@ -4,18 +4,14 @@ import {
   listUsableAttacksOfActive,
 } from "./card-effects.ts";
 import { countEnergyUnitsOfTypes } from "./continuous-effects.ts";
+import { firstCandidateChoices } from "./effect-choices.ts";
 import {
   buildDeck,
   type Decklist,
   type Goal,
   type PlayingPolicy,
 } from "./engine.ts";
-import {
-  BASIC,
-  ENERGY,
-  firstCandidateChoices,
-  SAMPLE_RECORD_TABLE,
-} from "./sample-cards.ts";
+import { BASIC, ENERGY, SAMPLE_RECORD_TABLE } from "./sample-cards.ts";
 import {
   compareVariants,
   formatAssumptions,
@@ -43,7 +39,7 @@ function countActiveEnergy(state: GameState): number {
 /** 手札のエネルギーをバトル場に 1 枚つけ、ワザを使う。 */
 const attachingPolicy: PlayingPolicy = {
   ...firstCandidateChoices,
-  chooseActiveAtSetup: (basics) => {
+  chooseActiveAtSetup: (_, basics) => {
     const [first] = basics;
     if (first === undefined) {
       throw new Error("たねが無い");

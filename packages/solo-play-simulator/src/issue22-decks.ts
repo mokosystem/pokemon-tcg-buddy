@@ -4,6 +4,7 @@
  * 「公式サイトの内容を転載しない方針との整理」)。4 デッキの記録がそろい、翻訳で 60 枚を最後まで回せるかのテストに使う。
  */
 
+import type { Declaration } from "./declaration.ts";
 import type { Decklist } from "./engine.ts";
 
 /** 記録だけで組み立てて回すデッキ。 */
@@ -12,6 +13,42 @@ export interface RecordedDeck {
   readonly decklist: Decklist;
   readonly name: string;
 }
+
+/**
+ * メガサーナイトex デッキ(xG8Kax-DHob4e-84xcca)の宣言。docs/setup-rate-design.md「宣言の書式」の例と同じ。
+ * 順 7 で探索の題材(局面 A〜F と時間の計測)に使う。ほかの 3 デッキの宣言は順 8 の答え合わせで書く。
+ */
+export const MEGA_GARDEVOIR_DECLARATION: Declaration = {
+  deadlines: [2, 3],
+  mainAttacks: [{ attackName: "メガシンフォニア", cardId: "048464" }],
+  minimumDamage: 300,
+  pathsToMainAttacker: [
+    {
+      name: "偉大な大樹の道",
+      requiredCards: [
+        { cardId: "046040", place: "stadium" },
+        { cardId: "049714", place: "inPlaySincePreviousTurn" },
+        { cardId: "049715", place: "deck" },
+        { cardId: "048464", place: "deck" },
+      ],
+    },
+    {
+      name: "ふしぎなアメの道",
+      requiredCards: [
+        { cardId: "050462", place: "hand" },
+        { cardId: "048464", place: "hand" },
+        { cardId: "049714", place: "inPlaySincePreviousTurn" },
+      ],
+    },
+    {
+      name: "素の進化の道",
+      requiredCards: [
+        { cardId: "049715", place: "inPlaySincePreviousTurn" },
+        { cardId: "048464", place: "hand" },
+      ],
+    },
+  ],
+};
 
 export const ISSUE22_DECKS: readonly RecordedDeck[] = [
   {

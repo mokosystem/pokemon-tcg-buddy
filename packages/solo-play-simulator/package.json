@@ -11,14 +11,20 @@
     "./card-records": "./src/card-record-table.ts",
     "./cards": "./src/cards.ts",
     "./continuous-effects": "./src/continuous-effects.ts",
+    "./declaration": "./src/declaration.ts",
     "./effect-choices": "./src/effect-choices.ts",
     "./engine": "./src/engine.ts",
+    "./player-actions": "./src/player-actions.ts",
     "./random": "./src/random.ts",
+    "./search-evaluators": "./src/search-evaluators.ts",
+    "./search-policy": "./src/search-policy.ts",
     "./simulate": "./src/simulate.ts",
     "./state": "./src/state.ts"
   },
   "scripts": {
-    "generate:card-record-files": "bun scripts/generate-card-record-files.ts"
+    "compare:search-evaluators": "bun scripts/compare-search-evaluators.ts",
+    "generate:card-record-files": "bun scripts/generate-card-record-files.ts",
+    "measure:search-time": "bun scripts/measure-search-time.ts"
   },
   "dependencies": {
     "valibot": "1.5.0"

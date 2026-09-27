@@ -44,10 +44,15 @@ export interface DeckVariant {
  * 固定の手順をここに書く。
  */
 export interface PlayingPolicy extends EffectChoices {
-  chooseActiveAtSetup: (basics: readonly Card[]) => Card;
+  /** 対戦の準備でバトル場に出すたねポケモン。basics は手札のたねポケモン。 */
+  chooseActiveAtSetup: (state: GameState, basics: readonly Card[]) => Card;
   /** 使うワザ(使えるワザの一覧 listUsableAttacksOfActive の候補の 1 つ)。使わないときは null。先攻の最初の番は呼ばれない。 */
   chooseAttack: (context: EffectContext) => UsableAttack | null;
-  chooseBenchAtSetup: (basics: readonly Card[]) => readonly Card[];
+  /** 対戦の準備でベンチに出すたねポケモン。basics はバトル場に出した後の手札のたねポケモン。 */
+  chooseBenchAtSetup: (
+    state: GameState,
+    basics: readonly Card[]
+  ) => readonly Card[];
   /** 番の最初に 1 枚引いた後、ワザを選ぶ前までの行動をすべて行う。card-effects.ts の関数で行動する。 */
   playTurn: (context: EffectContext) => void;
 }
@@ -137,9 +142,13 @@ function countCards(decklist: Decklist): number {
 
 /**
  * 番の終わりにワザを使う。使えるワザがある間だけ選ばせ、1 回使ったあとは 2 回目を使える効果(「おまつりおんど」)が
- * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。
+ * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。次の番を試す評価(search-evaluators.ts)も、
+ * 試しの番の終わりに同じ進め方をする。
  */
-function useAttacksOfTurn(context: EffectContext, policy: PlayingPolicy): void {
+export function useAttacksOfTurn(
+  context: EffectContext,
+  policy: PlayingPolicy
+): void {
   while (listUsableAttacksOfActive(context).length > 0) {
     const attack = policy.chooseAttack(context);
     if (attack === null) {
@@ -165,11 +174,24 @@ export function setupGame(
     state.returnHandToDeck();
     state.draw(HAND_SIZE_AT_SETUP);
   }
-  const active = policy.chooseActiveAtSetup(state.hand.filter(isBasicPokemon));
-  state.placeActiveFromHand(active);
-  for (const card of policy.chooseBenchAtSetup(
+  const active = policy.chooseActiveAtSetup(
+    state,
     state.hand.filter(isBasicPokemon)
-  )) {
+  );
+  state.placeActiveFromHand(active);
+  placeBenchAtSetup(
+    state,
+    policy.chooseBenchAtSetup(state, state.hand.filter(isBasicPokemon))
+  );
+  state.placePrizesFromDeck();
+}
+
+/** 対戦の準備で、手札のたねポケモンをベンチに出す。ベンチに空きが無くなったら残りは出さない。探索も同じ出し方で試す。 */
+export function placeBenchAtSetup(
+  state: GameState,
+  cards: readonly Card[]
+): void {
+  for (const card of cards) {
     if (countEmptyBenchSlots(state) <= 0) {
       break;
     }
@@ -178,7 +200,6 @@ export function setupGame(
       from: "hand",
     });
   }
-  state.placePrizesFromDeck();
 }
 
 export interface RunGameOptions {

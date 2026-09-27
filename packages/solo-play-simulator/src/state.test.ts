@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { Card } from "./cards.ts";
+import { createSeededRandom } from "./random.ts";
 import {
   BASIC,
   ENERGY,
@@ -361,5 +362,138 @@ describe("ワザのエネルギー", () => {
     expect(canPayCost(["fire", "psychic"], ["any", "fire"])).toBe(true);
     expect(canPayCost(["fire", "psychic"], ["any", "grass"])).toBe(false);
     expect(canPayCost(["fire", COLORLESS], ["any", "grass"])).toBe(true);
+  });
+});
+
+describe("複製と混ぜ直し(探索が先を試すため)", () => {
+  /** 山札とサイドの中身を区別できるように、4 種のカードを並べた場。 */
+  function stateWithUnseen(deck: readonly Card[], prizes: readonly Card[]) {
+    const state = stateWith([GOODS], deck);
+    state.prizes.push(...prizes);
+    state.bench.push(new PokemonInPlay(BASIC, 0));
+    activeOf(state).energies.push(ENERGY);
+    return state;
+  }
+
+  function countNames(cards: readonly Card[]): Record<string, number> {
+    const counts: Record<string, number> = {};
+    for (const card of cards) {
+      counts[card.name] = (counts[card.name] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  test("複製を変えても元の状態は変わらない", () => {
+    const state = stateWithUnseen([STAGE1, STAGE2], [SUPPORTER]);
+    state.hand.push(ENERGY);
+    const copied = state.clone(createSeededRandom(1));
+    copied.draw(1);
+    copied.attachEnergyFromHand(ENERGY, activeOf(copied));
+    copied.bench.length = 0;
+    expect(state.hand).toEqual([GOODS, ENERGY]);
+    expect(state.deck).toEqual([STAGE1, STAGE2]);
+    expect(activeOf(state).energies).toEqual([ENERGY]);
+    expect(state.bench).toHaveLength(1);
+    expect(state.hasAttachedEnergy).toBe(false);
+  });
+
+  test("複製は場のポケモンを別のものとして写し、この番に 1 回目のワザを使ったポケモンも写しの側を指す", () => {
+    const state = stateWithUnseen([], []);
+    state.firstAttackerThisTurn = state.active;
+    const copied = state.clone(createSeededRandom(1));
+    expect(copied.active).not.toBe(state.active);
+    expect(copied.active?.energies).toEqual([ENERGY]);
+    expect(copied.firstAttackerThisTurn).toBe(copied.active);
+  });
+
+  test("見えていないカードの混ぜ直しは、山札とサイドを合わせた中身と枚数を変えない", () => {
+    const deck = [STAGE1, STAGE1, STAGE2, ENERGY, ENERGY, ENERGY, SUPPORTER];
+    const prizes = [STAGE2, STAGE2];
+    const state = stateWithUnseen(deck, prizes);
+    state.random = createSeededRandom(3);
+    state.remixUnseenCards();
+    expect(state.deck).toHaveLength(deck.length);
+    expect(state.prizes).toHaveLength(prizes.length);
+    expect(countNames([...state.deck, ...state.prizes])).toEqual(
+      countNames([...deck, ...prizes])
+    );
+  });
+
+  test("混ぜ直した結果は、見えていないカードの組み合わせと乱数だけで決まり、元の山札の順とサイドの中身によらない", () => {
+    const left = stateWithUnseen([STAGE1, STAGE2, ENERGY, ENERGY], [SUPPORTER]);
+    const right = stateWithUnseen(
+      [ENERGY, SUPPORTER, ENERGY, STAGE1],
+      [STAGE2]
+    );
+    left.random = createSeededRandom(7);
+    right.random = createSeededRandom(7);
+    left.remixUnseenCards();
+    right.remixUnseenCards();
+    expect(right.deck).toEqual(left.deck);
+    expect(right.prizes).toEqual(left.prizes);
+  });
+
+  test("何か分かっている山札の上のカードは、混ぜ直しても動かない", () => {
+    const state = stateWithUnseen([], [SUPPORTER]);
+    state.hand = [STAGE2, STAGE1];
+    state.deck = [ENERGY, ENERGY, ENERGY];
+    state.placeHandCardsOnDeckTop([STAGE2, STAGE1]);
+    state.random = createSeededRandom(11);
+    state.remixUnseenCards();
+    expect(state.deck.slice(0, 2)).toEqual([STAGE2, STAGE1]);
+    expect(state.knownDeckTopCount).toBe(2);
+  });
+
+  test("山札の順だけの混ぜ直しは、サイドを変えない", () => {
+    const state = stateWithUnseen(
+      [STAGE1, STAGE2, ENERGY, ENERGY],
+      [SUPPORTER]
+    );
+    state.random = createSeededRandom(5);
+    state.shuffleUnknownDeckOrder();
+    expect(state.prizes).toEqual([SUPPORTER]);
+    expect(countNames(state.deck)).toEqual(
+      countNames([STAGE1, STAGE2, ENERGY, ENERGY])
+    );
+  });
+
+  test("山札の上から見たカードは何か分かっているものとして数え、山札の枚数を超えない", () => {
+    const state = stateWithUnseen([STAGE1, STAGE2], []);
+    state.markDeckTopKnown(5);
+    expect(state.knownDeckTopCount).toBe(2);
+  });
+
+  test("見えていないカードから引く・探すと、見えていないカードで結果が決まったこととして数える", () => {
+    const state = stateWithUnseen([STAGE1, STAGE2, ENERGY], []);
+    const before = state.uncertainOutcomeCount;
+    state.draw(1);
+    expect(state.uncertainOutcomeCount).toBe(before + 1);
+    state.takeFromDeckToHand(ENERGY);
+    expect(state.uncertainOutcomeCount).toBe(before + 2);
+  });
+
+  test("自分で山札の上に置いて分かっているカードを引いても、見えていないカードで決まったことにはしない", () => {
+    const state = stateWithUnseen([ENERGY], []);
+    state.hand = [STAGE1];
+    state.placeHandCardsOnDeckTop([STAGE1]);
+    const before = state.uncertainOutcomeCount;
+    state.draw(1);
+    expect(state.uncertainOutcomeCount).toBe(before);
+  });
+
+  test("次の番に進めると番ごとの制限と使ったワザの記録が戻り、引く 1 枚は引かない", () => {
+    const state = stateWithUnseen([STAGE1], []);
+    state.hasAttachedEnergy = true;
+    state.hasUsedSupporter = true;
+    state.attacks.set(state.turn, "ワザ");
+    state.firstAttackerThisTurn = state.active;
+    const handSize = state.hand.length;
+    state.advanceToNextTurn();
+    expect(state.turn).toBe(3);
+    expect(state.hasAttachedEnergy).toBe(false);
+    expect(state.hasUsedSupporter).toBe(false);
+    expect(state.firstAttackerThisTurn).toBeNull();
+    expect(state.attacks.has(state.turn)).toBe(false);
+    expect(state.hand).toHaveLength(handSize);
   });
 });
