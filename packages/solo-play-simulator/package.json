@@ -11,8 +11,10 @@
     "./card-records": "./src/card-record-table.ts",
     "./cards": "./src/cards.ts",
     "./continuous-effects": "./src/continuous-effects.ts",
+    "./declaration": "./src/declaration.ts",
     "./effect-choices": "./src/effect-choices.ts",
     "./engine": "./src/engine.ts",
+    "./player-actions": "./src/player-actions.ts",
     "./random": "./src/random.ts",
     "./simulate": "./src/simulate.ts",
     "./state": "./src/state.ts"
