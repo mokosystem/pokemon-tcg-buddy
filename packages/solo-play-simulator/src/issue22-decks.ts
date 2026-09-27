@@ -16,7 +16,7 @@ export interface RecordedDeck {
 
 /**
  * メガサーナイトex デッキ(xG8Kax-DHob4e-84xcca)の宣言。docs/setup-rate-design.md「宣言の書式」の例と同じ。
- * 順 7 で探索の題材(局面 A〜F と時間の計測)に使う。ほかの 3 デッキの宣言は順 8 の答え合わせで書く。
+ * 順 7 で探索の題材(局面 A〜F と時間の計測)に、順 8 で答え合わせに使う。
  */
 export const MEGA_GARDEVOIR_DECLARATION: Declaration = {
   deadlines: [2, 3],
@@ -45,6 +45,98 @@ export const MEGA_GARDEVOIR_DECLARATION: Declaration = {
       requiredCards: [
         { cardId: "049715", place: "inPlaySincePreviousTurn" },
         { cardId: "048464", place: "hand" },
+      ],
+    },
+  ],
+};
+
+/**
+ * メガリザードンYex & Xex デッキ(DxKGxx-6pqCKy-xxJ8Yc)の宣言。順 8 の答え合わせに使う。主軸は Yex と Xex のどちらでも
+ * よく、ダメージの下限は #22 の狙い「270 以上」(プロージョンY は 280、インフェルノX は場の炎エネルギー 3 個で 270)。
+ * 道は 2 進化への 2 通り(ふしぎなアメ、リザードからの進化)を、Yex と Xex それぞれに書く。#22 の狙いのうち、
+ * ファイアローex の「かぎづめハント」は主軸ではないため宣言に入れない(答え合わせでは測るだけの狙いとして渡す)。
+ */
+export const MEGA_CHARIZARD_DECLARATION: Declaration = {
+  deadlines: [2, 3],
+  mainAttacks: [
+    { attackName: "プロージョンY", cardId: "049482" },
+    { attackName: "インフェルノX", cardId: "048353" },
+  ],
+  minimumDamage: 270,
+  pathsToMainAttacker: [
+    {
+      name: "ふしぎなアメの道(Yex)",
+      requiredCards: [
+        { cardId: "050423", place: "hand" },
+        { cardId: "049482", place: "hand" },
+        { cardId: "048351", place: "inPlaySincePreviousTurn" },
+      ],
+    },
+    {
+      name: "ふしぎなアメの道(Xex)",
+      requiredCards: [
+        { cardId: "050423", place: "hand" },
+        { cardId: "048353", place: "hand" },
+        { cardId: "048351", place: "inPlaySincePreviousTurn" },
+      ],
+    },
+    {
+      name: "素の進化の道(Yex)",
+      requiredCards: [
+        { cardId: "049481", place: "inPlaySincePreviousTurn" },
+        { cardId: "049482", place: "hand" },
+      ],
+    },
+    {
+      name: "素の進化の道(Xex)",
+      requiredCards: [
+        { cardId: "049481", place: "inPlaySincePreviousTurn" },
+        { cardId: "048353", place: "hand" },
+      ],
+    },
+  ],
+};
+
+/**
+ * ばけがくれ デッキ(9nnnLP-Wejgk5-gn6gn9)の宣言。順 8 の答え合わせに使う。主軸はたねポケモンのダダリンで、道は
+ * ダダリンが場にいることだけになる。ダメージの下限 170 は、トラッシュに特性「ばけがくれ」を持つポケモンが 4 枚以上
+ * あるときの「むねんのイカリ」(30 + 140)。トラッシュの枚数そのものは置き場所に書けないため、宣言に入れない
+ * (答え合わせでは #22 の狙い「トラッシュに 4 枚以上」を測るだけの狙いとして渡す)。
+ */
+export const BAKEGAKURE_DECLARATION: Declaration = {
+  deadlines: [2, 3],
+  mainAttacks: [{ attackName: "むねんのイカリ", cardId: "050308" }],
+  minimumDamage: 170,
+  pathsToMainAttacker: [
+    {
+      name: "ダダリンの道",
+      requiredCards: [{ cardId: "050308", place: "inPlay" }],
+    },
+  ],
+};
+
+/**
+ * ドラパルトex デッキ(9gngnQ-zAMw9G-96H9nn)の宣言。順 8 の答え合わせに使う。「ファントムダイブ」は 200 で固定の
+ * ため、ダメージの下限は書かない(#22 の狙いにも無い)。#22 の狙いのうち「ドロンチが場にいる」は主軸の狙いの 3 段に
+ * 収まらないため宣言に入れない(答え合わせでは測るだけの狙いとして渡す)。
+ */
+export const DRAGAPULT_DECLARATION: Declaration = {
+  deadlines: [2, 3],
+  mainAttacks: [{ attackName: "ファントムダイブ", cardId: "049264" }],
+  pathsToMainAttacker: [
+    {
+      name: "ふしぎなアメの道",
+      requiredCards: [
+        { cardId: "049371", place: "hand" },
+        { cardId: "049264", place: "hand" },
+        { cardId: "049262", place: "inPlaySincePreviousTurn" },
+      ],
+    },
+    {
+      name: "素の進化の道",
+      requiredCards: [
+        { cardId: "049263", place: "inPlaySincePreviousTurn" },
+        { cardId: "049264", place: "hand" },
       ],
     },
   ],

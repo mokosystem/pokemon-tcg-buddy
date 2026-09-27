@@ -6,7 +6,12 @@ import {
   DeclarationValidationError,
   resolveDeclaration,
 } from "./declaration.ts";
-import { MEGA_GARDEVOIR_DECLARATION } from "./issue22-decks.ts";
+import {
+  BAKEGAKURE_DECLARATION,
+  DRAGAPULT_DECLARATION,
+  MEGA_CHARIZARD_DECLARATION,
+  MEGA_GARDEVOIR_DECLARATION,
+} from "./issue22-decks.ts";
 import { PokemonInPlay } from "./state.ts";
 
 const MEGA_GARDEVOIR = buildRecordedCard("048464");
@@ -53,6 +58,27 @@ describe("宣言の検査", () => {
       "素の進化の道",
     ]);
     expect(resolved.deadlines).toEqual([2, 3]);
+  });
+
+  test("答え合わせの残り 3 デッキの宣言を記録に引き当て、狙いを導く", () => {
+    const goalNamesOf = (declaration: Declaration) =>
+      resolveDeclaration(declaration, cardRecordTable).goals.map(
+        (goal) => goal.name
+      );
+    expect(goalNamesOf(MEGA_CHARIZARD_DECLARATION)).toEqual([
+      "メガリザードンYex か メガリザードンXex が場にいる",
+      "プロージョンY か インフェルノX を打てる",
+      "プロージョンY か インフェルノX を 270 以上で打てる",
+    ]);
+    expect(goalNamesOf(BAKEGAKURE_DECLARATION)).toEqual([
+      "ダダリン が場にいる",
+      "むねんのイカリ を打てる",
+      "むねんのイカリ を 170 以上で打てる",
+    ]);
+    expect(goalNamesOf(DRAGAPULT_DECLARATION)).toEqual([
+      "ドラパルトex が場にいる",
+      "ファントムダイブ を打てる",
+    ]);
   });
 
   test("締め切りを省くと 2 と 3、ダメージの下限を省くと狙いは 2 段になる", () => {
