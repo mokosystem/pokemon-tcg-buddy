@@ -1,6 +1,6 @@
 /**
  * 宣言(CONTEXT.md「宣言」)の書式と、宣言とカードの記録から狙いの 3 段を導く処理。書式の理由は
- * docs/setup-rate-design.md「宣言と探索(Issue 27 の順 7)」にある。
+ * docs/solo-play-simulator-design.md「宣言と探索(Issue 27 の順 7)」にある。
  *
  * 宣言は利用者の入力なので、読み込み時にスキーマ(valibot)で書式を検査し、続けて記録と突き合わせる
  * (カード ID に記録があるか、主軸のワザの名前が記録のワザの一覧にあるか)。
@@ -31,10 +31,11 @@ import {
   type CardRecord,
   type PokemonRecord,
 } from "./card-record-schema.ts";
+import type { Card } from "./cards.ts";
 import type { UsableAttack } from "./continuous-effects.ts";
 import { firstCandidateChoices } from "./effect-choices.ts";
 import type { CardRecordTable, Goal } from "./engine.ts";
-import type { GameState } from "./state.ts";
+import type { GameState, PokemonInPlay } from "./state.ts";
 
 const nonEmptyText = pipe(string(), nonEmpty());
 const CardIdSchema = pipe(string(), regex(/^[0-9]{6}$/));
@@ -194,7 +195,7 @@ export function resolveDeclaration(
   const { minimumDamage } = declaration;
   return {
     deadlines,
-    goals: buildGoals(mainAttacks, minimumDamage),
+    goals: buildGoals(mainAttacks, minimumDamage, paths),
     mainAttacks,
     ...(minimumDamage === undefined ? {} : { minimumDamage }),
     paths,
@@ -259,26 +260,156 @@ export function calculateBestMainAttackDamage(
   return damages.length === 0 ? null : Math.max(...damages);
 }
 
+// ---- 主軸への道の足りないカード(失敗の要因) ----
+
+/** 記録のカードが今どこにあるか(手札、場、山札、サイド、トラッシュの順に探す)。 */
+function describePlace(state: GameState, record: CardRecord): string {
+  const zones: readonly [string, readonly Card[]][] = [
+    ["手札", state.hand],
+    ["場", state.listPokemonInPlay().map((pokemon) => pokemon.card)],
+    ["山札", state.deck],
+    ["サイド", state.prizes],
+    ["トラッシュ", state.discard],
+  ];
+  const found = zones.find(([, zoneCards]) =>
+    zoneCards.some((candidate) => candidate.record === record)
+  );
+  return found === undefined ? "無い" : found[0];
+}
+
+/** 1 つの道を見るときの、使ったカード。同じ道で同じ 1 枚を 2 つの必要なカードに数えないため。 */
+interface UsedInPath {
+  readonly hand: Set<Card>;
+  readonly inPlay: Set<PokemonInPlay>;
+}
+
+function takePokemonInPlay(
+  state: GameState,
+  used: UsedInPath,
+  record: CardRecord,
+  isUsable: (pokemon: PokemonInPlay) => boolean
+): boolean {
+  const pokemon = state
+    .listPokemonInPlay()
+    .find(
+      (candidate) =>
+        candidate.card.record === record &&
+        !used.inPlay.has(candidate) &&
+        isUsable(candidate)
+    );
+  if (pokemon !== undefined) {
+    used.inPlay.add(pokemon);
+  }
+  return pokemon !== undefined;
+}
+
+/** 必要なカードが置き場所にあるか。置き場所の種類(RequiredCardPlace)と 1 対 1 に対応させる。 */
+const requiredCardCheckers: Readonly<
+  Record<
+    RequiredCardPlace,
+    (state: GameState, used: UsedInPath, record: CardRecord) => boolean
+  >
+> = {
+  deck: (state, _, record) =>
+    state.deck.some((candidate) => candidate.record === record),
+  hand: (state, used, record) => {
+    const card = state.hand.find(
+      (candidate) => candidate.record === record && !used.hand.has(candidate)
+    );
+    if (card !== undefined) {
+      used.hand.add(card);
+    }
+    return card !== undefined;
+  },
+  inPlay: (state, used, record) =>
+    takePokemonInPlay(state, used, record, () => true),
+  inPlaySincePreviousTurn: (state, used, record) =>
+    takePokemonInPlay(
+      state,
+      used,
+      record,
+      (pokemon) => !pokemon.isFresh(state.turn)
+    ),
+  stadium: (state, _, record) => state.stadium?.record === record,
+};
+
+/** 置き場所に無い必要なカードの今の置き場所。前の番から場に要るポケモンがこの番に出たばかりなら、そう書く。 */
+function describeMissingCard(state: GameState, required: RequiredCard): string {
+  const isFreshInPlay =
+    required.place === "inPlaySincePreviousTurn" &&
+    state
+      .listPokemonInPlay()
+      .some(
+        (pokemon) =>
+          pokemon.card.record === required.record && pokemon.isFresh(state.turn)
+      );
+  const where = isFreshInPlay
+    ? "この番に場に出たか進化した"
+    : describePlace(state, required.record);
+  return `${required.record.name}(${where})`;
+}
+
+/** 道の必要なカードのうち、置き場所に揃っていないものの一覧(名前と今の置き場所)。 */
+export function listMissingCards(
+  state: GameState,
+  path: PathToMainAttacker
+): string[] {
+  const used: UsedInPath = { hand: new Set(), inPlay: new Set() };
+  return path.requiredCards.flatMap((required) =>
+    requiredCardCheckers[required.place](state, used, required.record)
+      ? []
+      : [describeMissingCard(state, required)]
+  );
+}
+
+/**
+ * 主軸が場にいないときの失敗の要因。宣言の道のうちいちばん揃っている道(足りないカードが少ない道、同数なら先の道)に
+ * ついて、足りないカードと今の置き場所を出す。#22 の規則ファイルがデッキごとに書いていた要因の関数の代わりで、
+ * 宣言の道から作る(docs/solo-play-simulator-design.md「主軸への道を探索の評価に使う理由」)。
+ */
+export function explainPathShortfall(
+  state: GameState,
+  paths: readonly PathToMainAttacker[]
+): string {
+  const best = paths
+    .map((path) => ({ missing: listMissingCards(state, path), path }))
+    .reduce<{ missing: string[]; path: PathToMainAttacker } | null>(
+      (current, candidate) =>
+        current === null || candidate.missing.length < current.missing.length
+          ? candidate
+          : current,
+      null
+    );
+  if (best === null || best.missing.length === 0) {
+    return "道は揃っているが主軸が場にいない";
+  }
+  return `${best.path.name}: ${best.missing.join("、")} が足りない`;
+}
+
+// ---- 狙いの 3 段 ----
+
 function joinNames(names: readonly string[]): string {
   return [...new Set(names)].join(" か ");
 }
 
 function buildGoals(
   mainAttacks: readonly MainAttack[],
-  minimumDamage: number | undefined
+  minimumDamage: number | undefined,
+  paths: readonly PathToMainAttacker[]
 ): Goal[] {
   const pokemonNames = joinNames(mainAttacks.map((main) => main.record.name));
   const attackNames = joinNames(mainAttacks.map((main) => main.attack.name));
-  const notInPlay = `${pokemonNames} が場にいない`;
+  const explainNotInPlay = (state: GameState): string =>
+    `${pokemonNames} が場にいない(${explainPathShortfall(state, paths)})`;
   const stand: Goal = {
-    explainFailure: () => notInPlay,
+    explainFailure: explainNotInPlay,
     isAchieved: (state) => isMainPokemonInPlay(state, mainAttacks),
     name: `${pokemonNames} が場にいる`,
   };
   const explainAttackFailure = (state: GameState): string =>
     isMainPokemonInPlay(state, mainAttacks)
       ? `${pokemonNames} はいるが、バトル場から ${attackNames} を使えない`
-      : notInPlay;
+      : explainNotInPlay(state);
   const attack: Goal = {
     explainFailure: explainAttackFailure,
     isAchieved: (state) =>

@@ -156,10 +156,27 @@ describe("宣言から導いた狙いの判定", () => {
     );
   });
 
-  test("主軸が場にいなければ、どの段も要因は「場にいない」", () => {
+  test("主軸が場にいなければ、どの段も要因は「場にいない」と、いちばん揃っている道の足りないカード", () => {
     const state = buildState({ active: KIRLIA });
     expect(stand.isAchieved(state)).toBe(false);
-    expect(damage.explainFailure(state)).toBe("メガサーナイトex が場にいない");
+    expect(damage.explainFailure(state)).toBe(
+      "メガサーナイトex が場にいない(素の進化の道: メガサーナイトex(無い) が足りない)"
+    );
+  });
+
+  test("前の番から場に要るポケモンがこの番に出たばかりなら、要因にそう書く", () => {
+    const state = buildState({ hand: [MEGA_GARDEVOIR], turn: 2 });
+    state.active = new PokemonInPlay(KIRLIA, 2);
+    expect(stand.explainFailure(state)).toBe(
+      "メガサーナイトex が場にいない(素の進化の道: キルリア(この番に場に出たか進化した) が足りない)"
+    );
+  });
+
+  test("道が揃っているのに主軸が場にいなければ、そう書く", () => {
+    const state = buildState({ active: KIRLIA, hand: [MEGA_GARDEVOIR] });
+    expect(stand.explainFailure(state)).toBe(
+      "メガサーナイトex が場にいない(道は揃っているが主軸が場にいない)"
+    );
   });
 
   test("バトル場の主軸に超エネルギーが 1 個なら打てるが、場の超エネルギーが 6 個に満たなければ 300 に届かない", () => {

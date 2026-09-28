@@ -1,13 +1,13 @@
 /**
- * 記録をそろえたデッキ(Issue 22 の 4 デッキと、規則ファイルの無い開発責任者の 2 デッキ)を、カードの記録だけで
+ * 記録をそろえたデッキ(Issue 22 の 4 デッキと、開発責任者の残り 2 デッキ)を、カードの記録だけで
  * 組み立てて回す。今できる行動の一覧(player-actions.ts)から行動を選ぶ 2 つの手順で、翻訳した効果と一覧の行動が
  * 基本ルールに反さずに最後まで動くかを確かめる(効果の中の選択は候補の先頭から選ぶ)。
  */
 
 import { describe, expect, test } from "bun:test";
+import { ADDITIONAL_RECORDED_DECKS } from "./additional-recorded-decks.ts";
 import { listUsableAttacksOfActive } from "./card-effects.ts";
 import { cardRecordTable } from "./card-record-table.ts";
-import { DECKS_WITHOUT_RULE_FILES } from "./decks-without-rule-files.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
 import { buildDeck, type PlayingPolicy, runGame } from "./engine.ts";
 import { ISSUE22_DECKS } from "./issue22-decks.ts";
@@ -68,7 +68,7 @@ function createRandomActionPolicy(seed: number): PlayingPolicy {
 }
 
 describe("記録をそろえたデッキ", () => {
-  for (const deck of [...ISSUE22_DECKS, ...DECKS_WITHOUT_RULE_FILES]) {
+  for (const deck of [...ISSUE22_DECKS, ...ADDITIONAL_RECORDED_DECKS]) {
     test(`${deck.name}: 60 枚すべてをカードの記録から組み立てられる`, () => {
       expect(buildDeck(cardRecordTable, deck.decklist)).toHaveLength(60);
     });

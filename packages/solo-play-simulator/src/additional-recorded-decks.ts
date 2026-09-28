@@ -1,13 +1,14 @@
 /**
- * 開発責任者のデッキのうち、Issue 22 の規則ファイルが無い 2 デッキの 60 枚の内容(カード ID と枚数)。
+ * 記録だけで組み立てて回すデッキのうち、Issue 22 の 4 デッキ(issue22-decks.ts)以外のもの。開発責任者の残り 2 デッキ
+ * (シロナのガブリアスex、メガレックウザex)の 60 枚の内容(カード ID と枚数)。
  * デッキコードから公式のデッキ表示ページで読んだ(2026-09-23)。開発責任者の許可を得てリポジトリに置く
- * (docs/setup-rate-design.md「公式サイトの内容を転載しない方針との整理」)。Issue 27 の決定事項「翻訳の範囲」で、
+ * (docs/solo-play-simulator-design.md「公式サイトの内容を転載しない方針との整理」)。Issue 27 の決定事項「翻訳の範囲」で、
  * Issue 22 の 4 デッキと並んで記録をそろえる対象になっている。記録だけで 60 枚を最後まで回せるかのテストに使う。
  */
 
 import type { RecordedDeck } from "./issue22-decks.ts";
 
-export const DECKS_WITHOUT_RULE_FILES: readonly RecordedDeck[] = [
+export const ADDITIONAL_RECORDED_DECKS: readonly RecordedDeck[] = [
   {
     deckCode: "6nNQgQ-y6q3om-9HnnLL",
     decklist: [

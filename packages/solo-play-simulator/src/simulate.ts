@@ -241,11 +241,15 @@ export function formatSummary(
 }
 
 export interface VariantComparisonOptions {
+  /**
+   * 変更案ごと、先攻・後攻ごとに作り直すプレイングの判断基準。探索は自分の乱数を持つため、1 つを使い回すと
+   * 前の変更案の試行の分だけ乱数が進み、差に探索の乱数の違いが混ざる。
+   */
+  readonly createPolicy: () => PlayingPolicy;
   readonly deadlines: readonly Deadline[];
   readonly decklist: Decklist;
   readonly goals: readonly Goal[];
   readonly maxTurn: number;
-  readonly policy: PlayingPolicy;
   readonly recordTable: CardRecordTable;
   readonly seed: number;
   readonly trials: number;
@@ -289,7 +293,7 @@ export function compareVariants(
         ),
         goals: options.goals,
         maxTurn: options.maxTurn,
-        policy: options.policy,
+        policy: options.createPolicy(),
         seed: options.seed,
         trials: options.trials,
         wentFirst,

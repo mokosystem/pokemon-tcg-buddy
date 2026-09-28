@@ -6,17 +6,13 @@
  *   bun run compare:issue22-rates mega-charizard 20000
  *   bun run compare:issue22-rates dragapult 2000 ファントムダイブ 3 5
  *
- * 失敗の要因の内訳は、主軸が場にいないときだけ、宣言の主軸への道のうちいちばん揃っている道で、足りないカードと
- * その置き場所を出す(狙いの判定そのものは宣言から導いた狙いと同じ)。
+ * 失敗の要因の内訳は、宣言から導いた狙いのもの(主軸が場にいないときは、宣言の道のうちいちばん揃っている道の
+ * 足りないカードと置き場所。declaration.ts の explainPathShortfall)。
  */
 
-import type { CardRecord } from "../src/card-record-schema.ts";
 import { cardRecordTable } from "../src/card-record-table.ts";
 import type { Card } from "../src/cards.ts";
 import {
-  isMainPokemonInPlay,
-  type PathToMainAttacker,
-  type RequiredCard,
   type ResolvedDeclaration,
   resolveDeclaration,
 } from "../src/declaration.ts";
@@ -36,7 +32,6 @@ import {
   formatSummary,
   SimulationSummary,
 } from "../src/simulate.ts";
-import type { GameState, PokemonInPlay } from "../src/state.ts";
 import {
   ISSUE22_COMPARISON_TARGETS,
   type Issue22Rate,
@@ -47,139 +42,6 @@ const SEED = 20_260_917;
 const SEARCH_SEED = 1;
 /** 2 万回のときの割合の揺れ(95 % の範囲、ポイント)。答え合わせの基準(Issue 27 の決定事項)。 */
 const TOLERANCE_POINTS = 0.7;
-
-// ---- 失敗の要因(主軸への道の足りないカード) ----
-
-/** 記録のカードが今どこにあるか(手札、場、山札、サイド、トラッシュの順に探す)。 */
-function describePlace(state: GameState, record: CardRecord): string {
-  const zones: readonly [string, readonly Card[]][] = [
-    ["手札", state.hand],
-    ["場", state.listPokemonInPlay().map((pokemon) => pokemon.card)],
-    ["山札", state.deck],
-    ["サイド", state.prizes],
-    ["トラッシュ", state.discard],
-  ];
-  const found = zones.find(([, zoneCards]) =>
-    zoneCards.some((candidate) => candidate.record === record)
-  );
-  return found === undefined ? "無い" : found[0];
-}
-
-/** 1 つの道を見るときの、使ったカード。同じ道で同じ 1 枚を 2 つの必要なカードに数えないため。 */
-interface UsedInPath {
-  readonly hand: Set<Card>;
-  readonly inPlay: Set<PokemonInPlay>;
-}
-
-function takePokemonInPlay(
-  state: GameState,
-  used: UsedInPath,
-  record: CardRecord,
-  isUsable: (pokemon: PokemonInPlay) => boolean
-): boolean {
-  const pokemon = state
-    .listPokemonInPlay()
-    .find(
-      (candidate) =>
-        candidate.card.record === record &&
-        !used.inPlay.has(candidate) &&
-        isUsable(candidate)
-    );
-  if (pokemon !== undefined) {
-    used.inPlay.add(pokemon);
-  }
-  return pokemon !== undefined;
-}
-
-/** 必要なカードが置き場所にあるか。置き場所の種類(declaration.ts の RequiredCardPlace)と 1 対 1 に対応させる。 */
-const requiredCardCheckers: Readonly<
-  Record<
-    RequiredCard["place"],
-    (state: GameState, used: UsedInPath, record: CardRecord) => boolean
-  >
-> = {
-  deck: (state, _, record) =>
-    state.deck.some((candidate) => candidate.record === record),
-  hand: (state, used, record) => {
-    const card = state.hand.find(
-      (candidate) => candidate.record === record && !used.hand.has(candidate)
-    );
-    if (card !== undefined) {
-      used.hand.add(card);
-    }
-    return card !== undefined;
-  },
-  inPlay: (state, used, record) =>
-    takePokemonInPlay(state, used, record, () => true),
-  inPlaySincePreviousTurn: (state, used, record) =>
-    takePokemonInPlay(
-      state,
-      used,
-      record,
-      (pokemon) => !pokemon.isFresh(state.turn)
-    ),
-  stadium: (state, _, record) => state.stadium?.record === record,
-};
-
-/** 置き場所に無い必要なカードの今の置き場所。前の番から場に要るポケモンがこの番に出たばかりなら、そう書く。 */
-function describeMissingCard(state: GameState, required: RequiredCard): string {
-  const isFreshInPlay =
-    required.place === "inPlaySincePreviousTurn" &&
-    state
-      .listPokemonInPlay()
-      .some(
-        (pokemon) =>
-          pokemon.card.record === required.record && pokemon.isFresh(state.turn)
-      );
-  const where = isFreshInPlay
-    ? "この番に場に出たか進化した"
-    : describePlace(state, required.record);
-  return `${required.record.name}(${where})`;
-}
-
-/** 必要なカードが置き場所に揃っていないものの一覧。 */
-function listMissingCards(
-  state: GameState,
-  path: PathToMainAttacker
-): string[] {
-  const used: UsedInPath = { hand: new Set(), inPlay: new Set() };
-  return path.requiredCards.flatMap((required) =>
-    requiredCardCheckers[required.place](state, used, required.record)
-      ? []
-      : [describeMissingCard(state, required)]
-  );
-}
-
-/** 主軸が場にいないとき、いちばん揃っている道(足りないカードが少ない道、同数なら先の道)の足りないカード。 */
-function explainPathShortfall(
-  state: GameState,
-  resolved: ResolvedDeclaration
-): string {
-  const best = resolved.paths
-    .map((path) => ({ missing: listMissingCards(state, path), path }))
-    .reduce<{ missing: string[]; path: PathToMainAttacker } | null>(
-      (current, candidate) =>
-        current === null || candidate.missing.length < current.missing.length
-          ? candidate
-          : current,
-      null
-    );
-  if (best === null || best.missing.length === 0) {
-    return "道は揃っているが主軸が場にいない";
-  }
-  return `${best.path.name}: ${best.missing.join("、")} が足りない`;
-}
-
-/** 宣言から導いた狙いの失敗の要因を、主軸が場にいないときだけ道の足りないカードに置き換える。 */
-function withPathShortfall(resolved: ResolvedDeclaration): Goal[] {
-  return resolved.goals.map((goal) => ({
-    ...goal,
-    explainFailure: (state) =>
-      isMainPokemonInPlay(state, resolved.mainAttacks)
-        ? goal.explainFailure(state)
-        : `主軸が場にいない(${explainPathShortfall(state, resolved)})`,
-  }));
-}
 
 // ---- 対戦の履歴 ----
 
@@ -394,7 +256,7 @@ function main(argv: readonly string[]): void {
   const resolved = resolveDeclaration(target.declaration, cardRecordTable);
   const sideOptions = {
     deckCards: buildDeck(cardRecordTable, deck.decklist),
-    goals: [...target.measuredGoals, ...withPathShortfall(resolved)],
+    goals: [...target.measuredGoals, ...resolved.goals],
     resolved,
     traceRequest: parseTraceRequest(argv.slice(2)),
     trials,
