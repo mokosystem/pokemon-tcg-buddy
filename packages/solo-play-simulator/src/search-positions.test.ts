@@ -1,6 +1,6 @@
 /**
  * 題材の局面 A〜F(search-positions.ts)で、探索が正しい手を選ぶかを確かめる。20 通りの並べ方での結果は
- * `bun run compare:search-evaluators 20` で出し、docs/setup-rate-design.md「順 7 で決めたこと(2 セッション目)」に記録した。
+ * `bun run compare:search-evaluators 20` で出し、docs/solo-play-simulator-design.md「順 7 で決めたこと(2 セッション目)」に記録した。
  * ここでは並べ方 5 通りで確かめる。今は正しい手を選べない局面は test.failing にし、選べるようになったら落ちて知らせる。
  */
 

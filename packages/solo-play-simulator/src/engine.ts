@@ -92,7 +92,7 @@ export class MissingCardRecordsError extends Error {
 /**
  * 60 枚の内容から、対戦で使うカードの並びを作る。記録が無いカード ID は全部集めて示して止める
  * (属性が分からないと、前提の文で何を含めていないかを正しく言えないため。
- * docs/setup-rate-design.md「翻訳が無いカードと計算の前提」)。
+ * docs/solo-play-simulator-design.md「翻訳が無いカードと計算の前提」)。
  */
 export function buildDeck(
   recordTable: CardRecordTable,

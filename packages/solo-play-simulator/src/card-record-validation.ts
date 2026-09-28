@@ -3,7 +3,7 @@
  * ファイルの置き場所、記録の中の欄どうしの整合)を行い、カード ID から記録を引く表を作る。
  *
  * 入口(card-record-table.ts)が読み込み時にこの検査を 1 回通し、落ちたらファイル名と JSON の中の位置を
- * 添えて止める。壊れた記録で数字を出さないため(docs/setup-rate-design.md「検査をコードに置く理由」)。
+ * 添えて止める。壊れた記録で数字を出さないため(docs/solo-play-simulator-design.md「検査をコードに置く理由」)。
  */
 
 import { getDotPath, safeParse } from "valibot";
@@ -235,7 +235,7 @@ function findRecordProblems(file: ParsedCardRecordFile): string[] {
 
 /**
  * 記録をまたぐ検査と、記録ごとの整合の検査。進化前の名前が記録にあるかは検査しない
- * (進化前がどのデッキにも入らない記録が正当にある。docs/setup-rate-design.md「検査をコードに置く理由」)。
+ * (進化前がどのデッキにも入らない記録が正当にある。docs/solo-play-simulator-design.md「検査をコードに置く理由」)。
  */
 export function findCardRecordProblems(
   files: readonly ParsedCardRecordFile[]
