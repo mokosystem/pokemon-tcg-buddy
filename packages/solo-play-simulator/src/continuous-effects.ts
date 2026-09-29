@@ -2,7 +2,7 @@
  * 場にある間ずっと働く効果(特性、スタジアム、ポケモンのどうぐ、特殊エネルギー)を集め、判定に当てる。
  *
  * 状態を書き換えず、判定のたびに場にある効果を集めて実効値を求める。場を離れた効果は集めた中に
- * 入らないので、効果を消すための記録が要らない(docs/setup-rate-design.md「場にある間ずっと働く効果」)。
+ * 入らないので、効果を消すための記録が要らない(docs/solo-play-simulator-design.md「場にある間ずっと働く効果」)。
  */
 
 import {
@@ -124,7 +124,7 @@ function collectMet(
 /**
  * 今働いている効果を集める。特性やどうぐを無くす効果は、スタジアムが持つものだけを先に集めて当てる。
  * 特性やどうぐが特性・どうぐを無くすカードはまだ翻訳に無く、無くす効果どうしの優先も決めていない
- * (docs/setup-rate-design.md「場にある間ずっと働く効果」)。
+ * (docs/solo-play-simulator-design.md「場にある間ずっと働く効果」)。
  */
 function collectContinuousEffects(
   state: GameState

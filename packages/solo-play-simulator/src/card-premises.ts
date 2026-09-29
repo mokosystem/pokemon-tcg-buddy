@@ -1,6 +1,6 @@
 /**
  * 計算の前提(CONTEXT.md「計算の前提」)。デッキによらない固定の文と、デッキのカードの記録から作る
- * カードごとの前提からなる。docs/setup-rate-design.md「翻訳が無いカードと計算の前提」の 3 つの分け方に従う。
+ * カードごとの前提からなる。docs/solo-play-simulator-design.md「翻訳が無いカードと計算の前提」の 3 つの分け方に従う。
  */
 
 import type {

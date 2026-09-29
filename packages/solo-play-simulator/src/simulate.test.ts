@@ -168,11 +168,11 @@ describe("集計の整形", () => {
 
 describe("枚数を変えたときの比較", () => {
   const options = {
+    createPolicy: () => attachingPolicy,
     deadlines: [{ goal: "エネルギー 2 個", turn: 2 }],
     decklist: BASICS_AND_ENERGIES,
     goals: [twoEnergies],
     maxTurn: 2,
-    policy: attachingPolicy,
     recordTable: SAMPLE_RECORD_TABLE,
     seed: 1,
     trials: 50,

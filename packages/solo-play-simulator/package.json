@@ -24,6 +24,7 @@
   "scripts": {
     "compare:issue22-rates": "bun scripts/compare-with-issue22.ts",
     "compare:search-evaluators": "bun scripts/compare-search-evaluators.ts",
+    "estimate:setup-rate": "bun scripts/estimate-setup-rate.ts",
     "generate:card-record-files": "bun scripts/generate-card-record-files.ts",
     "measure:search-time": "bun scripts/measure-search-time.ts"
   },

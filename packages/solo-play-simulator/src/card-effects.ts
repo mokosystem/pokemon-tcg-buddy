@@ -3,7 +3,7 @@
  * カードの記録にある効果の翻訳とともに実行する。プレイングの判断基準(PlayingPolicy)はこの関数で行動する。
  *
  * 翻訳が無いカードは、カードを使う基本処理(トラッシュする、場に出す、つける)だけが起きる
- * (docs/setup-rate-design.md「翻訳が無いカードと計算の前提」)。
+ * (docs/solo-play-simulator-design.md「翻訳が無いカードと計算の前提」)。
  */
 
 import { CardCategory } from "./card-record-schema.ts";

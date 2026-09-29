@@ -1,6 +1,6 @@
 /**
  * Issue 22 の 4 デッキの 60 枚の内容(カード ID と枚数)。setup_rate/decks/ の規則ファイルのカード表と 60 枚の内容から写した。
- * 開発責任者のデッキ 3 つは本人の許可、ドラパルトex は公式の記事で公開された優勝デッキ(docs/setup-rate-design.md
+ * 開発責任者のデッキ 3 つは本人の許可、ドラパルトex は公式の記事で公開された優勝デッキ(docs/solo-play-simulator-design.md
  * 「公式サイトの内容を転載しない方針との整理」)。4 デッキの記録がそろい、翻訳で 60 枚を最後まで回せるかのテストに使う。
  */
 
@@ -15,7 +15,7 @@ export interface RecordedDeck {
 }
 
 /**
- * メガサーナイトex デッキ(xG8Kax-DHob4e-84xcca)の宣言。docs/setup-rate-design.md「宣言の書式」の例と同じ。
+ * メガサーナイトex デッキ(xG8Kax-DHob4e-84xcca)の宣言。docs/solo-play-simulator-design.md「宣言の書式」の例と同じ。
  * 順 7 で探索の題材(局面 A〜F と時間の計測)に、順 8 で答え合わせに使う。
  */
 export const MEGA_GARDEVOIR_DECLARATION: Declaration = {

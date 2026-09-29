@@ -3,7 +3,7 @@
  *
  * 記録は src/card-records/ の JSON に 1 記録 1 ファイルで置き、このスキーマで検査する。TypeScript の型は
  * ここから導き、編集時の検証に使う JSON Schema(src/card-records/card-record.schema.json)もここから生成する。
- * 部品の意味と足す手順は docs/setup-rate-design.md「効果の記法と裁定のデータ」にある。
+ * 部品の意味と足す手順は docs/solo-play-simulator-design.md「効果の記法と裁定のデータ」にある。
  *
  * スキーマの道具を valibot にしたのは、パッケージに実行時にコードを生成する処理(new Function、eval)が無く、
  * 依存も無く、JSON Schema を公式の @valibot/to-json-schema で出せるため(選定の記録は設計文書)。

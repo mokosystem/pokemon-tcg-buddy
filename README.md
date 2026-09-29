@@ -16,7 +16,7 @@
 
 Claude Code や Cursor などのコーディングエージェント上で動くエージェントスキルとして提供する。このリポジトリを開いたエージェントが、そのままデッキ構築とデッキ診断の相談相手になる形を最初のゴールとする。一般ユーザー向けの UI は後から検討する。
 
-このリポジトリは、Web(Next.js)、API(Bun と Elysia.js)、Terraform、AI エージェント(スキル)をまとめて管理するモノレポにする想定で、複数の場所から使う共有の部品は TypeScript で `packages/` に置く。スキルが計算に使う道具(主軸の成立率を乱数試行で求める骨組み)もこの共有の部品にあたり、提供形態はスキルのままで、コードはスキルが呼び出す道具と位置づける。現在の `setup_rate/`(Python)は Issue 22 で作った試作で、Issue 27 で `packages/` の TypeScript に置き換えるまでの間だけ残す。設計は [docs/setup-rate-design.md](docs/setup-rate-design.md) にある。
+このリポジトリは、Web(Next.js)、API(Bun と Elysia.js)、Terraform、AI エージェント(スキル)をまとめて管理するモノレポにする想定で、複数の場所から使う共有の部品は TypeScript で `packages/` に置く。スキルが計算に使う道具(主軸の成立率を乱数試行で求める骨組み)もこの共有の部品にあたり、提供形態はスキルのままで、コードはスキルが呼び出す道具と位置づける。計算の骨組みは `packages/solo-play-simulator` にあり、Issue 22 で作った Python の試作(`setup_rate/`)は Issue 27 で置き換えて削除した。設計は [docs/solo-play-simulator-design.md](docs/solo-play-simulator-design.md) にある。
 
 ## 対象レギュレーション
 

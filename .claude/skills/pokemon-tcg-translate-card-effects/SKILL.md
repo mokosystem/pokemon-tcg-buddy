@@ -5,7 +5,7 @@ description: ポケモンカードのカードの記録(属性、ワザと特性
 
 # カードの記録を書く
 
-カード 1 種について、成立率の計算の骨組み(`packages/solo-play-simulator`)が読むカードの記録を書く。記録は公式のカード詳細ページと公式 Q&A で確かめた事実だけで書き、記憶で書かない。用語は [CONTEXT.md](../../../CONTEXT.md)「デッキ診断」の節(効果の記法、効果の翻訳、場にある間ずっと働く効果、カードの記録、裁定のデータ、計算の前提)に従う。記法の部品、欄の識別子、検査の設計の理由は [docs/setup-rate-design.md](../../../docs/setup-rate-design.md)「効果の記法と裁定のデータ」にある。
+カード 1 種について、成立率の計算の骨組み(`packages/solo-play-simulator`)が読むカードの記録を書く。記録は公式のカード詳細ページと公式 Q&A で確かめた事実だけで書き、記憶で書かない。用語は [CONTEXT.md](../../../CONTEXT.md)「デッキ診断」の節(効果の記法、効果の翻訳、場にある間ずっと働く効果、カードの記録、裁定のデータ、計算の前提)に従う。記法の部品、欄の識別子、検査の設計の理由は [docs/solo-play-simulator-design.md](../../../docs/solo-play-simulator-design.md)「効果の記法と裁定のデータ」にある。
 
 ## いつ使うか
 
@@ -18,7 +18,7 @@ description: ポケモンカードのカードの記録(属性、ワザと特性
 - [docs/pokemon-tcg/site-usage-notes.md](../../../docs/pokemon-tcg/site-usage-notes.md)(転載しない、過度な連続アクセスをしない)
 - [docs/pokemon-tcg/card-lookup.md](../../../docs/pokemon-tcg/card-lookup.md)(3 点確認、同じ名前のカードと印刷)
 - [docs/pokemon-tcg/faq-lookup.md](../../../docs/pokemon-tcg/faq-lookup.md)(公式 Q&A の検索と出典の書き方)
-- [docs/setup-rate-design.md](../../../docs/setup-rate-design.md)「効果の記法と裁定のデータ」の「基本操作」の表、「欄と部品の識別子」、「部品を足す手順」、「カードによらない実行の決まり」
+- [docs/solo-play-simulator-design.md](../../../docs/solo-play-simulator-design.md)「効果の記法と裁定のデータ」の「基本操作」の表、「欄と部品の識別子」、「部品を足す手順」、「カードによらない実行の決まり」
 - 記法のスキーマ `packages/solo-play-simulator/src/card-record-schema.ts` と、同じ種類のカードの記録の例(`src/card-records/<種類>/`)
 
 ## 手順
@@ -139,7 +139,7 @@ bun run lint
 bun run analyze
 ```
 
-デッキ全体の記録がそろったら、そのデッキを記録だけで組み立てて回すテスト(`src/recorded-decks.test.ts`)にデッキを足し、使えるカードを片端から使う手順で最後まで回ることを確かめる。基本ルールに反する翻訳や、場が空になる効果の見落としは、ここで見つかる。60 枚の内容は `src/issue22-decks.ts` と `src/decks-without-rule-files.ts` と同じ形で置く。リポジトリに置いてよいのは持ち主の許可があるデッキだけで、環境デッキなど大会で結果を残したデッキの 60 枚の内容は置かない([docs/pokemon-tcg/metagame-lookup.md](../../../docs/pokemon-tcg/metagame-lookup.md)「デッキ内容を保存しない」)。置けないデッキは、同じ手順を作業領域で回して確かめ、結果だけを PR に書く。Issue 22 のドラパルトex は、公式の記事で公開された優勝デッキを検証用に置くと決めた例外([docs/setup-rate-design.md](../../../docs/setup-rate-design.md)「公式サイトの内容を転載しない方針との整理」)。
+デッキ全体の記録がそろったら、そのデッキを記録だけで組み立てて回すテスト(`src/recorded-decks.test.ts`)にデッキを足し、使えるカードを片端から使う手順で最後まで回ることを確かめる。基本ルールに反する翻訳や、場が空になる効果の見落としは、ここで見つかる。60 枚の内容は `src/issue22-decks.ts` と `src/additional-recorded-decks.ts` と同じ形で置く。リポジトリに置いてよいのは持ち主の許可があるデッキだけで、環境デッキなど大会で結果を残したデッキの 60 枚の内容は置かない([docs/pokemon-tcg/metagame-lookup.md](../../../docs/pokemon-tcg/metagame-lookup.md)「デッキ内容を保存しない」)。置けないデッキは、同じ手順を作業領域で回して確かめ、結果だけを PR に書く。Issue 22 のドラパルトex は、公式の記事で公開された優勝デッキを検証用に置くと決めた例外([docs/solo-play-simulator-design.md](../../../docs/solo-play-simulator-design.md)「公式サイトの内容を転載しない方針との整理」)。
 
 記録を書き終えたら、取得した詳細ページと記録の属性(名前、進化の段階と進化前、HP、タイプ、にげるエネルギー、ワザの名前・必要なエネルギー・ダメージ、特性の名前、ポケモンex・メガシンカex、テラスタル、トレーナーズの種類)を機械的に突き合わせる。写し間違いは検査では見つからない(スキーマに合った誤りの値は通る)。突き合わせの道具は作業領域に書いて捨て、ページの内容はリポジトリに保存しない。
 

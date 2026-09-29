@@ -1,7 +1,7 @@
 /**
  * 効果の記法の基本操作を、骨組みの状態に対して実行する。操作ごとの処理は、記法の部品の一覧と
  * 1 対 1 に対応する表(operationRunners、firstStepTargetChecks)に置く。部品を足すときは、
- * card-record-schema.ts の部品とこの 2 つの表に 1 行ずつ足す(docs/setup-rate-design.md「部品を足す手順」)。
+ * card-record-schema.ts の部品とこの 2 つの表に 1 行ずつ足す(docs/solo-play-simulator-design.md「部品を足す手順」)。
  */
 
 import {
@@ -728,7 +728,7 @@ function attachEnergyFromHandDistributed(
   }
 }
 
-/** コインを 1 回投げる。オモテとウラは 1/2 ずつとする(docs/setup-rate-design.md「順 4 から送られた論点の決定」の 1)。 */
+/** コインを 1 回投げる。オモテとウラは 1/2 ずつとする(docs/solo-play-simulator-design.md「順 4 から送られた論点の決定」の 1)。 */
 function flipsHeads(state: GameState): boolean {
   state.noteUncertainOutcome();
   return state.random.nextFloat() < 0.5;
