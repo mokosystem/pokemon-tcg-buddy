@@ -277,10 +277,32 @@ function describePlace(state: GameState, record: CardRecord): string {
   return found === undefined ? "無い" : found[0];
 }
 
-/** 1 つの道を見るときの、使ったカード。同じ道で同じ 1 枚を 2 つの必要なカードに数えないため。 */
+/**
+ * 1 つの道を見るときに使ったカード。同じ道で同じ 1 枚を 2 つの必要なカードに数えないため。手札と山札は記録ごとの
+ * 枚数で数える(buildDeck は同じカード ID の各枚を同じ Card で表すので、Card の集合では 2 枚目以降を区別できない)。
+ * 場のポケモンは 1 匹ずつ別の PokemonInPlay なので、そのまま集合で持つ。
+ */
 interface UsedInPath {
-  readonly hand: Set<Card>;
+  readonly deck: Map<CardRecord, number>;
+  readonly hand: Map<CardRecord, number>;
   readonly inPlay: Set<PokemonInPlay>;
+}
+
+/** zoneCards に record のカードが、使った分を除いて残っていれば 1 枚使い、使えたかを返す。 */
+function takeCard(
+  zoneCards: readonly Card[],
+  used: Map<CardRecord, number>,
+  record: CardRecord
+): boolean {
+  const taken = used.get(record) ?? 0;
+  const available = zoneCards.filter(
+    (candidate) => candidate.record === record
+  ).length;
+  if (available <= taken) {
+    return false;
+  }
+  used.set(record, taken + 1);
+  return true;
 }
 
 function takePokemonInPlay(
@@ -310,17 +332,8 @@ const requiredCardCheckers: Readonly<
     (state: GameState, used: UsedInPath, record: CardRecord) => boolean
   >
 > = {
-  deck: (state, _, record) =>
-    state.deck.some((candidate) => candidate.record === record),
-  hand: (state, used, record) => {
-    const card = state.hand.find(
-      (candidate) => candidate.record === record && !used.hand.has(candidate)
-    );
-    if (card !== undefined) {
-      used.hand.add(card);
-    }
-    return card !== undefined;
-  },
+  deck: (state, used, record) => takeCard(state.deck, used.deck, record),
+  hand: (state, used, record) => takeCard(state.hand, used.hand, record),
   inPlay: (state, used, record) =>
     takePokemonInPlay(state, used, record, () => true),
   inPlaySincePreviousTurn: (state, used, record) =>
@@ -354,7 +367,11 @@ export function listMissingCards(
   state: GameState,
   path: PathToMainAttacker
 ): string[] {
-  const used: UsedInPath = { hand: new Set(), inPlay: new Set() };
+  const used: UsedInPath = {
+    deck: new Map(),
+    hand: new Map(),
+    inPlay: new Set(),
+  };
   return path.requiredCards.flatMap((required) =>
     requiredCardCheckers[required.place](state, used, required.record)
       ? []

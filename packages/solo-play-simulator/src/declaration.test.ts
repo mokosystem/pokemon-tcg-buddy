@@ -4,6 +4,8 @@ import { buildRecordedCard, buildState } from "./card-test-support.ts";
 import {
   type Declaration,
   DeclarationValidationError,
+  listMissingCards,
+  type PathToMainAttacker,
   resolveDeclaration,
 } from "./declaration.ts";
 import {
@@ -177,6 +179,29 @@ describe("宣言から導いた狙いの判定", () => {
     expect(stand.explainFailure(state)).toBe(
       "メガサーナイトex が場にいない(道は揃っているが主軸が場にいない)"
     );
+  });
+
+  test("同じカードを 2 枚要る道は、手札と山札の枚数で揃いを数える", () => {
+    const twoRaltsInHand: PathToMainAttacker = {
+      name: "手札に 2 枚の道",
+      requiredCards: [
+        { place: "hand", record: RALTS.record },
+        { place: "hand", record: RALTS.record },
+      ],
+    };
+    const twoRaltsInDeck: PathToMainAttacker = {
+      name: "山札に 2 枚の道",
+      requiredCards: [
+        { place: "deck", record: RALTS.record },
+        { place: "deck", record: RALTS.record },
+      ],
+    };
+    const enough = buildState({ deck: [RALTS, RALTS], hand: [RALTS, RALTS] });
+    expect(listMissingCards(enough, twoRaltsInHand)).toEqual([]);
+    expect(listMissingCards(enough, twoRaltsInDeck)).toEqual([]);
+    const short = buildState({ deck: [RALTS], hand: [RALTS] });
+    expect(listMissingCards(short, twoRaltsInHand)).toEqual(["ラルトス(手札)"]);
+    expect(listMissingCards(short, twoRaltsInDeck)).toEqual(["ラルトス(手札)"]);
   });
 
   test("バトル場の主軸に超エネルギーが 1 個なら打てるが、場の超エネルギーが 6 個に満たなければ 300 に届かない", () => {

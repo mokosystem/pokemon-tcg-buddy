@@ -7,10 +7,11 @@
  *
  * 入力の JSON は 1 つのファイルで、デッキコード、60 枚の内容(カード ID と枚数)、宣言、比べたい枚数の変更案(任意)を
  * 持つ(書式は `EstimateInputSchema`)。利用者のデッキの内容は本人のものなので、このファイルはリポジトリに置かず、作業領域に
- * 書いて捨てる。出力は、計算の前提(デッキによらない前提とカードごとの前提)、先攻・後攻の成立率の表、失敗の要因の内訳、
- * 枚数を変えたときの比較。乱数の種は既定を固定し、同じ入力なら同じ数字が出る。記録の無いカード ID があれば計算せずに
- * 止まる(engine.ts の MissingCardRecordsError)。探索の設定は順 8 の答え合わせと同じ(混ぜ直しを変えて試す回数 4、
- * 効果の中の選択は候補を試して選ぶ、探索の乱数の種 1)。
+ * 書いて捨てる。出力は、計算の前提(デッキによらない前提とカードごとの前提。変更案で足すカードの前提も含む)、先攻・
+ * 後攻の成立率の表、失敗の要因の内訳、枚数を変えたときの比較。乱数の種は既定を固定し、同じ入力なら同じ数字が出る。
+ * 60 枚の内容にも変更案にも、記録の無いカード ID があれば計算せずに止まる(engine.ts の MissingCardRecordsError)。
+ * 探索の設定は順 8 の答え合わせと同じ(混ぜ直しを変えて試す回数 4、効果の中の選択は候補を試して選ぶ、探索の乱数の
+ * 種 1)。
  */
 
 import { readFileSync } from "node:fs";
@@ -43,7 +44,12 @@ import {
   type ResolvedDeclaration,
   resolveDeclaration,
 } from "../src/declaration.ts";
-import { buildDeck, type PlayingPolicy } from "../src/engine.ts";
+import {
+  applyVariant,
+  buildDeck,
+  type DeckVariant,
+  type PlayingPolicy,
+} from "../src/engine.ts";
 import { createPathProgressEvaluator } from "../src/search-evaluators.ts";
 import { createSearchPolicy } from "../src/search-policy.ts";
 import {
@@ -122,6 +128,12 @@ function parsePositiveInteger(
   return value;
 }
 
+/** 変更案と、その案で 60 枚に足す(元のデッキに無い)カード。前提に書くため。 */
+interface VariantAddedCards {
+  readonly addedCards: readonly Card[];
+  readonly variant: DeckVariant;
+}
+
 interface EstimateRun {
   readonly cards: readonly Card[];
   readonly createPolicy: () => PlayingPolicy;
@@ -131,9 +143,29 @@ interface EstimateRun {
   readonly resolved: ResolvedDeclaration;
   readonly seed: number;
   readonly trials: number;
+  readonly variants: readonly VariantAddedCards[];
 }
 
-/** 入力を読み、宣言と 60 枚の内容を記録に引き当て、探索の作り方をまとめる。 */
+/**
+ * 変更案ごとに 60 枚を組み立て、元のデッキに無い記録のカードを集める。ここで組み立てるのは、変更案の誤り(記録の無い
+ * カード ID、枚数が負になる、合計が変わる)を試行の前に見つけるためでもある(比較は元のデッキの試行の後に回る)。
+ */
+function listVariantAddedCards(
+  decklist: EstimateInput["decklist"],
+  baseCards: readonly Card[],
+  variants: readonly DeckVariant[]
+): VariantAddedCards[] {
+  const baseRecords = new Set(baseCards.map((card) => card.record));
+  return variants.map((variant) => ({
+    addedCards: buildDeck(
+      cardRecordTable,
+      applyVariant(decklist, variant)
+    ).filter((card) => !baseRecords.has(card.record)),
+    variant,
+  }));
+}
+
+/** 入力を読み、宣言と 60 枚の内容(変更案を含む)を記録に引き当て、探索の作り方をまとめる。 */
 function prepareRun(argv: readonly string[]): EstimateRun {
   const [inputPath, trialsArgument, seedArgument] = argv;
   if (inputPath === undefined) {
@@ -153,8 +185,9 @@ function prepareRun(argv: readonly string[]): EstimateRun {
   const deadlines = resolved.goals.flatMap((goal) =>
     resolved.deadlines.map((turn) => ({ goal: goal.name, turn }))
   );
+  const cards = buildDeck(cardRecordTable, input.decklist);
   return {
-    cards: buildDeck(cardRecordTable, input.decklist),
+    cards,
     createPolicy: () =>
       createSearchPolicy(resolved, createPathProgressEvaluator(resolved), {
         samplesForUncertainOutcome: SAMPLES_FOR_UNCERTAIN_OUTCOME,
@@ -167,7 +200,23 @@ function prepareRun(argv: readonly string[]): EstimateRun {
     resolved,
     seed: parsePositiveInteger(seedArgument, DEFAULT_SEED, "乱数の種"),
     trials: parsePositiveInteger(trialsArgument, DEFAULT_TRIALS, "試行回数"),
+    variants: listVariantAddedCards(
+      input.decklist,
+      cards,
+      input.variants ?? []
+    ),
   };
+}
+
+/** 変更案で足すカードのカードごとの前提。元のデッキの前提に続けて出す(比較の数字だけ見て省略を見落とさないため)。 */
+function formatVariantCardPremises(
+  variants: readonly VariantAddedCards[]
+): string[] {
+  return variants.flatMap(({ addedCards, variant }) =>
+    formatCardPremises(buildCardPremises(addedCards)).map(
+      (line) => `変更案「${variant.label}」で足すカード: ${line}`
+    )
+  );
 }
 
 function printAssumptions(run: EstimateRun): void {
@@ -177,6 +226,7 @@ function printAssumptions(run: EstimateRun): void {
         ...DECK_INDEPENDENT_PREMISES,
         "手札の使い方は、宣言した狙いの成立確率を最大にする手を探索(道の揃い具合を見る評価)で選ぶ。実際のプレイヤーの判断とは違うことがある",
         ...formatCardPremises(buildCardPremises(run.cards)),
+        ...formatVariantCardPremises(run.variants),
       ],
       deckCode: run.input.deckCode,
       title: `${run.input.name} の成立率(先攻・後攻 ${run.trials} 回ずつ、乱数の種 ${run.seed})`,
@@ -208,7 +258,7 @@ function printRates(run: EstimateRun): void {
 
 /** 入力に変更案があれば、枚数を変えたときの比較を出す。 */
 function printVariantComparison(run: EstimateRun): void {
-  const variants = run.input.variants ?? [];
+  const variants = run.variants.map((entry) => entry.variant);
   if (variants.length === 0) {
     return;
   }
