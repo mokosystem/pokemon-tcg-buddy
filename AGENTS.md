@@ -21,7 +21,11 @@
 
 カード、ルール、レギュレーションについて書くときは、README の「情報源の方針」に従う。具体的な確認手順は docs/pokemon-tcg/ の手順書にある。公式サイトを参照する前に [docs/pokemon-tcg/site-usage-notes.md](docs/pokemon-tcg/site-usage-notes.md) を読み、カードの確認は [docs/pokemon-tcg/card-lookup.md](docs/pokemon-tcg/card-lookup.md)、対戦の基本ルールは [docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md)、公式 Q&A の検索は [docs/pokemon-tcg/faq-lookup.md](docs/pokemon-tcg/faq-lookup.md)、デッキコードの読み取りとデッキ登録は [docs/pokemon-tcg/deck-tool.md](docs/pokemon-tcg/deck-tool.md)、環境(どの環境デッキが使われているか)の確認と通称の解決は [docs/pokemon-tcg/metagame-lookup.md](docs/pokemon-tcg/metagame-lookup.md) に従い、既存デッキの診断で避ける誤りの類型は [docs/pokemon-tcg/deck-diagnosis-pitfalls.md](docs/pokemon-tcg/deck-diagnosis-pitfalls.md) にある。エージェントとしての要点は次の通り。
 
-- カードの効果、数値、使用可否を記憶で断定しない。公式カード検索の詳細ページを開いて確認してから書く
+- カードの効果、数値、使用可否を記憶で断定しない。公式カード検索の詳細ページを開いて確認してから書く。カードの記録(`packages/solo-play-simulator/src/card-records/`)があるカードは、記録を読んでカード ID を添えてもよい(記録には公式ページを確認した日が入っている)
+- 対戦の基本ルール(にげる、進化、番に 1 回の制限など)に触れる文は、[docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md) の該当する行を読んでから書く。記憶で書かない
+- **出典を添えられない文は書かない。** 答えの本体だけでなく、会話の中の説明、理由を添えるついでの一文、局面の正しい手の設計、テストの前提、コードコメントも同じ。出典は、basic-rules.md の行、カードの記録のカード ID、公式ページの URL と確認日、公式 Q&A の検索結果 URL と確認日のいずれかにする。出典を添えられなければ書かないか、「未確認」と明記する。返答を送る前に、ルールやカードに触れる文に出典があるかを見直す
+- 実戦の判断(定石、どちらの手が正しいか)は公式の出典から導けないため、自分で断定せず、デッキの持ち主か開発責任者に確認する。ルール上の事実(何ができて何ができないか)と実戦の判断を、文の上で分けて書く
+- 計算の骨組み(`packages/solo-play-simulator`)では、ルールの判定(にげられるか、進化できるか、エネルギーを払えるか、サポートを使えるか)を骨組みの関数から借りる。探索の評価や手順の中にルールの数値や条件を書き直さない。ルールの誤りが入り込む場所を骨組みの 1 か所に限るため
 - 同じ名前のカードが複数並んでいても、詳細ページを見比べる前に「印刷違い」と書かない。見比べていなければ「印刷違いか別のカードかは未確認」と書く。人気のポケモンは同じ名前でワザや特性の違うカードが多い(card-lookup.md 手順 8)
 - 現行レギュレーションの内容(使用できるレギュレーションマークなど)をドキュメントやコードに固定値として書かない。公式レギュレーションページを都度参照する
 - 公式サイトのページ内容やカード画像をリポジトリに転載しない
