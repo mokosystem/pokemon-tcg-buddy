@@ -8,6 +8,8 @@ on:
 
 # ジョブ名は「何をするか-どの範囲か」で付ける。範囲は packages/(Bun の workspaces の共有ライブラリ)。
 # Web や API のパッケージを足すときは、その範囲のジョブを別に足す。
+# verifiers/(規約に照らして合否を出すスクリプト)の範囲は -verifiers のジョブ。
+# verify-exact-dependency-versions は範囲がリポジトリ全体の package.json なので、範囲ごとのジョブとは別に置く。
 jobs:
   test-packages:
     runs-on: ubuntu-latest
@@ -25,7 +27,7 @@ jobs:
       - uses: jdx/mise-action@v4
       - run: bun install --frozen-lockfile
       - name: packages/ を TypeScript の型検査にかける(bun test は型を検査しないため)
-        run: bun run typecheck
+        run: bun run tsc --noEmit -p packages/solo-play-simulator/tsconfig.json
 
   lint-packages:
     runs-on: ubuntu-latest
@@ -44,3 +46,38 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: packages/ を fallow で解析する(未使用のコード、循環参照、重複、複雑さ)
         run: bun run fallow
+
+  test-verifiers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bun install --frozen-lockfile
+      - name: verifiers/ のテストを実行する
+        run: bun test verifiers
+
+  typecheck-verifiers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bun install --frozen-lockfile
+      - name: verifiers/ を TypeScript の型検査にかける(bun test は型を検査しないため)
+        run: bun run tsc --noEmit -p verifiers/tsconfig.json
+
+  lint-verifiers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bun install --frozen-lockfile
+      - name: verifiers/ を Ultracite(Biome)で検査する(整形と lint)
+        run: bun run ultracite check verifiers
+
+  verify-exact-dependency-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - name: すべての package.json の依存の版がパッチまで固定されているかを検証する(Bun の組み込みだけで動くため bun install を省く)
+        run: bun run verify:exact-dependency-versions

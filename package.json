@@ -9,7 +9,8 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "test": "bun test",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p packages/solo-play-simulator/tsconfig.json && tsc --noEmit -p verifiers/tsconfig.json",
+    "verify:exact-dependency-versions": "bun verifiers/verify-exact-dependency-versions.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
