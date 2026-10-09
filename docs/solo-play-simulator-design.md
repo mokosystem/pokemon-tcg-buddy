@@ -4,7 +4,7 @@
 
 対応する Issue: [#22](https://github.com/mokosystem/pokemon-tcg-buddy/issues/22)(試作。Python の `setup_rate/`。設計日 2026-09-17)と [#27](https://github.com/mokosystem/pokemon-tcg-buddy/issues/27)(置き換え。TypeScript の `packages/solo-play-simulator`。2026-09-18〜2026-09-28)。#22 の試作は、デッキごとに規則ファイル(カードの効果の書き下しと行動の優先順位)を人が書く形で、利用者の多様なデッキに広げられないと分かり、#27 で「カードの効果は記法で書いたデータ(カードの記録)、プレイングの判断基準は宣言した狙いの成立確率を最大にする探索」に置き換えた。試作は #27 の順 9(2026-09-28)で削除し、その設計と検証の記録は「試作(Issue 22)の記録」に残す。
 
-この文書の並び: 目的と道具の構成(今の形) → Issue 27 の順ごとに決めたこと(順 1 の環境、順 5 の記法、順 7 の宣言と探索、順 8 の答え合わせ、順 9 の文書と後始末) → 試作(Issue 22)の記録 → 扱わないと決めたこと → 今後の課題。
+この文書の並び: 目的と道具の構成(今の形) → Issue 27 の順ごとに決めたこと(順 1 の環境(Issue 43 で変えた依存の版の固定と `tsconfig.json` の構成を含む)、順 5 の記法、順 7 の宣言と探索、順 8 の答え合わせ、順 9 の文書と後始末) → 試作(Issue 22)の記録 → 扱わないと決めたこと → 今後の課題。
 
 ## 目的
 
@@ -72,13 +72,13 @@ README は「コーディングエージェント上で動くスキルとして�
 | 項目 | 内容 |
 | --- | --- |
 | 実行環境 | Bun 1.4.2。`mise.toml` の `[tools]` で固定し、`mise install` で入る |
-| パッケージ管理 | Bun の workspaces(`packages/*`)。最上位の `package.json` は `private` で、`bun.lock` を 1 つだけ持つ |
+| パッケージ管理 | Bun の workspaces(`packages/*`)。最上位の `package.json` は `private` で、`bun.lock` を 1 つだけ持つ。依存の版は範囲指定なしでパッチまで書く。最上位の `bunfig.toml` の `[install] exact = true` で、版を指定しない `bun add` が固定の版を書き、`bun run verify:exact-dependency-versions` がすべての `package.json` を検証する(「Issue 43 で決めたこと」) |
 | 計算の骨組みの置き場所 | `packages/solo-play-simulator`(パッケージ名 `@pokemon-tcg-buddy/solo-play-simulator`)。「一人回し」(相手なしでデッキを回すこと)を模擬する道具であることが名前から読めるようにした。当初の `setup-rate` は「成立率」の直訳で、準備の速さや割合と読めてしまい、デッキの計算だと分からないため改名した。この設計文書のファイル名は順 9 で `solo-play-simulator-design.md` に合わせ、`pokemon-tcg-estimate-setup-rate` スキルの名前は利用者のために何をするかを表す名前として残した(「順 9 で決めたこと」) |
 | Linter と Formatter | Ultracite 7.12.0(Biome 2.5.12)。`biome.jsonc` は `ultracite/biome/core` だけを継承する |
 | 静的解析 | fallow 3.27.0。`.fallowrc.json` は workspaces `packages/*` と、既定から変えた規則 3 つ(`unused-dev-dependencies`、`unused-optional-dependencies`、`private-type-leaks` を error)を書く。入口は各パッケージの `package.json` の `exports` から fallow が自動で検出する(順 2 で `src/index.*` の入口設定を外した。理由は下の「順 2 で決めたこと」) |
-| 型検査 | TypeScript 7.0.2(devDependencies)。`bun test` は型を検査しないため、`tsc --noEmit -p tsconfig.json` を別に走らせる |
-| 最上位の scripts | `bun run test`(`bun test`)、`bun run typecheck`(`tsc --noEmit`)、`bun run lint`(`ultracite check`)、`bun run lint:fix`(`ultracite fix`)、`bun run analyze`(`fallow`)。名前は何をするかで付け、道具が生成した `check` は使わない |
-| 検査の自動実行 | `.github/workflows/ci.yml`。PR と main への push で、`test-packages`、`typecheck-packages`、`lint-packages`、`analyze-packages` の 4 つのジョブが並行して走る。各ジョブは jdx/mise-action が `mise.toml` から Bun を入れ、`bun install --frozen-lockfile` の後に `packages/` を対象に実行する。main への PR は、4 つのジョブの合格をルールセットで必須にする |
+| 型検査 | TypeScript 7.0.2(devDependencies)。`bun test` は型を検査しないため、別に走らせる。設定は、共通の `compilerOptions` だけを持つ最上位の `tsconfig.json`(土台)と、それを `extends` で継承して自分の `include` だけを書く範囲ごとの `tsconfig.json`(`packages/solo-play-simulator/`、`verifiers/`)に分かれる。範囲ごとに `tsc --noEmit -p <範囲>/tsconfig.json` で検査する(「Issue 43 で決めたこと」) |
+| 最上位の scripts | `bun run test`(`bun test`)、`bun run typecheck`(範囲ごとの `tsc --noEmit -p` を順に実行)、`bun run lint`(`ultracite check`)、`bun run lint:fix`(`ultracite fix`)、`bun run analyze`(`fallow`)、`bun run verify:exact-dependency-versions`(`bun verifiers/verify-exact-dependency-versions.ts`)。名前は何をするかで付け、道具が生成した `check` は使わない |
+| 検査の自動実行 | `.github/workflows/ci.yml`。PR と main への push で、8 つのジョブが並行して走る。`packages/` の範囲の `test-packages`、`typecheck-packages`、`lint-packages`、`analyze-packages`、`verifiers/` の範囲の `test-verifiers`、`typecheck-verifiers`、`lint-verifiers`、リポジトリ全体の `package.json` を範囲にする `verify-exact-dependency-versions`。各ジョブは jdx/mise-action が `mise.toml` から Bun を入れ、`verify-exact-dependency-versions` 以外は `bun install --frozen-lockfile` の後に実行する。main への PR は、8 つのジョブの合格をルールセットで必須にする |
 
 ### 導入時に確かめたこと
 
@@ -110,6 +110,36 @@ README は「コーディングエージェント上で動くスキルとして�
 
 - **oven-sh/setup-bun で Bun を入れる案。** `bun-version-file` が読めるのは `package.json`、`.bun-version`、`.tool-versions` で、`mise.toml` は読めない(https://github.com/oven-sh/setup-bun 、確認日 2026-09-21)。Bun の版を `mise.toml` と別の場所にも書くと二重管理になるため、`mise.toml` を読む jdx/mise-action を使う
 - **テスト、Ultracite、fallow を 1 つのジョブ `check` にまとめる案。** 依存パッケージの取得が 1 回で済むが、`check` は何をするか、リポジトリ全体か `packages/` 配下かが名前から読めない(モノレポでは範囲の区別が要る)。ジョブを「何をするか-どの範囲か」(`test-packages` など)の 3 つに分け、名前だけで内容と範囲が分かる形にした。取得は Bun のキャッシュで数秒なので、3 回になっても支障は無い
+
+### Issue 43 で決めたこと
+
+2026-10-09。依存の版を、`package.json` だけ読めば実際に使う版が分かり、どの環境で入れ直しても同じ版が入る状態にした([#43](https://github.com/mokosystem/pokemon-tcg-buddy/issues/43))。範囲指定(`^7.0.2` など)は、lockfile を作り直したときや依存を更新したときに意図せず新しい版を入れうるうえ、どの版で動作を確かめたかが `package.json` から読めない。固定の対象は最上位の `@types/bun`(`^1.4.2` → `1.4.2`)と `typescript`(`^7.0.2` → `7.0.2`)の 2 つで、どちらも `bun.lock` に解決済みの版と同じにした。
+
+- **依存の版の検証は、外部のパッケージを入れず、最上位の `verifiers/` の Bun のスクリプトで行う。** fallow 3.27.0 と Biome 2.5.12 の設定スキーマには `package.json` の版の形を検査する規則が無い(`node_modules/fallow/schema.json`、`node_modules/@biomejs/biome/configuration_schema.json`)。検査する欄は `dependencies`、`devDependencies`、`peerDependencies`、`optionalDependencies`。通す値は、パッチまで書いた版(プレリリースの印が付いたものを含む)と、`workspace:` で始まる値(指す先がリポジトリの中のパッケージ)の 2 つだけで、それ以外(`^`、`~`、`>=`、`*`、`latest`、`npm:` の別名、git や file の参照、ビルドメタデータ付きの版)はすべて違反にする。CI の検証のジョブは `bun install` を省くため、スクリプトは Bun の組み込みだけで書いた
+- **`verifiers/` に入れるのは「規約に照らして合否を出し、破られていれば落ちる物」だけ。** 生成・変換・計算の入口は入れない。性質の違う物を足したくなったら、器を広げずに別の名前の置き場を作る。`tools` や `scripts` のような何でも入る名前は、`package.json` の `scripts` の欄と取り違えるため使わなかった。`verifiers/` は `package.json` を持たず、workspaces に入れない
+- **`tsconfig.json` を、共通の設定だけを持つ土台と、範囲ごとの設定に分けた。** それまでの最上位の `tsconfig.json` は `include` が `packages/*/src` と `packages/*/scripts` だけで、`verifiers/` を置くとそのファイルが型検査に掛からなかった。2026-09-21 に 1 パッケージ前提で置いた暫定の構成で、Web のパッケージには別の設定(`jsx`、`allowJs`)が要ることも当時から分かっていた(「導入時に確かめたこと」)。最上位の `tsconfig.json` は `compilerOptions` だけを持ち、範囲ごと(`packages/solo-play-simulator/tsconfig.json`、`verifiers/tsconfig.json`)が `extends` で継承して自分の `include` だけを書く。将来の Web と API のパッケージも同じ形にする。TypeScript の `extends` は土台を先に読み、継承する側が上書きし、`files`・`include`・`exclude` は継承する側のものに置き換わる。相対パスは書いた設定ファイル基準で解決される(https://www.typescriptlang.org/tsconfig/#extends 、2026-10-08 確認)。`types: ["bun"]` も土台に置いた(`verifiers/` のスクリプトも Bun の組み込みを使うため)。分ける前と後で、`packages/` の型検査の対象ファイルが同じであることを `tsc --listFilesOnly` で確かめた(2026-10-09、`node_modules` を除いて 395 ファイル)
+- **CI の `typecheck-packages` は、`bun run typecheck` ではなく範囲の `tsconfig.json` を直接検査する。** `bun run typecheck` はすべての範囲を順に検査するため、そのままだと `packages/` の範囲のジョブが `verifiers/` も検査する。`test-packages`、`lint-packages` と同じく、検査のコマンドを範囲を絞って呼ぶ形にそろえた
+- **`analyze-verifiers` は足さなかった。** `analyze-packages` の `bun run fallow` は引数なしでリポジトリ全体を解析し、`verifiers/` のファイルも対象にする(`bun run fallow list` で確認、2026-10-09)
+- **`verifiers/` のスクリプトは Bun の機能を `import { file, Glob } from "bun"` で取り込む。** 名前空間の `Bun`(`Bun.file`)は、Ultracite の core プリセットの `noUndeclaredVariables` が宣言の無い変数として落とす(Biome 2.5.12、2026-10-09 に確認)
+- **`bun.lock` は `workspaces` の欄の 2 行だけが変わった。** `bun.lock` は各 `package.json` に書いた指定を `workspaces` の欄に書き写しており、`bun install` がその 2 行を固定の版に書き換えた。解決済みの版と integrity(`packages` の欄)は変わっていない。書き換える前の `bun.lock` でも `bun install --frozen-lockfile` は通る(2026-10-09、Bun 1.4.2)
+
+`bunfig.toml` の効き方(Bun 1.4.2、2026-10-08 に使い捨ての作業場で確認):
+
+| 操作 | `[install] exact = true` があるとき |
+| --- | --- |
+| `bun add <名前>`(版の指定なし) | 固定で書く(無いときは `^` 付き) |
+| `bun add -d <名前>` | devDependencies も固定で書く |
+| `bun update`、`bun update --latest` | 手で書いた `^1.4.0` も `1.5.0` のように固定へ書き換える |
+| `bun add <名前>@^1.4.0`(範囲を明示) | `^1.4.0` のまま。設定では止まらない |
+| `bun install` | 手で書いた `^` を書き換えない |
+| 置き場所 | workspaces の最上位に置いたものだけ読まれる。パッケージのディレクトリに置いても効かない |
+
+範囲を明示した `bun add` と手書きは `bunfig.toml` ではすり抜けるため、検証のジョブを置き、main のルールセット(id 23753240)の必須ジョブに足した(必須ジョブは 8 つ)。
+
+採らなかった案:
+
+- **GitHub Actions のアクションの版(`actions/checkout@v7` など)も固定する。** この Issue の範囲外とし、別の Issue も起こさない(Issue 43 の決定事項)
+- **検証のスクリプトで `**/package.json` を探す。** `node_modules` の中の依存パッケージの `package.json` まで拾う。最上位の `workspaces` が指すパッケージに限った
 
 ## 効果の記法と裁定のデータ(Issue 27 の順 5)
 
