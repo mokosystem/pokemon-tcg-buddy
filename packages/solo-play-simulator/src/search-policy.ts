@@ -16,6 +16,7 @@ import {
   useAttack,
 } from "./card-effects.ts";
 import type { Card } from "./cards.ts";
+import type { UsableAttack } from "./continuous-effects.ts";
 import {
   isMainAttackCandidate,
   type ResolvedDeclaration,
@@ -150,7 +151,7 @@ function keyOfPokemon(state: GameState, pokemon: PokemonInPlay): string {
     keyOfCard(pokemon.card),
     pokemon.underneath.map(keyOfCard).join("."),
     pokemon.energies.map(keyOfCard).sort().join("."),
-    pokemon.tool === null ? "" : keyOfCard(pokemon.tool),
+    pokemon.tool === undefined ? "" : keyOfCard(pokemon.tool),
     pokemon.turnEntered,
     pokemon.turnEvolved,
     [...pokemon.abilitiesUsedThisTurn].sort().join("."),
@@ -755,7 +756,7 @@ export function createSearchPolicy(
       benchChosenAtSetup.set(state, bench);
       return active;
     },
-    chooseAttack: (context) => {
+    chooseAttack: (context): UsableAttack | undefined => {
       choicesForAttack = undefined;
       const { state } = context;
       const candidates = listUsableAttacksOfActive(context);
@@ -768,14 +769,14 @@ export function createSearchPolicy(
             Number(isMainAttackOf(declaration, context, right)) -
             Number(isMainAttackOf(declaration, context, left))
         );
-      let best: number | null = order[0] ?? null;
+      let best: number | undefined = order[0];
       if (hasOpenDeadline(fromTurn)) {
         const seeds = drawSeeds();
         const [firstSeed = 0] = seeds;
         let bestValue = Number.NEGATIVE_INFINITY;
-        for (const index of [...order, null]) {
+        for (const index of [...order, undefined]) {
           const value =
-            index === null
+            index === undefined
               ? tools.evaluateByTrying(
                   state,
                   () => undefined,
@@ -796,8 +797,8 @@ export function createSearchPolicy(
           }
         }
       }
-      if (best === null) {
-        return null;
+      if (best === undefined) {
+        return undefined;
       }
       choicesForAttack = createChoicesFor(
         state,
@@ -805,7 +806,7 @@ export function createSearchPolicy(
         fromTurn,
         endTurnForEvaluation
       );
-      return candidates[best] ?? null;
+      return candidates[best];
     },
     chooseBenchAtSetup: (state) => benchChosenAtSetup.get(state) ?? [],
     chooseCards: (state, request) => {

@@ -245,19 +245,19 @@ export function listMainAttackCandidates(
   }).filter((candidate) => isMainAttackCandidate(candidate, mainAttacks));
 }
 
-/** 主軸のワザにあたる候補のうち、いちばん大きいダメージ。候補が無ければ null。狙いの 3 段目に使う。 */
+/** 主軸のワザにあたる候補のうち、いちばん大きいダメージ。候補が無ければ undefined。狙いの 3 段目に使う。 */
 export function calculateBestMainAttackDamage(
   state: GameState,
   mainAttacks: readonly MainAttack[]
-): number | null {
+): number | undefined {
   const { active } = state;
-  if (active === null) {
-    return null;
+  if (active === undefined) {
+    return undefined;
   }
   const damages = listMainAttackCandidates(state, mainAttacks).map(
     (candidate) => calculateAttackDamage(state, active, candidate.attack) ?? 0
   );
-  return damages.length === 0 ? null : Math.max(...damages);
+  return damages.length === 0 ? undefined : Math.max(...damages);
 }
 
 // ---- 主軸への道の足りないカード(失敗の要因) ----
@@ -390,14 +390,15 @@ export function explainPathShortfall(
 ): string {
   const best = paths
     .map((path) => ({ missing: listMissingCards(state, path), path }))
-    .reduce<{ missing: string[]; path: PathToMainAttacker } | null>(
+    .reduce<{ missing: string[]; path: PathToMainAttacker } | undefined>(
       (current, candidate) =>
-        current === null || candidate.missing.length < current.missing.length
+        current === undefined ||
+        candidate.missing.length < current.missing.length
           ? candidate
           : current,
-      null
+      undefined
     );
-  if (best === null || best.missing.length === 0) {
+  if (best === undefined || best.missing.length === 0) {
     return "道は揃っているが主軸が場にいない";
   }
   return `${best.path.name}: ${best.missing.join("、")} が足りない`;
@@ -439,7 +440,7 @@ function buildGoals(
   const damage: Goal = {
     explainFailure: (state) => {
       const best = calculateBestMainAttackDamage(state, mainAttacks);
-      return best === null
+      return best === undefined
         ? explainAttackFailure(state)
         : `ダメージが ${best} で ${minimumDamage} に届かない`;
     },

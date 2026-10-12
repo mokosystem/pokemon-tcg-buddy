@@ -46,8 +46,8 @@ export interface DeckVariant {
 export interface PlayingPolicy extends EffectChoices {
   /** 対戦の準備でバトル場に出すたねポケモン。basics は手札のたねポケモン。 */
   chooseActiveAtSetup: (state: GameState, basics: readonly Card[]) => Card;
-  /** 使うワザ(使えるワザの一覧 listUsableAttacksOfActive の候補の 1 つ)。使わないときは null。先攻の最初の番は呼ばれない。 */
-  chooseAttack: (context: EffectContext) => UsableAttack | null;
+  /** 使うワザ(使えるワザの一覧 listUsableAttacksOfActive の候補の 1 つ)。使わないときは undefined。先攻の最初の番は呼ばれない。 */
+  chooseAttack: (context: EffectContext) => UsableAttack | undefined;
   /** 対戦の準備でベンチに出すたねポケモン。basics はバトル場に出した後の手札のたねポケモン。 */
   chooseBenchAtSetup: (
     state: GameState,
@@ -71,8 +71,8 @@ export interface GameResult {
   readonly events: readonly string[];
   /** 狙いごとの、成立しなかった番 → 要因。 */
   readonly failureLabels: ReadonlyMap<string, ReadonlyMap<number, string>>;
-  /** 狙いごとの、最初に成立した番。maxTurn までに成立しなかったときは null。 */
-  readonly goalFirstTurn: ReadonlyMap<string, number | null>;
+  /** 狙いごとの、最初に成立した番。maxTurn までに成立しなかった狙いは入らない。 */
+  readonly goalFirstTurn: ReadonlyMap<string, number>;
   readonly mulligans: number;
 }
 
@@ -151,7 +151,7 @@ export function useAttacksOfTurn(
 ): void {
   while (listUsableAttacksOfActive(context).length > 0) {
     const attack = policy.chooseAttack(context);
-    if (attack === null) {
+    if (attack === undefined) {
       return;
     }
     useAttack(context, attack);
@@ -215,7 +215,7 @@ export interface RunGameOptions {
 
 interface GoalProgress {
   readonly failureLabels: Map<number, string>;
-  firstTurn: number | null;
+  firstTurn: number | undefined;
   readonly goal: Goal;
 }
 
@@ -226,14 +226,14 @@ export function runGame(options: RunGameOptions): GameResult {
   setupGame(state, policy);
   const progresses: GoalProgress[] = options.goals.map((goal) => ({
     failureLabels: new Map(),
-    firstTurn: null,
+    firstTurn: undefined,
     goal,
   }));
   for (let turnIndex = 0; turnIndex < maxTurn; turnIndex += 1) {
     state.beginTurn();
     policy.playTurn(context);
     for (const progress of progresses) {
-      if (progress.firstTurn !== null) {
+      if (progress.firstTurn !== undefined) {
         continue;
       }
       if (progress.goal.isAchieved(state)) {
@@ -255,7 +255,11 @@ export function runGame(options: RunGameOptions): GameResult {
       progresses.map((progress) => [progress.goal.name, progress.failureLabels])
     ),
     goalFirstTurn: new Map(
-      progresses.map((progress) => [progress.goal.name, progress.firstTurn])
+      progresses.flatMap((progress) =>
+        progress.firstTurn === undefined
+          ? []
+          : [[progress.goal.name, progress.firstTurn] as const]
+      )
     ),
     mulligans: state.mulligans,
   };

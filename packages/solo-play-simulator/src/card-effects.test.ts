@@ -54,7 +54,7 @@ describe("ワザ", () => {
         ? pokemon.record.attacks
         : [];
     const { active } = state;
-    if (attack === undefined || active === null) {
+    if (attack === undefined || active === undefined) {
       throw new Error("ワザを持つバトルポケモンが無い");
     }
     // 一覧に無い候補を渡しても使えない

@@ -261,7 +261,7 @@ describe("ワザのダメージ", () => {
     ).toBe(4 * 90);
   });
 
-  test("固定のダメージはそのまま、コインで決まる上乗せは含めず、ダメージの無いワザは null", () => {
+  test("固定のダメージはそのまま、コインで決まる上乗せは含めず、ダメージの無いワザは undefined", () => {
     const state = buildState({ active: DRAGAPULT });
     expect(
       calculateAttackDamage(
@@ -283,7 +283,7 @@ describe("ワザのダメージ", () => {
         activeOf(state),
         findAttack(GARDEVOIR, "あふれるねがい")
       )
-    ).toBeNull();
+    ).toBeUndefined();
   });
 
   test("基本のダメージが 0 なら、ダメージを増やす効果を足さない", () => {

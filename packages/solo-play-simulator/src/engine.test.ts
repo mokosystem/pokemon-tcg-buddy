@@ -35,7 +35,7 @@ const BASICS_AND_ENERGIES: Decklist = [
 const idlePolicy: PlayingPolicy = {
   ...firstCandidateChoices,
   chooseActiveAtSetup: (_, [first]) => first ?? BASIC,
-  chooseAttack: () => null,
+  chooseAttack: () => undefined,
   chooseBenchAtSetup: (_, basics) => basics,
   playTurn: () => undefined,
 };
@@ -43,20 +43,20 @@ const idlePolicy: PlayingPolicy = {
 /** 手札のエネルギーをバトル場につけ、進化できれば進化し、使えるワザを使う。 */
 const evolvingPolicy: PlayingPolicy = {
   ...idlePolicy,
-  chooseAttack: (context) => listUsableAttacksOfActive(context)[0] ?? null,
+  chooseAttack: (context) => listUsableAttacksOfActive(context)[0],
   playTurn: (context) => {
     const { state } = context;
     const { active } = state;
-    if (active === null) {
+    if (active === undefined) {
       return;
     }
     const energy = state.findFirstInHand(ENERGY.name);
-    if (energy !== null) {
+    if (energy !== undefined) {
       attachEnergyFromHandToPokemon(context, energy, active);
     }
     for (const name of [STAGE1.name, STAGE2.name]) {
       const card = state.findFirstInHand(name);
-      if (card !== null && state.canEvolve(active, card)) {
+      if (card !== undefined && state.canEvolve(active, card)) {
         evolvePokemonFromHand(context, active, card);
       }
     }
@@ -91,7 +91,7 @@ describe("対戦の準備", () => {
     for (let game = 0; game < 50; game += 1) {
       const state = new GameState(random, cards, true);
       setupGame(state, idlePolicy);
-      expect(state.active).not.toBeNull();
+      expect(state.active).not.toBeUndefined();
       if (state.mulligans > 0) {
         return;
       }
@@ -166,7 +166,7 @@ describe("対戦の進行", () => {
         {
           explainFailure: () => "まだ",
           isAchieved: (state) =>
-            state.active !== null &&
+            state.active !== undefined &&
             countEnergyUnitsOfTypes(state, state.active, ["psychic"]) >= 2,
           name: "エネルギー 2 個",
         },
@@ -247,7 +247,7 @@ describe("対戦の進行", () => {
           random,
           wentFirst,
         });
-        expect([...outcome.goalFirstTurn.keys()]).toEqual(
+        expect([...outcome.failureLabels.keys()]).toEqual(
           goals.map((goal) => goal.name)
         );
         expect(outcome.events.at(-1)).toStartWith("[3] ");
@@ -266,7 +266,7 @@ describe("対戦の進行", () => {
           playTurn: ({ state }) => {
             const { active } = state;
             const energy = state.findFirstInHand(ENERGY.name);
-            if (active !== null && energy !== null) {
+            if (active !== undefined && energy !== undefined) {
               state.attachEnergyFromHand(energy, active);
               state.attachEnergyFromHand(energy, active);
             }

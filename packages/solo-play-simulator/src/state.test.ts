@@ -34,7 +34,7 @@ function stateWith(
 }
 
 function activeOf(state: GameState): PokemonInPlay {
-  if (state.active === null) {
+  if (state.active === undefined) {
     throw new Error("バトル場が空");
   }
   return state.active;
@@ -212,10 +212,10 @@ describe("問い合わせ", () => {
     expect(state.countUnseen("基本超エネルギー")).toBe(3);
   });
 
-  test("手札から名前で最初の 1 枚を探し、無ければ null を返す", () => {
+  test("手札から名前で最初の 1 枚を探し、無ければ undefined を返す", () => {
     const state = stateWith([ENERGY, SUPPORTER], []);
     expect(state.findFirstInHand("サポート")).toBe(SUPPORTER);
-    expect(state.findFirstInHand("グッズ")).toBeNull();
+    expect(state.findFirstInHand("グッズ")).toBeUndefined();
   });
 });
 
@@ -247,7 +247,7 @@ describe("山札の操作", () => {
     state.attachEnergyFromHand(ENERGY, active);
     state.evolve(active, STAGE1, { from: "hand" });
     state.returnPokemonToDeck(active);
-    expect(state.active).toBeNull();
+    expect(state.active).toBeUndefined();
     expect(state.deck).toHaveLength(3);
     expect(state.countInDeck("1進化")).toBe(1);
     expect(state.countInDeck("たね")).toBe(1);
@@ -271,7 +271,7 @@ describe("山札の操作", () => {
     state.attachEnergyFromHand(ENERGY, active);
     state.evolve(active, STAGE1, { from: "hand" });
     state.returnPokemonToHand(active);
-    expect(state.active).toBeNull();
+    expect(state.active).toBeUndefined();
     expect(state.hand).toEqual([STAGE1, BASIC, ENERGY]);
   });
 
@@ -326,7 +326,7 @@ describe("対戦の準備", () => {
     expect(active.turnEntered).toBe(0);
     expect(state.hand).toEqual([BASIC, STAGE1]);
     expect(() => state.placeActiveFromHand(BASIC)).toThrow(IllegalMove);
-    state.active = null;
+    state.active = undefined;
     expect(() => state.placeActiveFromHand(STAGE1)).toThrow(IllegalMove);
   });
 
@@ -492,7 +492,7 @@ describe("複製と混ぜ直し(探索が先を試すため)", () => {
     expect(state.turn).toBe(3);
     expect(state.hasAttachedEnergy).toBe(false);
     expect(state.hasUsedSupporter).toBe(false);
-    expect(state.firstAttackerThisTurn).toBeNull();
+    expect(state.firstAttackerThisTurn).toBeUndefined();
     expect(state.attacks.has(state.turn)).toBe(false);
     expect(state.hand).toHaveLength(handSize);
   });

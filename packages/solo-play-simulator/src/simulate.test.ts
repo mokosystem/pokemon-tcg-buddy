@@ -31,7 +31,7 @@ const BASICS_AND_ENERGIES: Decklist = [
 ];
 
 function countActiveEnergy(state: GameState): number {
-  return state.active === null
+  return state.active === undefined
     ? 0
     : countEnergyUnitsOfTypes(state, state.active, ["psychic"]);
 }
@@ -46,12 +46,12 @@ const attachingPolicy: PlayingPolicy = {
     }
     return first;
   },
-  chooseAttack: (context) => listUsableAttacksOfActive(context)[0] ?? null,
+  chooseAttack: (context) => listUsableAttacksOfActive(context)[0],
   chooseBenchAtSetup: () => [],
   playTurn: (context) => {
     const { state } = context;
     const energy = state.findFirstInHand(ENERGY.name);
-    if (energy !== null && state.active !== null) {
+    if (energy !== undefined && state.active !== undefined) {
       attachEnergyFromHandToPokemon(context, energy, state.active);
     }
   },

@@ -25,8 +25,8 @@ import {
 
 interface CollectedContinuousEffect {
   readonly effect: ContinuousEffect;
-  /** 特性のポケモン、どうぐ・特殊エネルギーをつけているポケモン。スタジアムは null。 */
-  readonly holder: PokemonInPlay | null;
+  /** 特性のポケモン、どうぐ・特殊エネルギーをつけているポケモン。スタジアムは undefined。 */
+  readonly holder: PokemonInPlay | undefined;
   readonly sourceCard: Card;
 }
 
@@ -110,7 +110,7 @@ function collectMet(
   state: GameState,
   collected: CollectedContinuousEffect[],
   sourceCard: Card,
-  holder: PokemonInPlay | null,
+  holder: PokemonInPlay | undefined,
   effects: readonly ContinuousEffect[]
 ): void {
   for (const effect of effects) {
@@ -131,12 +131,12 @@ function collectContinuousEffects(
 ): CollectedContinuousEffect[] {
   const { stadium } = state;
   const collected: CollectedContinuousEffect[] = [];
-  if (stadium !== null) {
+  if (stadium !== undefined) {
     collectMet(
       state,
       collected,
       stadium,
-      null,
+      undefined,
       listCardContinuousEffects(stadium)
     );
   }
@@ -158,7 +158,7 @@ function collectContinuousEffects(
       collectMet(state, collected, pokemon.card, pokemon, abilities);
     }
     const { tool } = pokemon;
-    if (tool !== null) {
+    if (tool !== undefined) {
       const toolEffects = listCardContinuousEffects(tool);
       if (
         toolEffects.length > 0 &&

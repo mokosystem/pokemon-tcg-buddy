@@ -32,7 +32,7 @@ function createListDrivenPolicy(
       }
       return first;
     },
-    chooseAttack: (context) => listUsableAttacksOfActive(context)[0] ?? null,
+    chooseAttack: (context) => listUsableAttacksOfActive(context)[0],
     chooseBenchAtSetup: (_, basics) => basics,
     playTurn: (context: EffectContext) => {
       for (let count = 0; count < MAX_ACTIONS_PER_TURN; count += 1) {
