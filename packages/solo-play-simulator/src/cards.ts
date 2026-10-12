@@ -68,7 +68,7 @@ export function buildCardFromRecord(record: CardRecord, cardId: string): Card {
       return {
         ...common,
         ...extractEvolution(record),
-        exRule: record.exRule,
+        ...(record.exRule === undefined ? {} : { exRule: record.exRule }),
         hasRuleBox: record.hasRuleBox,
         hp: record.hp,
         isTerastal: record.isTerastal,
