@@ -85,11 +85,11 @@ export class SimulationSummary {
     if (outcome.mulligans > 0) {
       this.mulliganGames += 1;
     }
-    for (const [goalName, firstTurn] of outcome.goalFirstTurn) {
+    for (const [goalName, failureLabels] of outcome.failureLabels) {
       this.tallyGoal(
         goalName,
-        firstTurn,
-        outcome.failureLabels.get(goalName) ?? new Map()
+        outcome.goalFirstTurn.get(goalName),
+        failureLabels
       );
     }
     for (const [turn, attack] of outcome.attacks) {
@@ -99,7 +99,7 @@ export class SimulationSummary {
 
   private tallyGoal(
     goalName: string,
-    firstTurn: number | null,
+    firstTurn: number | undefined,
     failureLabels: ReadonlyMap<number, string>
   ): void {
     const achieved = this.achievedByTurn.get(goalName);
@@ -107,7 +107,7 @@ export class SimulationSummary {
     if (achieved === undefined || failures === undefined) {
       throw new Error(`狙い ${goalName} は集計に無い`);
     }
-    if (firstTurn !== null) {
+    if (firstTurn !== undefined) {
       for (let turn = firstTurn; turn <= this.maxTurn; turn += 1) {
         achieved[turn - 1] = (achieved[turn - 1] ?? 0) + 1;
       }
@@ -284,7 +284,7 @@ export function compareVariants(
 ): VariantComparison[] {
   const variants = [BASE_VARIANT, ...options.variants];
   return [true, false].map((wentFirst) => {
-    let base: SimulationSummary | null = null;
+    let base: SimulationSummary | undefined;
     const rows = variants.map((variant) => {
       const summary = simulate({
         cards: buildDeck(

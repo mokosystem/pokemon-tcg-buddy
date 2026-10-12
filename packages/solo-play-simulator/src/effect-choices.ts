@@ -148,19 +148,19 @@ export function choosePokemonUpTo(
   return chosen;
 }
 
-/** 候補が 1 つでもあれば必ず 1 匹を選ぶ。候補が無ければ null。 */
+/** 候補が 1 つでもあれば必ず 1 匹を選ぶ。候補が無ければ undefined。 */
 export function chooseOnePokemon(
   context: EffectContext,
   candidates: readonly PokemonInPlay[],
   purpose: string
-): PokemonInPlay | null {
+): PokemonInPlay | undefined {
   if (candidates.length === 0) {
-    return null;
+    return undefined;
   }
   const request = { candidates, maxCount: 1, minCount: 1, purpose };
   const chosen = context.choices.choosePokemon(context.state, request);
   validateChosen(request, chosen);
-  return chosen[0] ?? null;
+  return chosen[0];
 }
 
 /** タイプの違うエネルギーを選ぶ求め(アカマツ)では、同じタイプの 2 枚目以降を候補から外す。 */

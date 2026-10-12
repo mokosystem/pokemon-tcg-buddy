@@ -55,7 +55,7 @@ export function buildState(setup: FieldSetup): GameState {
   );
   state.turn = setup.turn ?? 2;
   state.active =
-    setup.active === undefined ? null : new PokemonInPlay(setup.active, 0);
+    setup.active === undefined ? undefined : new PokemonInPlay(setup.active, 0);
   state.bench.push(
     ...(setup.bench ?? []).map((card) => new PokemonInPlay(card, 0))
   );
@@ -105,7 +105,7 @@ export function pickCardsByName(names: readonly string[]) {
 }
 
 export function activeOf(state: GameState): PokemonInPlay {
-  if (state.active === null) {
+  if (state.active === undefined) {
     throw new Error("バトル場が空");
   }
   return state.active;

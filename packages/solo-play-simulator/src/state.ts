@@ -135,7 +135,7 @@ export class PokemonInPlay {
   turnEvolved = -1;
   readonly energies: Card[] = [];
   readonly underneath: Card[] = [];
-  tool: Card | null = null;
+  tool: Card | undefined = undefined;
   /** この番にこのポケモンが使った特性の名前。「番に 1 回」はポケモンごとに数える。 */
   readonly abilitiesUsedThisTurn = new Set<string>();
 
@@ -172,7 +172,7 @@ export class PokemonInPlay {
       this.card,
       ...this.underneath,
       ...this.energies,
-      ...(this.tool === null ? [] : [this.tool]),
+      ...(this.tool === undefined ? [] : [this.tool]),
     ];
   }
 }
@@ -190,9 +190,9 @@ export class GameState {
   hand: Card[] = [];
   readonly prizes: Card[] = [];
   readonly discard: Card[] = [];
-  active: PokemonInPlay | null = null;
+  active: PokemonInPlay | undefined = undefined;
   readonly bench: PokemonInPlay[] = [];
-  stadium: Card | null = null;
+  stadium: Card | undefined = undefined;
   readonly wentFirst: boolean;
   turn = 0;
   mulligans = 0;
@@ -200,7 +200,7 @@ export class GameState {
   // false 型と推論し、この欄を条件に使う箇所を noUnnecessaryConditions で誤検出するため。
   hasUsedSupporter: boolean;
   /** この番に手札から使ったサポート。名前に文字列を含むかの条件(ロケット団のファクトリー)に使う。 */
-  supporterUsedThisTurn: Card | null = null;
+  supporterUsedThisTurn: Card | undefined = undefined;
   hasAttachedEnergy: boolean;
   hasPlayedStadium: boolean;
   /** 今場にあるスタジアムの効果を、この番に使ったか。スタジアムが入れ替わったら戻す(`playStadium`)。 */
@@ -217,7 +217,7 @@ export class GameState {
    * この番に 1 回目のワザを使ったポケモン。2 回目のワザ(「おまつりおんど」)は、1 回目を使ったポケモンが
    * 続けて使うときだけ使える。1 回目のワザで入れ替わったバトルポケモンには使わせない。
    */
-  firstAttackerThisTurn: PokemonInPlay | null = null;
+  firstAttackerThisTurn: PokemonInPlay | undefined = undefined;
   readonly events: string[] = [];
   /**
    * 見えていないカード(山札とサイド)の中身や並び、コインの結果で決まることが起きた回数。山札から引く・探す・上から見る、
@@ -269,7 +269,8 @@ export class GameState {
       copies.set(pokemon, copiedPokemon);
       return copiedPokemon;
     };
-    copied.active = this.active === null ? null : copyPokemon(this.active);
+    copied.active =
+      this.active === undefined ? undefined : copyPokemon(this.active);
     copied.bench.push(...this.bench.map(copyPokemon));
     copied.stadium = this.stadium;
     copied.turn = this.turn;
@@ -289,9 +290,9 @@ export class GameState {
     }
     copied.hasUsedSecondAttack = this.hasUsedSecondAttack;
     copied.firstAttackerThisTurn =
-      this.firstAttackerThisTurn === null
-        ? null
-        : (copies.get(this.firstAttackerThisTurn) ?? null);
+      this.firstAttackerThisTurn === undefined
+        ? undefined
+        : copies.get(this.firstAttackerThisTurn);
     copied.uncertainOutcomeCount = this.uncertainOutcomeCount;
     return copied;
   }
@@ -341,8 +342,8 @@ export class GameState {
     return countByName(this.hand, name);
   }
 
-  findFirstInHand(name: string): Card | null {
-    return this.hand.find((card) => card.name === name) ?? null;
+  findFirstInHand(name: string): Card | undefined {
+    return this.hand.find((card) => card.name === name);
   }
 
   /**
@@ -382,7 +383,7 @@ export class GameState {
 
   /** ワザを使える番か。ワザごとのエネルギーの判定は card-effects.ts が場の効果を集めて行う。 */
   canAttack(): boolean {
-    return this.active !== null && !this.isFirstTurnGoingFirst();
+    return this.active !== undefined && !this.isFirstTurnGoingFirst();
   }
 
   /** このポケモンを、この番に手札の進化ポケモンへ進化させられるか(最初の番、出したばかりの制限を含む)。 */
@@ -593,7 +594,7 @@ export class GameState {
 
   private removeFromPlay(target: PokemonInPlay): void {
     if (target === this.active) {
-      this.active = null;
+      this.active = undefined;
     } else {
       removeFirst(this.bench, target, "ベンチ");
     }
@@ -617,7 +618,7 @@ export class GameState {
     if (!isBasicPokemon(card)) {
       throw new IllegalMove(`${card.name} はたねポケモンではない`);
     }
-    if (this.active !== null) {
+    if (this.active !== undefined) {
       throw new IllegalMove("バトル場にはもうポケモンがいる");
     }
     removeCard(this.hand, card, "手札");
@@ -697,12 +698,12 @@ export class GameState {
 
   /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
   discardStadium(): void {
-    if (this.stadium === null) {
+    if (this.stadium === undefined) {
       return;
     }
     this.discard.push(this.stadium);
     this.record(`スタジアム ${this.stadium.name} をトラッシュ`);
-    this.stadium = null;
+    this.stadium = undefined;
   }
 
   playStadium(card: Card): void {
@@ -715,7 +716,7 @@ export class GameState {
     if (this.stadium?.name === card.name) {
       throw new IllegalMove("同じ名前のスタジアムは出せない");
     }
-    if (this.stadium !== null) {
+    if (this.stadium !== undefined) {
       this.discard.push(this.stadium);
     }
     removeCard(this.hand, card, "手札");
@@ -733,7 +734,7 @@ export class GameState {
     if (card.category !== CardCategory.Tool) {
       throw new IllegalMove(`${card.name} はポケモンのどうぐではない`);
     }
-    if (target.tool !== null) {
+    if (target.tool !== undefined) {
       throw new IllegalMove(
         `${target.name} にはもうポケモンのどうぐがついている`
       );
@@ -896,7 +897,7 @@ export class GameState {
   // ---- バトル場の入れ替え ----
 
   switchActive(benchPokemon: PokemonInPlay): void {
-    if (this.active === null || !this.bench.includes(benchPokemon)) {
+    if (this.active === undefined || !this.bench.includes(benchPokemon)) {
       throw new IllegalMove("入れ替える相手がいない");
     }
     removeFirst(this.bench, benchPokemon, "ベンチ");
@@ -907,7 +908,7 @@ export class GameState {
 
   /** バトル場が空になったときに、ベンチのポケモンをバトル場に出す。 */
   promoteToActive(benchPokemon: PokemonInPlay): void {
-    if (this.active !== null) {
+    if (this.active !== undefined) {
       throw new IllegalMove("バトル場にはもうポケモンがいる");
     }
     removeFirst(this.bench, benchPokemon, "ベンチ");
@@ -924,7 +925,7 @@ export class GameState {
       throw new IllegalMove("この番はもうにげた");
     }
     const { active } = this;
-    if (active === null) {
+    if (active === undefined) {
       throw new IllegalMove("バトル場にポケモンがいない");
     }
     for (const energy of energiesToDiscard) {
@@ -959,13 +960,13 @@ export class GameState {
   advanceToNextTurn(): void {
     this.turn += 1;
     this.hasUsedSupporter = false;
-    this.supporterUsedThisTurn = null;
+    this.supporterUsedThisTurn = undefined;
     this.hasAttachedEnergy = false;
     this.hasPlayedStadium = false;
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
     this.hasUsedSecondAttack = false;
-    this.firstAttackerThisTurn = null;
+    this.firstAttackerThisTurn = undefined;
     this.abilityNamesUsedThisTurn = [];
     this.attackDamageIncreasesThisTurn = [];
     for (const pokemon of this.listPokemonInPlay()) {

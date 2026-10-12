@@ -83,9 +83,9 @@ const damageTargetCounters: {
           target.filter === undefined ||
           matchesPokemonFilter(state, pokemon, target.filter)
       ).length,
-  stadiumsInPlay: (_, state) => (state.stadium === null ? 0 : 1),
+  stadiumsInPlay: (_, state) => (state.stadium === undefined ? 0 : 1),
   toolAttachedToAttackingPokemon: (_, __, attacker) =>
-    attacker.tool === null ? 0 : 1,
+    attacker.tool === undefined ? 0 : 1,
 };
 
 function countDamageTarget<Name extends DamageCountTarget["count"]>(
@@ -123,7 +123,7 @@ function sumAttackDamageIncreaseThisTurn(
 }
 
 /**
- * attacker が attack を使ったときのダメージ。ダメージの無いワザは null。attacker はワザを使うポケモン
+ * attacker が attack を使ったときのダメージ。ダメージの無いワザは undefined。attacker はワザを使うポケモン
  * (バトルポケモン)で、ベンチのポケモンのワザを使う効果(ミュウex の「きおくのらせん」)でもワザの持ち主ではない。
  * ダメージを増やす効果の条件(タイプ、名前)はワザを使うポケモンに当てる(公式 Q&A「パワープロテイン」:
  * 超タイプのミュウex がメガルカリオex のワザを使っても、闘ポケモンのワザを増やす効果は働かない)。
@@ -135,10 +135,10 @@ export function calculateAttackDamage(
   state: GameState,
   attacker: PokemonInPlay,
   attack: Attack
-): number | null {
+): number | undefined {
   const { damage } = attack;
   if (damage.kind === "none") {
-    return null;
+    return undefined;
   }
   const base =
     damage.amount +

@@ -29,7 +29,7 @@ writeFileSync(
 );
 writeFileSync(
   schemaPath,
-  `${JSON.stringify(renderCardRecordJsonSchema(), null, 2)}\n`
+  `${JSON.stringify(renderCardRecordJsonSchema(), undefined, 2)}\n`
 );
 const formatted = spawnSync(
   "bun",

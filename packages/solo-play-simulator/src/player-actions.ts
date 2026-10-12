@@ -112,7 +112,7 @@ function listHandCardActions(
     if (isEnergy(card) && !state.hasAttachedEnergy) {
       actions.push({ card, kind: "attachEnergy", targetIndex });
     }
-    if (card.category === CardCategory.Tool && pokemon.tool === null) {
+    if (card.category === CardCategory.Tool && pokemon.tool === undefined) {
       actions.push({ card, kind: "attachTool", targetIndex });
     }
   });
@@ -171,7 +171,7 @@ function listRetreatPayments(
 
 function listRetreatActions(state: GameState): PlayerAction[] {
   const { active } = state;
-  if (active === null || state.hasRetreated || state.bench.length === 0) {
+  if (active === undefined || state.hasRetreated || state.bench.length === 0) {
     return [];
   }
   const payments = listRetreatPayments(state, active);

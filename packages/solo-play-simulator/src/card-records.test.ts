@@ -252,7 +252,7 @@ function damageOf(
   attacker: PokemonInPlay,
   card: Card,
   attackName: string
-): number | null {
+): number | undefined {
   const attack =
     card.record.category === "ポケモン"
       ? card.record.attacks.find((candidate) => candidate.name === attackName)
@@ -676,7 +676,7 @@ describeTranslation("ふしぎなアメ", () => {
       false
     );
     const fresh = buildState({ hand: [RARE_CANDY, GARDEVOIR, RALTS] });
-    fresh.active = null;
+    fresh.active = undefined;
     fresh.placeActiveFromHand(RALTS);
     expect(canPlayTrainerFromHand(buildContext(fresh), RARE_CANDY)).toBe(false);
   });
@@ -1552,7 +1552,7 @@ describeTranslation("メガレックウザex", () => {
     expect(storm?.attack.name).toBe("ストームエメラルダ");
     expect(
       storm === undefined
-        ? null
+        ? undefined
         : calculateAttackDamage(state, activeOf(state), storm.attack)
     ).toBe(200);
   });
@@ -2082,7 +2082,7 @@ describeTranslation("Nのゾロアークex", () => {
     expect(thunder?.attack.cost).toEqual(["dark", "dark"]);
     expect(
       thunder === undefined
-        ? null
+        ? undefined
         : calculateAttackDamage(state, activeOf(state), thunder.attack)
     ).toBe(250);
   });
@@ -2352,7 +2352,7 @@ describeTranslation("ヤドキング", () => {
     );
     expect(
       hammer === undefined
-        ? null
+        ? undefined
         : calculateAttackDamage(state, activeOf(state), hammer.attack)
     ).toBe(150);
     useAttackNamed(context, "メタリックハンマー");
@@ -3160,7 +3160,7 @@ describeTranslation("イーユイ", () => {
       damageOf(state, activeOf(state), IRON_JUGULIS_TING_LU, "グラウンドメルト")
     ).toBe(120);
     useAttackNamed(buildContext(state), "グラウンドメルト");
-    expect(state.stadium).toBeNull();
+    expect(state.stadium).toBeUndefined();
     expect(namesOf(state.discard)).toContain("ゼロの大空洞");
     expect(state.bench).toHaveLength(5);
     expect(

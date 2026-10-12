@@ -13,7 +13,7 @@ import type { GameState, PokemonInPlay } from "./state.ts";
 /** 効果の持ち主。card はその効果を持つカード、pokemon は「このポケモン」(特性・ワザ)か、どうぐ・エネルギーをつけているポケモン。 */
 export interface EffectSource {
   readonly card: Card;
-  readonly pokemon: PokemonInPlay | null;
+  readonly pokemon: PokemonInPlay | undefined;
 }
 
 export function matchesPokemonFilter(
@@ -31,10 +31,10 @@ export function matchesPokemonFilter(
 /** 手札のうち、使おうとしているカード 1 枚を除いた残り。同じカードは同じ参照を枚数分並べているため、参照で 1 枚だけ除く。 */
 export function listHandExcludingOneCopy(
   state: GameState,
-  card: Card | null
+  card: Card | undefined
 ): Card[] {
   const rest = [...state.hand];
-  const index = card === null ? -1 : rest.indexOf(card);
+  const index = card === undefined ? -1 : rest.indexOf(card);
   if (index >= 0) {
     rest.splice(index, 1);
   }
@@ -60,7 +60,7 @@ const conditionEvaluators: {
   // 場にある間ずっと働く効果を集めないと分からず、それは条件の判定(このファイル)を使うため循環する。記録にある
   // 特性を無くす効果(ロケット団の監視塔: 無色ポケモン)は、この条件が見る特性を持つポケモンに届かないため見ない
   activePokemonHasAbilityNamed: (condition, state) =>
-    state.active !== null &&
+    state.active !== undefined &&
     state.active.card.record.category === CardCategory.Pokemon &&
     state.active.card.record.abilities.some(
       (ability) => ability.name === condition.abilityName
@@ -68,7 +68,7 @@ const conditionEvaluators: {
   anyOf: (condition, state, source) =>
     condition.conditions.some((inner) => isConditionMet(inner, state, source)),
   attachedPokemonMatches: (condition, state, source) =>
-    source.pokemon !== null &&
+    source.pokemon !== undefined &&
     matchesPokemonFilter(state, source.pokemon, condition.filter),
   deckHasCards: (condition, state) => state.deck.length >= condition.minCount,
   handHasAtMostCards: (condition, state, source) =>
@@ -95,13 +95,13 @@ const conditionEvaluators: {
   ownRemainingPrizesAre: (condition, state) =>
     state.prizes.length === condition.count,
   selfHasEnergyAttached: (_, __, source) =>
-    source.pokemon !== null && source.pokemon.energies.length > 0,
+    source.pokemon !== undefined && source.pokemon.energies.length > 0,
   selfHasNoEnergyAttached: (_, __, source) =>
-    source.pokemon !== null && source.pokemon.energies.length === 0,
+    source.pokemon !== undefined && source.pokemon.energies.length === 0,
   selfIsActive: (_, state, source) =>
-    source.pokemon !== null && source.pokemon === state.active,
+    source.pokemon !== undefined && source.pokemon === state.active,
   selfIsOnBench: (_, state, source) =>
-    source.pokemon !== null && state.bench.includes(source.pokemon),
+    source.pokemon !== undefined && state.bench.includes(source.pokemon),
   stadiumInPlayNamed: (condition, state) =>
     state.stadium?.name === condition.name,
   supporterUsedThisTurnNameIncludes: (condition, state) =>

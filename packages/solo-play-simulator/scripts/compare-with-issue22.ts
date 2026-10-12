@@ -73,10 +73,10 @@ interface TraceRequest {
   readonly turn: number;
 }
 
-function parseTraceRequest(argv: readonly string[]): TraceRequest | null {
+function parseTraceRequest(argv: readonly string[]): TraceRequest | undefined {
   const [goalPart, turn, count] = argv;
   if (goalPart === undefined) {
-    return null;
+    return undefined;
   }
   return { count: Number(count ?? "3"), goalPart, turn: Number(turn ?? "3") };
 }
@@ -88,7 +88,7 @@ function hasFailedByTurn(
   turn: number
 ): boolean {
   const firstTurn = result.goalFirstTurn.get(goalName);
-  return firstTurn === null || (firstTurn !== undefined && firstTurn > turn);
+  return firstTurn === undefined || firstTurn > turn;
 }
 
 /** 履歴を出す狙いが、指定の番までに成立しなかった対戦なら、その履歴の行を返す。 */
@@ -97,13 +97,13 @@ function formatTraceIfFailed(
   goals: readonly Goal[],
   request: TraceRequest,
   trial: number
-): string[] | null {
+): string[] | undefined {
   const tracedGoal = goals.find((goal) => goal.name.includes(request.goalPart));
   if (
     tracedGoal === undefined ||
     !hasFailedByTurn(result, tracedGoal.name, request.turn)
   ) {
-    return null;
+    return undefined;
   }
   return [
     `#### 試行 ${trial}(${tracedGoal.name} が ${request.turn} 番目の番までに成立しなかった)`,
@@ -118,14 +118,14 @@ function collectTrace(
   traces: string[][],
   result: GameResult,
   goals: readonly Goal[],
-  request: TraceRequest | null,
+  request: TraceRequest | undefined,
   trial: number
 ): void {
-  if (request === null || traces.length >= request.count) {
+  if (request === undefined || traces.length >= request.count) {
     return;
   }
   const trace = formatTraceIfFailed(result, goals, request, trial);
-  if (trace !== null) {
+  if (trace !== undefined) {
     traces.push(trace);
   }
 }
@@ -174,7 +174,7 @@ interface SideOptions {
   readonly deckCards: readonly Card[];
   readonly goals: readonly Goal[];
   readonly resolved: ResolvedDeclaration;
-  readonly traceRequest: TraceRequest | null;
+  readonly traceRequest: TraceRequest | undefined;
   readonly trials: number;
   readonly wentFirst: boolean;
 }
@@ -192,7 +192,7 @@ function runSide(options: SideOptions): SimulationSummary {
     }
   );
   const playingPolicy =
-    traceRequest === null ? policy : withHandRecords(policy);
+    traceRequest === undefined ? policy : withHandRecords(policy);
   const random = createSeededRandom(SEED);
   const maxTurn = Math.max(...resolved.deadlines);
   const summary = new SimulationSummary(

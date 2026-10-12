@@ -63,7 +63,7 @@ export function canPlayTrainerFromHand(
   if (!state.hand.includes(card)) {
     return false;
   }
-  const source: EffectSource = { card, pokemon: null };
+  const source: EffectSource = { card, pokemon: undefined };
   const effectsAreUsable = findCardEffects(card, "whenPlayed").every(
     (cardEffect) => canStartEffect(state, cardEffect.effect, source, card)
   );
@@ -101,7 +101,12 @@ export function playTrainerFromHand(context: EffectContext, card: Card): void {
       return;
   }
   for (const cardEffect of findCardEffects(card, "whenPlayed")) {
-    runEffect(context, cardEffect.effect, { card, pokemon: null }, card.name);
+    runEffect(
+      context,
+      cardEffect.effect,
+      { card, pokemon: undefined },
+      card.name
+    );
   }
 }
 
@@ -116,7 +121,7 @@ export function attachToolFromHand(
 export function canUseStadiumEffect(context: EffectContext): boolean {
   const { state } = context;
   const { stadium } = state;
-  if (stadium === null || state.hasUsedStadiumEffect) {
+  if (stadium === undefined || state.hasUsedStadiumEffect) {
     return false;
   }
   const effects = findCardEffects(stadium, "activatedOncePerTurn");
@@ -126,8 +131,8 @@ export function canUseStadiumEffect(context: EffectContext): boolean {
       canStartEffect(
         state,
         cardEffect.effect,
-        { card: stadium, pokemon: null },
-        null
+        { card: stadium, pokemon: undefined },
+        undefined
       )
     )
   );
@@ -136,7 +141,7 @@ export function canUseStadiumEffect(context: EffectContext): boolean {
 /** 場のスタジアムの「自分の番ごとに 1 回」の効果を使う。 */
 export function useStadiumEffect(context: EffectContext): void {
   const { stadium } = context.state;
-  if (stadium === null || !canUseStadiumEffect(context)) {
+  if (stadium === undefined || !canUseStadiumEffect(context)) {
     throw new IllegalMove("スタジアムの効果は今使えない");
   }
   context.state.hasUsedStadiumEffect = true;
@@ -145,7 +150,7 @@ export function useStadiumEffect(context: EffectContext): void {
     runEffect(
       context,
       cardEffect.effect,
-      { card: stadium, pokemon: null },
+      { card: stadium, pokemon: undefined },
       stadium.name
     );
   }
@@ -187,7 +192,7 @@ export function canUseAbility(
       state,
       translation.effect,
       { card: pokemon.card, pokemon },
-      null
+      undefined
     )
   );
 }
@@ -229,7 +234,7 @@ export function canUseAbilityFromHand(
     canStartEffect(
       context.state,
       translation.effect,
-      { card, pokemon: null },
+      { card, pokemon: undefined },
       card
     )
   );
@@ -247,8 +252,13 @@ export function useAbilityFromHand(
   ) {
     throw new IllegalMove(`${card.name} の特性 ${abilityName} は今使えない`);
   }
-  markAbilityUsed(context.state, null, abilityName);
-  runEffect(context, translation.effect, { card, pokemon: null }, abilityName);
+  markAbilityUsed(context.state, undefined, abilityName);
+  runEffect(
+    context,
+    translation.effect,
+    { card, pokemon: undefined },
+    abilityName
+  );
 }
 
 /**
@@ -364,7 +374,7 @@ export function retreatActive(
 ): void {
   const { state } = context;
   const { active } = state;
-  if (active === null) {
+  if (active === undefined) {
     throw new IllegalMove("バトル場にポケモンがいない");
   }
   const cost = calculateRetreatCost(state, active);
@@ -393,7 +403,7 @@ export function listUsableAttacksOfActive(
 ): UsableAttack[] {
   const { state } = context;
   const { active } = state;
-  if (active === null || !state.canAttack()) {
+  if (active === undefined || !state.canAttack()) {
     return [];
   }
   if (
@@ -443,7 +453,7 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
     chosen.usedAs === undefined
       ? chosen.attack.name
       : `${chosen.usedAs.name}(${chosen.attack.name})`;
-  if (active === null || usable === undefined) {
+  if (active === undefined || usable === undefined) {
     throw new IllegalMove(`ワザ ${attackName} は今使えない`);
   }
   if (state.attacks.has(state.turn)) {

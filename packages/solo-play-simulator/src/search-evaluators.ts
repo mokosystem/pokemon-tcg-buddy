@@ -180,7 +180,7 @@ function findSearchableRecords(
   unseen: ReadonlyMap<CardRecord, { card: Card; count: number }>
 ): { oneStep: Set<CardRecord>; twoSteps: Set<CardRecord> } {
   const inPlay = [
-    ...(state.stadium === null ? [] : [state.stadium]),
+    ...(state.stadium === undefined ? [] : [state.stadium]),
     ...state.listPokemonInPlay().map((pokemon) => pokemon.card),
   ];
   const reachableBy = (filters: readonly CardFilter[]): Set<CardRecord> => {
@@ -500,7 +500,7 @@ export function createNextTurnTrialEvaluator(
       );
       result.firstAchievedTurns.forEach((firstTurn, index) => {
         for (const deadline of openDeadlines) {
-          if (firstTurn !== null && firstTurn <= deadline) {
+          if (firstTurn !== undefined && firstTurn <= deadline) {
             total += 1;
           } else if (deadline > lastTurn) {
             total += result.leafScores[index] ?? 0;
@@ -521,7 +521,7 @@ function playTrialTurns(
   { fromTurn, stage, state, statistics }: EvaluationInput,
   lastTurn: number,
   trialSeed: number
-): { firstAchievedTurns: (number | null)[]; leafScores: number[] } {
+): { firstAchievedTurns: (number | undefined)[]; leafScores: number[] } {
   const rollout = createSearchPolicy(
     declaration,
     createPathProgressEvaluator(declaration),
@@ -535,7 +535,9 @@ function playTrialTurns(
   statistics.clones += 1;
   copy.remixUnseenCards();
   const context = { choices: rollout, state: copy };
-  const firstAchievedTurns = declaration.goals.map((): number | null => null);
+  const firstAchievedTurns = declaration.goals.map(
+    (): number | undefined => undefined
+  );
   let isPlayable = beginTrialTurn(copy, fromTurn, stage);
   for (let turn = fromTurn; isPlayable && turn <= lastTurn; turn += 1) {
     // 「番を終える」を試すときは、その番の行動をもう行わない
@@ -543,7 +545,7 @@ function playTrialTurns(
       rollout.playTurn(context);
     }
     declaration.goals.forEach((goal, index) => {
-      if (firstAchievedTurns[index] === null && goal.isAchieved(copy)) {
+      if (firstAchievedTurns[index] === undefined && goal.isAchieved(copy)) {
         firstAchievedTurns[index] = turn;
       }
     });

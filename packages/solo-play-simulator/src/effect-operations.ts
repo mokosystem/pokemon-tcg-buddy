@@ -70,7 +70,7 @@ function minCountForDeckSearch(filter: CardFilter, available: number): number {
 
 function listOtherPokemonWithEnergy(
   state: GameState,
-  holder: PokemonInPlay | null
+  holder: PokemonInPlay | undefined
 ): PokemonInPlay[] {
   return state
     .listPokemonInPlay()
@@ -185,7 +185,7 @@ const firstStepTargetChecks: {
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
   attachEnergyFromHandToSelf: (step, { hand, source }) =>
     listMatching(hand, step.energyFilter).some(isEnergy) &&
-    source.pokemon !== null,
+    source.pokemon !== undefined,
   branchOnCoinFlip: (step, input) => {
     // コインを投げる前に、オモテのときの最初の操作に対象があるかで決める(対象が無ければ効果を使えない決まりと同じ)
     const [first] = step.stepsWhenHeads;
@@ -198,7 +198,7 @@ const firstStepTargetChecks: {
   // 手札が 0 枚でも使える(公式 Q&A「ゼイユ」: 手札がゼイユだけのときも使える、2026-09-24 確認)
   discardHand: alwaysHasTarget,
   discardSelf: alwaysHasTarget,
-  discardStadiumInPlay: (_, { state }) => state.stadium !== null,
+  discardStadiumInPlay: (_, { state }) => state.stadium !== undefined,
   drawCards: deckHasCards,
   evolveBasicToStage2FromHand: (_, { state }) =>
     listRareCandyPairs(state).length > 0,
@@ -210,12 +210,12 @@ const firstStepTargetChecks: {
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
   // 山札が 4 枚に満たなくても、ある分だけ見て使える(公式 Q&A「はしゃのほうこう」、2026-09-23 確認)
   lookAtDeckTopAndAttachEnergyToSelf: (_, { source, state }) =>
-    state.deck.length > 0 && source.pokemon !== null,
+    state.deck.length > 0 && source.pokemon !== undefined,
   lookAtDeckTopAndTakeIntoHand: deckHasCards,
   moveAnyEnergyFromOwnPokemonToSelf: (_, { source, state }) =>
     listOtherPokemonWithEnergy(state, source.pokemon).length > 0,
   moveEnergyFromBenchToActive: (_, { state }) =>
-    state.active !== null &&
+    state.active !== undefined &&
     state.bench.some((pokemon) => pokemon.energies.length > 0),
   moveEnergyFromSwitchedOutPokemonToActive: alwaysHasTarget,
   moveEnergyToAnotherOwnPokemon: (step, { state }) =>
@@ -227,13 +227,13 @@ const firstStepTargetChecks: {
   placeHandCardsOnDeckTop: (step, { hand }) => hand.length >= step.count,
   placeSelfOnBenchFromHand: (_, { state }) => countEmptyBenchSlots(state) > 0,
   replaceSelfWithPokemonFromDeck: (_, { source, state }) =>
-    state.deck.length > 0 && source.pokemon !== null,
+    state.deck.length > 0 && source.pokemon !== undefined,
   returnFromDiscardToDeck: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
   returnPokemonToHand: (step, { source, state }) =>
     step.target === "self"
-      ? source.pokemon !== null
+      ? source.pokemon !== undefined
       : state.listPokemonInPlay().length > 0,
   returnSelfToDeck: alwaysHasTarget,
   searchDeckAndAttachEnergyDistributedToPokemon: (step, { state }) =>
@@ -244,7 +244,7 @@ const firstStepTargetChecks: {
     state.deck.length > 0 &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
   searchDeckAndAttachEnergyToSelf: (_, { source, state }) =>
-    state.deck.length > 0 && source.pokemon !== null,
+    state.deck.length > 0 && source.pokemon !== undefined,
   searchDeckAndPlaceOnTopAfterShuffle: deckHasCards,
   searchDeckIntoHand: deckHasCards,
   searchDeckIntoHandAndAttachRest: deckHasCards,
@@ -253,11 +253,11 @@ const firstStepTargetChecks: {
     state.deck.length > 0 && countEmptyBenchSlots(state) > 0,
   shuffleHandIntoDeck: alwaysHasTarget,
   switchActiveWithBench: (step, { state }) =>
-    state.active !== null &&
+    state.active !== undefined &&
     listBenchMatchingOrAll(state, step.benchFilter).length > 0,
   switchSelfWithActive: (_, { source, state }) =>
-    state.active !== null &&
-    source.pokemon !== null &&
+    state.active !== undefined &&
+    source.pokemon !== undefined &&
     state.bench.includes(source.pokemon),
 };
 
@@ -294,7 +294,7 @@ export function canStartEffect(
   state: GameState,
   effect: Effect,
   source: EffectSource,
-  cardBeingPlayed: Card | null
+  cardBeingPlayed: Card | undefined
 ): boolean {
   const [firstStep] = effect.steps;
   const input: TargetCheckInput = {
@@ -323,7 +323,7 @@ interface OperationRun {
     /** 山札の上からトラッシュしたカード(モルペコの「その中から」)。 */
     cardsDiscardedFromDeckTop: Card[];
     discardedCount: number;
-    switchedOutPokemon: PokemonInPlay | null;
+    switchedOutPokemon: PokemonInPlay | undefined;
   };
   readonly source: EffectSource;
 }
@@ -362,7 +362,7 @@ export function trimBenchToLimit(context: EffectContext): void {
       state.bench,
       `ベンチを ${limit} 匹にするためにトラッシュするベンチポケモン`
     );
-    if (target === null) {
+    if (target === undefined) {
       return;
     }
     state.discardBenchedPokemon(target);
@@ -371,7 +371,7 @@ export function trimBenchToLimit(context: EffectContext): void {
 
 function promoteIfActiveIsEmpty(context: EffectContext): void {
   const { state } = context;
-  if (state.active !== null) {
+  if (state.active !== undefined) {
     return;
   }
   const next = chooseOnePokemon(
@@ -379,17 +379,17 @@ function promoteIfActiveIsEmpty(context: EffectContext): void {
     state.bench,
     "バトル場に出すベンチポケモン"
   );
-  if (next !== null) {
+  if (next !== undefined) {
     state.promoteToActive(next);
   }
 }
 
 function returnToZone(
   context: EffectContext,
-  target: PokemonInPlay | null,
+  target: PokemonInPlay | undefined,
   zone: "deck" | "hand"
 ): void {
-  if (target === null) {
+  if (target === undefined) {
     return;
   }
   if (zone === "deck") {
@@ -451,13 +451,13 @@ function attachEnergyChosenFromHand(
   );
   const target =
     chosen.length === 0
-      ? null
+      ? undefined
       : chooseOnePokemon(
           context,
           listOwnPokemonMatching(state, step.targetFilter),
           `${label}: 手札のエネルギーをつけるポケモン`
         );
-  if (target === null) {
+  if (target === undefined) {
     return;
   }
   for (const energy of chosen) {
@@ -516,13 +516,13 @@ function attachEnergyToOnePokemon(
   const { chosen, targets } = chooseEnergiesForOwnPokemon(run, step, zone);
   const target =
     chosen.length === 0
-      ? null
+      ? undefined
       : chooseOnePokemon(
           context,
           targets,
           `${label}: ${ZONE_NAMES[zone]}のエネルギーをつけるポケモン`
         );
-  if (target !== null) {
+  if (target !== undefined) {
     for (const energy of chosen) {
       state.attachEnergyByEffect(energy, target, zone);
     }
@@ -540,7 +540,7 @@ function lookAtDeckTopAndAttachToSelf(
   const { context, label, source } = run;
   const { state } = context;
   const holder = source.pokemon;
-  if (holder === null) {
+  if (holder === undefined) {
     return;
   }
   const looked = state.deck.slice(0, step.lookCount);
@@ -582,7 +582,7 @@ function lookAtDeckTopAndAttachToOwnPokemon(
       targets,
       `${label}: ${energy.name} をつけるポケモン`
     );
-    return target === null ? [] : [{ energy, target }];
+    return target === undefined ? [] : [{ energy, target }];
   });
   state.attachFromDeckTopToEach(
     step.lookCount,
@@ -604,7 +604,7 @@ function moveEnergyBetweenOwnPokemon(
     `${label}: エネルギーをつけ替える元のポケモン`
   );
   const [energy] =
-    from === null
+    from === undefined
       ? []
       : chooseCardsWithin(
           context,
@@ -613,14 +613,14 @@ function moveEnergyBetweenOwnPokemon(
           `${label}: ${from.name} からつけ替えるエネルギー`
         );
   const to =
-    from === null || energy === undefined
-      ? null
+    from === undefined || energy === undefined
+      ? undefined
       : chooseOnePokemon(
           context,
           state.listPokemonInPlay().filter((pokemon) => pokemon !== from),
           `${label}: ${energy.name} をつけ替える先のポケモン`
         );
-  if (from !== null && energy !== undefined && to !== null) {
+  if (from !== undefined && energy !== undefined && to !== undefined) {
     state.moveAttachedEnergy(from, to, energy);
   }
 }
@@ -669,7 +669,7 @@ function attachEnergyDistributed(
       targets,
       `${label}: ${energy.name} をつけるポケモン`
     );
-    if (target !== null) {
+    if (target !== undefined) {
       state.attachEnergyByEffect(energy, target, zone);
     }
   }
@@ -682,7 +682,7 @@ function attachEnergyFromHandToHolder(
 ): void {
   const { context, label, source } = run;
   const holder = source.pokemon;
-  if (holder === null) {
+  if (holder === undefined) {
     return;
   }
   const chosen = chooseCardsWithin(
@@ -721,7 +721,7 @@ function attachEnergyFromHandDistributed(
       targets,
       `${label}: ${energy.name} をつけるポケモン`
     );
-    if (target !== null) {
+    if (target !== undefined) {
       state.attachEnergyByEffect(energy, target, "hand");
       resolveAttachedFromHandTriggers(context, energy, target);
     }
@@ -762,7 +762,7 @@ function searchDeckAndAttachToHolder(
   const { state } = context;
   const holder = source.pokemon;
   const maxCount = calculateAttachCount(step.maxCount, run);
-  if (holder !== null && maxCount > 0) {
+  if (holder !== undefined && maxCount > 0) {
     for (const energy of chooseCardsWithin(
       context,
       listMatching(state.deck, step.energyFilter).filter(isEnergy),
@@ -779,7 +779,7 @@ function searchDeckAndAttachToHolder(
 /** つけ替える元のポケモンを 0 匹以上選び、それぞれからエネルギーを 0 枚以上選んで、効果の持ち主につけ替える。 */
 function moveEnergyToHolder(run: OperationRun): void {
   const holder = run.source.pokemon;
-  if (holder === null) {
+  if (holder === undefined) {
     return;
   }
   moveChosenEnergies(
@@ -854,13 +854,13 @@ function evolveFromDeck(run: OperationRun, canContinueToStage2: boolean): void {
   );
   const target =
     stage1 === undefined
-      ? null
+      ? undefined
       : chooseOnePokemon(
           context,
           basics.filter((pokemon) => pokemon.name === stage1.evolvesFrom),
           `${label}: 進化させるたねポケモン`
         );
-  if (stage1 !== undefined && target !== null) {
+  if (stage1 !== undefined && target !== undefined) {
     state.evolve(target, stage1, { from: "deck" });
     const [stage2] = canContinueToStage2
       ? chooseCardsWithin(
@@ -918,7 +918,7 @@ function searchIntoHandAndAttachRest(
       listOwnPokemonMatching(state, step.targetFilter),
       `${label}: ${energy.name} をつけるポケモン`
     );
-    if (target !== null) {
+    if (target !== undefined) {
       state.attachEnergyByEffect(energy, target, "deck");
     }
   }
@@ -974,7 +974,7 @@ function evolveWithRareCandy(run: OperationRun): void {
   );
   const target =
     stage2 === undefined
-      ? null
+      ? undefined
       : chooseOnePokemon(
           context,
           pairs
@@ -982,7 +982,7 @@ function evolveWithRareCandy(run: OperationRun): void {
             .map((pair) => pair.target),
           `${label}: ${stage2.name} に進化させるたねポケモン`
         );
-  if (stage2 !== undefined && target !== null) {
+  if (stage2 !== undefined && target !== undefined) {
     context.state.evolveSkippingStage1(target, stage2);
     // ふしぎなアメで手札から出した 2進化ポケモンも「手札から出して進化させたとき」に当たる(公式 Q&A「ふしぎなアメ」:
     // 手札からポケモンのカードを出して進化していれば、そのときに使える特性を使える。2026-09-24 確認)
@@ -1098,7 +1098,7 @@ const operationRunners: {
   moveAnyEnergyFromOwnPokemonToSelf: (_, run) => moveEnergyToHolder(run),
   moveEnergyFromBenchToActive: (step, run) => {
     const { active, bench } = run.context.state;
-    if (active !== null) {
+    if (active !== undefined) {
       moveChosenEnergies(
         run,
         bench.filter((pokemon) => pokemon.energies.length > 0),
@@ -1114,7 +1114,7 @@ const operationRunners: {
     const { state } = context;
     const from = progress.switchedOutPokemon;
     const to = state.active;
-    if (from === null || to === null) {
+    if (from === undefined || to === undefined) {
       return;
     }
     // ベンチに下がったポケモンにエネルギーがあれば、つけ替えないことは選べない(公式 Q&A「ヒガナの信頼」、2026-09-24 確認)
@@ -1152,7 +1152,7 @@ const operationRunners: {
     const { state } = context;
     const holder = source.pokemon;
     const [card] =
-      holder === null
+      holder === undefined
         ? []
         : chooseCardsWithin(
             context,
@@ -1161,7 +1161,7 @@ const operationRunners: {
             `${label}: ${holder.name} と入れ替える山札のポケモン`,
             "deck"
           );
-    if (holder !== null && card !== undefined) {
+    if (holder !== undefined && card !== undefined) {
       state.replacePokemonWithDeckCard(holder, card);
     }
     state.shuffleDeck();
@@ -1250,19 +1250,19 @@ const operationRunners: {
     const { state } = context;
     const benched = chooseOnePokemon(
       context,
-      state.active === null
+      state.active === undefined
         ? []
         : listBenchMatchingOrAll(state, step.benchFilter),
       `${label}: バトル場と入れ替えるベンチポケモン`
     );
-    if (benched !== null) {
+    if (benched !== undefined) {
       progress.switchedOutPokemon = state.active;
       state.switchActive(benched);
     }
   },
   switchSelfWithActive: (_, { context, source }) => {
     const holder = source.pokemon;
-    if (holder !== null && context.state.bench.includes(holder)) {
+    if (holder !== undefined && context.state.bench.includes(holder)) {
       context.state.switchActive(holder);
     }
   },
@@ -1313,7 +1313,7 @@ export function runEffect(
     progress: {
       cardsDiscardedFromDeckTop: [],
       discardedCount: 0,
-      switchedOutPokemon: null,
+      switchedOutPokemon: undefined,
     },
     source,
   };
@@ -1328,7 +1328,7 @@ export function runEffect(
 
 export function markAbilityUsed(
   state: GameState,
-  pokemon: PokemonInPlay | null,
+  pokemon: PokemonInPlay | undefined,
   abilityName: string
 ): void {
   pokemon?.abilitiesUsedThisTurn.add(abilityName);
@@ -1355,7 +1355,7 @@ export function resolveAbilityTriggers(
     if (
       translation?.kind === kind &&
       !isAbilityNegated(state, pokemon) &&
-      canStartEffect(state, translation.effect, { card, pokemon }, null) &&
+      canStartEffect(state, translation.effect, { card, pokemon }, undefined) &&
       context.choices.choosesToApplyOptionalEffect(state, ability.name)
     ) {
       markAbilityUsed(state, pokemon, ability.name);
@@ -1392,7 +1392,7 @@ export function resolveAttachedFromHandTriggers(
   )) {
     // ベンチが 5 匹のときテレパス超エネルギーはつけられるが、山札を見ることはできない
     // (公式 Q&A「テレパス超エネルギー」、2026-09-23 確認)。最初の操作に対象が無ければ効果は起きない
-    if (canStartEffect(context.state, cardEffect.effect, source, null)) {
+    if (canStartEffect(context.state, cardEffect.effect, source, undefined)) {
       runEffect(context, cardEffect.effect, source, energy.name);
     }
   }

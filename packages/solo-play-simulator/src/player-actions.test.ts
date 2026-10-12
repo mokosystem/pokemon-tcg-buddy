@@ -55,7 +55,7 @@ describe("今できる行動の一覧", () => {
   test("にげるときにトラッシュするエネルギーは、足りてどの 1 枚を除いても足りなくなる組だけを並べる", () => {
     const state = buildState({ active: MEOWTH, bench: [RALTS] });
     const { active } = state;
-    if (active === null) {
+    if (active === undefined) {
       throw new Error("バトル場が空");
     }
     active.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY, TELEPATH_ENERGY);
