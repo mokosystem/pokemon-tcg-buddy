@@ -69,7 +69,7 @@ export interface GameResult {
   /** 番 → 使ったワザの名前。 */
   readonly attacks: ReadonlyMap<number, string>;
   readonly events: readonly string[];
-  /** 狙いごとの、成立しなかった番 → 要因。 */
+  /** 狙いごとの、成立しなかった番 → 要因。すべての狙いが入る(最初の番で成立した狙いは空の Map)。 */
   readonly failureLabels: ReadonlyMap<string, ReadonlyMap<number, string>>;
   /** 狙いごとの、最初に成立した番。maxTurn までに成立しなかった狙いは入らない。 */
   readonly goalFirstTurn: ReadonlyMap<string, number>;

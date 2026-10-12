@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | データの欄(概念として欄が無い) | `evolvesFrom`、ワザの `effect` | 欄を省略する(`evolvesFrom?: string`)。最上位の `tsconfig.json` の `exactOptionalPropertyTypes: true` が、`undefined` を明示的に入れること(`{ evolvesFrom: undefined }`)も型で禁じる。値があるときだけ欄を足すには `...(value === undefined ? {} : { value })` と書く |
 | 状態の空き(欄はあるが今は空) | バトル場 `active`、スタジアム `stadium`、ポケモンのどうぐ `tool`、`EffectSource.pokemon`、`holder` | `active: PokemonInPlay \| undefined` と明示する。空にするときは `undefined` を代入する。欄の省略(`active?:`)にしない。`exactOptionalPropertyTypes` の下では `this.active = undefined` が型エラーになり、`delete` が要るため |
-| 関数が「無い」を返す | `calculateAttackDamage`、`chooseAttack`、`findFirstInHand`、場のポケモンを 1 匹選ぶ関数(`chooseOnePokemon`) | 戻り値の型を `T \| undefined` と書き、`return undefined;` と書く。戻り値の型を書かない関数(オブジェクトの欄に置いた矢印関数を含む)で `return undefined;` と書くと、Ultracite の `noUselessUndefined` が落とす |
+| 関数が「無い」を返す | `calculateAttackDamage`、`chooseAttack`、`findFirstInHand`、場のポケモンを 1 匹選ぶ関数(`chooseOnePokemon`) | 戻り値の型を `T \| undefined` にし、`return undefined;` と書く。戻り値の型を書かない関数(オブジェクトの欄に置いた矢印関数を含む)で `return undefined;` と書くと、Ultracite の `noUselessUndefined` が落とす |
 
 ### 判定の書き方
 
