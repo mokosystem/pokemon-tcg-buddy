@@ -25,7 +25,7 @@ import {
 
 interface CollectedContinuousEffect {
   readonly effect: ContinuousEffect;
-  /** 特性のポケモン、どうぐ・特殊エネルギーをつけているポケモン。スタジアムは undefined。 */
+  /** 特性のポケモン、ポケモンのどうぐ・特殊エネルギーをつけているポケモン。スタジアムは undefined。 */
   readonly holder: PokemonInPlay | undefined;
   readonly sourceCard: Card;
 }
