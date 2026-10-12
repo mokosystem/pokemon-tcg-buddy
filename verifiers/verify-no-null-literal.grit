@@ -1,0 +1,3 @@
+`null` as $n where {
+  register_diagnostic(span=$n, message="値が無いことは null ではなく省略(undefined)で表す。外部の仕様が null を要求するときだけ、理由を biome-ignore のコメントに書いて残す(docs/coding-rules.md)")
+}
