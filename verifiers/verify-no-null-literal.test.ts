@@ -43,6 +43,21 @@ describe("null のリテラルを見つけるプラグイン", () => {
     expect(linted.exitCode).toBe(1);
   });
 
+  test("null という名前のプロパティには診断を出さない", () => {
+    const linted = lintWithRepositoryConfig(
+      "with-null-property-name.ts",
+      [
+        "export function readNullKey(names: Record<string, string>): string | undefined {",
+        "  const keys = { null: names.null };",
+        "  return keys.null;",
+        "}",
+        "",
+      ].join("\n")
+    );
+    expect(linted.pluginDiagnosticCount).toBe(0);
+    expect(linted.exitCode).toBe(0);
+  });
+
   test("直前の行に biome-ignore lint/plugin の抑止コメントがある null には診断を出さない", () => {
     const linted = lintWithRepositoryConfig(
       "with-suppressed-null-literal.ts",

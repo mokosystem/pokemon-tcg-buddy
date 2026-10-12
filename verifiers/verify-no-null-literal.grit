@@ -1,3 +1,7 @@
-`null` as $n where {
+// 文字の並び `null` で合わせると、プロパティ名の null(names.null、{ null: 1 })にも一致するため、構文ノードの種類で合わせる
+or {
+  JsNullLiteralExpression(),
+  TsNullLiteralType()
+} as $n where {
   register_diagnostic(span=$n, message="値が無いことは null ではなく省略(undefined)で表す。外部の仕様が null を要求するときだけ、理由を biome-ignore のコメントに書いて残す(docs/coding-rules.md)")
 }
