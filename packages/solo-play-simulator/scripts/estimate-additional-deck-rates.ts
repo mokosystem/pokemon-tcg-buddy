@@ -15,12 +15,13 @@ import {
 } from "../src/additional-recorded-decks.ts";
 import { cardRecordTable } from "../src/card-record-table.ts";
 import { type Declaration, resolveDeclaration } from "../src/declaration.ts";
-import { buildDeck, type Goal } from "../src/engine.ts";
+import type { Goal } from "../src/engine.ts";
+import { findRecordedDeck } from "../src/issue22-decks.ts";
 import { TALON_HUNT_GOAL } from "./issue22-comparison-targets.ts";
 import {
+  findDeckTargetByName,
   parseTraceRequest,
-  runSearchTrialsOfSide,
-  SEED,
+  runSearchTrialsOfBothSides,
 } from "./run-search-trials.ts";
 
 interface AdditionalDeckTarget {
@@ -50,28 +51,12 @@ const ADDITIONAL_DECK_TARGETS: Readonly<Record<string, AdditionalDeckTarget>> =
     },
   };
 
-function findAdditionalDeckTarget(deckName: string): AdditionalDeckTarget {
-  const target = ADDITIONAL_DECK_TARGETS[deckName];
-  if (target === undefined) {
-    throw new Error(
-      `デッキの名前を渡す(${Object.keys(ADDITIONAL_DECK_TARGETS).join("、")})`
-    );
-  }
-  return target;
-}
-
 function main(argv: readonly string[]): void {
-  const target = findAdditionalDeckTarget(argv[0] ?? "");
-  const deck = ADDITIONAL_RECORDED_DECKS.find(
-    (entry) => entry.deckCode === target.deckCode
-  );
-  if (deck === undefined) {
-    throw new Error(`デッキ ${target.deckCode} が無い`);
-  }
+  const target = findDeckTargetByName(ADDITIONAL_DECK_TARGETS, argv[0] ?? "");
+  const deck = findRecordedDeck(ADDITIONAL_RECORDED_DECKS, target.deckCode);
   const trials = Number(argv[1] ?? "20000");
   const resolved = resolveDeclaration(target.declaration, cardRecordTable);
-  const sideOptions = {
-    deckCards: buildDeck(cardRecordTable, deck.decklist),
+  runSearchTrialsOfBothSides(deck, {
     goals: [...target.measuredGoals, ...resolved.goals],
     resolved,
     summaryDeadlines: [
@@ -84,12 +69,7 @@ function main(argv: readonly string[]): void {
     ],
     traceRequest: parseTraceRequest(argv.slice(2)),
     trials,
-  };
-  console.log(
-    `## ${deck.name}(${deck.deckCode})、道の揃い具合を見る評価、先攻・後攻 ${trials} 回ずつ(乱数の種 ${SEED})\n`
-  );
-  runSearchTrialsOfSide({ ...sideOptions, wentFirst: true });
-  runSearchTrialsOfSide({ ...sideOptions, wentFirst: false });
+  });
 }
 
 main(process.argv.slice(2));

@@ -23,16 +23,18 @@ import {
 
 export const BENCH_LIMIT = 5;
 /**
- * 手札からエネルギーをつけられる回数(1 回の番あたり。docs/pokemon-tcg/basic-rules.md 72 行)。骨組みの番ごとの制限は
- * hasAttachedEnergy の真偽値で持ち、数を書いた所が無いため、締め切りまでにつけられる枚数を数える場の評価
- * (goal-prospects.ts)が借りる数としてここに置く。
+ * 手札からエネルギーをつけられる回数(1 回の番あたり。docs/pokemon-tcg/basic-rules.md 72 行)。締め切りまでにつけられる
+ * 枚数を数える場の評価(goal-prospects.ts)だけが使う。骨組みの番ごとの判定(attachEnergyFromHand と、player-actions.ts の
+ * 行動の一覧)はこの数を通らず、hasAttachedEnergy の真偽値で 1 回だけを表す。真偽値を数に変えると状態の形が変わるため
+ * 変えておらず、この数と真偽値の 2 か所が同じ制限を表している。
  */
 export const ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN = 1;
 
 /**
  * 1 回の番に 1 枚しか使えないトレーナーズの種類。サポートは 1 回の番に 1 枚、スタジアムを出すのは 1 回の番に 1 枚
- * (docs/pokemon-tcg/basic-rules.md 75・76 行)。骨組みはこの制限を canUseSupporter と hasPlayedStadium で持つ。締め切り
- * までに使える探す手段を数える場の評価(deck-fetch-sources.ts)が、制限の種類を評価の側に書き直さずに借りるため、ここに置く。
+ * (docs/pokemon-tcg/basic-rules.md 75・76 行)。骨組みの判定(GameState の hasUsedOnceInTurn を通る canUseSupporter・
+ * playStadium と、card-effects.ts の canPlayTrainerIfInHand)と、締め切りまでに使える探す手段を数える場の評価
+ * (deck-fetch-sources.ts)が、どのカードがこの制限を受けるかを classifyOnceInTurnKind から借りる。
  */
 export type OnceInTurnKind = "supporter" | "stadium";
 
@@ -449,12 +451,17 @@ export class GameState {
     return this.wentFirst && this.turn === 1;
   }
 
+  /** この番に、1 回の番に 1 枚の制限の種類 kind のトレーナーズを使ったか(サポートを使った、スタジアムを出した)。 */
+  hasUsedOnceInTurn(kind: OnceInTurnKind): boolean {
+    return kind === "supporter" ? this.hasUsedSupporter : this.hasPlayedStadium;
+  }
+
   /** usableOnFirstTurnGoingFirst は、先攻の最初の番でも使える印を持つサポート(ゼイユ)のときに真にする。 */
   canUseSupporter(
     options: { usableOnFirstTurnGoingFirst?: boolean } = {}
   ): boolean {
     return !(
-      this.hasUsedSupporter ||
+      this.hasUsedOnceInTurn("supporter") ||
       (this.isFirstTurnGoingFirst() && !options.usableOnFirstTurnGoingFirst)
     );
   }
@@ -788,7 +795,7 @@ export class GameState {
     if (card.category !== CardCategory.Stadium) {
       throw new IllegalMove(`${card.name} はスタジアムではない`);
     }
-    if (this.hasPlayedStadium) {
+    if (this.hasUsedOnceInTurn("stadium")) {
       throw new IllegalMove("この番はもうスタジアムを出した");
     }
     if (this.stadium?.name === card.name) {

@@ -8,11 +8,7 @@ import {
   type ResolvedDeclaration,
   resolveDeclaration,
 } from "./declaration.ts";
-import {
-  GoalProspects,
-  PROGRESS_WEIGHTS,
-  scoreGoalsByPathProgress,
-} from "./goal-prospects.ts";
+import { GoalProspects, PROGRESS_WEIGHTS } from "./goal-prospects.ts";
 import {
   BAKEGAKURE_DECLARATION,
   DRAGAPULT_DECLARATION,
@@ -125,19 +121,11 @@ describe("番を終えるときの点", () => {
       state,
       "actionsRemain"
     );
-    expect(scoreGoalsByPathProgress(PLAIN_EVOLUTION, actionsDone, 2)).toEqual([
-      0, 0, 0,
-    ]);
-    for (const score of scoreGoalsByPathProgress(
-      PLAIN_EVOLUTION,
-      actionsRemain,
-      2
-    )) {
+    expect(actionsDone.scoreGoals(2)).toEqual([0, 0, 0]);
+    for (const score of actionsRemain.scoreGoals(2)) {
       expect(score).toBeGreaterThan(0);
     }
-    expect(scoreGoalsByPathProgress(PLAIN_EVOLUTION, actionsDone, 3)).toEqual(
-      scoreGoalsByPathProgress(PLAIN_EVOLUTION, actionsRemain, 3)
-    );
+    expect(actionsDone.scoreGoals(3)).toEqual(actionsRemain.scoreGoals(3));
   });
 });
 
@@ -672,9 +660,10 @@ describe("主軸の系統のほかのワザを試した後の見込み", () => {
     expect(prospects.calculateDamageRatio()).toBeCloseTo(50 / 300, 9);
     const [afterWish] = prospects.listProspectsAfterNonMainAttacks();
     expect(afterWish?.calculateDamageRatio()).toBeCloseTo(200 / 300, 9);
-    expect(
-      scoreGoalsByPathProgress(MEGA_GARDEVOIR_DECK, prospects, 3)[2]
-    ).toBeCloseTo((PROGRESS_WEIGHTS.unachievedGoal * (1 + 200 / 300)) / 2, 9);
+    expect(prospects.scoreGoals(3)[2]).toBeCloseTo(
+      (PROGRESS_WEIGHTS.unachievedGoal * (1 + 200 / 300)) / 2,
+      9
+    );
   });
 
   test("この番の締め切りの 3 段目は、あふれるねがいを試した後の場を使わず、今の場(50)で数える", () => {
@@ -682,8 +671,9 @@ describe("主軸の系統のほかのワザを試した後の見込み", () => {
       MEGA_GARDEVOIR_DECK,
       buildMegaGardevoirWithThreeBenched()
     );
-    expect(
-      scoreGoalsByPathProgress(MEGA_GARDEVOIR_DECK, prospects, 2)[2]
-    ).toBeCloseTo((PROGRESS_WEIGHTS.unachievedGoal * (1 + 50 / 300)) / 2, 9);
+    expect(prospects.scoreGoals(2)[2]).toBeCloseTo(
+      (PROGRESS_WEIGHTS.unachievedGoal * (1 + 50 / 300)) / 2,
+      9
+    );
   });
 });

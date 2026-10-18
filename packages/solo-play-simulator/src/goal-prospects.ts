@@ -16,6 +16,8 @@ import {
 import {
   buildCardFromRecord,
   type Card,
+  type CardsOfRecord,
+  countCardsByRecord,
   isEnergy,
   matchesCardFilter,
 } from "./cards.ts";
@@ -47,7 +49,11 @@ import {
   type ResolvedDeclaration,
 } from "./declaration.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
-import { findCardEffects } from "./effect-operations.ts";
+import {
+  findCardEffects,
+  listPossibleOperations,
+} from "./effect-operations.ts";
+import { findOrCreate } from "./find-or-create.ts";
 import { canRetreatActive } from "./player-actions.ts";
 import { SeededRandom } from "./random.ts";
 import { type EvaluationInput, endTurnForEvaluation } from "./search-policy.ts";
@@ -96,20 +102,12 @@ const FETCH_ROUTE_WEIGHTS: Readonly<Record<FetchRoute, number>> = {
 /** 必要なカードを数える置き場所。evolvableThisTurn は場のポケモンのうち、この番に進化させられるもの。 */
 type Zone = "hand" | "inPlay" | "evolvableThisTurn" | "unseen";
 
-function countByRecord(cards: readonly Card[]): Map<CardRecord, number> {
-  const counts = new Map<CardRecord, number>();
-  for (const card of cards) {
-    counts.set(card.record, (counts.get(card.record) ?? 0) + 1);
-  }
-  return counts;
-}
-
 /** 見えていないカード(view.unseen から数える)のほかの置き場所。 */
 type CountedZone = Exclude<Zone, "unseen">;
 
 interface PathView {
   /** 置き場所ごとの記録ごとの枚数。道によって要る置き場所が違う(この番に進化させられるものはこの番の締め切りの進化の元だけ)ので、初めて要るときに数える。 */
-  readonly counts: Map<CountedZone, ReadonlyMap<CardRecord, number>>;
+  readonly counts: Map<CountedZone, ReadonlyMap<CardRecord, CardsOfRecord>>;
   /** 2 段の中継の一覧。道によらないので、締め切りの種類ごとに 1 回だけ作る。 */
   readonly relaysByTiming: Map<DeadlineTiming, readonly DeckFetchRelay[]>;
   readonly state: GameState;
@@ -135,24 +133,20 @@ function countInZone(view: PathView, zone: Zone, record: CardRecord): number {
   if (zone === "unseen") {
     return view.unseen.get(record)?.count ?? 0;
   }
-  let counts = view.counts.get(zone);
-  if (counts === undefined) {
-    counts = countByRecord(listCardsInZone(view.state, zone));
-    view.counts.set(zone, counts);
-  }
-  return counts.get(record) ?? 0;
+  return (
+    findOrCreate(view.counts, zone, () =>
+      countCardsByRecord(listCardsInZone(view.state, zone))
+    ).get(record)?.count ?? 0
+  );
 }
 
 function listRelaysOnce(
   view: PathView,
   timing: DeadlineTiming
 ): readonly DeckFetchRelay[] {
-  let relays = view.relaysByTiming.get(timing);
-  if (relays === undefined) {
-    relays = listDeckFetchRelays(view.state, timing, view.unseen);
-    view.relaysByTiming.set(timing, relays);
-  }
-  return relays;
+  return findOrCreate(view.relaysByTiming, timing, () =>
+    listDeckFetchRelays(view.state, timing, view.unseen)
+  );
 }
 
 /** 1 つの道を数えるときの、置き場所ごとの使った枚数。同じ道の中で同じ 1 枚を 2 つの必要なカードに数えないため。 */
@@ -189,7 +183,7 @@ class UsedCards {
     if (this.used.unseen.size === 0) {
       return this.view.unseen;
     }
-    const remaining = new Map<CardRecord, { card: Card; count: number }>();
+    const remaining = new Map<CardRecord, CardsOfRecord>();
     for (const [record, { card, count }] of this.view.unseen) {
       const rest = count - (this.used.unseen.get(record) ?? 0);
       if (rest > 0) {
@@ -315,27 +309,15 @@ function listEvolutionLineNames(main: MainAttack): Set<string> {
 
 /**
  * 効果の操作のうち、バトルポケモンをベンチポケモンと入れ替える操作(switchActiveWithBench)の、バトル場に出すベンチ
- * ポケモンの条件(条件が無ければ undefined)。条件の分かれ道とコインの中も、山札から持ってくる操作の条件を集めるとき
- * (deck-fetch-sources.ts)と同じ辿り方で見る。
+ * ポケモンの条件(条件が無ければ undefined)。条件の分かれ道とコインの中も見る(listPossibleOperations)。
  */
 function listSwitchBenchFilters(
   steps: readonly EffectStep[]
 ): (CardFilter | undefined)[] {
-  return steps.flatMap((step): (CardFilter | undefined)[] => {
-    switch (step.operation) {
-      case "switchActiveWithBench":
-        return [step.benchFilter];
-      case "branchOnCondition":
-        return listSwitchBenchFilters([
-          ...step.stepsWhenMet,
-          ...step.stepsOtherwise,
-        ]);
-      case "branchOnCoinFlip":
-        return listSwitchBenchFilters(step.stepsWhenHeads);
-      default:
-        return [];
-    }
-  });
+  return listPossibleOperations(steps).flatMap(
+    (step): (CardFilter | undefined)[] =>
+      step.operation === "switchActiveWithBench" ? [step.benchFilter] : []
+  );
 }
 
 const switchBenchFiltersByRecord = new WeakMap<
@@ -355,49 +337,18 @@ function canSwitchIntoActive(card: Card, pokemon: PokemonInPlay): boolean {
   ) {
     return false;
   }
-  let filters = switchBenchFiltersByRecord.get(card.record);
-  if (filters === undefined) {
-    filters = findCardEffects(card, "whenPlayed").flatMap((cardEffect) =>
+  const filters = findOrCreate(switchBenchFiltersByRecord, card.record, () =>
+    findCardEffects(card, "whenPlayed").flatMap((cardEffect) =>
       listSwitchBenchFilters(cardEffect.effect.steps)
-    );
-    switchBenchFiltersByRecord.set(card.record, filters);
-  }
+    )
+  );
   return filters.some(
     (filter) => filter === undefined || matchesCardFilter(pokemon.card, filter)
   );
 }
 
+/** 場に出たとみなした主軸のカード。記録ごとに 1 枚だけ作る。 */
 const detachedCardsByRecord = new WeakMap<CardRecord, Card>();
-
-/** 場に出たとみなした主軸(場には置かない)。主軸が場にいないときに、ダメージやつけたエネルギーの供給を数えるため。 */
-function buildDetachedMain(state: GameState, main: MainAttack): PokemonInPlay {
-  let card = detachedCardsByRecord.get(main.record);
-  if (card === undefined) {
-    card = buildCardFromRecord(main.record, main.record.cardIds[0] ?? "");
-    detachedCardsByRecord.set(main.record, card);
-  }
-  return new PokemonInPlay(card, state.turn);
-}
-
-/**
- * 主軸がワザを使ったときのダメージの見込み。主軸が場にいればそのポケモン(バトル場を先に)で、いなければ場に出たと
- * みなした主軸で、記録の規則から求める(ダメージの上乗せが場のエネルギーの数などで決まるため)。上乗せ「N 以上なら
- * M を足す」は数が N に届く前から途中経過に比例して数える(estimateAttackDamageWithPartialThresholds)ので、狙いの
- * 判定のダメージとは違う。
- */
-function estimateMainAttackDamageProspect(
-  state: GameState,
-  main: MainAttack
-): number {
-  const attacker =
-    state
-      .listPokemonInPlay()
-      .find((pokemon) => pokemon.card.record === main.record) ??
-    buildDetachedMain(state, main);
-  return (
-    estimateAttackDamageWithPartialThresholds(state, attacker, main.attack) ?? 0
-  );
-}
 
 /** 手札から主軸につけるエネルギーの組。filled は払えない分のうち埋めた数。 */
 interface HandEnergySelection {
@@ -495,7 +446,7 @@ function buildPathView(state: GameState): PathView {
  * 締め切りの間で使い回す。
  */
 export class GoalProspects {
-  readonly input: EvaluationInput;
+  private readonly input: EvaluationInput;
   private readonly declaration: ResolvedDeclaration;
   private readonly achievements = new Map<number, boolean>();
   private readonly standProspects = new Map<DeadlineTiming, number>();
@@ -610,33 +561,31 @@ export class GoalProspects {
 
   /** 宣言から導いた狙いの index 段目(0 が立つ)が、今の場で成り立っているか。 */
   isGoalAchieved(index: number): boolean {
-    let achieved = this.achievements.get(index);
-    if (achieved === undefined) {
-      achieved = this.declaration.goals[index]?.isAchieved(this.input.state);
+    return findOrCreate(this.achievements, index, () => {
+      const achieved = this.declaration.goals[index]?.isAchieved(
+        this.input.state
+      );
       if (achieved === undefined) {
         throw new Error(`宣言から導いた狙いに ${index + 1} 段目が無い`);
       }
-      this.achievements.set(index, achieved);
-    }
-    return achieved;
+      return achieved;
+    });
   }
 
   /** 主軸への道のどれか 1 本が、締め切りまでに揃う見込み(0 以上 1 以下)。 */
   calculateStandProspect(timing: DeadlineTiming): number {
-    let prospect = this.standProspects.get(timing);
-    if (prospect === undefined) {
+    return findOrCreate(this.standProspects, timing, () => {
       const view = this.countPathViewOnce();
       // どれか 1 本の道が揃えば立つので、道ごとの見込みを別々の機会とみなして「少なくとも 1 本揃う」見込みにする
-      prospect =
+      return (
         1 -
         this.declaration.paths.reduce(
           (product, path) =>
             product * (1 - scorePath(view, path.requiredCards, timing)),
           1
-        );
-      this.standProspects.set(timing, prospect);
-    }
-    return prospect;
+        )
+      );
+    });
   }
 
   /** 置き場所ごとの枚数と探して持ってこられる記録を、締め切りの間で使い回すため 1 回だけ数える。 */
@@ -651,8 +600,7 @@ export class GoalProspects {
    * いなければ、エネルギーの見込みを 0、バトル場に出せる見込みを noWayToActive として平均する。
    */
   calculateAttackProspect(deadline: number): number {
-    let prospect = this.attackProspects.get(deadline);
-    if (prospect === undefined) {
+    return findOrCreate(this.attackProspects, deadline, () => {
       const standScore = this.isGoalAchieved(0)
         ? 1
         : this.calculateStandProspect(
@@ -672,10 +620,8 @@ export class GoalProspects {
           }
         }
       }
-      prospect = (standScore + bestLineScore) / 3;
-      this.attackProspects.set(deadline, prospect);
-    }
-    return prospect;
+      return (standScore + bestLineScore) / 3;
+    });
   }
 
   /**
@@ -687,33 +633,26 @@ export class GoalProspects {
    * 真になることで数え、手札にあるそのカードを先回りして数えない(Issue 51 の数え漏れ 4)。
    */
   calculateActiveSpotProspect(pokemon: PokemonInPlay): number {
-    let prospect = this.activeSpotProspects.get(pokemon);
-    if (prospect === undefined) {
-      prospect = this.measureActiveSpotProspect(pokemon);
-      this.activeSpotProspects.set(pokemon, prospect);
-    }
-    return prospect;
-  }
-
-  private measureActiveSpotProspect(pokemon: PokemonInPlay): number {
-    const { state } = this.input;
-    if (state.active === pokemon) {
-      return 1;
-    }
-    // 手札の入れ替えるカードを、今使えるか(canPlayTrainerFromHand)で絞らない。Issue 51 の数え漏れ 4 は「手札に
-    // 入れ替えるカードがある」で数えると決めており、絞ると、この番にサポートを使った後の手札のスグリが山札の段
-    // (switchCardSearchable)にも当たらず noWayToActive に落ち、山札にあるときより低くなる(置き場所に近いほど高く
-    // する重みの尺度が逆になる。Issue 51「重みの扱い」)
-    const hasSwitchCard = state.hand.some((card) =>
-      canSwitchIntoActive(card, pokemon)
-    );
-    this.canRetreat ??= canRetreatActive(state);
-    if (hasSwitchCard || this.canRetreat) {
-      return PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn;
-    }
-    return this.canFetchSwitchCardFor(pokemon)
-      ? PROGRESS_WEIGHTS.switchCardSearchable
-      : PROGRESS_WEIGHTS.noWayToActive;
+    return findOrCreate(this.activeSpotProspects, pokemon, () => {
+      const { state } = this.input;
+      if (state.active === pokemon) {
+        return 1;
+      }
+      // 手札の入れ替えるカードを、今使えるか(canPlayTrainerFromHand)で絞らない。Issue 51 の数え漏れ 4 は「手札に
+      // 入れ替えるカードがある」で数えると決めており、絞ると、この番にサポートを使った後の手札のスグリが山札の段
+      // (switchCardSearchable)にも当たらず noWayToActive に落ち、山札にあるときより低くなる(置き場所に近いほど高く
+      // する重みの尺度が逆になる。Issue 51「重みの扱い」)
+      const hasSwitchCard = state.hand.some((card) =>
+        canSwitchIntoActive(card, pokemon)
+      );
+      this.canRetreat ??= canRetreatActive(state);
+      if (hasSwitchCard || this.canRetreat) {
+        return PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn;
+      }
+      return this.canFetchSwitchCardFor(pokemon)
+        ? PROGRESS_WEIGHTS.switchCardSearchable
+        : PROGRESS_WEIGHTS.noWayToActive;
+    });
   }
 
   /**
@@ -879,34 +818,34 @@ export class GoalProspects {
     readonly cost: readonly PokemonType[];
     readonly unpaid: readonly PokemonType[];
   } {
-    let byAttacker = this.unpaidCosts.get(main);
-    if (byAttacker === undefined) {
-      byAttacker = new Map();
-      this.unpaidCosts.set(main, byAttacker);
-    }
-    let entry = byAttacker.get(attacker);
-    if (entry === undefined) {
-      const { state } = this.input;
-      const cost = calculateAttackCost(state, attacker, main.attack);
-      entry = {
-        cost,
-        unpaid:
-          cost.length === 0
-            ? []
-            : listUnpaidCost(cost, listEnergyUnits(state, attacker)),
-      };
-      byAttacker.set(attacker, entry);
-    }
-    return entry;
+    return findOrCreate(
+      findOrCreate(this.unpaidCosts, main, () => new Map()),
+      attacker,
+      () => {
+        const { state } = this.input;
+        const cost = calculateAttackCost(state, attacker, main.attack);
+        return {
+          cost,
+          unpaid:
+            cost.length === 0
+              ? []
+              : listUnpaidCost(cost, listEnergyUnits(state, attacker)),
+        };
+      }
+    );
   }
 
+  /**
+   * 場に出たとみなした主軸(場には置かない)。主軸が場にいないときに、ダメージやつけたエネルギーの供給を数えるため。
+   * 主軸の記録ごとに 1 匹だけ作り、エネルギーの見込みとダメージの見込みで同じものを使う。
+   */
   private placeDetachedMainOnce(main: MainAttack): PokemonInPlay {
-    let holder = this.detachedMains.get(main.record);
-    if (holder === undefined) {
-      holder = buildDetachedMain(this.input.state, main);
-      this.detachedMains.set(main.record, holder);
-    }
-    return holder;
+    return findOrCreate(this.detachedMains, main.record, () => {
+      const card = findOrCreate(detachedCardsByRecord, main.record, () =>
+        buildCardFromRecord(main.record, main.record.cardIds[0] ?? "")
+      );
+      return new PokemonInPlay(card, this.input.state.turn);
+    });
   }
 
   /** energy を holder につけたとしたら供給する 1 個ずつのタイプ(記録ごとに覚える)。 */
@@ -914,39 +853,25 @@ export class GoalProspects {
     holder: PokemonInPlay,
     energy: Card
   ): EnergyUnit[] {
-    let byRecord = this.provisions.get(holder);
-    if (byRecord === undefined) {
-      byRecord = new Map();
-      this.provisions.set(holder, byRecord);
-    }
-    let units = byRecord.get(energy.record);
-    if (units === undefined) {
-      units = toEnergyUnits(
-        resolveEnergyProvisionWhenAttached(this.input.state, holder, energy)
-      );
-      byRecord.set(energy.record, units);
-    }
-    return units;
+    return findOrCreate(
+      findOrCreate(this.provisions, holder, () => new Map()),
+      energy.record,
+      () =>
+        toEnergyUnits(
+          resolveEnergyProvisionWhenAttached(this.input.state, holder, energy)
+        )
+    );
   }
 
   /** 手札のエネルギーの、記録ごとの枚数と holder につけたとしたら供給するもの。 */
   private listHandEnergies(holder: PokemonInPlay) {
-    const counts = countByRecord(this.input.state.hand.filter(isEnergy));
-    const representatives = new Map(
-      this.input.state.hand.map((card) => [card.record, card])
+    return [...countCardsByRecord(this.input.state.hand.filter(isEnergy))].map(
+      ([record, { card, count }]) => ({
+        count,
+        record,
+        units: this.resolveUnitsWhenAttached(holder, card),
+      })
     );
-    return [...counts].flatMap(([record, count]) => {
-      const card = representatives.get(record);
-      return card === undefined
-        ? []
-        : [
-            {
-              count,
-              record,
-              units: this.resolveUnitsWhenAttached(holder, card),
-            },
-          ];
-    });
   }
 
   /** 見えていないエネルギーのうち、holder につけたとしたら要求 required を 1 つ埋められるものの記録。 */
@@ -976,98 +901,102 @@ export class GoalProspects {
     }
     this.damageRatio ??= Math.max(
       ...this.declaration.mainAttacks.map((main) =>
-        Math.min(
-          1,
-          estimateMainAttackDamageProspect(this.input.state, main) /
-            minimumDamage
-        )
+        Math.min(1, this.estimateMainAttackDamageProspect(main) / minimumDamage)
       )
     );
     return this.damageRatio;
   }
-}
 
-/**
- * 締め切り deadline についての、狙いの段ごとの点。成り立っていれば 1、成り立っていなければ見込みに unachievedGoal の
- * 重みをかけたもの。
- * 1 段目(立つ): 主軸への道ごとの見込み(必要なカードの揃い具合の積)から、少なくとも 1 本揃う見込み。
- * 2 段目(打てる): 1 段目の見込み(成り立っていれば 1)、ワザのエネルギーの見込み、バトル場に出せる見込みの平均
- * (GoalProspects の calculateAttackProspect)。
- * 3 段目(N 以上): 2 段目の見込みと、ダメージの見込みの下限に対する割合の平均。
- * 後の番の締め切りの 2 段目と 3 段目は、主軸の系統のほかのワザを試した後の場の点と比べて高いほう
- * (raiseByNonMainAttacks)。
- */
-export function scoreGoalsByPathProgress(
-  declaration: ResolvedDeclaration,
-  prospects: GoalProspects,
-  deadline: number
-): number[] {
-  const [standGoal, attackGoal, damageGoal] = declaration.goals;
-  if (standGoal === undefined || attackGoal === undefined) {
-    throw new Error("宣言から導いた狙いが 2 段に満たない");
-  }
-  const timing = toDeadlineTiming(deadline, prospects.input.fromTurn);
-  // 「番を終える」を試すとき(stage が actionsDone)は、この番の狙いにもう何も届かないので、成り立っていない狙いの
-  // 見込みを 0 にする(Issue 51 の決定事項 2026-10-18)。手札に残した探すカードの見込みを番を終える手に数えると、
-  // 探すカードを使う手(見えていないカードを混ぜ直した数通りの平均)が番を終える手を下回ることがあるため
-  const unachievedWeight =
-    prospects.input.stage === "actionsDone" && timing === "thisTurn"
-      ? 0
-      : PROGRESS_WEIGHTS.unachievedGoal;
-  const weigh = (achieved: boolean, progress: () => number) => {
-    if (achieved) {
-      return 1;
-    }
-    return unachievedWeight === 0 ? 0 : unachievedWeight * progress();
-  };
-  const isAttacking = prospects.isGoalAchieved(1);
-  const attackProgress = () => prospects.calculateAttackProspect(deadline);
-  const scores = [
-    weigh(prospects.isGoalAchieved(0), () =>
-      prospects.calculateStandProspect(timing)
-    ),
-    weigh(isAttacking, attackProgress),
-  ];
-  const { minimumDamage } = declaration;
-  if (damageGoal !== undefined && minimumDamage !== undefined) {
-    scores.push(
-      weigh(
-        prospects.isGoalAchieved(2),
-        () =>
-          ((isAttacking ? 1 : attackProgress()) +
-            prospects.calculateDamageRatio()) /
-          2
-      )
+  /**
+   * 主軸がワザを使ったときのダメージの見込み。主軸が場にいればそのポケモン(バトル場を先に)で、いなければ場に出たと
+   * みなした主軸で、記録の規則から求める(ダメージの上乗せが場のエネルギーの数などで決まるため)。上乗せ「N 以上なら
+   * M を足す」は数が N に届く前から途中経過に比例して数える(estimateAttackDamageWithPartialThresholds)ので、狙いの
+   * 判定のダメージとは違う。
+   */
+  private estimateMainAttackDamageProspect(main: MainAttack): number {
+    const { state } = this.input;
+    const attacker =
+      state
+        .listPokemonInPlay()
+        .find((pokemon) => pokemon.card.record === main.record) ??
+      this.placeDetachedMainOnce(main);
+    return (
+      estimateAttackDamageWithPartialThresholds(state, attacker, main.attack) ??
+      0
     );
   }
-  if (timing === "laterTurn") {
-    raiseByNonMainAttacks(declaration, prospects, deadline, scores);
-  }
-  return scores;
-}
 
-/**
- * 後の番の締め切り deadline の 2 段目と 3 段目の点 scores を、主軸の系統のほかのワザを試した後の場の点
- * (GoalProspects の listProspectsAfterNonMainAttacks)と比べて高いほうにする(Issue 51 の数え漏れ 6)。この番の
- * 締め切りには使わない(ワザは狙いの判定の後に使うため)。成り立っている段は 1 で比べても変わらないので、試した後の
- * 見込みは成り立っていない段があるときに初めて作る。
- */
-function raiseByNonMainAttacks(
-  declaration: ResolvedDeclaration,
-  prospects: GoalProspects,
-  deadline: number,
-  scores: number[]
-): void {
-  let scoresAfterAttacks: number[][] | undefined;
-  for (let index = 1; index < scores.length; index += 1) {
-    if (prospects.isGoalAchieved(index)) {
-      continue;
+  /**
+   * 締め切り deadline についての、狙いの段ごとの点。成り立っていれば 1、成り立っていなければ見込みに unachievedGoal の
+   * 重みをかけたもの。
+   * 1 段目(立つ): 主軸への道ごとの見込み(必要なカードの揃い具合の積)から、少なくとも 1 本揃う見込み。
+   * 2 段目(打てる): 1 段目の見込み(成り立っていれば 1)、ワザのエネルギーの見込み、バトル場に出せる見込みの平均
+   * (calculateAttackProspect)。
+   * 3 段目(N 以上): 2 段目の見込みと、ダメージの見込みの下限に対する割合の平均。
+   * 後の番の締め切りの 2 段目と 3 段目は、主軸の系統のほかのワザを試した後の場の点と比べて高いほう
+   * (raiseByNonMainAttacks)。
+   */
+  scoreGoals(deadline: number): number[] {
+    const [standGoal, attackGoal, damageGoal] = this.declaration.goals;
+    if (standGoal === undefined || attackGoal === undefined) {
+      throw new Error("宣言から導いた狙いが 2 段に満たない");
     }
-    scoresAfterAttacks ??= prospects
-      .listProspectsAfterNonMainAttacks()
-      .map((after) => scoreGoalsByPathProgress(declaration, after, deadline));
-    for (const after of scoresAfterAttacks) {
-      scores[index] = Math.max(scores[index] ?? 0, after[index] ?? 0);
+    const timing = toDeadlineTiming(deadline, this.input.fromTurn);
+    // 「番を終える」を試すとき(stage が actionsDone)は、この番の狙いにもう何も届かないので、成り立っていない狙いの
+    // 見込みを 0 にする(Issue 51 の決定事項 2026-10-18)。手札に残した探すカードの見込みを番を終える手に数えると、
+    // 探すカードを使う手(見えていないカードを混ぜ直した数通りの平均)が番を終える手を下回ることがあるため
+    const unachievedWeight =
+      this.input.stage === "actionsDone" && timing === "thisTurn"
+        ? 0
+        : PROGRESS_WEIGHTS.unachievedGoal;
+    const weigh = (achieved: boolean, progress: () => number) => {
+      if (achieved) {
+        return 1;
+      }
+      return unachievedWeight === 0 ? 0 : unachievedWeight * progress();
+    };
+    const isAttacking = this.isGoalAchieved(1);
+    const attackProgress = () => this.calculateAttackProspect(deadline);
+    const scores = [
+      weigh(this.isGoalAchieved(0), () => this.calculateStandProspect(timing)),
+      weigh(isAttacking, attackProgress),
+    ];
+    const { minimumDamage } = this.declaration;
+    if (damageGoal !== undefined && minimumDamage !== undefined) {
+      scores.push(
+        weigh(
+          this.isGoalAchieved(2),
+          () =>
+            ((isAttacking ? 1 : attackProgress()) +
+              this.calculateDamageRatio()) /
+            2
+        )
+      );
+    }
+    if (timing === "laterTurn") {
+      this.raiseByNonMainAttacks(deadline, scores);
+    }
+    return scores;
+  }
+
+  /**
+   * 後の番の締め切り deadline の 2 段目と 3 段目の点 scores を、主軸の系統のほかのワザを試した後の場の点
+   * (listProspectsAfterNonMainAttacks)と比べて高いほうにする(Issue 51 の数え漏れ 6)。この番の締め切りには使わない
+   * (ワザは狙いの判定の後に使うため)。成り立っている段は 1 で比べても変わらないので、試した後の見込みは成り立って
+   * いない段があるときに初めて作る。
+   */
+  private raiseByNonMainAttacks(deadline: number, scores: number[]): void {
+    let scoresAfterAttacks: number[][] | undefined;
+    for (let index = 1; index < scores.length; index += 1) {
+      if (this.isGoalAchieved(index)) {
+        continue;
+      }
+      scoresAfterAttacks ??= this.listProspectsAfterNonMainAttacks().map(
+        (after) => after.scoreGoals(deadline)
+      );
+      for (const after of scoresAfterAttacks) {
+        scores[index] = Math.max(scores[index] ?? 0, after[index] ?? 0);
+      }
     }
   }
 }

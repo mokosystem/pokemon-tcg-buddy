@@ -16,8 +16,10 @@ import {
   type VariantRate,
 } from "../src/simulate.ts";
 import {
+  ALLOWED_SHORTFALL_POINTS,
   type Issue22ComparisonTarget,
   type Issue22Rate,
+  NOISE_POINTS,
   parseIssue22ComparisonArguments,
 } from "./issue22-comparison-targets.ts";
 import {
@@ -26,10 +28,10 @@ import {
   SEED,
 } from "./run-search-trials.ts";
 
-/** 2 万回のときの差の揺れ(ポイント)。向きのずれは、両方の差がこれを超えて符号が逆のときだけ数える。 */
-const NOISE_POINTS = 0.7;
-/** 大きさのずれ: 探索の差と #22 の差の開き(ポイント)がこれを超えたもの。Issue 51 の完了の物差しの幅に合わせた。 */
-const MAGNITUDE_GAP_POINTS = 2;
+/**
+ * ずれの判定。向きは、両方の差が 2 万回の揺れ(NOISE_POINTS)を超えて符号が逆のときだけ数える。大きさは、探索の差と
+ * #22 の差の開きが Issue 51 の完了の物差しの幅(ALLOWED_SHORTFALL_POINTS)を超えたもの。
+ */
 
 /** 変更案の rates に出てくる狙いと番の組を、重ねずに並べる。 */
 function listVariantDeadlines(target: Issue22ComparisonTarget): Deadline[] {
@@ -86,7 +88,7 @@ function isOppositeDirection(
 function describeGap(searchPoints: number, issue22Points: number): string {
   return [
     ...(isOppositeDirection(searchPoints, issue22Points) ? ["向き"] : []),
-    ...(Math.abs(searchPoints - issue22Points) > MAGNITUDE_GAP_POINTS
+    ...(Math.abs(searchPoints - issue22Points) > ALLOWED_SHORTFALL_POINTS
       ? ["大きさ"]
       : []),
   ].join("、");
@@ -163,7 +165,7 @@ function main(argv: readonly string[]): void {
     console.log("");
   }
   console.log(
-    `ずれ: 向きは両方の差が ±${NOISE_POINTS} ポイントを超えて符号が逆のもの、大きさは差の開きが ${MAGNITUDE_GAP_POINTS} ポイントを超えたもの。`
+    `ずれ: 向きは両方の差が ±${NOISE_POINTS} ポイントを超えて符号が逆のもの、大きさは差の開きが ${ALLOWED_SHORTFALL_POINTS} ポイントを超えたもの。`
   );
   console.log(
     `所要時間 ${((performance.now() - started) / 1000).toFixed(1)} 秒`

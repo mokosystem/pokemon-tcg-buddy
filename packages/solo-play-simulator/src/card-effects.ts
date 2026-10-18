@@ -33,6 +33,7 @@ import {
 } from "./effect-operations.ts";
 import {
   canPayCost,
+  classifyOnceInTurnKind,
   type GameState,
   IllegalMove,
   type PokemonInPlay,
@@ -61,6 +62,10 @@ export function canPlayTrainerIfInHand(
   card: Card
 ): boolean {
   const { state } = context;
+  const onceInTurnKind = classifyOnceInTurnKind(card);
+  if (onceInTurnKind !== undefined && state.hasUsedOnceInTurn(onceInTurnKind)) {
+    return false;
+  }
   const source: EffectSource = { card, pokemon: undefined };
   const effectsAreUsable = findCardEffects(card, "whenPlayed").every(
     (cardEffect) => canStartEffect(state, cardEffect.effect, source, card)
@@ -69,11 +74,12 @@ export function canPlayTrainerIfInHand(
     case CardCategory.Goods:
       return effectsAreUsable;
     case CardCategory.Supporter:
+      // 先攻の最初の番の制限は canUseSupporter が見る
       return (
         state.canUseSupporter(supporterOptionsOf(card)) && effectsAreUsable
       );
     case CardCategory.Stadium:
-      return !state.hasPlayedStadium && state.stadium?.name !== card.name;
+      return state.stadium?.name !== card.name;
     default:
       return false;
   }
@@ -421,11 +427,7 @@ export function listUsableAttacksOfActive(
     return [];
   }
   const source: EffectSource = { card: active.card, pokemon: active };
-  const { candidates, units } = listAttackCandidatesWithCosts(
-    state,
-    active,
-    state.attacks.has(state.turn)
-  );
+  const { candidates, units } = listAttackCandidatesWithCosts(state, active);
   return candidates
     .filter(
       ({ cost, usable: { attack } }) =>

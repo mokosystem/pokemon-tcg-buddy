@@ -39,27 +39,8 @@ import type { CardSource, GameState, PokemonInPlay } from "./state.ts";
 
 // ---- 対象の候補 ----
 
-/**
- * 条件ごと・カードごとの、条件に合うかの結果。合うかはカードと条件の読み取り専用の値だけで決まるので、探索が同じ
- * 山札や手札から何度も候補を出すときに比べ直さない。
- */
-const filterMatches = new WeakMap<CardFilter, WeakMap<Card, boolean>>();
-
 function listMatching(cards: readonly Card[], filter: CardFilter): Card[] {
-  let byCard = filterMatches.get(filter);
-  if (byCard === undefined) {
-    byCard = new WeakMap();
-    filterMatches.set(filter, byCard);
-  }
-  const matches = byCard;
-  return cards.filter((card) => {
-    let matched = matches.get(card);
-    if (matched === undefined) {
-      matched = matchesCardFilter(card, filter);
-      matches.set(card, matched);
-    }
-    return matched;
-  });
+  return cards.filter((card) => matchesCardFilter(card, filter));
 }
 
 function listMatchingOrAll(
@@ -1311,6 +1292,26 @@ function resolveBranch(step: EffectStep, run: OperationRun): BasicOperation[] {
     default:
       return [step];
   }
+}
+
+/**
+ * 操作の列に含まれる、起こりうる基本操作の並び。条件の分かれ道は両側、コインはオモテの側を含める(ウラの側は何も
+ * 起こさない)。効果を実行せずに、効果が持つ操作の条件を読み取るとき(山札から持ってくるカードの条件、入れ替えて
+ * バトル場に出すポケモンの条件)に使う。
+ */
+export function listPossibleOperations(
+  steps: readonly EffectStep[]
+): BasicOperation[] {
+  return steps.flatMap((step): BasicOperation[] => {
+    switch (step.operation) {
+      case "branchOnCondition":
+        return [...step.stepsWhenMet, ...step.stepsOtherwise];
+      case "branchOnCoinFlip":
+        return step.stepsWhenHeads;
+      default:
+        return [step];
+    }
+  });
 }
 
 /** 効果を実行する。「のぞむなら」の効果は、起こすかを問い合わせてから実行する。 */

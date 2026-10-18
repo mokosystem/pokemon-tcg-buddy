@@ -14,6 +14,18 @@ export interface RecordedDeck {
   readonly name: string;
 }
 
+/** decks からデッキコードが deckCode のデッキを探す。無ければ投げる。 */
+export function findRecordedDeck(
+  decks: readonly RecordedDeck[],
+  deckCode: string
+): RecordedDeck {
+  const deck = decks.find((entry) => entry.deckCode === deckCode);
+  if (deck === undefined) {
+    throw new Error(`デッキ ${deckCode} が無い`);
+  }
+  return deck;
+}
+
 /**
  * メガサーナイトex デッキ(xG8Kax-DHob4e-84xcca)の宣言。docs/solo-play-simulator-design.md「宣言の書式」の例と同じ。
  * 順 7 で探索の題材(局面 A〜F と時間の計測)に、順 8 で答え合わせに使う。

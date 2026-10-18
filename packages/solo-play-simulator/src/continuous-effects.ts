@@ -631,29 +631,25 @@ function listUsableAttacks(
   return [...own, ...fromBench];
 }
 
-/** ワザの候補 1 つと、それを使うのに必要なエネルギー(calculateAttackCost と同じ)。 */
-export interface AttackCandidateWithCost {
-  readonly cost: PokemonType[];
-  readonly usable: UsableAttack;
-}
-
 /**
- * pokemon のワザの候補(isSecondAttack が真なら listSecondAttacks、偽なら listUsableAttacks)と、候補ごとに必要な
- * エネルギー(calculateAttackCost)、pokemon についているエネルギーの 1 個ずつのタイプ(listEnergyUnits)。どれも
- * 働いている効果から求めるので、効果を 1 回だけ集めて使い回す。探索は評価のたびにバトルポケモンの使えるワザを
- * 出すため、3 つを別々に呼んで効果を何度も集めない。
+ * pokemon のワザの候補(この番にワザを使った後なら 2 回目に使えるワザ listSecondAttacks、まだなら listUsableAttacks)と、
+ * 候補ごとに必要なエネルギー(cost。calculateAttackCost と同じ)、pokemon についているエネルギーの 1 個ずつのタイプ
+ * (listEnergyUnits)。どれも働いている効果から求めるので、効果を 1 回だけ集めて使い回す。探索は評価のたびにバトル
+ * ポケモンの使えるワザを出すため、3 つを別々に呼んで効果を何度も集めない。
  */
 export function listAttackCandidatesWithCosts(
   state: GameState,
-  pokemon: PokemonInPlay,
-  isSecondAttack: boolean
+  pokemon: PokemonInPlay
 ): {
-  readonly candidates: AttackCandidateWithCost[];
+  readonly candidates: {
+    readonly cost: PokemonType[];
+    readonly usable: UsableAttack;
+  }[];
   readonly units: EnergyUnit[];
 } {
   const all = collectContinuousEffects(state);
   const applying = listCollectedApplyingTo(state, all, pokemon);
-  const usables = isSecondAttack
+  const usables = state.attacks.has(state.turn)
     ? listSecondAttacks(applying, pokemon)
     : listUsableAttacks(state, applying, pokemon);
   return {

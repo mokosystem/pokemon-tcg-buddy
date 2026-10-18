@@ -5,7 +5,6 @@
  */
 
 import {
-  canPlayTrainerFromHand,
   canPlayTrainerIfInHand,
   canUseAbility,
   canUseStadiumEffect,
@@ -16,11 +15,19 @@ import {
   type CardRecord,
   type EffectStep,
   type PokemonInPlayFilter,
+  type PokemonRecord,
 } from "./card-record-schema.ts";
-import { type Card, matchesCardFilter } from "./cards.ts";
+import {
+  type Card,
+  type CardsOfRecord,
+  countCardsByRecord,
+  matchesCardFilter,
+} from "./cards.ts";
 import { matchesPokemonFilter } from "./conditions.ts";
 import type { DeadlineTiming } from "./deadline-timing.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
+import { listPossibleOperations } from "./effect-operations.ts";
+import { findOrCreate } from "./find-or-create.ts";
 import {
   classifyOnceInTurnKind,
   type GameState,
@@ -29,14 +36,11 @@ import {
 } from "./state.ts";
 
 /** 見えていないカード(山札とサイド)の、記録ごとの枚数と代表の 1 枚。 */
-export type UnseenCards = ReadonlyMap<
-  CardRecord,
-  { readonly card: Card; readonly count: number }
->;
+export type UnseenCards = ReadonlyMap<CardRecord, CardsOfRecord>;
 
 /** 効果の操作のうち、山札のカードを手札か場に持ってくるものの条件。条件の分かれ道とコインの中の操作も含める。 */
 function listDeckFetchFilters(steps: readonly EffectStep[]): CardFilter[] {
-  return steps.flatMap((step): CardFilter[] => {
+  return listPossibleOperations(steps).flatMap((step): CardFilter[] => {
     switch (step.operation) {
       case "searchDeckIntoHand":
       case "searchDeckIntoHandFromOneOfPicks":
@@ -45,13 +49,6 @@ function listDeckFetchFilters(steps: readonly EffectStep[]): CardFilter[] {
       case "searchDeckIntoHandAndAttachRest":
       case "lookAtDeckTopAndTakeIntoHand":
         return [step.filter];
-      case "branchOnCondition":
-        return listDeckFetchFilters([
-          ...step.stepsWhenMet,
-          ...step.stepsOtherwise,
-        ]);
-      case "branchOnCoinFlip":
-        return listDeckFetchFilters(step.stepsWhenHeads);
       default:
         return [];
     }
@@ -65,21 +62,11 @@ function listDeckFetchFilters(steps: readonly EffectStep[]): CardFilter[] {
 function listEffectAttachTargetFilters(
   steps: readonly EffectStep[]
 ): PokemonInPlayFilter[] {
-  return steps.flatMap((step): PokemonInPlayFilter[] => {
-    switch (step.operation) {
-      case "searchDeckIntoHandAndAttachRest":
-        return [step.targetFilter];
-      case "branchOnCondition":
-        return listEffectAttachTargetFilters([
-          ...step.stepsWhenMet,
-          ...step.stepsOtherwise,
-        ]);
-      case "branchOnCoinFlip":
-        return listEffectAttachTargetFilters(step.stepsWhenHeads);
-      default:
-        return [];
-    }
-  });
+  return listPossibleOperations(steps).flatMap((step) =>
+    step.operation === "searchDeckIntoHandAndAttachRest"
+      ? [step.targetFilter]
+      : []
+  );
 }
 
 /** カードの置き場所ごとに、使えば山札から持ってこられるカードの条件。 */
@@ -108,80 +95,66 @@ function filtersOf(
   return effects.flatMap((effect) => listDeckFetchFilters(effect.steps));
 }
 
-function listFetchFiltersOf(record: CardRecord): FetchFilters {
-  const cached = fetchFiltersByRecord.get(record);
-  if (cached !== undefined) {
-    return cached;
-  }
-  let filters: FetchFilters;
-  if (record.category === CardCategory.Pokemon) {
-    const effectsOf = (kinds: readonly string[]) =>
-      record.abilities.flatMap((ability) =>
-        ability.translation !== undefined &&
-        "effect" in ability.translation &&
-        kinds.includes(ability.translation.kind)
-          ? [{ abilityName: ability.name, effect: ability.translation.effect }]
-          : []
-      );
-    const inHandEffects = effectsOf([
-      "activatedFromHand",
-      "triggeredWhenPlacedOnBenchFromHand",
-      "triggeredWhenEvolvedFromHand",
-    ]).map(({ effect }) => effect);
-    filters = {
-      inHand: filtersOf(inHandEffects),
-      inHandEffectAttachTargets: inHandEffects.flatMap((effect) =>
-        listEffectAttachTargetFilters(effect.steps)
-      ),
-      inPlayAbilities: effectsOf(["activatedInPlay"])
-        .map(({ abilityName, effect }) => ({
-          abilityName,
-          filters: listDeckFetchFilters(effect.steps),
-        }))
-        .filter(({ filters: abilityFilters }) => abilityFilters.length > 0),
-      inPlayStadium: [],
-    };
-  } else {
-    const cardEffects = "cardEffects" in record ? record.cardEffects : [];
-    const allEffects = cardEffects.flatMap((cardEffect) =>
-      "effect" in cardEffect ? [cardEffect.effect] : []
+function readPokemonFetchFilters(record: PokemonRecord): FetchFilters {
+  const effectsOf = (kinds: readonly string[]) =>
+    record.abilities.flatMap((ability) =>
+      ability.translation !== undefined &&
+      "effect" in ability.translation &&
+      kinds.includes(ability.translation.kind)
+        ? [{ abilityName: ability.name, effect: ability.translation.effect }]
+        : []
     );
-    const inPlayStadium = filtersOf(
+  const inHandEffects = effectsOf([
+    "activatedFromHand",
+    "triggeredWhenPlacedOnBenchFromHand",
+    "triggeredWhenEvolvedFromHand",
+  ]).map(({ effect }) => effect);
+  return {
+    inHand: filtersOf(inHandEffects),
+    inHandEffectAttachTargets: inHandEffects.flatMap((effect) =>
+      listEffectAttachTargetFilters(effect.steps)
+    ),
+    inPlayAbilities: effectsOf(["activatedInPlay"])
+      .map(({ abilityName, effect }) => ({
+        abilityName,
+        filters: listDeckFetchFilters(effect.steps),
+      }))
+      .filter(({ filters: abilityFilters }) => abilityFilters.length > 0),
+    inPlayStadium: [],
+  };
+}
+
+function readTrainerOrEnergyFetchFilters(record: CardRecord): FetchFilters {
+  const cardEffects = "cardEffects" in record ? record.cardEffects : [];
+  const allEffects = cardEffects.flatMap((cardEffect) =>
+    "effect" in cardEffect ? [cardEffect.effect] : []
+  );
+  return {
+    inHand: filtersOf(allEffects),
+    inHandEffectAttachTargets: allEffects.flatMap((effect) =>
+      listEffectAttachTargetFilters(effect.steps)
+    ),
+    inPlayAbilities: [],
+    inPlayStadium: filtersOf(
       cardEffects.flatMap((cardEffect) =>
         cardEffect.kind === "activatedOncePerTurn" ? [cardEffect.effect] : []
       )
-    );
-    filters = {
-      inHand: filtersOf(allEffects),
-      inHandEffectAttachTargets: allEffects.flatMap((effect) =>
-        listEffectAttachTargetFilters(effect.steps)
-      ),
-      inPlayAbilities: [],
-      inPlayStadium,
-    };
-  }
-  fetchFiltersByRecord.set(record, filters);
-  return filters;
+    ),
+  };
 }
 
-const filterMatchesByRecord = new WeakMap<
-  readonly CardFilter[],
-  Map<CardRecord, boolean>
->();
+/** record の効果の翻訳から読み取った、置き場所ごとの山札から持ってこられるカードの条件(記録ごとに 1 回だけ読む)。 */
+function listFetchFiltersOf(record: CardRecord): FetchFilters {
+  return findOrCreate(fetchFiltersByRecord, record, () =>
+    record.category === CardCategory.Pokemon
+      ? readPokemonFetchFilters(record)
+      : readTrainerOrEnergyFetchFilters(record)
+  );
+}
 
-/** card が条件のどれかに合うか。条件はカードの記録だけで決まるので、条件の並びと記録の組で覚えて評価ごとに繰り返さない。 */
+/** card が条件のどれかに合うか。 */
 function matchesAnyFilter(filters: readonly CardFilter[], card: Card): boolean {
-  let matches = filterMatchesByRecord.get(filters);
-  if (matches === undefined) {
-    matches = new Map();
-    filterMatchesByRecord.set(filters, matches);
-  }
-  let matched = matches.get(card.record);
-  if (matched === undefined) {
-    matched = filters.some((filter) => matchesCardFilter(card, filter));
-    matches.set(card.record, matched);
-  }
-  return matched;
+  return filters.some((filter) => matchesCardFilter(card, filter));
 }
 
 /**
@@ -196,30 +169,8 @@ export function canFetchInOneStep(
 }
 
 /** 見えていないカード(山札とサイド)の、記録ごとの枚数と代表の 1 枚。 */
-export function countUnseenByRecord(
-  state: GameState
-): Map<CardRecord, { card: Card; count: number }> {
-  const counts = new Map<CardRecord, { card: Card; count: number }>();
-  for (const zone of [state.deck, state.prizes]) {
-    for (const card of zone) {
-      const entry = counts.get(card.record);
-      if (entry === undefined) {
-        counts.set(card.record, { card, count: 1 });
-      } else {
-        entry.count += 1;
-      }
-    }
-  }
-  return counts;
-}
-
-/** 手札から使うトレーナーズ(グッズ・サポート・スタジアム)か。使えるかを骨組みの canPlayTrainerFromHand で判定できる。 */
-function isTrainerPlayedFromHand(card: Card): boolean {
-  return (
-    card.category === CardCategory.Goods ||
-    card.category === CardCategory.Supporter ||
-    card.category === CardCategory.Stadium
-  );
+export function countUnseenByRecord(state: GameState): UnseenCards {
+  return countCardsByRecord(state.deck, state.prizes);
 }
 
 /**
@@ -243,12 +194,9 @@ export interface DeckFetchSource extends EffectAttachTargets {
  * 2 段で持ってくるときの中継に使える、見えていないカードの記録 1 つ(CONTEXT.md「見えていないカード」)。
  * 探す手段で手札に加えた後、そのカードの効果で山札からさらに持ってこられる。
  */
-export interface DeckFetchRelay extends EffectAttachTargets {
+export interface DeckFetchRelay extends DeckFetchSource {
   /** 見えていないカードのうちの代表の 1 枚。 */
   readonly card: Card;
-  /** 手札に来た後に使うと山札から持ってこられるカードの条件。 */
-  readonly filters: readonly CardFilter[];
-  readonly onceInTurnKind?: OnceInTurnKind;
 }
 
 /** 山札から持ってくる必要のあるもの 1 つ。candidates のどれか 1 枚が来れば満たす。 */
@@ -289,16 +237,40 @@ export function canAttachByEffectTo(
   );
 }
 
-function withOnceInTurnKind(card: Card): { onceInTurnKind?: OnceInTurnKind } {
+/** 手札にある(来た)card を使ったときの探す手段。filters は card の手札にあるときの条件。 */
+function buildHandFetchSource(
+  card: Card,
+  { inHand, inHandEffectAttachTargets }: FetchFilters
+): DeckFetchSource {
   const onceInTurnKind = classifyOnceInTurnKind(card);
-  return onceInTurnKind === undefined ? {} : { onceInTurnKind };
+  return {
+    filters: inHand,
+    ...(onceInTurnKind === undefined ? {} : { onceInTurnKind }),
+    ...(inHandEffectAttachTargets.length === 0
+      ? {}
+      : { effectAttachTargetFilters: inHandEffectAttachTargets }),
+  };
 }
 
-function withEffectAttachTargets(record: CardRecord): EffectAttachTargets {
-  const { inHandEffectAttachTargets } = listFetchFiltersOf(record);
-  return inHandEffectAttachTargets.length === 0
-    ? {}
-    : { effectAttachTargetFilters: inHandEffectAttachTargets };
+/**
+ * 手札にある(来た)card を、締め切り timing までに使えるか。この番の締め切りでは、グッズ・サポート・スタジアムを
+ * 手札にあるとしたらこの番に使えるか(骨組みの canPlayTrainerIfInHand)で絞る。手札にあるカードでは、手札にあるかも
+ * 見る canPlayTrainerFromHand と同じ結果になる。ポケモンとエネルギーは絞らない(listDeckFetchSources)。
+ */
+function isUsableByDeadline(
+  context: EffectContext,
+  card: Card,
+  timing: DeadlineTiming
+): boolean {
+  const isTrainerPlayedFromHand =
+    card.category === CardCategory.Goods ||
+    card.category === CardCategory.Supporter ||
+    card.category === CardCategory.Stadium;
+  return (
+    timing !== "thisTurn" ||
+    !isTrainerPlayedFromHand ||
+    canPlayTrainerIfInHand(context, card)
+  );
 }
 
 /** 手札の探す手段。excludedHandCounts の枚数分を除き、この番の締め切りではグッズ・サポート・スタジアムを今使えるものに絞る。 */
@@ -310,8 +282,8 @@ function listHandSources(
   const sources: DeckFetchSource[] = [];
   const excluded = new Map(excludedHandCounts);
   for (const card of context.state.hand) {
-    const { inHand } = listFetchFiltersOf(card.record);
-    if (inHand.length === 0) {
+    const filters = listFetchFiltersOf(card.record);
+    if (filters.inHand.length === 0) {
       continue;
     }
     const excludedCount = excluded.get(card.record) ?? 0;
@@ -319,18 +291,9 @@ function listHandSources(
       excluded.set(card.record, excludedCount - 1);
       continue;
     }
-    if (
-      timing === "thisTurn" &&
-      isTrainerPlayedFromHand(card) &&
-      !canPlayTrainerFromHand(context, card)
-    ) {
-      continue;
+    if (isUsableByDeadline(context, card, timing)) {
+      sources.push(buildHandFetchSource(card, filters));
     }
-    sources.push({
-      filters: inHand,
-      ...withOnceInTurnKind(card),
-      ...withEffectAttachTargets(card.record),
-    });
   }
   return sources;
 }
@@ -368,7 +331,7 @@ function listInPlaySources(
 
 /**
  * 手札と場の探す手段(1 枚ずつ)。excludedHandCounts の枚数分の手札は除く(道の必要なカードとして手札から数えた
- * カードを、同じ道の探す手段に重ねないため)。この番の締め切り(thisTurn)では、骨組みの判定(canPlayTrainerFromHand、
+ * カードを、同じ道の探す手段に重ねないため)。この番の締め切り(thisTurn)では、骨組みの判定(canPlayTrainerIfInHand、
  * canUseAbility、canUseStadiumEffect)で今使えるものに絞る。手札のポケモンとエネルギーは絞らない。手札から出したとき・
  * つけたときの効果を今使えるかを 1 つで答える骨組みの関数が無く、評価の中で条件を書き直すことになるため。
  */
@@ -385,10 +348,9 @@ export function listDeckFetchSources(
 }
 
 /**
- * 2 段の中継に使える見えていないカード(記録ごとに 1 つ)。この番の締め切りでは、グッズ・サポート・スタジアムを、
- * 手札に来たとしたらこの番に使えるか(骨組みの canPlayTrainerIfInHand)で絞る。この番にサポートを使った後に、山札の
- * サポートを中継に数えないため(docs/pokemon-tcg/basic-rules.md 75 行)。ポケモンとエネルギーは listDeckFetchSources と
- * 同じ理由で絞らない。
+ * 2 段の中継に使える見えていないカード(記録ごとに 1 つ)。この番の締め切りでは、手札の探す手段と同じく、手札に
+ * 来たとしたらこの番に使えるかで絞る(isUsableByDeadline)。この番にサポートを使った後に、山札のサポートを中継に
+ * 数えないため(docs/pokemon-tcg/basic-rules.md 75 行)。
  */
 export function listDeckFetchRelays(
   state: GameState,
@@ -398,23 +360,13 @@ export function listDeckFetchRelays(
   const context: EffectContext = { choices: firstCandidateChoices, state };
   const relays: DeckFetchRelay[] = [];
   for (const { card } of unseen.values()) {
-    const { inHand } = listFetchFiltersOf(card.record);
-    if (inHand.length === 0) {
-      continue;
-    }
+    const filters = listFetchFiltersOf(card.record);
     if (
-      timing === "thisTurn" &&
-      isTrainerPlayedFromHand(card) &&
-      !canPlayTrainerIfInHand(context, card)
+      filters.inHand.length > 0 &&
+      isUsableByDeadline(context, card, timing)
     ) {
-      continue;
+      relays.push({ card, ...buildHandFetchSource(card, filters) });
     }
-    relays.push({
-      card,
-      filters: inHand,
-      ...withOnceInTurnKind(card),
-      ...withEffectAttachTargets(card.record),
-    });
   }
   return relays;
 }

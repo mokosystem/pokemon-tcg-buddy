@@ -15,6 +15,7 @@ import {
   type PokemonRecord,
   type PokemonType,
 } from "./card-record-schema.ts";
+import { findOrCreate } from "./find-or-create.ts";
 
 export interface Card {
   readonly basicPokemonOfEvolutionLine?: string;
@@ -129,23 +130,98 @@ function providesListedType(card: Card, filter: CardFilter): boolean {
   return provided === "any" || provided.some((type) => wanted.includes(type));
 }
 
+/**
+ * 条件ごと・記録ごとの、条件に合うかの結果。条件が見る属性はどれも記録から写したもの(buildCardFromRecord。カード ID は
+ * 見ない)で、同じ記録のカードは結果が同じなので、記録の単位で覚える。探索は同じ山札や手札から何度も候補を出すため、
+ * 比べ直さない。
+ */
+const filterMatchesByRecord = new WeakMap<
+  CardFilter,
+  WeakMap<CardRecord, boolean>
+>();
+
+function createRecordMatches(): WeakMap<CardRecord, boolean> {
+  return new WeakMap();
+}
+
 /** カードを選ぶ条件(CardFilter)に合うか。書かれた欄はすべて満たし、欄の中の並びと anyOf はどれか 1 つでよい。 */
 export function matchesCardFilter(card: Card, filter: CardFilter): boolean {
+  const byRecord = findOrCreate(
+    filterMatchesByRecord,
+    filter,
+    createRecordMatches
+  );
+  // 記録ごとの結果は findOrCreate を使わずに引く。探索でいちばん多く呼ばれる所で、card と filter を閉じ込めた関数を
+  // 呼ぶたびに作ると、所要時間の計測(measure:search-time path-progress 1500)が 53.1 秒から 56 秒台に延びたため
+  const found = byRecord.get(card.record);
+  if (found !== undefined) {
+    return found;
+  }
+  const matched = evaluateCardFilter(card, filter);
+  byRecord.set(card.record, matched);
+  return matched;
+}
+
+function evaluateCardFilter(card: Card, filter: CardFilter): boolean {
+  return (
+    matchesListedAttributes(card, filter) &&
+    matchesUnlistedAttributes(card, filter) &&
+    !isExcludedByFilter(card, filter) &&
+    (filter.anyOf === undefined ||
+      filter.anyOf.some((inner) => matchesCardFilter(card, inner)))
+  );
+}
+
+/** 条件のうち、並びで書く欄(供給するタイプ、カードの種類、進化の段階、名前、タイプ、ex のルール)をすべて満たすか。 */
+function matchesListedAttributes(card: Card, filter: CardFilter): boolean {
   return (
     providesListedType(card, filter) &&
     includesIfListed(filter.categories, card.category) &&
     includesIfListed(filter.stages, card.stage) &&
     includesIfListed(filter.names, card.name) &&
     includesIfListed(filter.pokemonTypes, card.pokemonType) &&
-    includesIfListed(filter.exRules, card.exRule) &&
+    includesIfListed(filter.exRules, card.exRule)
+  );
+}
+
+/** 条件のうち、並びで書かない欄(名前に含む文字、テラスタル、HP の上限)をすべて満たすか。 */
+function matchesUnlistedAttributes(card: Card, filter: CardFilter): boolean {
+  return (
     (filter.nameIncludes === undefined ||
       card.name.includes(filter.nameIncludes)) &&
     (filter.isTerastal === undefined || card.isTerastal) &&
-    (filter.maxHp === undefined ||
-      (isPokemon(card) && card.hp <= filter.maxHp)) &&
-    !(filter.excludesPokemonWithRuleBox === true && card.hasRuleBox) &&
-    !(filter.excludesNames?.includes(card.name) ?? false) &&
-    (filter.anyOf === undefined ||
-      filter.anyOf.some((inner) => matchesCardFilter(card, inner)))
+    (filter.maxHp === undefined || (isPokemon(card) && card.hp <= filter.maxHp))
   );
+}
+
+/** 条件の除く欄(ルールを持つポケモン、名前)に当たるか。 */
+function isExcludedByFilter(card: Card, filter: CardFilter): boolean {
+  return (
+    (filter.excludesPokemonWithRuleBox === true && card.hasRuleBox) ||
+    (filter.excludesNames?.includes(card.name) ?? false)
+  );
+}
+
+/** 同じ記録のカードの枚数と、そのうち最初に数えた 1 枚(代表)。 */
+export interface CardsOfRecord {
+  readonly card: Card;
+  readonly count: number;
+}
+
+/** zones のカードを並びの順に数えた、記録ごとの枚数と代表の 1 枚(記録は最初に出てきた順に並ぶ)。 */
+export function countCardsByRecord(
+  ...zones: readonly (readonly Card[])[]
+): Map<CardRecord, CardsOfRecord> {
+  const counts = new Map<CardRecord, { card: Card; count: number }>();
+  for (const zone of zones) {
+    for (const card of zone) {
+      const entry = counts.get(card.record);
+      if (entry === undefined) {
+        counts.set(card.record, { card, count: 1 });
+      } else {
+        entry.count += 1;
+      }
+    }
+  }
+  return counts;
 }

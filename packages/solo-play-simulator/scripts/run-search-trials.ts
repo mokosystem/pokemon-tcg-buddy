@@ -4,14 +4,17 @@
  * 回すため、ここにまとめる。
  */
 
+import { cardRecordTable } from "../src/card-record-table.ts";
 import type { Card } from "../src/cards.ts";
 import type { ResolvedDeclaration } from "../src/declaration.ts";
 import {
+  buildDeck,
   type GameResult,
   type Goal,
   type PlayingPolicy,
   runGame,
 } from "../src/engine.ts";
+import type { RecordedDeck } from "../src/issue22-decks.ts";
 import { createSeededRandom } from "../src/random.ts";
 import { createPathProgressEvaluator } from "../src/search-evaluators.ts";
 import { createSearchPolicy } from "../src/search-policy.ts";
@@ -55,6 +58,18 @@ function withHandRecords(policy: PlayingPolicy): PlayingPolicy {
       policy.playTurn(context);
     },
   };
+}
+
+/** 道具の引数のデッキの名前 deckName で targets を引く。無ければ、渡せる名前を添えて投げる。 */
+export function findDeckTargetByName<Target>(
+  targets: Readonly<Record<string, Target>>,
+  deckName: string
+): Target {
+  const target = targets[deckName];
+  if (target === undefined) {
+    throw new Error(`デッキの名前を渡す(${Object.keys(targets).join("、")})`);
+  }
+  return target;
 }
 
 export interface TraceRequest {
@@ -151,7 +166,7 @@ export interface SearchTrialSideOptions {
 }
 
 /** 先攻か後攻の一方を trials 回回して集計を出力し、集計を返す。 */
-export function runSearchTrialsOfSide(
+function runSearchTrialsOfSide(
   options: SearchTrialSideOptions
 ): SimulationSummary {
   const { goals, resolved, traceRequest, trials, wentFirst } = options;
@@ -189,4 +204,25 @@ export function runSearchTrialsOfSide(
     console.log(trace.join("\n"));
   }
   return summary;
+}
+
+/** deck の見出しを出し、先攻と後攻を trials 回ずつ回して、それぞれの集計を返す。 */
+export function runSearchTrialsOfBothSides(
+  deck: RecordedDeck,
+  options: Omit<SearchTrialSideOptions, "deckCards" | "wentFirst">
+): {
+  readonly firstSummary: SimulationSummary;
+  readonly secondSummary: SimulationSummary;
+} {
+  console.log(
+    `## ${deck.name}(${deck.deckCode})、道の揃い具合を見る評価、先攻・後攻 ${options.trials} 回ずつ(乱数の種 ${SEED})\n`
+  );
+  const sideOptions = {
+    ...options,
+    deckCards: buildDeck(cardRecordTable, deck.decklist),
+  };
+  return {
+    firstSummary: runSearchTrialsOfSide({ ...sideOptions, wentFirst: true }),
+    secondSummary: runSearchTrialsOfSide({ ...sideOptions, wentFirst: false }),
+  };
 }

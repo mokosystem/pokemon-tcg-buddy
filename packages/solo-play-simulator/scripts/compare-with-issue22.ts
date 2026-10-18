@@ -10,28 +10,18 @@
  * 足りないカードと置き場所。declaration.ts の explainPathShortfall)。比較の表には Issue 51 の完了の物差しの判定(▼)を出す。
  */
 
-import { cardRecordTable } from "../src/card-record-table.ts";
-import { buildDeck } from "../src/engine.ts";
 import type { SimulationSummary } from "../src/simulate.ts";
 import {
+  ALLOWED_SHORTFALL_POINTS,
   type Issue22Rate,
+  NOISE_POINTS,
   parseIssue22ComparisonArguments,
 } from "./issue22-comparison-targets.ts";
 import {
   formatPoints,
   parseTraceRequest,
-  runSearchTrialsOfSide,
-  SEED,
+  runSearchTrialsOfBothSides,
 } from "./run-search-trials.ts";
-
-/** 2 万回のときの割合の揺れ(95 % の範囲、ポイント)。答え合わせの基準(Issue 27 の決定事項)。 */
-const TOLERANCE_POINTS = 0.7;
-
-/**
- * Issue 51 の完了の物差し: 宣言の狙いの 2 番目と 3 番目の番で、探索の成立率が #22 の成立率からこれより大きく
- * 下回らないこと(ポイント)。2 万回の揺れ(両側で ±0.7)とメガリザードンのワザの後のトラッシュの違い(約 1)を合わせた幅。
- */
-const ALLOWED_SHORTFALL_POINTS = 2;
 
 /** 完了の物差しで判定する番。 */
 const JUDGED_TURNS: readonly number[] = [2, 3];
@@ -45,7 +35,7 @@ function formatComparisonCell(
   isShortfall: boolean
 ): string {
   const difference = actual - expected;
-  const mark = Math.abs(difference) <= TOLERANCE_POINTS ? "" : " ※";
+  const mark = Math.abs(difference) <= NOISE_POINTS ? "" : " ※";
   return `${actual.toFixed(1)} % | ${expected.toFixed(1)} % | ${formatPoints(difference)}${mark}${isShortfall ? " ▼" : ""}`;
 }
 
@@ -88,7 +78,7 @@ function formatComparison(
   const judgedCells = rates.filter(isJudgedRate).length * 2;
   lines.push(
     "",
-    `※ は差が ±${TOLERANCE_POINTS} ポイント(2 万回の揺れ)を超えたもの。`,
+    `※ は差が ±${NOISE_POINTS} ポイント(2 万回の揺れ)を超えたもの。`,
     `▼ は宣言の狙いの 2・3 番目の番で、#22 の成立率から ${ALLOWED_SHORTFALL_POINTS} ポイントを超えて下回ったもの(Issue 51 の完了の物差し)。下回った欄: ${shortfallCells} 個(判定した欄 ${judgedCells} 個)`
   );
   return lines.join("\n");
@@ -100,8 +90,7 @@ function main(argv: readonly string[]): void {
   const { deck, resolved, target, trials } =
     parseIssue22ComparisonArguments(argv);
   const goals = [...target.measuredGoals, ...resolved.goals];
-  const sideOptions = {
-    deckCards: buildDeck(cardRecordTable, deck.decklist),
+  const { firstSummary, secondSummary } = runSearchTrialsOfBothSides(deck, {
     goals,
     resolved,
     summaryDeadlines: goals.flatMap((goal) =>
@@ -109,17 +98,6 @@ function main(argv: readonly string[]): void {
     ),
     traceRequest: parseTraceRequest(argv.slice(2)),
     trials,
-  };
-  console.log(
-    `## ${deck.name}(${deck.deckCode})、道の揃い具合を見る評価、先攻・後攻 ${trials} 回ずつ(乱数の種 ${SEED})\n`
-  );
-  const firstSummary = runSearchTrialsOfSide({
-    ...sideOptions,
-    wentFirst: true,
-  });
-  const secondSummary = runSearchTrialsOfSide({
-    ...sideOptions,
-    wentFirst: false,
   });
   console.log("### #22 の規則ファイルとの比較\n");
   console.log(

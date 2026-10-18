@@ -21,6 +21,7 @@ import { buildDeck } from "./engine.ts";
 import {
   BAKEGAKURE_DECLARATION,
   DRAGAPULT_DECLARATION,
+  findRecordedDeck,
   ISSUE22_DECKS,
   MEGA_CHARIZARD_DECLARATION,
   MEGA_GARDEVOIR_DECLARATION,
@@ -39,12 +40,11 @@ function buildPositionDeck(
   deckCode: string,
   declaration: Declaration
 ): PositionDeck {
-  const deck = ISSUE22_DECKS.find((entry) => entry.deckCode === deckCode);
-  if (deck === undefined) {
-    throw new Error(`デッキ ${deckCode} が無い`);
-  }
   return {
-    cards: buildDeck(cardRecordTable, deck.decklist),
+    cards: buildDeck(
+      cardRecordTable,
+      findRecordedDeck(ISSUE22_DECKS, deckCode).decklist
+    ),
     declaration: resolveDeclaration(declaration, cardRecordTable),
   };
 }
@@ -131,10 +131,10 @@ interface PokemonSetup {
   readonly evolvedFrom?: readonly CardKey[];
 }
 
+/** 番の中の局面の場。 */
 interface PositionSetup {
   readonly active: PokemonSetup;
   readonly bench?: readonly PokemonSetup[];
-  readonly deck: PositionDeckKey;
   /** トラッシュに置くカード(前の番までに使ったカード)。 */
   readonly discard?: readonly CardKey[];
   readonly hand: readonly CardKey[];
@@ -191,10 +191,11 @@ function arrangeUnseen(
 }
 
 function buildPositionState(
+  deck: PositionDeckKey,
   setup: PositionSetup,
   arrangementSeed: number
 ): GameState {
-  const pool = [...POSITION_DECKS[setup.deck].cards];
+  const pool = [...POSITION_DECKS[deck].cards];
   const state = new GameState(
     createSeededRandom(arrangementSeed + 1),
     [],
@@ -241,6 +242,33 @@ export interface SearchPosition {
   /** 作った局面で探索に選ばせ、正しい手を選んだかを返す。 */
   readonly judge: (policy: SearchPolicy, state: GameState) => boolean;
   readonly situation: string;
+}
+
+/**
+ * 局面の書き方。デッキは deck の 1 か所に書き、局面の 60 枚と宣言はそこから導く。番の中の局面は field に場を、対戦の
+ * 準備の局面は setupHand に手札 7 枚を書く。
+ */
+type PositionDefinition = Pick<
+  SearchPosition,
+  "correctPlay" | "id" | "judge" | "situation"
+> & { readonly deck: PositionDeckKey } & (
+    | { readonly field: PositionSetup }
+    | { readonly setupHand: readonly CardKey[] }
+  );
+
+function toSearchPosition(definition: PositionDefinition): SearchPosition {
+  const { correctPlay, deck, id, judge, situation } = definition;
+  return {
+    build: (seed) =>
+      "field" in definition
+        ? buildPositionState(deck, definition.field, seed)
+        : buildSetupState(deck, definition.setupHand, seed),
+    correctPlay,
+    declaration: POSITION_DECKS[deck].declaration,
+    id,
+    judge,
+    situation,
+  };
 }
 
 function playTurnOf(policy: SearchPolicy, state: GameState): void {
@@ -310,29 +338,24 @@ const SETUP_HAND: readonly CardKey[] = [
   "specialRedCard",
 ];
 
-export const SEARCH_POSITIONS: readonly SearchPosition[] = [
+const POSITION_DEFINITIONS: readonly PositionDefinition[] = [
   {
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "ralts" },
-          deck: "megaGardevoir",
-          hand: [
-            "rareCandy",
-            "megaGardevoir",
-            "lillie",
-            "psychicEnergy",
-            "bossOrders",
-            "specialRedCard",
-          ],
-          turn: 1,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay:
       "リーリエの決心を使わない。次の番のふしぎなアメの道の材料を流さない",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    deck: "megaGardevoir",
+    field: {
+      active: { card: "ralts" },
+      hand: [
+        "rareCandy",
+        "megaGardevoir",
+        "lillie",
+        "psychicEnergy",
+        "bossOrders",
+        "specialRedCard",
+      ],
+      turn: 1,
+      wentFirst: false,
+    },
     id: "A",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -342,24 +365,19 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "後攻 1 番目の番。バトル場にラルトス。手札にふしぎなアメ、メガサーナイトex、リーリエの決心",
   },
   {
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: {
-            card: "megaGardevoir",
-            energies: ["psychicEnergy"],
-            evolvedFrom: ["ralts", "kirlia"],
-          },
-          bench: [{ card: "ralts" }, { card: "ralts" }, { card: "latias" }],
-          deck: "megaGardevoir",
-          hand: ["bossOrders", "specialRedCard"],
-          turn: 2,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay: "「メガシンフォニア」ではなく「あふれるねがい」を使う",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    deck: "megaGardevoir",
+    field: {
+      active: {
+        card: "megaGardevoir",
+        energies: ["psychicEnergy"],
+        evolvedFrom: ["ralts", "kirlia"],
+      },
+      bench: [{ card: "ralts" }, { card: "ralts" }, { card: "latias" }],
+      hand: ["bossOrders", "specialRedCard"],
+      turn: 2,
+      wentFirst: false,
+    },
     id: "B",
     judge: (policy, state) =>
       chooseAttackName(policy, state) === "あふれるねがい",
@@ -367,9 +385,8 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "2 番目の番。バトル場に超エネルギー 1 個のメガサーナイトex、ベンチに 3 匹、山札に基本超エネルギー",
   },
   {
-    build: (seed) => buildSetupState("megaGardevoir", SETUP_HAND, seed),
     correctPlay: "ニャースex をベンチに出さず手札に残す",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    deck: "megaGardevoir",
     id: "C",
     judge: (policy, state) => {
       const { active, bench } = chooseSetupPlacement(policy, state, [
@@ -381,28 +398,24 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
         bench.every((card) => !isCardOf(card, "meowth"))
       );
     },
+    setupHand: SETUP_HAND,
     situation: "対戦の準備。手札のたねポケモンがラルトスとニャースex",
   },
   {
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "ralts" },
-          deck: "megaGardevoir",
-          hand: [
-            "psychicEnergy",
-            "lillie",
-            "bossOrders",
-            "specialRedCard",
-            "switchCard",
-          ],
-          turn: 1,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay: "エネルギーをつけてからリーリエの決心を使う",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    deck: "megaGardevoir",
+    field: {
+      active: { card: "ralts" },
+      hand: [
+        "psychicEnergy",
+        "lillie",
+        "bossOrders",
+        "specialRedCard",
+        "switchCard",
+      ],
+      turn: 1,
+      wentFirst: false,
+    },
     id: "D",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -414,21 +427,16 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "後攻 1 番目の番。バトル場にラルトス。手札に基本超エネルギーとリーリエの決心。次の番の材料は無い",
   },
   {
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "ralts" },
-          deck: "megaGardevoir",
-          hand: ["kirlia", "achroma", "bossOrders", "specialRedCard"],
-          keepInDeck: ["greatTree", "kirlia", "megaGardevoir"],
-          turn: 2,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay:
       "アクロマの執念で偉大な大樹を取って出し、大樹でラルトスをキルリア、メガサーナイトex と進化させる。手札のキルリアは先に乗せない",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    deck: "megaGardevoir",
+    field: {
+      active: { card: "ralts" },
+      hand: ["kirlia", "achroma", "bossOrders", "specialRedCard"],
+      keepInDeck: ["greatTree", "kirlia", "megaGardevoir"],
+      turn: 2,
+      wentFirst: false,
+    },
     id: "E",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -444,20 +452,15 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "2 番目の番。前の番からのラルトスが 1 匹。手札にキルリアとアクロマの執念。偉大な大樹は場に無い",
   },
   {
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "ralts" },
-          deck: "megaGardevoir",
-          hand: ["ultraBall", "rareCandy", "frillish", "yukari", "bossOrders"],
-          keepInDeck: ["megaGardevoir"],
-          turn: 2,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay: "捨てる 2 枚にふしぎなアメを選ばない",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    deck: "megaGardevoir",
+    field: {
+      active: { card: "ralts" },
+      hand: ["ultraBall", "rareCandy", "frillish", "yukari", "bossOrders"],
+      keepInDeck: ["megaGardevoir"],
+      turn: 2,
+      wentFirst: false,
+    },
     id: "F",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -471,30 +474,25 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
   },
   // 局面 1〜10 は Issue 51「正しい手の局面」の表。カードの効果は記録から読む(各局面のコメントのカード ID)
   {
-    // ハイパーボール 050461(049600 は同じ記録)、なかよしポフィン 048675(049364 は同じ記録)。ドラパルトex の先攻の試行 13
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "dreepy" },
-          bench: [{ card: "budew" }, { card: "dreepy" }],
-          deck: "dragapult",
-          hand: [
-            "nightStretcher",
-            "ultraBall",
-            "poffin",
-            "rocketWatchTower",
-            "poffin",
-            "psychicEnergy",
-          ],
-          keepInDeck: ["drakloak", "dragapult", "rareCandy"],
-          turn: 2,
-          wentFirst: true,
-        },
-        seed
-      ),
     correctPlay:
       "探すカードを手札に残したまま、何もせずに番を終えない(ハイパーボールかなかよしポフィンの少なくとも一方を使う)",
-    declaration: POSITION_DECKS.dragapult.declaration,
+    // ハイパーボール 050461(049600 は同じ記録)、なかよしポフィン 048675(049364 は同じ記録)。ドラパルトex の先攻の試行 13
+    deck: "dragapult",
+    field: {
+      active: { card: "dreepy" },
+      bench: [{ card: "budew" }, { card: "dreepy" }],
+      hand: [
+        "nightStretcher",
+        "ultraBall",
+        "poffin",
+        "rocketWatchTower",
+        "poffin",
+        "psychicEnergy",
+      ],
+      keepInDeck: ["drakloak", "dragapult", "rareCandy"],
+      turn: 2,
+      wentFirst: true,
+    },
     id: "1",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -504,31 +502,26 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "ドラパルトex、2 番目の番。前の番からのドラメシヤ 2 匹。手札にハイパーボール 1 枚となかよしポフィン 2 枚。ドロンチ・ドラパルトex・ふしぎなアメは山札(先攻の試行 13)",
   },
   {
-    // アクロマの執念 045934、偉大な大樹 046040、キルリア 049715、メガサーナイトex 048464。メガサーナイトex の先攻の試行 16
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "latias", energies: ["psychicEnergy"] },
-          bench: [{ card: "ralts" }, { card: "ralts" }, { card: "meowth" }],
-          deck: "megaGardevoir",
-          discard: ["poffin"],
-          hand: [
-            "megaGardevoir",
-            "specialRedCard",
-            "ultraBall",
-            "kirlia",
-            "achroma",
-            "mitsuru",
-          ],
-          keepInDeck: ["greatTree"],
-          turn: 2,
-          wentFirst: true,
-        },
-        seed
-      ),
     correctPlay:
       "番の終わりにメガサーナイトex が場にいる(アクロマの執念で偉大な大樹を取って出し、大樹でラルトスをキルリア、メガサーナイトex と進化させる)",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    // アクロマの執念 045934、偉大な大樹 046040、キルリア 049715、メガサーナイトex 048464。メガサーナイトex の先攻の試行 16
+    deck: "megaGardevoir",
+    field: {
+      active: { card: "latias", energies: ["psychicEnergy"] },
+      bench: [{ card: "ralts" }, { card: "ralts" }, { card: "meowth" }],
+      discard: ["poffin"],
+      hand: [
+        "megaGardevoir",
+        "specialRedCard",
+        "ultraBall",
+        "kirlia",
+        "achroma",
+        "mitsuru",
+      ],
+      keepInDeck: ["greatTree"],
+      turn: 2,
+      wentFirst: true,
+    },
     id: "2",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -538,30 +531,25 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "メガサーナイトex、2 番目の番。前の番からのラルトス 2 匹。手札にキルリア・メガサーナイトex・アクロマの執念。偉大な大樹は山札(先攻の試行 16)",
   },
   {
-    // アクロマの執念 045934、リーリエの決心 049445、ふしぎなアメ 050462。メガサーナイトex の先攻の試行 1
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "lilliesClefairy" },
-          bench: [{ card: "ralts", energies: ["psychicEnergy"] }],
-          deck: "megaGardevoir",
-          hand: [
-            "specialRedCard",
-            "kirlia",
-            "achroma",
-            "lillie",
-            "rareCandy",
-            "poffin",
-          ],
-          keepInDeck: ["greatTree", "megaGardevoir"],
-          turn: 2,
-          wentFirst: true,
-        },
-        seed
-      ),
     correctPlay:
       "この番に使うサポートがアクロマの執念である(リーリエの決心ではない)",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    // アクロマの執念 045934、リーリエの決心 049445、ふしぎなアメ 050462。メガサーナイトex の先攻の試行 1
+    deck: "megaGardevoir",
+    field: {
+      active: { card: "lilliesClefairy" },
+      bench: [{ card: "ralts", energies: ["psychicEnergy"] }],
+      hand: [
+        "specialRedCard",
+        "kirlia",
+        "achroma",
+        "lillie",
+        "rareCandy",
+        "poffin",
+      ],
+      keepInDeck: ["greatTree", "megaGardevoir"],
+      turn: 2,
+      wentFirst: true,
+    },
     id: "3",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -574,29 +562,24 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "メガサーナイトex、2 番目の番。前の番からのラルトス 1 匹。手札にキルリア・ふしぎなアメ・アクロマの執念・リーリエの決心(先攻の試行 1)",
   },
   {
-    // ダダリン 050308、リーリエの決心 049445(050468 は同じ記録)、ハイパーボール 050461、ポケギア3.0 049376。ばけがくれの先攻の試行 5
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "dhelmise" },
-          deck: "bakegakure",
-          hand: [
-            "ultraBall",
-            "pokegear",
-            "lillie",
-            "dudunsparce",
-            "lillie",
-            "lillie",
-            "shuppet",
-            "nightStretcher",
-          ],
-          turn: 2,
-          wentFirst: true,
-        },
-        seed
-      ),
     correctPlay: "この番にリーリエの決心を使う(手札に残したまま番を終えない)",
-    declaration: POSITION_DECKS.bakegakure.declaration,
+    // ダダリン 050308、リーリエの決心 049445(050468 は同じ記録)、ハイパーボール 050461、ポケギア3.0 049376。ばけがくれの先攻の試行 5
+    deck: "bakegakure",
+    field: {
+      active: { card: "dhelmise" },
+      hand: [
+        "ultraBall",
+        "pokegear",
+        "lillie",
+        "dudunsparce",
+        "lillie",
+        "lillie",
+        "shuppet",
+        "nightStretcher",
+      ],
+      turn: 2,
+      wentFirst: true,
+    },
     id: "4",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -606,25 +589,20 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "ばけがくれ、2 番目の番。バトル場にエネルギー 0 個のダダリン。手札にリーリエの決心 3 枚・ハイパーボール・ポケギア3.0。エネルギーは無い(先攻の試行 5)",
   },
   {
-    // ドラパルトex 049264(ファントムダイブは炎 1 個と超 1 個)、基本炎エネルギー 050746、基本超エネルギー 049463
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: {
-            card: "dragapult",
-            energies: ["psychicEnergy"],
-            evolvedFrom: ["dreepy", "drakloak"],
-          },
-          deck: "dragapult",
-          hand: ["psychicEnergy", "fireEnergy", "bossOrders", "specialRedCard"],
-          turn: 2,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay:
       "基本炎エネルギーをつける(ファントムダイブは炎と超が 1 個ずつ)",
-    declaration: POSITION_DECKS.dragapult.declaration,
+    // ドラパルトex 049264(ファントムダイブは炎 1 個と超 1 個)、基本炎エネルギー 050746、基本超エネルギー 049463
+    deck: "dragapult",
+    field: {
+      active: {
+        card: "dragapult",
+        energies: ["psychicEnergy"],
+        evolvedFrom: ["dreepy", "drakloak"],
+      },
+      hand: ["psychicEnergy", "fireEnergy", "bossOrders", "specialRedCard"],
+      turn: 2,
+      wentFirst: false,
+    },
     id: "5",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -634,23 +612,9 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "ドラパルトex(基本超エネルギー 1 個つき)がバトル場。手札に基本炎エネルギー 1 枚と基本超エネルギー 1 枚(作った場面)",
   },
   {
-    // ダダリン 050308(にげる 3)、カゲボウズ 050250(にげる 1)
-    build: (seed) =>
-      buildSetupState(
-        "bakegakure",
-        [
-          "shuppet",
-          "dhelmise",
-          "bossOrders",
-          "bossOrders",
-          "nightStretcher",
-          "nightStretcher",
-          "psychicEnergy",
-        ],
-        seed
-      ),
     correctPlay: "ダダリンをバトル場に、カゲボウズをベンチに置く",
-    declaration: POSITION_DECKS.bakegakure.declaration,
+    // ダダリン 050308(にげる 3)、カゲボウズ 050250(にげる 1)
+    deck: "bakegakure",
     id: "6",
     judge: (policy, state) => {
       const { active, bench } = chooseSetupPlacement(policy, state, [
@@ -662,32 +626,36 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
         bench.some((card) => isCardOf(card, "shuppet"))
       );
     },
+    setupHand: [
+      "shuppet",
+      "dhelmise",
+      "bossOrders",
+      "bossOrders",
+      "nightStretcher",
+      "nightStretcher",
+      "psychicEnergy",
+    ],
     situation:
       "ばけがくれ、対戦の準備。手札のたねポケモンがダダリン(にげる 3)とカゲボウズ(にげる 1)(作った場面)",
   },
   {
-    // ポケモンいれかえ 049602、ニャースex 049694(にげる 1)、メガサーナイトex 048464(メガシンフォニア)
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "meowth" },
-          bench: [
-            {
-              card: "megaGardevoir",
-              energies: ["psychicEnergy"],
-              evolvedFrom: ["ralts", "kirlia"],
-            },
-          ],
-          deck: "megaGardevoir",
-          hand: ["bossOrders", "specialRedCard", "switchCard"],
-          turn: 3,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay:
       "ポケモンいれかえでメガサーナイトex をバトル場に出し、メガシンフォニアを使う",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    // ポケモンいれかえ 049602、ニャースex 049694(にげる 1)、メガサーナイトex 048464(メガシンフォニア)
+    deck: "megaGardevoir",
+    field: {
+      active: { card: "meowth" },
+      bench: [
+        {
+          card: "megaGardevoir",
+          energies: ["psychicEnergy"],
+          evolvedFrom: ["ralts", "kirlia"],
+        },
+      ],
+      hand: ["bossOrders", "specialRedCard", "switchCard"],
+      turn: 3,
+      wentFirst: false,
+    },
     id: "8",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -701,21 +669,16 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "メガサーナイトex、3 番目の番。ベンチにメガサーナイトex(超エネルギー 1 個つき)。バトル場にエネルギー 0 個のニャースex。手札にポケモンいれかえ(作った場面)",
   },
   {
-    // ハイパーボール 050461、チャデス 050224、カゲボウズ 050250、ポケパッド 050424、ダダリン 050308(むねんのイカリ)
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: { card: "dhelmise", energies: ["psychicEnergy"] },
-          deck: "bakegakure",
-          hand: ["ultraBall", "pokePad", "poltchageist", "shuppet"],
-          turn: 2,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay:
       "ハイパーボールで捨てる 2 枚にチャデスとカゲボウズを選ぶ(ポケパッドを捨てない)",
-    declaration: POSITION_DECKS.bakegakure.declaration,
+    // ハイパーボール 050461、チャデス 050224、カゲボウズ 050250、ポケパッド 050424、ダダリン 050308(むねんのイカリ)
+    deck: "bakegakure",
+    field: {
+      active: { card: "dhelmise", energies: ["psychicEnergy"] },
+      hand: ["ultraBall", "pokePad", "poltchageist", "shuppet"],
+      turn: 2,
+      wentFirst: false,
+    },
     id: "9",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -729,26 +692,21 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "ばけがくれ、2 番目の番。バトル場にダダリン(超エネルギー 1 個つき)。トラッシュに特性「ばけがくれ」のポケモンは 0 枚。手札にハイパーボール・チャデス・カゲボウズ・ポケパッド(作った場面)",
   },
   {
-    // メガサーナイトex 048464(あふれるねがい)、ラルトス 049714、基本超エネルギー 049463
-    build: (seed) =>
-      buildPositionState(
-        {
-          active: {
-            card: "megaGardevoir",
-            energies: ["psychicEnergy"],
-            evolvedFrom: ["ralts", "kirlia"],
-          },
-          bench: [{ card: "ralts" }, { card: "latias" }],
-          deck: "megaGardevoir",
-          hand: ["ralts", "bossOrders", "specialRedCard"],
-          keepInDeck: ["psychicEnergy"],
-          turn: 2,
-          wentFirst: false,
-        },
-        seed
-      ),
     correctPlay: "ラルトスをベンチに出してから「あふれるねがい」を使う",
-    declaration: POSITION_DECKS.megaGardevoir.declaration,
+    // メガサーナイトex 048464(あふれるねがい)、ラルトス 049714、基本超エネルギー 049463
+    deck: "megaGardevoir",
+    field: {
+      active: {
+        card: "megaGardevoir",
+        energies: ["psychicEnergy"],
+        evolvedFrom: ["ralts", "kirlia"],
+      },
+      bench: [{ card: "ralts" }, { card: "latias" }],
+      hand: ["ralts", "bossOrders", "specialRedCard"],
+      keepInDeck: ["psychicEnergy"],
+      turn: 2,
+      wentFirst: false,
+    },
     id: "10",
     judge: (policy, state) => {
       playTurnOf(policy, state);
@@ -762,6 +720,9 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
   },
 ];
 
+export const SEARCH_POSITIONS: readonly SearchPosition[] =
+  POSITION_DEFINITIONS.map(toSearchPosition);
+
 /**
  * メガリザードン(DxKGxx-6pqCKy-xxJ8Yc)の後攻 2 番目の番。バトル場とベンチにヒトカゲ(048351)、手札にハイパーボール
  * (050461。050742 は同じ記録)、ポケパッド(050424。050743 は同じ記録)、リーリエの決心(049445。050468 は同じ記録)、
@@ -772,10 +733,10 @@ export function buildMegaCharizardSecondTurnState(
   arrangementSeed: number
 ): GameState {
   return buildPositionState(
+    "megaCharizard",
     {
       active: { card: "charmander" },
       bench: [{ card: "charmander" }],
-      deck: "megaCharizard",
       hand: ["ultraBall", "pokePad", "lillie", "fireEnergy"],
       turn: 2,
       wentFirst: false,

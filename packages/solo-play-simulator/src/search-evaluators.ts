@@ -14,7 +14,7 @@ import { resolveEndOfTurnTriggers } from "./card-effects.ts";
 import type { ResolvedDeclaration } from "./declaration.ts";
 import type { EffectChoices } from "./effect-choices.ts";
 import { type PlayingPolicy, useAttacksOfTurn } from "./engine.ts";
-import { GoalProspects, scoreGoalsByPathProgress } from "./goal-prospects.ts";
+import { GoalProspects } from "./goal-prospects.ts";
 import { SeededRandom } from "./random.ts";
 import {
   createSearchPolicy,
@@ -24,13 +24,12 @@ import {
 } from "./search-policy.ts";
 import type { GameState } from "./state.ts";
 
-/** 判定がまだ済んでいない締め切りの数。今成り立っている狙いは、この数だけ成立確率の合計に効く。 */
-function countOpenDeadlines(
+/** 判定がまだ済んでいない締め切り(fromTurn の番より前でないもの)。今成り立っている狙いは、この数だけ成立確率の合計に効く。 */
+function listOpenDeadlines(
   declaration: ResolvedDeclaration,
   fromTurn: number
-): number {
-  return declaration.deadlines.filter((deadline) => deadline >= fromTurn)
-    .length;
+): number[] {
+  return declaration.deadlines.filter((deadline) => deadline >= fromTurn);
 }
 
 /** その番の狙いだけを見る評価。今の場で成り立っている狙いの数 × 判定がまだ済んでいない締め切りの数。 */
@@ -38,7 +37,7 @@ export function createGoalOnlyEvaluator(
   declaration: ResolvedDeclaration
 ): Evaluator {
   return ({ fromTurn, state }) =>
-    countOpenDeadlines(declaration, fromTurn) *
+    listOpenDeadlines(declaration, fromTurn).length *
     declaration.goals.filter((goal) => goal.isAchieved(state)).length;
 }
 
@@ -49,7 +48,7 @@ function sumScores(scores: readonly number[]): number {
 }
 
 /**
- * 道の揃い具合を見る評価。判定がまだ済んでいない締め切りごとに、狙いの段ごとの点(scoreGoalsByPathProgress)を
+ * 道の揃い具合を見る評価。判定がまだ済んでいない締め切りごとに、狙いの段ごとの点(GoalProspects の scoreGoals)を
  * 出して合計する。見込みが締め切りによって違う(この番に間に合う進化の元だけを数える、など)ため、1 つの締め切りの
  * 点を締め切りの数倍にしない。
  */
@@ -57,17 +56,13 @@ export function createPathProgressEvaluator(
   declaration: ResolvedDeclaration
 ): Evaluator {
   return (input) => {
-    const openDeadlines = declaration.deadlines.filter(
-      (deadline) => deadline >= input.fromTurn
-    );
+    const openDeadlines = listOpenDeadlines(declaration, input.fromTurn);
     if (openDeadlines.length === 0) {
       return 0;
     }
     const prospects = new GoalProspects(declaration, input);
     return openDeadlines.reduce(
-      (total, deadline) =>
-        total +
-        sumScores(scoreGoalsByPathProgress(declaration, prospects, deadline)),
+      (total, deadline) => total + sumScores(prospects.scoreGoals(deadline)),
       0
     );
   };
@@ -92,9 +87,7 @@ export function createNextTurnTrialEvaluator(
 ): Evaluator {
   const lastDeadline = Math.max(...declaration.deadlines);
   return (input) => {
-    const openDeadlines = declaration.deadlines.filter(
-      (deadline) => deadline >= input.fromTurn
-    );
+    const openDeadlines = listOpenDeadlines(declaration, input.fromTurn);
     if (openDeadlines.length === 0) {
       return 0;
     }
@@ -182,10 +175,7 @@ function playTrialTurns(
     leafScores: new Map(
       declaration.deadlines
         .filter((deadline) => deadline > lastTurn)
-        .map((deadline) => [
-          deadline,
-          scoreGoalsByPathProgress(declaration, prospects, deadline),
-        ])
+        .map((deadline) => [deadline, prospects.scoreGoals(deadline)])
     ),
   };
 }
