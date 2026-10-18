@@ -48,10 +48,44 @@ function compareCardIds(left: Card, right: Card): number {
 }
 
 /**
+ * sortByCardId で最近並べ直した入力と結果。探索は同じ状態の複製を何度も混ぜ直すため、同じ並びの入力が続けて来る。
+ * 結果は入力の並びだけで決まるので、並びがまったく同じ入力には覚えた結果の写しを返す(並びの比べは参照の比較だけで済み、
+ * 数え直して並べ直すより速い)。入力はその場で作った配列で、呼んだ側が後から書き換えないので、写さずに覚える。
+ */
+const RECENT_SORT_SLOTS = 16;
+const recentSorts: {
+  readonly cards: readonly Card[];
+  readonly sorted: readonly Card[];
+}[] = [];
+let nextSortSlot = 0;
+
+function isSameSequence(
+  left: readonly Card[],
+  right: readonly Card[]
+): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * カード ID の順に並べ直した写し。見えていないカードを混ぜ直すとき、同じ組み合わせのカードからは元の並びによらず
- * 同じ結果にするために使う。同じ参照のカードをまとめてから種類だけを並べるので、枚数が多くても速い。
+ * 同じ結果にするために使う。同じ参照のカードをまとめてから種類だけを並べるので、枚数が多くても速い。cards は
+ * その場で作った配列を渡す(recentSorts に写さずに覚えるため)。
  */
 function sortByCardId(cards: readonly Card[]): Card[] {
+  const recent = recentSorts.find((entry) =>
+    isSameSequence(cards, entry.cards)
+  );
+  if (recent !== undefined) {
+    return [...recent.sorted];
+  }
   const counts = new Map<Card, number>();
   for (const card of cards) {
     counts.set(card, (counts.get(card) ?? 0) + 1);
@@ -62,7 +96,9 @@ function sortByCardId(cards: readonly Card[]): Card[] {
       sorted.push(card);
     }
   }
-  return sorted;
+  recentSorts[nextSortSlot] = { cards, sorted };
+  nextSortSlot = (nextSortSlot + 1) % RECENT_SORT_SLOTS;
+  return [...sorted];
 }
 
 export type CardSource = "hand" | "deck" | "discard";

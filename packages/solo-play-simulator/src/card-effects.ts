@@ -10,15 +10,12 @@ import { CardCategory } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { areConditionsMet, type EffectSource } from "./conditions.ts";
 import {
-  calculateAttackCost,
   calculateBenchLimit,
   calculateRetreatCost,
   findEvolutionNameAllowedByEffect,
   isAbilityNegated,
   isFreshEvolutionAllowedByEffect,
-  listEnergyUnits,
-  listSecondAttacks,
-  listUsableAttacks,
+  listAttackCandidatesWithCosts,
   resolveEnergyProvision,
   toEnergyUnits,
   type UsableAttack,
@@ -423,18 +420,21 @@ export function listUsableAttacksOfActive(
   ) {
     return [];
   }
-  const units = listEnergyUnits(state, active);
   const source: EffectSource = { card: active.card, pokemon: active };
-  const candidates = state.attacks.has(state.turn)
-    ? listSecondAttacks(state, active)
-    : listUsableAttacks(state, active);
-  return candidates.filter(
-    ({ attack }) =>
-      canPayCost(calculateAttackCost(state, active, attack), units) &&
-      (attack.effect === undefined ||
-        (areConditionsMet(state, attack.effect.useConditions, source) &&
-          !wouldLeaveFieldEmpty(state, attack.effect)))
+  const { candidates, units } = listAttackCandidatesWithCosts(
+    state,
+    active,
+    state.attacks.has(state.turn)
   );
+  return candidates
+    .filter(
+      ({ cost, usable: { attack } }) =>
+        canPayCost(cost, units) &&
+        (attack.effect === undefined ||
+          (areConditionsMet(state, attack.effect.useConditions, source) &&
+            !wouldLeaveFieldEmpty(state, attack.effect)))
+    )
+    .map(({ usable }) => usable);
 }
 
 /**

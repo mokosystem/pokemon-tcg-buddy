@@ -39,8 +39,27 @@ import type { CardSource, GameState, PokemonInPlay } from "./state.ts";
 
 // ---- 対象の候補 ----
 
+/**
+ * 条件ごと・カードごとの、条件に合うかの結果。合うかはカードと条件の読み取り専用の値だけで決まるので、探索が同じ
+ * 山札や手札から何度も候補を出すときに比べ直さない。
+ */
+const filterMatches = new WeakMap<CardFilter, WeakMap<Card, boolean>>();
+
 function listMatching(cards: readonly Card[], filter: CardFilter): Card[] {
-  return cards.filter((card) => matchesCardFilter(card, filter));
+  let byCard = filterMatches.get(filter);
+  if (byCard === undefined) {
+    byCard = new WeakMap();
+    filterMatches.set(filter, byCard);
+  }
+  const matches = byCard;
+  return cards.filter((card) => {
+    let matched = matches.get(card);
+    if (matched === undefined) {
+      matched = matchesCardFilter(card, filter);
+      matches.set(card, matched);
+    }
+    return matched;
+  });
 }
 
 function listMatchingOrAll(

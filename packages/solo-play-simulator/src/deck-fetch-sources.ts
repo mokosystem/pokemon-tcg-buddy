@@ -157,12 +157,14 @@ export function countUnseenByRecord(
   state: GameState
 ): Map<CardRecord, { card: Card; count: number }> {
   const counts = new Map<CardRecord, { card: Card; count: number }>();
-  for (const card of [...state.deck, ...state.prizes]) {
-    const entry = counts.get(card.record);
-    if (entry === undefined) {
-      counts.set(card.record, { card, count: 1 });
-    } else {
-      entry.count += 1;
+  for (const zone of [state.deck, state.prizes]) {
+    for (const card of zone) {
+      const entry = counts.get(card.record);
+      if (entry === undefined) {
+        counts.set(card.record, { card, count: 1 });
+      } else {
+        entry.count += 1;
+      }
     }
   }
   return counts;
@@ -379,7 +381,8 @@ class DeckFetchAssignment {
   private best: { routes: FetchRoute[]; score: AssignmentScore } | undefined;
   private readonly groups: SourceGroup[];
   private readonly relays: readonly DeckFetchRelay[];
-  private readonly remaining = new Map<CardRecord, number>();
+  /** 記録ごとの、この割り当てで使った枚数。残りは unseen の枚数から引いて出す。 */
+  private readonly consumed = new Map<CardRecord, number>();
   private readonly requirements: readonly FetchRequirement[];
   private readonly routes: FetchRoute[] = [];
   private readonly timing: DeadlineTiming;
@@ -398,9 +401,6 @@ class DeckFetchAssignment {
     this.relays = relays;
     this.unseen = unseen;
     this.timing = timing;
-    for (const [record, { count }] of unseen) {
-      this.remaining.set(record, count);
-    }
   }
 
   findBestRoutes(): FetchRoute[] {
@@ -409,11 +409,13 @@ class DeckFetchAssignment {
   }
 
   private countRemaining(record: CardRecord): number {
-    return this.remaining.get(record) ?? 0;
+    return (
+      (this.unseen.get(record)?.count ?? 0) - (this.consumed.get(record) ?? 0)
+    );
   }
 
   private consume(record: CardRecord, count: number): void {
-    this.remaining.set(record, this.countRemaining(record) - count);
+    this.consumed.set(record, (this.consumed.get(record) ?? 0) + count);
   }
 
   /** この番の締め切りでは、種類のある探す手段と中継(サポート、スタジアム)を種類ごとに 1 回で使い切る。 */

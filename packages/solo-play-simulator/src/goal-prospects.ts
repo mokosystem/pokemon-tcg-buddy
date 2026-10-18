@@ -107,12 +107,43 @@ function countByRecord(cards: readonly Card[]): Map<CardRecord, number> {
   return counts;
 }
 
+/** 見えていないカード(view.unseen から数える)のほかの置き場所。 */
+type CountedZone = Exclude<Zone, "unseen">;
+
 interface PathView {
-  readonly counts: Readonly<Record<Zone, ReadonlyMap<CardRecord, number>>>;
+  /** 置き場所ごとの記録ごとの枚数。道によって要る置き場所が違う(この番に進化させられるものはこの番の締め切りの進化の元だけ)ので、初めて要るときに数える。 */
+  readonly counts: Map<CountedZone, ReadonlyMap<CardRecord, number>>;
   /** 2 段の中継の一覧。道によらないので、締め切りの種類ごとに 1 回だけ作る。 */
   readonly relaysByTiming: Map<DeadlineTiming, readonly DeckFetchRelay[]>;
   readonly state: GameState;
   readonly unseen: UnseenCards;
+}
+
+function listCardsInZone(state: GameState, zone: CountedZone): Card[] {
+  switch (zone) {
+    case "hand":
+      return state.hand;
+    case "inPlay":
+      return state.listPokemonInPlay().map((pokemon) => pokemon.card);
+    default:
+      return state
+        .listPokemonInPlay()
+        .filter((pokemon) => state.canEvolveThisTurn(pokemon))
+        .map((pokemon) => pokemon.card);
+  }
+}
+
+/** zone にある record のカードの枚数。 */
+function countInZone(view: PathView, zone: Zone, record: CardRecord): number {
+  if (zone === "unseen") {
+    return view.unseen.get(record)?.count ?? 0;
+  }
+  let counts = view.counts.get(zone);
+  if (counts === undefined) {
+    counts = countByRecord(listCardsInZone(view.state, zone));
+    view.counts.set(zone, counts);
+  }
+  return counts.get(record) ?? 0;
 }
 
 function listRelaysOnce(
@@ -144,7 +175,7 @@ class UsedCards {
   /** zone に record のカードが残っていれば 1 枚使い、使えたかを返す。 */
   take(zone: Zone, record: CardRecord): boolean {
     const used = this.used[zone].get(record) ?? 0;
-    if ((this.view.counts[zone].get(record) ?? 0) <= used) {
+    if (countInZone(this.view, zone, record) <= used) {
       return false;
     }
     this.used[zone].set(record, used + 1);
@@ -453,26 +484,11 @@ function listNonMainAttacksWithEffect(
 }
 
 function buildPathView(state: GameState): PathView {
-  const unseen = countUnseenByRecord(state);
-  const unseenCounts = new Map<CardRecord, number>();
-  for (const [record, { count }] of unseen) {
-    unseenCounts.set(record, count);
-  }
-  const pokemonInPlay = state.listPokemonInPlay();
   return {
-    counts: {
-      evolvableThisTurn: countByRecord(
-        pokemonInPlay
-          .filter((pokemon) => state.canEvolveThisTurn(pokemon))
-          .map((pokemon) => pokemon.card)
-      ),
-      hand: countByRecord(state.hand),
-      inPlay: countByRecord(pokemonInPlay.map((pokemon) => pokemon.card)),
-      unseen: unseenCounts,
-    },
+    counts: new Map(),
     relaysByTiming: new Map(),
     state,
-    unseen,
+    unseen: countUnseenByRecord(state),
   };
 }
 
@@ -493,6 +509,16 @@ export class GoalProspects {
   private readonly provisions = new Map<
     PokemonInPlay,
     Map<CardRecord, EnergyUnit[]>
+  >();
+  private readonly unpaidCosts = new Map<
+    MainAttack,
+    Map<
+      PokemonInPlay,
+      {
+        readonly cost: readonly PokemonType[];
+        readonly unpaid: readonly PokemonType[];
+      }
+    >
   >();
   private view: PathView | undefined;
   private damageRatio: number | undefined;
@@ -733,12 +759,8 @@ export class GoalProspects {
     deadline: number
   ): number {
     const { fromTurn, state } = this.input;
-    const cost = calculateAttackCost(state, attacker, main.attack);
-    if (cost.length === 0) {
-      return 1;
-    }
-    const unpaid = listUnpaidCost(cost, listEnergyUnits(state, attacker));
-    if (unpaid.length === 0) {
+    const { cost, unpaid } = this.listUnpaidCostOnce(main, attacker);
+    if (cost.length === 0 || unpaid.length === 0) {
       return 1;
     }
     const holder =
@@ -789,6 +811,35 @@ export class GoalProspects {
       );
     }
     return total / cost.length;
+  }
+
+  /** attacker が main のワザを使うのに必要なエネルギーと、ついているエネルギーで払えない分。締め切りによらないので使い回す。 */
+  private listUnpaidCostOnce(
+    main: MainAttack,
+    attacker: PokemonInPlay
+  ): {
+    readonly cost: readonly PokemonType[];
+    readonly unpaid: readonly PokemonType[];
+  } {
+    let byAttacker = this.unpaidCosts.get(main);
+    if (byAttacker === undefined) {
+      byAttacker = new Map();
+      this.unpaidCosts.set(main, byAttacker);
+    }
+    let entry = byAttacker.get(attacker);
+    if (entry === undefined) {
+      const { state } = this.input;
+      const cost = calculateAttackCost(state, attacker, main.attack);
+      entry = {
+        cost,
+        unpaid:
+          cost.length === 0
+            ? []
+            : listUnpaidCost(cost, listEnergyUnits(state, attacker)),
+      };
+      byAttacker.set(attacker, entry);
+    }
+    return entry;
   }
 
   private placeDetachedMainOnce(main: MainAttack): PokemonInPlay {
@@ -911,12 +962,12 @@ export function scoreGoalsByPathProgress(
     }
     return unachievedWeight === 0 ? 0 : unachievedWeight * progress();
   };
-  const isStanding = prospects.isGoalAchieved(0);
-  const standScore = isStanding ? 1 : prospects.calculateStandProspect(timing);
   const isAttacking = prospects.isGoalAchieved(1);
   const attackProgress = () => prospects.calculateAttackProspect(deadline);
   const scores = [
-    weigh(isStanding, () => standScore),
+    weigh(prospects.isGoalAchieved(0), () =>
+      prospects.calculateStandProspect(timing)
+    ),
     weigh(isAttacking, attackProgress),
   ];
   const { minimumDamage } = declaration;

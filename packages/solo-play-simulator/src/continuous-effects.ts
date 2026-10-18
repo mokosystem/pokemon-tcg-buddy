@@ -140,18 +140,16 @@ function collectContinuousEffects(
       listCardContinuousEffects(stadium)
     );
   }
-  const stadiumEffectCount = collected.length;
+  const stadiumEffects = [...collected];
   const isNegatedBy = (
     change: "negateAbilities" | "negateToolEffects",
     pokemon: PokemonInPlay
   ) =>
-    collected
-      .slice(0, stadiumEffectCount)
-      .some(
-        (entry) =>
-          entry.effect.change.change === change &&
-          appliesTo(state, entry, pokemon)
-      );
+    stadiumEffects.some(
+      (entry) =>
+        entry.effect.change.change === change &&
+        appliesTo(state, entry, pokemon)
+    );
   for (const pokemon of state.listPokemonInPlay()) {
     const abilities = listAbilityContinuousEffects(pokemon.card);
     if (abilities.length > 0 && !isNegatedBy("negateAbilities", pokemon)) {
@@ -323,7 +321,18 @@ export function listEnergyUnits(
     return [];
   }
   const all = collectContinuousEffects(state);
-  const applying = listCollectedApplyingTo(state, all, pokemon);
+  return listEnergyUnitsFrom(
+    all,
+    listCollectedApplyingTo(state, all, pokemon),
+    pokemon
+  );
+}
+
+function listEnergyUnitsFrom(
+  all: readonly CollectedContinuousEffect[],
+  applying: readonly CollectedContinuousEffect[],
+  pokemon: PokemonInPlay
+): EnergyUnit[] {
   return pokemon.energies.flatMap((energy) =>
     toEnergyUnits(resolveEnergyProvisionFrom(all, applying, pokemon, energy))
   );
@@ -423,7 +432,14 @@ export function calculateAttackCost(
   pokemon: PokemonInPlay,
   attack: Attack
 ): PokemonType[] {
-  const added = listEffectsApplyingTo(state, pokemon).reduce(
+  return calculateAttackCostFrom(listEffectsApplyingTo(state, pokemon), attack);
+}
+
+function calculateAttackCostFrom(
+  applying: readonly CollectedContinuousEffect[],
+  attack: Attack
+): PokemonType[] {
+  const added = applying.reduce(
     (total, collected) =>
       collected.effect.change.change === "addColorlessToAttackCost"
         ? total + collected.effect.change.count
@@ -555,13 +571,13 @@ function listBenchedAttacksUsedAs(
 
 /**
  * 1 回目のワザを使ったあとに、2 回目として使えるワザ(「おまつりおんど」)。2 回目を使える効果が働いていれば、
- * このポケモンが記録に持つワザ(ほかのワザを「このワザとして使う」ワザを除く)を返す。
+ * このポケモンが記録に持つワザ(ほかのワザを「このワザとして使う」ワザを除く)を返す。applying は pokemon に働く効果。
  */
-export function listSecondAttacks(
-  state: GameState,
+function listSecondAttacks(
+  applying: readonly CollectedContinuousEffect[],
   pokemon: PokemonInPlay
 ): UsableAttack[] {
-  const allowsSecondAttack = listEffectsApplyingTo(state, pokemon).some(
+  const allowsSecondAttack = applying.some(
     (collected) => collected.effect.change.change === "useAttacksTwice"
   );
   if (
@@ -583,9 +599,11 @@ export function listSecondAttacks(
  * Nのゾロアークex の「ナイトジョーカー」)なら、自身のワザと同じく選べるワザに置き換える。そのワザ自体は
  * ベンチのポケモンが持っているワザなので、ミュウex の「きおくのらせん」で使える(カードテキスト「ベンチポケモンが
  * 持つワザを、すべて使える」による。この組み合わせを問う公式 Q&A は無い、2026-09-24 確認)。
+ * applying は pokemon に働く効果。
  */
-export function listUsableAttacks(
+function listUsableAttacks(
   state: GameState,
+  applying: readonly CollectedContinuousEffect[],
   pokemon: PokemonInPlay
 ): UsableAttack[] {
   const own =
@@ -594,7 +612,7 @@ export function listUsableAttacks(
           listAttacksUsedAs(state, pokemon, pokemon, attack)
         )
       : [];
-  const allowsBenchAttacks = listEffectsApplyingTo(state, pokemon).some(
+  const allowsBenchAttacks = applying.some(
     (collected) =>
       collected.effect.change.change === "allowBenchedPokemonAttacks"
   );
@@ -611,4 +629,38 @@ export function listUsableAttacks(
         : []
     );
   return [...own, ...fromBench];
+}
+
+/** ワザの候補 1 つと、それを使うのに必要なエネルギー(calculateAttackCost と同じ)。 */
+export interface AttackCandidateWithCost {
+  readonly cost: PokemonType[];
+  readonly usable: UsableAttack;
+}
+
+/**
+ * pokemon のワザの候補(isSecondAttack が真なら listSecondAttacks、偽なら listUsableAttacks)と、候補ごとに必要な
+ * エネルギー(calculateAttackCost)、pokemon についているエネルギーの 1 個ずつのタイプ(listEnergyUnits)。どれも
+ * 働いている効果から求めるので、効果を 1 回だけ集めて使い回す。探索は評価のたびにバトルポケモンの使えるワザを
+ * 出すため、3 つを別々に呼んで効果を何度も集めない。
+ */
+export function listAttackCandidatesWithCosts(
+  state: GameState,
+  pokemon: PokemonInPlay,
+  isSecondAttack: boolean
+): {
+  readonly candidates: AttackCandidateWithCost[];
+  readonly units: EnergyUnit[];
+} {
+  const all = collectContinuousEffects(state);
+  const applying = listCollectedApplyingTo(state, all, pokemon);
+  const usables = isSecondAttack
+    ? listSecondAttacks(applying, pokemon)
+    : listUsableAttacks(state, applying, pokemon);
+  return {
+    candidates: usables.map((usable) => ({
+      cost: calculateAttackCostFrom(applying, usable.attack),
+      usable,
+    })),
+    units: listEnergyUnitsFrom(all, applying, pokemon),
+  };
 }
