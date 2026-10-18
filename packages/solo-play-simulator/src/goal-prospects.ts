@@ -5,9 +5,14 @@
  */
 
 import { calculateAttackDamage } from "./attack-damage.ts";
-import type { CardRecord } from "./card-record-schema.ts";
-import { buildCardFromRecord, type Card } from "./cards.ts";
-import { calculateAttackCost, listEnergyUnits } from "./continuous-effects.ts";
+import type { CardRecord, PokemonType } from "./card-record-schema.ts";
+import { buildCardFromRecord, type Card, isEnergy } from "./cards.ts";
+import {
+  calculateAttackCost,
+  listEnergyUnits,
+  resolveEnergyProvisionWhenAttached,
+  toEnergyUnits,
+} from "./continuous-effects.ts";
 import { type DeadlineTiming, toDeadlineTiming } from "./deadline-timing.ts";
 import {
   assignDeckFetchSources,
@@ -25,7 +30,13 @@ import type {
   ResolvedDeclaration,
 } from "./declaration.ts";
 import type { EvaluationInput } from "./search-policy.ts";
-import { type GameState, PokemonInPlay } from "./state.ts";
+import {
+  ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN,
+  type EnergyUnit,
+  type GameState,
+  listUnpaidCost,
+  PokemonInPlay,
+} from "./state.ts";
 
 /**
  * 見込みの重み。いずれも「成り立っている(1)」より小さく、置き場所に近いほど大きくする。値は正しい手の局面で
@@ -35,6 +46,8 @@ import { type GameState, PokemonInPlay } from "./state.ts";
 export const PROGRESS_WEIGHTS = {
   /** 必要なカードが山札かサイドにあるが、引くしかない(探す手段を割り当てられなかった)。 */
   drawOnly: 0.1,
+  /** ワザに必要なエネルギーが手札にある(締め切りまでに手札からつけられる枚数まで)。場に出す必要なカードが手札にあるのと同じ尺度。 */
+  energyInHand: 0.8,
   /** 場やスタジアムに必要なカードが手札にある(出す・進化させる・使うだけ)。 */
   inHandForPlace: 0.8,
   /** 必要なカードが山札かサイドにあり、手札や場の探す手段 1 枚を割り当てて山札から持ってこられる。 */
@@ -242,41 +255,95 @@ function listEvolutionLineNames(main: MainAttack): Set<string> {
   ]);
 }
 
-/** 主軸の系統の場のポケモンについているエネルギーが、主軸のワザに必要な数にどれだけ届いているか(0 以上 1 以下)。 */
-function scoreAttackEnergy(state: GameState, main: MainAttack): number {
-  const lineNames = listEvolutionLineNames(main);
-  const scores = state
-    .listPokemonInPlay()
-    .filter((pokemon) => lineNames.has(pokemon.name))
-    .map((pokemon) => {
-      const cost = calculateAttackCost(state, pokemon, main.attack).length;
-      return cost === 0
-        ? 1
-        : Math.min(1, listEnergyUnits(state, pokemon).length / cost);
-    });
-  return scores.length === 0 ? 0 : Math.max(...scores);
-}
-
 const detachedCardsByRecord = new WeakMap<CardRecord, Card>();
+
+/** 場に出たとみなした主軸(場には置かない)。主軸が場にいないときに、ダメージやつけたエネルギーの供給を数えるため。 */
+function buildDetachedMain(state: GameState, main: MainAttack): PokemonInPlay {
+  let card = detachedCardsByRecord.get(main.record);
+  if (card === undefined) {
+    card = buildCardFromRecord(main.record, main.record.cardIds[0] ?? "");
+    detachedCardsByRecord.set(main.record, card);
+  }
+  return new PokemonInPlay(card, state.turn);
+}
 
 /**
  * 主軸がワザを使ったときのダメージの見込み。主軸が場にいればそのポケモン(バトル場を先に)で、いなければ場に出たと
  * みなした主軸で、記録の規則から求める(ダメージの上乗せが場のエネルギーの数などで決まるため)。
  */
 function estimateMainAttackDamage(state: GameState, main: MainAttack): number {
-  const inPlay = state
-    .listPokemonInPlay()
-    .find((pokemon) => pokemon.card.record === main.record);
-  let attacker = inPlay;
-  if (attacker === undefined) {
-    let card = detachedCardsByRecord.get(main.record);
-    if (card === undefined) {
-      card = buildCardFromRecord(main.record, main.record.cardIds[0] ?? "");
-      detachedCardsByRecord.set(main.record, card);
-    }
-    attacker = new PokemonInPlay(card, state.turn);
-  }
+  const attacker =
+    state
+      .listPokemonInPlay()
+      .find((pokemon) => pokemon.card.record === main.record) ??
+    buildDetachedMain(state, main);
   return calculateAttackDamage(state, attacker, main.attack) ?? 0;
+}
+
+/** 手札から主軸につけるエネルギーの組。filled は払えない分のうち埋めた数。 */
+interface HandEnergySelection {
+  /** 組に選んだ、記録ごとの枚数。同じ見込みの中で、同じカードを探す手段に重ねて数えないため。 */
+  readonly counts: ReadonlyMap<CardRecord, number>;
+  readonly filled: number;
+  /** 組で埋めきれなかった払えない分。 */
+  readonly rest: readonly PokemonType[];
+}
+
+/**
+ * 手札のエネルギーから attachable 枚以下を選ぶ組をすべて試し、払えない分(unpaid)をいちばん多く埋める組を返す。
+ * 埋めた数が同じなら枚数の少ない組。埋め方は listUnpaidCost(ついているエネルギーの判定 canPayCost と同じ)。
+ * 供給は記録だけで決まるので、記録ごとの枚数で組を数える。
+ */
+function selectHandEnergies(
+  handEnergies: readonly {
+    readonly count: number;
+    readonly record: CardRecord;
+    readonly units: readonly EnergyUnit[];
+  }[],
+  unpaid: readonly PokemonType[],
+  attachable: number
+): HandEnergySelection {
+  let best: HandEnergySelection = {
+    counts: new Map(),
+    filled: 0,
+    rest: unpaid,
+  };
+  let bestCardCount = 0;
+  const chosen: number[] = handEnergies.map(() => 0);
+  const visit = (index: number, cardCount: number) => {
+    const group = handEnergies[index];
+    if (group === undefined) {
+      const units = handEnergies.flatMap((entry, at) =>
+        Array.from({ length: chosen[at] ?? 0 }, () => entry.units).flat()
+      );
+      const rest = listUnpaidCost(unpaid, units);
+      const filled = unpaid.length - rest.length;
+      if (
+        filled > best.filled ||
+        (filled === best.filled && cardCount < bestCardCount)
+      ) {
+        best = {
+          counts: new Map(
+            handEnergies.flatMap((entry, at) =>
+              (chosen[at] ?? 0) > 0 ? [[entry.record, chosen[at] ?? 0]] : []
+            )
+          ),
+          filled,
+          rest,
+        };
+        bestCardCount = cardCount;
+      }
+      return;
+    }
+    const most = Math.min(group.count, attachable - cardCount);
+    for (let count = 0; count <= most; count += 1) {
+      chosen[index] = count;
+      visit(index + 1, cardCount + count);
+    }
+    chosen[index] = 0;
+  };
+  visit(0, 0);
+  return best;
 }
 
 function buildPathView(state: GameState): PathView {
@@ -305,7 +372,7 @@ function buildPathView(state: GameState): PathView {
 
 /**
  * 1 つの状態について、狙いの見込みを数える。道の揃い具合を見る評価は判定が済んでいない締め切りごとに点を出すため、
- * 締め切りによらない部分(狙いが成り立っているか、置き場所ごとの枚数、ワザのエネルギー、ダメージ)は 1 回だけ数えて
+ * 締め切りによらない部分(狙いが成り立っているか、置き場所ごとの枚数、エネルギーの供給、ダメージ)は 1 回だけ数えて
  * 締め切りの間で使い回す。
  */
 export class GoalProspects {
@@ -313,8 +380,14 @@ export class GoalProspects {
   private readonly declaration: ResolvedDeclaration;
   private readonly achievements = new Map<number, boolean>();
   private readonly standProspects = new Map<DeadlineTiming, number>();
+  private readonly attackProspects = new Map<number, number>();
+  private readonly detachedMains = new Map<CardRecord, PokemonInPlay>();
+  /** つけるポケモンごと・エネルギーの記録ごとの供給。締め切りによらないので使い回す。 */
+  private readonly provisions = new Map<
+    PokemonInPlay,
+    Map<CardRecord, EnergyUnit[]>
+  >();
   private view: PathView | undefined;
-  private attachedEnergyRatio: number | undefined;
   private damageRatio: number | undefined;
 
   constructor(declaration: ResolvedDeclaration, input: EvaluationInput) {
@@ -359,14 +432,174 @@ export class GoalProspects {
     return this.view;
   }
 
-  /** 主軸のワザのうち、系統の場のポケモンについているエネルギーがいちばん届いているものの割合(0 以上 1 以下)。 */
-  calculateAttachedEnergyRatio(): number {
-    this.attachedEnergyRatio ??= Math.max(
-      ...this.declaration.mainAttacks.map((main) =>
-        scoreAttackEnergy(this.input.state, main)
-      )
+  /**
+   * 2 段目(打てる)の見込み(0 以上 1 以下)。立つ見込み(立っていれば 1)と、主軸のワザごと・系統の場のポケモンごとの
+   * エネルギーの見込みのうちいちばん高いものの平均。系統のポケモンが場にいなければエネルギーの見込みは 0。
+   */
+  calculateAttackProspect(deadline: number): number {
+    let prospect = this.attackProspects.get(deadline);
+    if (prospect === undefined) {
+      const standScore = this.isGoalAchieved(0)
+        ? 1
+        : this.calculateStandProspect(
+            toDeadlineTiming(deadline, this.input.fromTurn)
+          );
+      const { state } = this.input;
+      const energyProspects = this.declaration.mainAttacks.flatMap((main) => {
+        const lineNames = listEvolutionLineNames(main);
+        return state
+          .listPokemonInPlay()
+          .filter((pokemon) => lineNames.has(pokemon.name))
+          .map((attacker) =>
+            this.calculateAttackEnergyProspect(main, attacker, deadline)
+          );
+      });
+      prospect =
+        (standScore +
+          (energyProspects.length === 0 ? 0 : Math.max(...energyProspects))) /
+        2;
+      this.attackProspects.set(deadline, prospect);
+    }
+    return prospect;
+  }
+
+  /**
+   * attacker が主軸のワザ main を使うのに必要なエネルギーが、締め切り deadline までに揃う見込み(0 以上 1 以下)。
+   * ワザの要求 1 つごとの揃い具合(ついている 1、手札にある energyInHand、山札から 1 段・2 段で持ってこられる、引くしか
+   * ない、見えていないカードにも供給の合うエネルギーが無ければ 0)の合計を要求の数で割る。要求を埋める順は
+   * listUnpaidCost(ついているエネルギーの判定 canPayCost と同じ)。手札と見えていないカードのエネルギーは、主軸に
+   * つけたとしたら供給するもので数える(プリズムエネルギー 049455 は 2進化の主軸には無色 1 個)。
+   */
+  calculateAttackEnergyProspect(
+    main: MainAttack,
+    attacker: PokemonInPlay,
+    deadline: number
+  ): number {
+    const { fromTurn, state } = this.input;
+    const cost = calculateAttackCost(state, attacker, main.attack);
+    if (cost.length === 0) {
+      return 1;
+    }
+    const unpaid = listUnpaidCost(cost, listEnergyUnits(state, attacker));
+    if (unpaid.length === 0) {
+      return 1;
+    }
+    const holder =
+      attacker.card.record === main.record
+        ? attacker
+        : this.placeDetachedMainOnce(main);
+    // 手札からつけられるのは 1 回の番に 1 枚(docs/pokemon-tcg/basic-rules.md 72 行)。この番に既につけていれば、
+    // この番の分を数えない
+    const attachable =
+      (deadline - fromTurn + (state.hasAttachedEnergy ? 0 : 1)) *
+      ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN;
+    const fromHand = selectHandEnergies(
+      this.listHandEnergies(holder),
+      unpaid,
+      attachable
     );
-    return this.attachedEnergyRatio;
+    let total =
+      cost.length -
+      unpaid.length +
+      fromHand.filled * PROGRESS_WEIGHTS.energyInHand;
+    if (fromHand.rest.length === 0) {
+      return total / cost.length;
+    }
+    const view = this.countPathViewOnce();
+    // どの記録を持ってくる先にするかは割り当てが決め、同じ 1 枚を 2 つの要求に使わない。合うエネルギーが見えていない
+    // カードに無い要求は 0 のまま割り当てに渡さない
+    const requirements = fromHand.rest.flatMap((required) => {
+      const candidates = this.listUnseenEnergiesProviding(
+        view,
+        holder,
+        required
+      );
+      return candidates.length === 0 ? [] : [{ candidates }];
+    });
+    if (requirements.length > 0) {
+      const timing = toDeadlineTiming(deadline, fromTurn);
+      // エネルギーの見込みは道の見込みと別の見込みとして平均するので、探す手段と見えていないカードを道と分け合わない
+      const routes = assignDeckFetchSources(
+        requirements,
+        listDeckFetchSources(state, timing, fromHand.counts),
+        listRelaysOnce(view, timing),
+        view.unseen,
+        timing
+      );
+      total += routes.reduce(
+        (sum, route) => sum + FETCH_ROUTE_WEIGHTS[route],
+        0
+      );
+    }
+    return total / cost.length;
+  }
+
+  private placeDetachedMainOnce(main: MainAttack): PokemonInPlay {
+    let holder = this.detachedMains.get(main.record);
+    if (holder === undefined) {
+      holder = buildDetachedMain(this.input.state, main);
+      this.detachedMains.set(main.record, holder);
+    }
+    return holder;
+  }
+
+  /** energy を holder につけたとしたら供給する 1 個ずつのタイプ(記録ごとに覚える)。 */
+  private resolveUnitsWhenAttached(
+    holder: PokemonInPlay,
+    energy: Card
+  ): EnergyUnit[] {
+    let byRecord = this.provisions.get(holder);
+    if (byRecord === undefined) {
+      byRecord = new Map();
+      this.provisions.set(holder, byRecord);
+    }
+    let units = byRecord.get(energy.record);
+    if (units === undefined) {
+      units = toEnergyUnits(
+        resolveEnergyProvisionWhenAttached(this.input.state, holder, energy)
+      );
+      byRecord.set(energy.record, units);
+    }
+    return units;
+  }
+
+  /** 手札のエネルギーの、記録ごとの枚数と holder につけたとしたら供給するもの。 */
+  private listHandEnergies(holder: PokemonInPlay) {
+    const counts = countByRecord(this.input.state.hand.filter(isEnergy));
+    const representatives = new Map(
+      this.input.state.hand.map((card) => [card.record, card])
+    );
+    return [...counts].flatMap(([record, count]) => {
+      const card = representatives.get(record);
+      return card === undefined
+        ? []
+        : [
+            {
+              count,
+              record,
+              units: this.resolveUnitsWhenAttached(holder, card),
+            },
+          ];
+    });
+  }
+
+  /** 見えていないエネルギーのうち、holder につけたとしたら要求 required を 1 つ埋められるものの記録。 */
+  private listUnseenEnergiesProviding(
+    view: PathView,
+    holder: PokemonInPlay,
+    required: PokemonType
+  ): CardRecord[] {
+    const records: CardRecord[] = [];
+    for (const [record, { card }] of view.unseen) {
+      if (
+        isEnergy(card) &&
+        listUnpaidCost([required], this.resolveUnitsWhenAttached(holder, card))
+          .length === 0
+      ) {
+        records.push(record);
+      }
+    }
+    return records;
   }
 
   /** 主軸のワザのダメージの見込みが、ダメージの下限に対してどれだけ届いているか(0 以上 1 以下)。 */
@@ -391,7 +624,8 @@ export class GoalProspects {
  * 締め切り deadline についての、狙いの段ごとの点。成り立っていれば 1、成り立っていなければ見込みに unachievedGoal の
  * 重みをかけたもの。
  * 1 段目(立つ): 主軸への道ごとの見込み(必要なカードの揃い具合の積)から、少なくとも 1 本揃う見込み。
- * 2 段目(打てる): 1 段目の見込み(成り立っていれば 1)とワザのエネルギーの揃い具合の平均。
+ * 2 段目(打てる): 1 段目の見込み(成り立っていれば 1)とワザのエネルギーの見込みの平均(GoalProspects の
+ * calculateAttackProspect)。
  * 3 段目(N 以上): 2 段目の見込みと、ダメージの見込みの下限に対する割合の平均。
  */
 export function scoreGoalsByPathProgress(
@@ -420,8 +654,7 @@ export function scoreGoalsByPathProgress(
   const isStanding = prospects.isGoalAchieved(0);
   const standScore = isStanding ? 1 : prospects.calculateStandProspect(timing);
   const isAttacking = prospects.isGoalAchieved(1);
-  const attackProgress = () =>
-    (standScore + prospects.calculateAttachedEnergyRatio()) / 2;
+  const attackProgress = () => prospects.calculateAttackProspect(deadline);
   const scores = [
     weigh(isStanding, () => standScore),
     weigh(isAttacking, attackProgress),

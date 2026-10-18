@@ -243,6 +243,35 @@ export function resolveEnergyProvision(
 }
 
 /**
+ * 手札か山札のエネルギー 1 枚を holder につけたとしたら供給するもの。energy 自身の場にある間ずっと働く効果
+ * (プリズムエネルギー 049455、イグニッションエネルギー 049452)と、holder に働く場の効果を当てる。場にある効果を
+ * 集める collectContinuousEffects は場のカードしか見ないため、つける前のエネルギー自身の効果をここで足す。
+ * holder は場にいなくてよい(場の評価が、場に出たとみなした主軸で数えるため)。つけたことで場のほかの効果が
+ * 変わることは見ない。
+ */
+export function resolveEnergyProvisionWhenAttached(
+  state: GameState,
+  holder: PokemonInPlay,
+  energy: Card
+): EnergyProvision {
+  const collected = collectContinuousEffects(state);
+  const energyEffects: CollectedContinuousEffect[] = [];
+  collectMet(
+    state,
+    energyEffects,
+    energy,
+    holder,
+    listCardContinuousEffects(energy)
+  );
+  return resolveEnergyProvisionFrom(
+    [...energyEffects, ...collected],
+    listCollectedApplyingTo(state, collected, holder),
+    holder,
+    energy
+  );
+}
+
+/**
  * 集めた効果(all)と、そのうち pokemon に働く効果(applying)から、ついているエネルギー 1 枚が供給するものを求める。
  * 同じポケモンのエネルギーをまとめて求めるとき、効果を 1 回だけ集めるために分けてある。
  */

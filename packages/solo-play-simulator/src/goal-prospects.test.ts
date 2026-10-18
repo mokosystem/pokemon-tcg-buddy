@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { cardRecordTable } from "./card-record-table.ts";
 import { buildRecordedCard, buildState } from "./card-test-support.ts";
+import type { Card } from "./cards.ts";
 import {
   type Declaration,
+  type MainAttack,
   type ResolvedDeclaration,
   resolveDeclaration,
 } from "./declaration.ts";
@@ -11,6 +13,10 @@ import {
   PROGRESS_WEIGHTS,
   scoreGoalsByPathProgress,
 } from "./goal-prospects.ts";
+import {
+  DRAGAPULT_DECLARATION,
+  MEGA_CHARIZARD_DECLARATION,
+} from "./issue22-decks.ts";
 import type { TurnStage } from "./search-policy.ts";
 import type { GameState } from "./state.ts";
 
@@ -184,5 +190,136 @@ describe("探す手段 1 枚は 1 枚分", () => {
     );
     expect(afterProspect).toBeCloseTo(PROGRESS_WEIGHTS.drawOnly, 9);
     expect(afterProspect).toBeGreaterThanOrEqual(beforeProspect);
+  });
+});
+
+describe("ワザのエネルギーの見込み(置き場所とタイプ)", () => {
+  // ドラパルトex(2進化、ワザ「ファントムダイブ」は炎 1 個と超 1 個)、基本炎エネルギー、基本超エネルギー、ボスの指令(効果の
+  // 翻訳が無い)。記録 049264、050746、049463、050467
+  const DRAGAPULT_EX = buildRecordedCard("049264");
+  const FIRE_ENERGY = buildRecordedCard("050746");
+  const PSYCHIC_ENERGY = buildRecordedCard("049463");
+  const BOSS_ORDERS = buildRecordedCard("050467");
+  // メガリザードンYex(2進化、ワザ「プロージョンY」は炎 2 個と無色 1 個)、ひふきやろう(サポート。山札の基本炎エネルギーを
+  // 手札に加える)、イグニッションエネルギー(進化ポケモンについている間、無色 3 個)。記録 049482、048418、049452
+  const MEGA_CHARIZARD_Y = buildRecordedCard("049482");
+  const FIRE_SPITTER = buildRecordedCard("048418");
+  const IGNITION_ENERGY = buildRecordedCard("049452");
+  const DRAGAPULT = resolveDeclaration(DRAGAPULT_DECLARATION, cardRecordTable);
+  const MEGA_CHARIZARD = resolveDeclaration(
+    MEGA_CHARIZARD_DECLARATION,
+    cardRecordTable
+  );
+
+  function findMainAttack(
+    declaration: ResolvedDeclaration,
+    attackName: string
+  ): MainAttack {
+    const main = declaration.mainAttacks.find(
+      ({ attack }) => attack.name === attackName
+    );
+    if (main === undefined) {
+      throw new Error(`宣言に主軸のワザ ${attackName} が無い`);
+    }
+    return main;
+  }
+
+  /** バトルポケモンが main を使うためのエネルギーの見込み。 */
+  function calculateActiveEnergyProspect(
+    declaration: ResolvedDeclaration,
+    attackName: string,
+    state: GameState,
+    deadline: number
+  ): number {
+    const { active } = state;
+    if (active === undefined) {
+      throw new Error("バトル場にポケモンがいない");
+    }
+    return createProspects(declaration, state).calculateAttackEnergyProspect(
+      findMainAttack(declaration, attackName),
+      active,
+      deadline
+    );
+  }
+
+  /** ドラパルトex がバトル場にいて、基本超エネルギー 1 個がついている場。 */
+  function buildDragapultWithPsychic(
+    hand: readonly Card[],
+    deck: readonly Card[]
+  ): GameState {
+    const state = buildState({ active: DRAGAPULT_EX, deck, hand });
+    state.active?.energies.push(PSYCHIC_ENERGY);
+    return state;
+  }
+
+  test("炎と超が要るワザで超 1 個がついているとき、手札の基本炎エネルギーで炎を埋め、手札の基本超エネルギーでは埋めない", () => {
+    const withFire = buildDragapultWithPsychic(
+      [PSYCHIC_ENERGY, FIRE_ENERGY],
+      [BOSS_ORDERS]
+    );
+    expect(
+      calculateActiveEnergyProspect(DRAGAPULT, "ファントムダイブ", withFire, 2)
+    ).toBeCloseTo((1 + PROGRESS_WEIGHTS.energyInHand) / 2, 9);
+    // 手札は基本超エネルギーだけで、基本炎エネルギーは山札にあり、探す手段が無い
+    const withoutFire = buildDragapultWithPsychic(
+      [PSYCHIC_ENERGY],
+      [FIRE_ENERGY, BOSS_ORDERS]
+    );
+    expect(
+      calculateActiveEnergyProspect(
+        DRAGAPULT,
+        "ファントムダイブ",
+        withoutFire,
+        2
+      )
+    ).toBeCloseTo((1 + PROGRESS_WEIGHTS.drawOnly) / 2, 9);
+  });
+
+  // 手札からエネルギーをつけるのは 1 回の番に 1 枚だけ(docs/pokemon-tcg/basic-rules.md 72 行)
+  test("この番に手札からつけた後は、この番の締め切りでは手札のエネルギーを数えず、次の番の締め切りでは数える", () => {
+    // 山札にもサイドにも基本炎エネルギーが無いので、手札の基本炎エネルギーを数えなければ炎の要求は 0
+    const state = buildDragapultWithPsychic([FIRE_ENERGY], [BOSS_ORDERS]);
+    state.hasAttachedEnergy = true;
+    expect(
+      calculateActiveEnergyProspect(DRAGAPULT, "ファントムダイブ", state, 2)
+    ).toBeCloseTo(1 / 2, 9);
+    expect(
+      calculateActiveEnergyProspect(DRAGAPULT, "ファントムダイブ", state, 3)
+    ).toBeCloseTo((1 + PROGRESS_WEIGHTS.energyInHand) / 2, 9);
+  });
+
+  test("次の番の締め切りでは手札のエネルギーを 2 枚まで数え、この番の締め切りでは 1 枚まで数える", () => {
+    const state = buildState({
+      active: MEGA_CHARIZARD_Y,
+      deck: [BOSS_ORDERS],
+      hand: [FIRE_ENERGY, FIRE_ENERGY, FIRE_ENERGY],
+    });
+    // サイドの基本超エネルギー 6 枚(buildState が置く)を除き、無色の要求を引くしかないで埋めないようにする
+    state.prizes.length = 0;
+    expect(
+      calculateActiveEnergyProspect(MEGA_CHARIZARD, "プロージョンY", state, 3)
+    ).toBeCloseTo((2 * PROGRESS_WEIGHTS.energyInHand) / 3, 9);
+    expect(
+      calculateActiveEnergyProspect(MEGA_CHARIZARD, "プロージョンY", state, 2)
+    ).toBeCloseTo(PROGRESS_WEIGHTS.energyInHand / 3, 9);
+  });
+
+  test("見えていない基本炎エネルギーが 1 枚なら、ひふきやろうが 2 枚あっても、山札から持ってこられる要求は 1 つ", () => {
+    const state = buildState({
+      active: MEGA_CHARIZARD_Y,
+      deck: [FIRE_ENERGY, IGNITION_ENERGY, BOSS_ORDERS, BOSS_ORDERS],
+      hand: [FIRE_SPITTER, FIRE_SPITTER, BOSS_ORDERS],
+    });
+    // サイドの基本超エネルギー 6 枚を除く。無色の要求に合うエネルギーが増え、確かめたい形にならないため
+    state.prizes.length = 0;
+    state.active?.energies.push(FIRE_ENERGY);
+    // 残りの要求は炎と無色。炎は基本炎エネルギーを 1 段、無色はイグニッションエネルギーを引くしかない(ひふきやろうは
+    // 基本エネルギーだけを持ってくる)。2 つとも同じ基本炎エネルギーを 1 段に数えると、1 段の重みを 2 回足すことになる
+    expect(
+      calculateActiveEnergyProspect(MEGA_CHARIZARD, "プロージョンY", state, 3)
+    ).toBeCloseTo(
+      (1 + PROGRESS_WEIGHTS.searchableFromDeck + PROGRESS_WEIGHTS.drawOnly) / 3,
+      9
+    );
   });
 });

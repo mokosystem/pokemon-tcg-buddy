@@ -17,6 +17,7 @@ import {
   canPayCost,
   GameState,
   IllegalMove,
+  listUnpaidCost,
   PokemonInPlay,
 } from "./state.ts";
 
@@ -362,6 +363,22 @@ describe("ワザのエネルギー", () => {
     expect(canPayCost(["fire", "psychic"], ["any", "fire"])).toBe(true);
     expect(canPayCost(["fire", "psychic"], ["any", "grass"])).toBe(false);
     expect(canPayCost(["fire", COLORLESS], ["any", "grass"])).toBe(true);
+  });
+
+  test("払えない分は、タイプ指定を同じタイプで埋め、すべてのタイプとして働く 1 個を後に回した残り", () => {
+    expect(listUnpaidCost(["fire", "psychic"], ["any", "fire"])).toEqual([]);
+    expect(
+      listUnpaidCost(["fire", "psychic", COLORLESS], ["any", "grass"])
+    ).toEqual(["psychic"]);
+    expect(listUnpaidCost(["fire", COLORLESS, COLORLESS], [])).toEqual([
+      "fire",
+      COLORLESS,
+      COLORLESS,
+    ]);
+  });
+
+  test("炎と超の要求に超 1 個がついていれば、炎 1 個が払えない", () => {
+    expect(listUnpaidCost(["fire", "psychic"], ["psychic"])).toEqual(["fire"]);
   });
 });
 

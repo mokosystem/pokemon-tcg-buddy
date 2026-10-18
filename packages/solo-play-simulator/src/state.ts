@@ -22,6 +22,12 @@ import {
 } from "./cards.ts";
 
 export const BENCH_LIMIT = 5;
+/**
+ * 手札からエネルギーをつけられる回数(1 回の番あたり。docs/pokemon-tcg/basic-rules.md 72 行)。骨組みの番ごとの制限は
+ * hasAttachedEnergy の真偽値で持ち、数を書いた所が無いため、締め切りまでにつけられる枚数を数える場の評価
+ * (goal-prospects.ts)が借りる数としてここに置く。
+ */
+export const ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN = 1;
 export const HAND_SIZE_AT_SETUP = 7;
 export const PRIZE_COUNT = 6;
 export const COLORLESS: PokemonType = "colorless";
@@ -74,15 +80,16 @@ export interface AttackDamageIncrease {
 }
 
 /**
- * ワザに必要なエネルギー(タイプの並び。無色は colorless)を、ついているエネルギーの
- * 個数分(units)で払えるか。タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして
- * 働く 1 個を充て、残りを無色に充てる。すべてのタイプとして働く 1 個を後に回すのは、同じタイプの
- * 1 個で埋められる指定にそれを使うと、別のタイプの指定を埋められなくなるため。
+ * ワザに必要なエネルギー(タイプの並び。無色は colorless)のうち、ついているエネルギーの個数分(units)で払えない分。
+ * タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして働く 1 個を充て、残りを無色に充てる。
+ * すべてのタイプとして働く 1 個を後に回すのは、同じタイプの 1 個で埋められる指定にそれを使うと、別のタイプの指定を
+ * 埋められなくなるため。払えるかの判定(canPayCost)と、払えない分を数える場の評価(goal-prospects.ts)が同じ埋め方を
+ * 使うよう、埋め方をここ 1 か所に置く。
  */
-export function canPayCost(
+export function listUnpaidCost(
   cost: readonly PokemonType[],
   units: readonly EnergyUnit[]
-): boolean {
+): PokemonType[] {
   const remaining = [...units];
   const typedCost = cost.filter((required) => required !== COLORLESS);
   const unmatched: PokemonType[] = [];
@@ -94,15 +101,31 @@ export function canPayCost(
       remaining.splice(index, 1);
     }
   }
-  for (const _ of unmatched) {
+  const unpaidTyped: PokemonType[] = [];
+  for (const required of unmatched) {
     const index = remaining.indexOf("any");
     if (index < 0) {
-      return false;
+      unpaidTyped.push(required);
+    } else {
+      remaining.splice(index, 1);
     }
-    remaining.splice(index, 1);
   }
-  const colorlessNeeded = cost.length - typedCost.length;
-  return remaining.length >= colorlessNeeded;
+  const unpaidColorlessCount = Math.max(
+    0,
+    cost.length - typedCost.length - remaining.length
+  );
+  return [
+    ...unpaidTyped,
+    ...Array.from({ length: unpaidColorlessCount }, () => COLORLESS),
+  ];
+}
+
+/** ワザに必要なエネルギーを、ついているエネルギーの個数分(units)で払えるか。埋め方は listUnpaidCost。 */
+export function canPayCost(
+  cost: readonly PokemonType[],
+  units: readonly EnergyUnit[]
+): boolean {
+  return listUnpaidCost(cost, units).length === 0;
 }
 
 /** 基本ルールに反する操作が要求されたときに投げる。呼び出し側の書き誤りを示す。 */
