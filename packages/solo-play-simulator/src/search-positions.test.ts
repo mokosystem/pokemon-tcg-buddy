@@ -76,27 +76,10 @@ describe("道の揃い具合を見る評価で、Issue 51 の局面 1〜10 の�
   // 山札から探して持ってこられる重みを 0.5 から 0.4 に下げるまで、並べ方によってリーリエの決心を選んだ。局面 1 は順 3
   // (探す手段 1 枚を道の必要なカード 1 つにだけ割り当てる)の後も選ぶ。局面 4・5 は順 4(ワザのエネルギーの見込みを置き場所と
   // タイプで数える)の後も選ぶ。局面 6 は順 5(打てる見込みに、主軸の系統をバトル場に出せる見込みを足す)から選ぶ。局面 8 は
-  // 順 5 の後も選ぶ
-  for (const id of ["1", "2", "3", "4", "5", "6", "8", "10"]) {
+  // 順 5 の後も選ぶ。局面 9 は順 6(ダメージの見込みで「N 以上なら加算」の途中経過を数える)から選ぶ
+  for (const id of ["1", "2", "3", "4", "5", "6", "8", "9", "10"]) {
     const position = findPosition(id);
     test(`局面 ${id}: ${position.correctPlay}`, () => {
-      expect(playArrangements(id, pathProgress, ARRANGEMENTS)).toEqual(
-        ARRANGEMENTS.map(() => true)
-      );
-    });
-  }
-
-  // 今は選べない局面と、Issue 51 の表がその局面に当てた数え漏れ。数え漏れを直して選べるようになったら test に直す
-  const failingPositions: readonly { id: string; omission: string }[] = [
-    {
-      // 数え漏れ 5: 「N 以上なら加算」の途中経過を見ないため、トラッシュに「ばけがくれ」を送っても見込みが上がらない
-      id: "9",
-      omission: "数え漏れ 5",
-    },
-  ];
-  for (const { id, omission } of failingPositions) {
-    const position = findPosition(id);
-    test.failing(`局面 ${id}(${omission}): ${position.correctPlay}`, () => {
       expect(playArrangements(id, pathProgress, ARRANGEMENTS)).toEqual(
         ARRANGEMENTS.map(() => true)
       );

@@ -4,7 +4,7 @@
  * ダメージの下限までの距離から出した見込みに重みをかける。見込みは締め切りがこの番か後の番かで数え方が変わる。
  */
 
-import { calculateAttackDamage } from "./attack-damage.ts";
+import { estimateAttackDamageWithPartialThresholds } from "./attack-damage.ts";
 import { canPlayTrainerFromHand } from "./card-effects.ts";
 import {
   CardCategory,
@@ -346,15 +346,22 @@ function buildDetachedMain(state: GameState, main: MainAttack): PokemonInPlay {
 
 /**
  * 主軸がワザを使ったときのダメージの見込み。主軸が場にいればそのポケモン(バトル場を先に)で、いなければ場に出たと
- * みなした主軸で、記録の規則から求める(ダメージの上乗せが場のエネルギーの数などで決まるため)。
+ * みなした主軸で、記録の規則から求める(ダメージの上乗せが場のエネルギーの数などで決まるため)。上乗せ「N 以上なら
+ * M を足す」は数が N に届く前から途中経過に比例して数える(estimateAttackDamageWithPartialThresholds)ので、狙いの
+ * 判定のダメージとは違う。
  */
-function estimateMainAttackDamage(state: GameState, main: MainAttack): number {
+function estimateMainAttackDamageProspect(
+  state: GameState,
+  main: MainAttack
+): number {
   const attacker =
     state
       .listPokemonInPlay()
       .find((pokemon) => pokemon.card.record === main.record) ??
     buildDetachedMain(state, main);
-  return calculateAttackDamage(state, attacker, main.attack) ?? 0;
+  return (
+    estimateAttackDamageWithPartialThresholds(state, attacker, main.attack) ?? 0
+  );
 }
 
 /** 手札から主軸につけるエネルギーの組。filled は払えない分のうち埋めた数。 */
@@ -759,7 +766,8 @@ export class GoalProspects {
       ...this.declaration.mainAttacks.map((main) =>
         Math.min(
           1,
-          estimateMainAttackDamage(this.input.state, main) / minimumDamage
+          estimateMainAttackDamageProspect(this.input.state, main) /
+            minimumDamage
         )
       )
     );
