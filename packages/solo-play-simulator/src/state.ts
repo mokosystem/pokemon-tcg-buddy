@@ -28,6 +28,25 @@ export const BENCH_LIMIT = 5;
  * (goal-prospects.ts)が借りる数としてここに置く。
  */
 export const ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN = 1;
+
+/**
+ * 1 回の番に 1 枚しか使えないトレーナーズの種類。サポートは 1 回の番に 1 枚、スタジアムを出すのは 1 回の番に 1 枚
+ * (docs/pokemon-tcg/basic-rules.md 75・76 行)。骨組みはこの制限を canUseSupporter と hasPlayedStadium で持つ。締め切り
+ * までに使える探す手段を数える場の評価(deck-fetch-sources.ts)が、制限の種類を評価の側に書き直さずに借りるため、ここに置く。
+ */
+export type OnceInTurnKind = "supporter" | "stadium";
+
+/** card が 1 回の番に 1 枚しか使えない種類のトレーナーズなら、その種類。制限の無いカードは undefined。 */
+export function classifyOnceInTurnKind(card: Card): OnceInTurnKind | undefined {
+  switch (card.category) {
+    case CardCategory.Supporter:
+      return "supporter";
+    case CardCategory.Stadium:
+      return "stadium";
+    default:
+      return undefined;
+  }
+}
 export const HAND_SIZE_AT_SETUP = 7;
 export const PRIZE_COUNT = 6;
 export const COLORLESS: PokemonType = "colorless";

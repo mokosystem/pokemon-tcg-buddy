@@ -19,7 +19,11 @@ import {
 import { type Card, matchesCardFilter } from "./cards.ts";
 import type { DeadlineTiming } from "./deadline-timing.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
-import type { GameState } from "./state.ts";
+import {
+  classifyOnceInTurnKind,
+  type GameState,
+  type OnceInTurnKind,
+} from "./state.ts";
 
 /** 見えていないカード(山札とサイド)の、記録ごとの枚数と代表の 1 枚。 */
 export type UnseenCards = ReadonlyMap<
@@ -170,20 +174,6 @@ export function countUnseenByRecord(
   return counts;
 }
 
-/** 番に 1 枚しか使えないカードの種類(docs/pokemon-tcg/basic-rules.md 75・76 行)。この番の締め切りの割り当てで、種類ごとに 1 枚までにする。 */
-export type OnceInTurnKind = "supporter" | "stadium";
-
-function onceInTurnKindOf(card: Card): OnceInTurnKind | undefined {
-  switch (card.category) {
-    case CardCategory.Supporter:
-      return "supporter";
-    case CardCategory.Stadium:
-      return "stadium";
-    default:
-      return undefined;
-  }
-}
-
 /** 手札から使うトレーナーズ(グッズ・サポート・スタジアム)か。使えるかを骨組みの canPlayTrainerFromHand で判定できる。 */
 function isTrainerPlayedFromHand(card: Card): boolean {
   return (
@@ -224,7 +214,7 @@ export interface FetchRequirement {
 export type FetchRoute = "oneStep" | "twoSteps" | "drawOnly" | "noCopyLeft";
 
 function withOnceInTurnKind(card: Card): { onceInTurnKind?: OnceInTurnKind } {
-  const onceInTurnKind = onceInTurnKindOf(card);
+  const onceInTurnKind = classifyOnceInTurnKind(card);
   return onceInTurnKind === undefined ? {} : { onceInTurnKind };
 }
 

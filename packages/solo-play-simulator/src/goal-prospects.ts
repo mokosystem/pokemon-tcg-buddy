@@ -5,11 +5,7 @@
  */
 
 import { estimateAttackDamageWithPartialThresholds } from "./attack-damage.ts";
-import {
-  canPlayTrainerFromHand,
-  listUsableAttacksOfActive,
-  useAttack,
-} from "./card-effects.ts";
+import { listUsableAttacksOfActive, useAttack } from "./card-effects.ts";
 import {
   CardCategory,
   type CardFilter,
@@ -68,7 +64,7 @@ import {
  * 「場の評価の数え漏れの修正(Issue 51)」)に記録している。
  */
 export const PROGRESS_WEIGHTS = {
-  /** 主軸の系統のポケモンがベンチにいて、この番にバトル場に出す手段(今使える手札の入れ替えるカード、にげる)がある。 */
+  /** 主軸の系統のポケモンがベンチにいて、この番にバトル場に出す手段(手札の入れ替えるカード、にげる)がある。 */
   benchedWithWayToActiveThisTurn: 0.8,
   /** 必要なカードが山札かサイドにあるが、引くしかない(探す手段を割り当てられなかった)。 */
   drawOnly: 0.1,
@@ -683,7 +679,7 @@ export class GoalProspects {
 
   /**
    * 場のポケモン pokemon(主軸の進化の系統)を、ワザを使うバトル場に出せる見込み(0 以上 1 以下。締め切りによらない)。
-   * バトル場にいれば 1(対戦の準備でバトル場に置いたたねポケモンも)。ベンチにいて、今使える手札の入れ替えるカードがあるか、
+   * バトル場にいれば 1(対戦の準備でバトル場に置いたたねポケモンも)。ベンチにいて、手札に入れ替えるカードがあるか、
    * 今のバトルポケモンがにげられれば benchedWithWayToActiveThisTurn。入れ替えるカードが見えていないカードにあり、手札か
    * 場の探す手段で 1 段で持ってこられれば switchCardSearchable。どれでもなければ noWayToActive。にげるエネルギーを
    * 0 にするカード(ラティアスex 046248 の「スカイライン」)は、ベンチに出す手を試した後の場で canRetreatActive が
@@ -703,14 +699,15 @@ export class GoalProspects {
     if (state.active === pokemon) {
       return 1;
     }
-    const context: EffectContext = { choices: firstCandidateChoices, state };
-    const hasUsableSwitchCard = state.hand.some(
-      (card) =>
-        canSwitchIntoActive(card, pokemon) &&
-        canPlayTrainerFromHand(context, card)
+    // 手札の入れ替えるカードを、今使えるか(canPlayTrainerFromHand)で絞らない。Issue 51 の数え漏れ 4 は「手札に
+    // 入れ替えるカードがある」で数えると決めており、絞ると、この番にサポートを使った後の手札のスグリが山札の段
+    // (switchCardSearchable)にも当たらず noWayToActive に落ち、山札にあるときより低くなる(置き場所に近いほど高く
+    // する重みの尺度が逆になる。Issue 51「重みの扱い」)
+    const hasSwitchCard = state.hand.some((card) =>
+      canSwitchIntoActive(card, pokemon)
     );
     this.canRetreat ??= canRetreatActive(state);
-    if (hasUsableSwitchCard || this.canRetreat) {
+    if (hasSwitchCard || this.canRetreat) {
       return PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn;
     }
     return this.canFetchSwitchCardFor(pokemon)
@@ -751,14 +748,15 @@ export class GoalProspects {
    * ワザの要求 1 つごとの揃い具合(ついている 1、手札にある energyInHand、山札から 1 段・2 段で持ってこられる、引くしか
    * ない、見えていないカードにも供給の合うエネルギーが無ければ 0)の合計を要求の数で割る。要求を埋める順は
    * listUnpaidCost(ついているエネルギーの判定 canPayCost と同じ)。手札と見えていないカードのエネルギーは、主軸に
-   * つけたとしたら供給するもので数える(プリズムエネルギー 049455 は 2進化の主軸には無色 1 個)。
+   * つけたとしたら供給するもので数える(プリズムエネルギー 049455 は 2進化の主軸には無色 1 個)。手札のエネルギーと
+   * 山札から持ってくるエネルギーは、合わせて締め切りまでに手札からつけられる回数まで数え、超えた要求は 0 にする。
    */
   calculateAttackEnergyProspect(
     main: MainAttack,
     attacker: PokemonInPlay,
     deadline: number
   ): number {
-    const { fromTurn, state } = this.input;
+    const { fromTurn, stage, state } = this.input;
     const { cost, unpaid } = this.listUnpaidCostOnce(main, attacker);
     if (cost.length === 0 || unpaid.length === 0) {
       return 1;
@@ -768,9 +766,12 @@ export class GoalProspects {
         ? attacker
         : this.placeDetachedMainOnce(main);
     // 手札からつけられるのは 1 回の番に 1 枚(docs/pokemon-tcg/basic-rules.md 72 行)。この番に既につけていれば、
-    // この番の分を数えない
+    // この番の分を数えない。「番を終える」を試すとき(stage が actionsDone)も、番を終えた後はこの番にもう何も
+    // つけられないので数えない(Issue 51 の決定事項 2026-10-18 と同じ理由)
+    const canAttachThisTurn =
+      stage !== "actionsDone" && !state.hasAttachedEnergy;
     const attachable =
-      (deadline - fromTurn + (state.hasAttachedEnergy ? 0 : 1)) *
+      (deadline - fromTurn + (canAttachThisTurn ? 1 : 0)) *
       ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN;
     const fromHand = selectHandEnergies(
       this.listHandEnergies(holder),
@@ -781,7 +782,12 @@ export class GoalProspects {
       cost.length -
       unpaid.length +
       fromHand.filled * PROGRESS_WEIGHTS.energyInHand;
-    if (fromHand.rest.length === 0) {
+    // 山札から手札に持ってきたエネルギーも、つけるには手札からつける同じ 1 回を使う(basic-rules.md 72 行)ので、
+    // 手札で組に選んだ枚数を引いた残りの回数までしか山札の分を数えない
+    const attachableFromDeck =
+      attachable -
+      [...fromHand.counts.values()].reduce((sum, count) => sum + count, 0);
+    if (fromHand.rest.length === 0 || attachableFromDeck <= 0) {
       return total / cost.length;
     }
     const view = this.countPathViewOnce();
@@ -805,10 +811,13 @@ export class GoalProspects {
         view.unseen,
         timing
       );
-      total += routes.reduce(
-        (sum, route) => sum + FETCH_ROUTE_WEIGHTS[route],
-        0
-      );
+      // 回数の上限を割り当てに渡してやり直さないのは、割り当てが (持ってこられた数, 割り当てた数, 1 段の数) を辞書式に
+      // 最大にしており、その結果を重みの大きい順に残りの回数分だけ採れば、1 段・2 段で持ってこられる要求から先に数えるため
+      total += routes
+        .map((route) => FETCH_ROUTE_WEIGHTS[route])
+        .sort((left, right) => right - left)
+        .slice(0, attachableFromDeck)
+        .reduce((sum, weight) => sum + weight, 0);
     }
     return total / cost.length;
   }

@@ -15,6 +15,7 @@ import {
   BENCH_LIMIT,
   COLORLESS,
   canPayCost,
+  classifyOnceInTurnKind,
   GameState,
   IllegalMove,
   listUnpaidCost,
@@ -87,6 +88,15 @@ describe("番のルール", () => {
     expect(state.hand).toHaveLength(1);
     expect(state.hasUsedSupporter).toBe(false);
     expect(state.hasAttachedEnergy).toBe(false);
+  });
+
+  // サポートは 1 回の番に 1 枚、スタジアムを出すのは 1 回の番に 1 枚(docs/pokemon-tcg/basic-rules.md 75・76 行)
+  test("1 回の番に 1 枚の制限の種類は、サポートとスタジアムだけにあり、グッズとエネルギーとポケモンには無い", () => {
+    expect(classifyOnceInTurnKind(SUPPORTER)).toBe("supporter");
+    expect(classifyOnceInTurnKind(STADIUM)).toBe("stadium");
+    for (const card of [GOODS, ENERGY, BASIC]) {
+      expect(classifyOnceInTurnKind(card)).toBeUndefined();
+    }
   });
 
   test("同じ名前のスタジアムは出せない", () => {

@@ -231,13 +231,18 @@ describe("ワザのエネルギーの見込み(置き場所とタイプ)", () =>
     declaration: ResolvedDeclaration,
     attackName: string,
     state: GameState,
-    deadline: number
+    deadline: number,
+    stage: TurnStage = "actionsRemain"
   ): number {
     const { active } = state;
     if (active === undefined) {
       throw new Error("バトル場にポケモンがいない");
     }
-    return createProspects(declaration, state).calculateAttackEnergyProspect(
+    return createProspects(
+      declaration,
+      state,
+      stage
+    ).calculateAttackEnergyProspect(
       findMainAttack(declaration, attackName),
       active,
       deadline
@@ -306,6 +311,75 @@ describe("ワザのエネルギーの見込み(置き場所とタイプ)", () =>
     ).toBeCloseTo(PROGRESS_WEIGHTS.energyInHand / 3, 9);
   });
 
+  test("番を終えるときは、この番に手札からつける 1 回を数えず、次の番の締め切りで手札のエネルギーを 1 枚まで数える", () => {
+    const state = buildState({
+      active: MEGA_CHARIZARD_Y,
+      deck: [BOSS_ORDERS],
+      hand: [FIRE_ENERGY, FIRE_ENERGY, FIRE_ENERGY],
+    });
+    // サイドの基本超エネルギー 6 枚を除く。無色の要求を引くしかないで埋めないようにするため
+    state.prizes.length = 0;
+    expect(
+      calculateActiveEnergyProspect(
+        MEGA_CHARIZARD,
+        "プロージョンY",
+        state,
+        3,
+        "actionsDone"
+      )
+    ).toBeCloseTo(PROGRESS_WEIGHTS.energyInHand / 3, 9);
+    expect(
+      calculateActiveEnergyProspect(
+        MEGA_CHARIZARD,
+        "プロージョンY",
+        state,
+        3,
+        "actionsRemain"
+      )
+    ).toBeCloseTo((2 * PROGRESS_WEIGHTS.energyInHand) / 3, 9);
+  });
+
+  test("この番に手札からつけた後は、この番の締め切りで、ひふきやろうで山札の基本炎エネルギーを持ってこられる見込みを数えず、手札に加えた後と同じ見込みになる", () => {
+    const beforeFetching = buildState({
+      active: MEGA_CHARIZARD_Y,
+      deck: [FIRE_ENERGY, BOSS_ORDERS],
+      hand: [FIRE_SPITTER],
+    });
+    const afterFetching = buildState({
+      active: MEGA_CHARIZARD_Y,
+      deck: [BOSS_ORDERS],
+      hand: [FIRE_ENERGY],
+    });
+    afterFetching.hasUsedSupporter = true;
+    for (const state of [beforeFetching, afterFetching]) {
+      // サイドの基本超エネルギー 6 枚を除く。無色の要求を引くしかないで埋めないようにするため
+      state.prizes.length = 0;
+      state.active?.energies.push(FIRE_ENERGY);
+      state.hasAttachedEnergy = true;
+      expect(
+        calculateActiveEnergyProspect(MEGA_CHARIZARD, "プロージョンY", state, 2)
+      ).toBeCloseTo(1 / 3, 9);
+    }
+  });
+
+  test("次の番の締め切りで手札からつけられる 2 回のうち 1 回を手札の基本炎エネルギーに使うと、山札から持ってこられる要求は残りの 1 回分だけ数える", () => {
+    const state = buildState({
+      active: MEGA_CHARIZARD_Y,
+      deck: [FIRE_ENERGY, FIRE_ENERGY, BOSS_ORDERS],
+      hand: [FIRE_ENERGY, FIRE_SPITTER],
+    });
+    // サイドの基本超エネルギー 6 枚を除く。無色の要求に合うエネルギーが増え、確かめたい形にならないため
+    state.prizes.length = 0;
+    // 要求は炎 2 個と無色 1 個。炎 1 個を手札の基本炎エネルギーで埋め、残りの炎と無色のうち、ひふきやろうで 1 段で
+    // 持ってこられる 1 つだけを数え、引くしかない 1 つは手札からつける回数が残らないので数えない
+    expect(
+      calculateActiveEnergyProspect(MEGA_CHARIZARD, "プロージョンY", state, 3)
+    ).toBeCloseTo(
+      (PROGRESS_WEIGHTS.energyInHand + PROGRESS_WEIGHTS.searchableFromDeck) / 3,
+      9
+    );
+  });
+
   test("見えていない基本炎エネルギーが 1 枚なら、ひふきやろうが 2 枚あっても、山札から持ってこられる要求は 1 つ", () => {
     const state = buildState({
       active: MEGA_CHARIZARD_Y,
@@ -372,14 +446,52 @@ describe("バトル場に出せる見込み", () => {
     );
   });
 
-  // サポートは 1 回の番に 1 枚だけ(docs/pokemon-tcg/basic-rules.md 75 行)
-  test("この番にサポートを使った後は、手札のスグリをこの番にバトル場に出す手段に数えない", () => {
+  // サポートは 1 回の番に 1 枚だけ(docs/pokemon-tcg/basic-rules.md 75 行)。Issue 51 の数え漏れ 4 は「手札に入れ替える
+  // カードがある」で数えると決めている
+  test("この番にサポートを使った後でも、手札にスグリがあれば、この番にバトル場に出す手段がある重みになる", () => {
     const state = buildBenchedMegaGardevoir([KIERAN], [BOSS_ORDERS]);
+    state.hasUsedSupporter = true;
     expect(calculateBenchProspect(state)).toBe(
       PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn
     );
-    state.hasUsedSupporter = true;
-    expect(calculateBenchProspect(state)).toBe(PROGRESS_WEIGHTS.noWayToActive);
+  });
+
+  test("この番にサポートを使った後の手札のスグリは、山札のスグリを手札のポケギア3.0で持ってこられるときより低い重みにならない", () => {
+    const bakegakure = resolveDeclaration(
+      BAKEGAKURE_DECLARATION,
+      cardRecordTable
+    );
+    // バトル場にエネルギー 0 個のニャースex(にげるエネルギーを払えない)、ベンチにダダリン(主軸。記録 050308)
+    const buildBenchedDhelmise = (
+      hand: readonly Card[],
+      deck: readonly Card[]
+    ) => {
+      const state = buildState({
+        active: MEOWTH_EX,
+        bench: [buildRecordedCard("050308")],
+        deck,
+        hand,
+      });
+      state.hasUsedSupporter = true;
+      return state;
+    };
+    const calculateDhelmiseProspect = (state: GameState) => {
+      const [benched] = state.bench;
+      if (benched === undefined) {
+        throw new Error("ベンチにポケモンがいない");
+      }
+      return createProspects(bakegakure, state).calculateActiveSpotProspect(
+        benched
+      );
+    };
+    const inHand = calculateDhelmiseProspect(
+      buildBenchedDhelmise([KIERAN], [BOSS_ORDERS])
+    );
+    const inDeck = calculateDhelmiseProspect(
+      buildBenchedDhelmise([POKEGEAR], [KIERAN, BOSS_ORDERS])
+    );
+    expect(inHand).toBe(PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn);
+    expect(inDeck).toBe(PROGRESS_WEIGHTS.switchCardSearchable);
   });
 
   // にげるエネルギーの分のエネルギーをトラッシュして、ベンチポケモンと交代する(docs/pokemon-tcg/basic-rules.md 79 行)
