@@ -5,7 +5,11 @@
  */
 
 import { estimateAttackDamageWithPartialThresholds } from "./attack-damage.ts";
-import { canPlayTrainerFromHand } from "./card-effects.ts";
+import {
+  canPlayTrainerFromHand,
+  listUsableAttacksOfActive,
+  useAttack,
+} from "./card-effects.ts";
 import {
   CardCategory,
   type CardFilter,
@@ -24,6 +28,7 @@ import {
   listEnergyUnits,
   resolveEnergyProvisionWhenAttached,
   toEnergyUnits,
+  type UsableAttack,
 } from "./continuous-effects.ts";
 import { type DeadlineTiming, toDeadlineTiming } from "./deadline-timing.ts";
 import {
@@ -38,15 +43,17 @@ import {
   listDeckFetchSources,
   type UnseenCards,
 } from "./deck-fetch-sources.ts";
-import type {
-  MainAttack,
-  RequiredCard,
-  ResolvedDeclaration,
+import {
+  isMainAttackCandidate,
+  type MainAttack,
+  type RequiredCard,
+  type ResolvedDeclaration,
 } from "./declaration.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
 import { findCardEffects } from "./effect-operations.ts";
 import { canRetreatActive } from "./player-actions.ts";
-import type { EvaluationInput } from "./search-policy.ts";
+import { SeededRandom } from "./random.ts";
+import { type EvaluationInput, endTurnForEvaluation } from "./search-policy.ts";
 import {
   ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN,
   type EnergyUnit,
@@ -430,6 +437,21 @@ function selectHandEnergies(
   return best;
 }
 
+/**
+ * バトルポケモンが今使えるワザのうち、主軸のワザでなく効果のあるもの。効果の無いワザは、使っても番の終わりの処理の
+ * ほかに場が変わらない(ダメージは相手がいないため与えない。card-effects.ts の useAttack)ので試さない。
+ */
+function listNonMainAttacksWithEffect(
+  declaration: ResolvedDeclaration,
+  context: EffectContext
+): UsableAttack[] {
+  return listUsableAttacksOfActive(context).filter(
+    (candidate) =>
+      candidate.attack.effect !== undefined &&
+      !isMainAttackCandidate(candidate, declaration.mainAttacks)
+  );
+}
+
 function buildPathView(state: GameState): PathView {
   const unseen = countUnseenByRecord(state);
   const unseenCounts = new Map<CardRecord, number>();
@@ -476,10 +498,91 @@ export class GoalProspects {
   private damageRatio: number | undefined;
   private canRetreat: boolean | undefined;
   private oneStepSources: readonly DeckFetchSource[] | undefined;
+  /** 主軸の系統のほかのワザを試すか。試した後の見込みでは偽にし、試した中でさらに試さない。 */
+  private readonly triesNonMainAttacks: boolean;
+  private prospectsAfterNonMainAttacks: readonly GoalProspects[] | undefined;
 
-  constructor(declaration: ResolvedDeclaration, input: EvaluationInput) {
+  constructor(
+    declaration: ResolvedDeclaration,
+    input: EvaluationInput,
+    options: { readonly triesNonMainAttacks?: boolean } = {}
+  ) {
     this.declaration = declaration;
     this.input = input;
+    this.triesNonMainAttacks = options.triesNonMainAttacks ?? true;
+  }
+
+  /**
+   * 主軸の進化の系統のバトルポケモンが今使えるワザのうち、主軸のワザ以外で効果のあるもの(メガサーナイトex 048464 の
+   * 「あふれるねがい」)を 1 つずつ複製の上で 1 回だけ使い、番の終わりの効果を起こして次の番に進めた後の見込み
+   * (Issue 51 の数え漏れ 6)。後の番の締め切りの 2 段目と 3 段目を、試す前の見込みと比べて高いほうにするために使う。
+   * 1 回だけ作って覚える。
+   *
+   * - 複製は見えていないカードを混ぜ直してから使う。見えていないカードを知って試さないため。混ぜ直しの種は評価の
+   *   seed で、同じ場面で比べる候補どうしで試しの引きがそろう
+   * - 試すのは状態の番が fromTurn のとき(番の中の行動を試した後と、ワザを試して次の番に進めた後)だけ。対戦の準備の
+   *   評価(番 0)では、canAttack が番 0 を最初の番と見なさずワザの一覧が出るため除く
+   * - バトルポケモンが系統でないときは試さない。系統でないポケモンが系統のポケモンのワザを使う候補(ミュウex 050669 の
+   *   「きおくのらせん」)は、Issue の「主軸の進化の系統の場のポケモンが今使えるワザ」に当たらないため
+   * - 試した後の見込みでは、さらに試さない。1 回の評価で何番もの先を進めないため(Issue の「1 回だけ」)
+   */
+  listProspectsAfterNonMainAttacks(): readonly GoalProspects[] {
+    this.prospectsAfterNonMainAttacks ??= this.tryNonMainAttacks();
+    return this.prospectsAfterNonMainAttacks;
+  }
+
+  private tryNonMainAttacks(): GoalProspects[] {
+    const { fromTurn, seed, state, statistics } = this.input;
+    const { active } = state;
+    if (
+      !this.triesNonMainAttacks ||
+      state.turn !== fromTurn ||
+      active === undefined ||
+      !this.declaration.mainAttacks.some((main) =>
+        listEvolutionLineNames(main).has(active.name)
+      )
+    ) {
+      return [];
+    }
+    const candidateCount = listNonMainAttacksWithEffect(this.declaration, {
+      choices: firstCandidateChoices,
+      state,
+    }).length;
+    const prospects: GoalProspects[] = [];
+    for (let index = 0; index < candidateCount; index += 1) {
+      const trial = state.clone(new SeededRandom(seed));
+      trial.remixUnseenCards();
+      statistics.clones += 1;
+      const context: EffectContext = {
+        choices: firstCandidateChoices,
+        state: trial,
+      };
+      // 複製ではワザの持ち主の参照が変わるため、候補は複製の上で出し直す(search-policy.ts の useAttackAt と同じ)。
+      // 山札の上のカードで決まる候補は混ぜ直しで変わりうるので、同じ何番目かが無ければ試さない
+      const candidate = listNonMainAttacksWithEffect(this.declaration, context)[
+        index
+      ];
+      if (candidate === undefined) {
+        continue;
+      }
+      useAttack(context, candidate);
+      // 使ったワザの記録が残ると次の番の使えるワザの一覧が空になるため、次の番に進めてから数える
+      endTurnForEvaluation(trial);
+      prospects.push(
+        new GoalProspects(
+          this.declaration,
+          {
+            fromTurn: fromTurn + 1,
+            seed,
+            stage: "beforeDraw",
+            state: trial,
+            statistics,
+          },
+          { triesNonMainAttacks: false }
+        )
+      );
+    }
+    return prospects;
   }
 
   /** 宣言から導いた狙いの index 段目(0 が立つ)が、今の場で成り立っているか。 */
@@ -782,6 +885,8 @@ export class GoalProspects {
  * 2 段目(打てる): 1 段目の見込み(成り立っていれば 1)、ワザのエネルギーの見込み、バトル場に出せる見込みの平均
  * (GoalProspects の calculateAttackProspect)。
  * 3 段目(N 以上): 2 段目の見込みと、ダメージの見込みの下限に対する割合の平均。
+ * 後の番の締め切りの 2 段目と 3 段目は、主軸の系統のほかのワザを試した後の場の点と比べて高いほう
+ * (raiseByNonMainAttacks)。
  */
 export function scoreGoalsByPathProgress(
   declaration: ResolvedDeclaration,
@@ -826,5 +931,34 @@ export function scoreGoalsByPathProgress(
       )
     );
   }
+  if (timing === "laterTurn") {
+    raiseByNonMainAttacks(declaration, prospects, deadline, scores);
+  }
   return scores;
+}
+
+/**
+ * 後の番の締め切り deadline の 2 段目と 3 段目の点 scores を、主軸の系統のほかのワザを試した後の場の点
+ * (GoalProspects の listProspectsAfterNonMainAttacks)と比べて高いほうにする(Issue 51 の数え漏れ 6)。この番の
+ * 締め切りには使わない(ワザは狙いの判定の後に使うため)。成り立っている段は 1 で比べても変わらないので、試した後の
+ * 見込みは成り立っていない段があるときに初めて作る。
+ */
+function raiseByNonMainAttacks(
+  declaration: ResolvedDeclaration,
+  prospects: GoalProspects,
+  deadline: number,
+  scores: number[]
+): void {
+  let scoresAfterAttacks: number[][] | undefined;
+  for (let index = 1; index < scores.length; index += 1) {
+    if (prospects.isGoalAchieved(index)) {
+      continue;
+    }
+    scoresAfterAttacks ??= prospects
+      .listProspectsAfterNonMainAttacks()
+      .map((after) => scoreGoalsByPathProgress(declaration, after, deadline));
+    for (const after of scoresAfterAttacks) {
+      scores[index] = Math.max(scores[index] ?? 0, after[index] ?? 0);
+    }
+  }
 }

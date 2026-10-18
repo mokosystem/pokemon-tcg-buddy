@@ -111,10 +111,14 @@ type ReplayableAction = (context: EffectContext) => void;
  */
 type TrialEnding = (state: GameState) => void;
 
-const endTurnForEvaluation: TrialEnding = (state) => {
+/**
+ * ワザを試した複製の番の終わりの効果を起こし、次の番に進める。道の揃い具合を見る評価が、主軸の系統のほかのワザを
+ * 試した後の場を数えるときも(goal-prospects.ts)、探索と同じ進め方にするためこれを使う。
+ */
+export function endTurnForEvaluation(state: GameState): void {
   resolveEndOfTurnTriggers({ choices: firstCandidateChoices, state });
   state.advanceToNextTurn();
-};
+}
 
 /** 効果の中の選択の答え。候補は何番目かで持つ(複製では場のポケモンの参照が変わるため)。 */
 type ChoiceAnswer =

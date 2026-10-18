@@ -465,3 +465,54 @@ describe("バトル場に出せる見込み", () => {
     );
   });
 });
+
+describe("主軸の系統のほかのワザを試した後の見込み", () => {
+  // メガサーナイトex のワザ「あふれるねがい」(超 1 個。山札の基本超エネルギーを、ベンチのポケモンそれぞれに 1 枚ずつ
+  // つける)と「メガシンフォニア」(超 1 個。自分の場の超エネルギー 1 個につき 50)、基本超エネルギー。記録 048464、049463
+  const PSYCHIC_ENERGY = buildRecordedCard("049463");
+  const MEGA_GARDEVOIR_DECK = resolveDeclaration(
+    MEGA_GARDEVOIR_DECLARATION,
+    cardRecordTable
+  );
+
+  /**
+   * 2 番目の番。バトル場に基本超エネルギー 1 個のメガサーナイトex、ベンチにラルトス 3 匹。buildState はサイドに基本超
+   * エネルギー 6 枚を置くので、見えていないカードはすべて基本超エネルギーで、混ぜ直しの仕方によらず 3 匹すべてにつく。
+   */
+  function buildMegaGardevoirWithThreeBenched(): GameState {
+    const state = buildState({
+      active: MEGA_GARDEVOIR,
+      bench: [RALTS, RALTS, RALTS],
+      deck: Array.from({ length: 6 }, () => PSYCHIC_ENERGY),
+      turn: 2,
+    });
+    state.active?.energies.push(PSYCHIC_ENERGY);
+    return state;
+  }
+
+  test("ベンチ 3 匹のとき、次の番の締め切りの 3 段目は、あふれるねがいを試した後の場(場の超エネルギー 4 個で 200)で数える", () => {
+    const prospects = createProspects(
+      MEGA_GARDEVOIR_DECK,
+      buildMegaGardevoirWithThreeBenched()
+    );
+    expect(prospects.isGoalAchieved(1)).toBe(true);
+    expect(prospects.isGoalAchieved(2)).toBe(false);
+    // 試す前の場ではメガシンフォニアが 50(超エネルギー 1 個)で、下限 300 に対して 50 ÷ 300
+    expect(prospects.calculateDamageRatio()).toBeCloseTo(50 / 300, 9);
+    const [afterWish] = prospects.listProspectsAfterNonMainAttacks();
+    expect(afterWish?.calculateDamageRatio()).toBeCloseTo(200 / 300, 9);
+    expect(
+      scoreGoalsByPathProgress(MEGA_GARDEVOIR_DECK, prospects, 3)[2]
+    ).toBeCloseTo((PROGRESS_WEIGHTS.unachievedGoal * (1 + 200 / 300)) / 2, 9);
+  });
+
+  test("この番の締め切りの 3 段目は、あふれるねがいを試した後の場を使わず、今の場(50)で数える", () => {
+    const prospects = createProspects(
+      MEGA_GARDEVOIR_DECK,
+      buildMegaGardevoirWithThreeBenched()
+    );
+    expect(
+      scoreGoalsByPathProgress(MEGA_GARDEVOIR_DECK, prospects, 2)[2]
+    ).toBeCloseTo((PROGRESS_WEIGHTS.unachievedGoal * (1 + 50 / 300)) / 2, 9);
+  });
+});

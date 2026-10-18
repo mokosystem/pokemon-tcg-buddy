@@ -96,6 +96,32 @@ describe("探索は山札の順とサイドの中身を知らない", () => {
     expect(recordFirstTurnDecision(inPrizes)).toEqual(values);
   });
 
+  test("局面 10: 山札とサイドに分かれた基本超エネルギーの枚数が違っても、あふれるねがいを試す見込みが同じになり、同じ値で最初の行動を選ぶ", () => {
+    // あふれるねがい(記録 048464)は山札の基本超エネルギー(049463)をベンチのポケモンそれぞれに 1 枚ずつつける。
+    // サイドの基本超エネルギー以外のカードをすべて山札の基本超エネルギーと入れ替え、山札に残る基本超エネルギーを
+    // ベンチのポケモンの数より少なくする。試すときに混ぜ直しが抜けていれば、つく枚数が変わり値が食い違う
+    const inDeck = findPosition("10").build(1000);
+    const inPrizes = findPosition("10").build(1000);
+    for (let prize = 0; prize < inPrizes.prizes.length; prize += 1) {
+      if (inPrizes.prizes[prize]?.name === "基本超エネルギー") {
+        continue;
+      }
+      const energyIndex = inPrizes.deck.findIndex(
+        (card) => card.name === "基本超エネルギー"
+      );
+      const [energy] = inPrizes.deck.splice(energyIndex, 1);
+      const [other] = inPrizes.prizes.splice(prize, 1, energy as Card);
+      inPrizes.deck.splice(energyIndex, 0, other as Card);
+    }
+    const countPsychic = (cards: readonly Card[]) =>
+      cards.filter((card) => card.name === "基本超エネルギー").length;
+    expect(countPsychic(inPrizes.deck)).toBeLessThan(inPrizes.bench.length);
+    expect(countPsychic(inPrizes.deck)).toBeLessThan(countPsychic(inDeck.deck));
+    const values = recordFirstTurnDecision(inDeck);
+    expect(values.length).toBeGreaterThan(1);
+    expect(recordFirstTurnDecision(inPrizes)).toEqual(values);
+  });
+
   test("局面 B と C: ワザと対戦の準備の比べ方も、山札の順とサイドの中身によらない", () => {
     for (const id of ["B", "C"]) {
       const [left, right] = [1000, 1001].map((seed) => {
