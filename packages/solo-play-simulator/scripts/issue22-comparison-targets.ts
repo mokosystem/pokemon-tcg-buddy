@@ -113,7 +113,7 @@ const DRAGAPULT_ATTACK = "ファントムダイブ を打てる";
 const TALONFLAME = findRecord("050400");
 
 /** #22 の is_active_talonflame_ready と同じく、バトル場のファイアローex が今「かぎづめハント」を使えるか。 */
-const TALON_HUNT_GOAL: Goal = {
+export const TALON_HUNT_GOAL: Goal = {
   explainFailure: (state) =>
     state
       .listPokemonInPlay()
