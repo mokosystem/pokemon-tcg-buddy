@@ -1,8 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { cardRecordTable } from "./card-record-table.ts";
 import { buildRecordedCard, buildState } from "./card-test-support.ts";
-import { type Declaration, resolveDeclaration } from "./declaration.ts";
-import { GoalProspects, scoreGoalsByPathProgress } from "./goal-prospects.ts";
+import {
+  type Declaration,
+  type ResolvedDeclaration,
+  resolveDeclaration,
+} from "./declaration.ts";
+import {
+  GoalProspects,
+  PROGRESS_WEIGHTS,
+  scoreGoalsByPathProgress,
+} from "./goal-prospects.ts";
 import type { TurnStage } from "./search-policy.ts";
 import type { GameState } from "./state.ts";
 
@@ -40,7 +48,7 @@ const RARE_CANDY_PATH = resolveDeclarationWithPath([
 ]);
 
 function createProspects(
-  declaration: ReturnType<typeof resolveDeclarationWithPath>,
+  declaration: ResolvedDeclaration,
   state: GameState,
   stage: TurnStage = "actionsRemain"
 ): GoalProspects {
@@ -122,5 +130,59 @@ describe("番を終えるときの点", () => {
     expect(scoreGoalsByPathProgress(PLAIN_EVOLUTION, actionsDone, 3)).toEqual(
       scoreGoalsByPathProgress(PLAIN_EVOLUTION, actionsRemain, 3)
     );
+  });
+});
+
+describe("探す手段 1 枚は 1 枚分", () => {
+  // ドロンチ(1進化)、ドラパルトex(2進化、ワザ「ファントムダイブ」)、ハイパーボール(手札を 2 枚トラッシュし、山札から
+  // ポケモン 1 枚を手札に加える)、ボスの指令(効果の翻訳が無い)。記録 049263、049264、050461、050467
+  const DRAKLOAK = buildRecordedCard("049263");
+  const DRAGAPULT_EX = buildRecordedCard("049264");
+  const HYPER_BALL = buildRecordedCard("050461");
+  const BOSS_ORDERS = buildRecordedCard("050467");
+  // ドラパルトex の宣言(issue22-decks.ts の DRAGAPULT_DECLARATION)の素の進化の道だけ
+  const DRAGAPULT_PLAIN_EVOLUTION = resolveDeclaration(
+    {
+      deadlines: [2, 3],
+      mainAttacks: [{ attackName: "ファントムダイブ", cardId: "049264" }],
+      pathsToMainAttacker: [
+        {
+          name: "素の進化の道",
+          requiredCards: [
+            { cardId: "049263", place: "inPlaySincePreviousTurn" },
+            { cardId: "049264", place: "hand" },
+          ],
+        },
+      ],
+    } satisfies Declaration,
+    cardRecordTable
+  );
+
+  test("次の番の締め切りで、ハイパーボールを使ってドラパルトex を手札に加えた後の素の進化の道の見込みは、使う前を下回らない", () => {
+    // 使う前: 手札のハイパーボール 1 枚をドロンチとドラパルトex の一方にだけ割り当て、他方は引くしかない
+    const before = buildState({
+      deck: [DRAKLOAK, DRAGAPULT_EX],
+      hand: [HYPER_BALL, BOSS_ORDERS, BOSS_ORDERS],
+    });
+    // 使った後: 手札の 2 枚をトラッシュし、ドラパルトex が手札に来た。ドロンチは引くしかない
+    const after = buildState({
+      deck: [DRAKLOAK],
+      discard: [HYPER_BALL, BOSS_ORDERS, BOSS_ORDERS],
+      hand: [DRAGAPULT_EX],
+    });
+    const beforeProspect = createProspects(
+      DRAGAPULT_PLAIN_EVOLUTION,
+      before
+    ).calculateStandProspect("laterTurn");
+    const afterProspect = createProspects(
+      DRAGAPULT_PLAIN_EVOLUTION,
+      after
+    ).calculateStandProspect("laterTurn");
+    expect(beforeProspect).toBeCloseTo(
+      PROGRESS_WEIGHTS.searchableFromDeck * PROGRESS_WEIGHTS.drawOnly,
+      9
+    );
+    expect(afterProspect).toBeCloseTo(PROGRESS_WEIGHTS.drawOnly, 9);
+    expect(afterProspect).toBeGreaterThanOrEqual(beforeProspect);
   });
 });

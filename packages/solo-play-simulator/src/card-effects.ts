@@ -54,15 +54,16 @@ function supporterOptionsOf(card: Card): {
   };
 }
 
-/** グッズ・サポート・スタジアムを手札から使えるか。基本ルールの制限と、翻訳の使える条件の両方を見る。 */
-export function canPlayTrainerFromHand(
+/**
+ * グッズ・サポート・スタジアムを、手札にあるとしたら使えるか(手札にあるかは見ない)。基本ルールの制限と、翻訳の
+ * 使える条件の両方を見る。山札のカードを手札に加えた後に使えるかを、加える前に見積もるときにも使う。
+ * そのときの手札は今の手札のままとして見る(加える前に使ったカードが手札から減ることは見ない)。
+ */
+export function canPlayTrainerIfInHand(
   context: EffectContext,
   card: Card
 ): boolean {
   const { state } = context;
-  if (!state.hand.includes(card)) {
-    return false;
-  }
   const source: EffectSource = { card, pokemon: undefined };
   const effectsAreUsable = findCardEffects(card, "whenPlayed").every(
     (cardEffect) => canStartEffect(state, cardEffect.effect, source, card)
@@ -79,6 +80,16 @@ export function canPlayTrainerFromHand(
     default:
       return false;
   }
+}
+
+/** グッズ・サポート・スタジアムを手札から使えるか。基本ルールの制限と、翻訳の使える条件の両方を見る。 */
+export function canPlayTrainerFromHand(
+  context: EffectContext,
+  card: Card
+): boolean {
+  return (
+    context.state.hand.includes(card) && canPlayTrainerIfInHand(context, card)
+  );
 }
 
 /** グッズ・サポートを使う、またはスタジアムを出す。グッズとサポートは基本処理の後に効果の翻訳を実行する。 */

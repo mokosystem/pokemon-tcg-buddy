@@ -10,8 +10,14 @@ import { buildCardFromRecord, type Card } from "./cards.ts";
 import { calculateAttackCost, listEnergyUnits } from "./continuous-effects.ts";
 import { type DeadlineTiming, toDeadlineTiming } from "./deadline-timing.ts";
 import {
+  assignDeckFetchSources,
   countUnseenByRecord,
-  findSearchableRecords,
+  type DeckFetchRelay,
+  type FetchRequirement,
+  type FetchRoute,
+  listDeckFetchRelays,
+  listDeckFetchSources,
+  type UnseenCards,
 } from "./deck-fetch-sources.ts";
 import type {
   MainAttack,
@@ -26,18 +32,26 @@ import { type GameState, PokemonInPlay } from "./state.ts";
  * 決めたもので、根拠の強いものではない。決めた局面と変えた経緯は設計文書(「順 7 で決めたこと(2 セッション目)」と
  * 「場の評価の数え漏れの修正(Issue 51)」)に記録している。
  */
-const PROGRESS_WEIGHTS = {
-  /** 必要なカードが山札かサイドにあるが、引くしかない。 */
+export const PROGRESS_WEIGHTS = {
+  /** 必要なカードが山札かサイドにあるが、引くしかない(探す手段を割り当てられなかった)。 */
   drawOnly: 0.1,
   /** 場やスタジアムに必要なカードが手札にある(出す・進化させる・使うだけ)。 */
   inHandForPlace: 0.8,
-  /** 必要なカードが山札かサイドにあり、手札や場のカードの効果で山札から持ってこられる。 */
+  /** 必要なカードが山札かサイドにあり、手札や場の探す手段 1 枚を割り当てて山札から持ってこられる。 */
   searchableFromDeck: 0.4,
   /** 同上で、持ってくるのに 2 段(探すカードを探す)かかる。 */
   searchableInTwoSteps: 0.3,
   /** 狙いが成り立っていないときの見込みにかける重み。成り立っている狙い(1)より必ず小さくする。 */
   unachievedGoal: 0.5,
 } as const;
+
+/** 探す手段の割り当ての結果ごとの揃い具合。持ってくる先が残っていなければ 0(見えていない枚数を使い切った)。 */
+const FETCH_ROUTE_WEIGHTS: Readonly<Record<FetchRoute, number>> = {
+  drawOnly: PROGRESS_WEIGHTS.drawOnly,
+  noCopyLeft: 0,
+  oneStep: PROGRESS_WEIGHTS.searchableFromDeck,
+  twoSteps: PROGRESS_WEIGHTS.searchableInTwoSteps,
+};
 
 /** 必要なカードを数える置き場所。evolvableThisTurn は場のポケモンのうち、この番に進化させられるもの。 */
 type Zone = "hand" | "inPlay" | "evolvableThisTurn" | "unseen";
@@ -52,11 +66,22 @@ function countByRecord(cards: readonly Card[]): Map<CardRecord, number> {
 
 interface PathView {
   readonly counts: Readonly<Record<Zone, ReadonlyMap<CardRecord, number>>>;
-  readonly searchable: {
-    readonly oneStep: ReadonlySet<CardRecord>;
-    readonly twoSteps: ReadonlySet<CardRecord>;
-  };
+  /** 2 段の中継の一覧。道によらないので、締め切りの種類ごとに 1 回だけ作る。 */
+  readonly relaysByTiming: Map<DeadlineTiming, readonly DeckFetchRelay[]>;
   readonly state: GameState;
+  readonly unseen: UnseenCards;
+}
+
+function listRelaysOnce(
+  view: PathView,
+  timing: DeadlineTiming
+): readonly DeckFetchRelay[] {
+  let relays = view.relaysByTiming.get(timing);
+  if (relays === undefined) {
+    relays = listDeckFetchRelays(view.state, timing, view.unseen);
+    view.relaysByTiming.set(timing, relays);
+  }
+  return relays;
 }
 
 /** 1 つの道を数えるときの、置き場所ごとの使った枚数。同じ道の中で同じ 1 枚を 2 つの必要なカードに数えないため。 */
@@ -82,35 +107,42 @@ class UsedCards {
     this.used[zone].set(record, used + 1);
     return true;
   }
+
+  /** 手札から必要なカードとして使った、記録ごとの枚数。 */
+  countUsedInHand(): ReadonlyMap<CardRecord, number> {
+    return this.used.hand;
+  }
+
+  /** 見えていないカードのうち、まだ使っていない記録ごとの枚数と代表の 1 枚(残りが 0 の記録は入れない)。 */
+  countRemainingUnseen(): UnseenCards {
+    if (this.used.unseen.size === 0) {
+      return this.view.unseen;
+    }
+    const remaining = new Map<CardRecord, { card: Card; count: number }>();
+    for (const [record, { card, count }] of this.view.unseen) {
+      const rest = count - (this.used.unseen.get(record) ?? 0);
+      if (rest > 0) {
+        remaining.set(record, { card, count: rest });
+      }
+    }
+    return remaining;
+  }
 }
 
-function scoreUnseen(view: PathView, record: CardRecord): number {
-  if (view.searchable.oneStep.has(record)) {
-    return PROGRESS_WEIGHTS.searchableFromDeck;
-  }
-  if (view.searchable.twoSteps.has(record)) {
-    return PROGRESS_WEIGHTS.searchableInTwoSteps;
-  }
-  return PROGRESS_WEIGHTS.drawOnly;
-}
-
-function scoreFromUnseen(
-  view: PathView,
-  used: UsedCards,
-  record: CardRecord
-): number {
-  return used.take("unseen", record) ? scoreUnseen(view, record) : 0;
-}
+/**
+ * 必要なカード 1 つの揃い具合。"fromUnseen" は見えていないカードから持ってくる必要があることを表し、揃い具合は道の
+ * 必要なカードをすべて見た後に、探す手段を割り当ててから決める(探す手段 1 枚を必要なカード 1 つにだけ数えるため)。
+ */
+type RequiredCardProgress = number | "fromUnseen";
 
 /** 場に出す・進化させる・スタジアムとして出すカード: 手札にあれば出すだけ、無ければ山札かサイドから。 */
 function scoreFromHandOrUnseen(
-  view: PathView,
   used: UsedCards,
   record: CardRecord
-): number {
+): RequiredCardProgress {
   return used.take("hand", record)
     ? PROGRESS_WEIGHTS.inHandForPlace
-    : scoreFromUnseen(view, used, record);
+    : "fromUnseen";
 }
 
 type RequiredCardScorer = (
@@ -118,7 +150,7 @@ type RequiredCardScorer = (
   used: UsedCards,
   record: CardRecord,
   timing: DeadlineTiming
-) => number;
+) => RequiredCardProgress;
 
 /**
  * 進化の元(前の番から場)。この番の締め切りには、この番に進化させられる場のポケモンだけが間に合う。判定は骨組みの
@@ -126,7 +158,7 @@ type RequiredCardScorer = (
  * (docs/pokemon-tcg/basic-rules.md 77 行)を評価の中に書き直さない。手札や見えていないカードは、出してもこの番には
  * 進化できないので 0。後の番の締め切りには、この番に出したポケモンも間に合うので場にいれば 1。
  */
-const scoreEvolutionBase: RequiredCardScorer = (view, used, record, timing) => {
+const scoreEvolutionBase: RequiredCardScorer = (_, used, record, timing) => {
   if (timing === "thisTurn") {
     if (!used.take("evolvableThisTurn", record)) {
       return 0;
@@ -135,9 +167,7 @@ const scoreEvolutionBase: RequiredCardScorer = (view, used, record, timing) => {
     used.take("inPlay", record);
     return 1;
   }
-  return used.take("inPlay", record)
-    ? 1
-    : scoreFromHandOrUnseen(view, used, record);
+  return used.take("inPlay", record) ? 1 : scoreFromHandOrUnseen(used, record);
 };
 
 /**
@@ -148,29 +178,55 @@ const requiredCardScorers: Readonly<
   Record<RequiredCard["place"], RequiredCardScorer>
 > = {
   deck: (_, used, record) => (used.take("unseen", record) ? 1 : 0),
-  hand: (view, used, record) =>
-    used.take("hand", record) ? 1 : scoreFromUnseen(view, used, record),
-  inPlay: (view, used, record) =>
-    used.take("inPlay", record) ? 1 : scoreFromHandOrUnseen(view, used, record),
+  hand: (_, used, record) => (used.take("hand", record) ? 1 : "fromUnseen"),
+  inPlay: (_, used, record) =>
+    used.take("inPlay", record) ? 1 : scoreFromHandOrUnseen(used, record),
   inPlaySincePreviousTurn: scoreEvolutionBase,
   stadium: (view, used, record) =>
     view.state.stadium?.record === record
       ? 1
-      : scoreFromHandOrUnseen(view, used, record),
+      : scoreFromHandOrUnseen(used, record),
 };
 
-/** 1 本の道が揃う見込み。必要なカードごとの揃い具合を、それぞれ揃う見込みとみなして掛け合わせる。 */
+/**
+ * 1 本の道が揃う見込み。必要なカードごとの揃い具合を、それぞれ揃う見込みとみなして掛け合わせる。見えていないカードから
+ * 持ってくる必要のある必要なカードは、まとめて探す手段を割り当て(deck-fetch-sources.ts の assignDeckFetchSources)、
+ * 1 段・2 段・引くしかないで揃い具合を決める。探す手段の一覧は道で手札から数えたカードを除くため、道ごとに作る。
+ */
 function scorePath(
   view: PathView,
   requiredCards: readonly RequiredCard[],
   timing: DeadlineTiming
 ): number {
   const used = new UsedCards(view);
-  return requiredCards.reduce(
-    (product, required) =>
-      product *
-      requiredCardScorers[required.place](view, used, required.record, timing),
-    1
+  const requirements: FetchRequirement[] = [];
+  let product = 1;
+  for (const required of requiredCards) {
+    const progress = requiredCardScorers[required.place](
+      view,
+      used,
+      required.record,
+      timing
+    );
+    if (progress === "fromUnseen") {
+      requirements.push({ candidates: [required.record] });
+    } else {
+      product *= progress;
+    }
+  }
+  if (requirements.length === 0 || product === 0) {
+    return product;
+  }
+  const routes = assignDeckFetchSources(
+    requirements,
+    listDeckFetchSources(view.state, timing, used.countUsedInHand()),
+    listRelaysOnce(view, timing),
+    used.countRemainingUnseen(),
+    timing
+  );
+  return routes.reduce(
+    (total, route) => total * FETCH_ROUTE_WEIGHTS[route],
+    product
   );
 }
 
@@ -241,8 +297,9 @@ function buildPathView(state: GameState): PathView {
       inPlay: countByRecord(pokemonInPlay.map((pokemon) => pokemon.card)),
       unseen: unseenCounts,
     },
-    searchable: findSearchableRecords(state, unseen),
+    relaysByTiming: new Map(),
     state,
+    unseen,
   };
 }
 
