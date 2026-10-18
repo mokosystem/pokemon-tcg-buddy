@@ -17,7 +17,7 @@ import type { GameState } from "./state.ts";
 // 記録 050461、048675、045934、048418、049694
 const HYPER_BALL = buildRecordedCard("050461");
 const NEST_POFFIN = buildRecordedCard("048675");
-const ACEROLA = buildRecordedCard("045934");
+const ACHROMA = buildRecordedCard("045934");
 const FIRE_BREATHER = buildRecordedCard("048418");
 const MEOWTH_EX = buildRecordedCard("049694");
 // ドロンチ(1進化)、ドラパルトex(2進化)、偉大な大樹(スタジアム)、基本超エネルギー、基本炎エネルギー。記録 049263、
@@ -65,7 +65,7 @@ describe("探す手段の割り当て", () => {
   test("この番の締め切りでは、サポートの探す手段を 2 枚目からは数えず、次の番の締め切りでは 2 枚とも数える", () => {
     const state = buildState({
       deck: [GRAND_TREE, PSYCHIC_ENERGY],
-      hand: [ACEROLA, ACEROLA],
+      hand: [ACHROMA, ACHROMA],
     });
     const thisTurn = assignFor(state, [GRAND_TREE, PSYCHIC_ENERGY], "thisTurn");
     expect(thisTurn.filter((route) => route === "oneStep")).toHaveLength(1);
@@ -76,7 +76,7 @@ describe("探す手段の割り当て", () => {
   });
 
   test("この番にサポートを使った後は、手札のサポートをこの番の探す手段に数えず、次の番の探す手段には数える", () => {
-    const state = buildState({ deck: [PSYCHIC_ENERGY], hand: [ACEROLA] });
+    const state = buildState({ deck: [PSYCHIC_ENERGY], hand: [ACHROMA] });
     state.hasUsedSupporter = true;
     expect(listDeckFetchSources(state, "thisTurn", new Map())).toHaveLength(0);
     expect(listDeckFetchSources(state, "laterTurn", new Map())).toHaveLength(1);
@@ -97,13 +97,13 @@ describe("探す手段の割り当て", () => {
     // 手札のニャースex 1 枚で、山札のアクロマの執念を 1 段で持ってくるか、アクロマの執念を中継にして基本超エネルギーを
     // 2 段で持ってくるかのどちらか一方しかできない
     const state = buildState({
-      deck: [ACEROLA, ACEROLA, PSYCHIC_ENERGY],
+      deck: [ACHROMA, ACHROMA, PSYCHIC_ENERGY],
       hand: [MEOWTH_EX],
     });
     expect(assignFor(state, [PSYCHIC_ENERGY], "laterTurn")).toEqual([
       "twoSteps",
     ]);
-    expect(assignFor(state, [PSYCHIC_ENERGY, ACEROLA], "laterTurn")).toEqual([
+    expect(assignFor(state, [PSYCHIC_ENERGY, ACHROMA], "laterTurn")).toEqual([
       "drawOnly",
       "oneStep",
     ]);
@@ -127,7 +127,7 @@ describe("探す手段の割り当て", () => {
   test("この番にサポートを使った後は、2 段の中継のサポートもこの番には数えない", () => {
     // ほかに基本超エネルギーを持ってこられる探す手段が無い場。手札のニャースex → 山札のアクロマの執念 → 基本超エネルギー
     const state = buildState({
-      deck: [ACEROLA, PSYCHIC_ENERGY],
+      deck: [ACHROMA, PSYCHIC_ENERGY],
       hand: [MEOWTH_EX],
     });
     expect(assignFor(state, [PSYCHIC_ENERGY], "thisTurn")).toEqual([

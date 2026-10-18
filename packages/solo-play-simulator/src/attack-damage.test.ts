@@ -55,7 +55,7 @@ const ZACIAN = buildRecordedCard("050697");
 const IGGLYBUFF = buildRecordedCard("050708");
 const BALLOON = buildRecordedCard("050464");
 const BOSS = buildRecordedCard("050467");
-const SINISTEA = buildRecordedCard("050224");
+const POLTCHAGEIST = buildRecordedCard("050224");
 const SHUPPET = buildRecordedCard("050250");
 
 describe("ワザのダメージ", () => {
@@ -315,9 +315,9 @@ describe("場の評価に使うダメージの見込み", () => {
   // カゲボウズ 050250)が 4 枚以上なら 140 を足す
   const discards = [
     [],
-    [SINISTEA],
-    [SINISTEA, SHUPPET],
-    [SINISTEA, SHUPPET, SINISTEA, SHUPPET],
+    [POLTCHAGEIST],
+    [POLTCHAGEIST, SHUPPET],
+    [POLTCHAGEIST, SHUPPET, POLTCHAGEIST, SHUPPET],
   ];
   const resentfulAnchor = findAttack(DHELMISE, "むねんのイカリ");
 

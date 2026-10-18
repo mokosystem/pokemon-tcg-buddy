@@ -304,7 +304,7 @@ function scorePath(
   );
 }
 
-/** 主軸の進化の系統の名前(主軸、進化前、系統のたね)。これらのポケモンについたエネルギーは主軸のワザに使える。 */
+/** 主軸の進化の系統の名前(主軸、進化前、系統のたねポケモン)。これらのポケモンについたエネルギーは主軸のワザに使える。 */
 function listEvolutionLineNames(main: MainAttack): Set<string> {
   const { record } = main;
   return new Set([
@@ -683,7 +683,7 @@ export class GoalProspects {
 
   /**
    * 場のポケモン pokemon(主軸の進化の系統)を、ワザを使うバトル場に出せる見込み(0 以上 1 以下。締め切りによらない)。
-   * バトル場にいれば 1(対戦の準備でバトル場に置いたたねも)。ベンチにいて、今使える手札の入れ替えるカードがあるか、
+   * バトル場にいれば 1(対戦の準備でバトル場に置いたたねポケモンも)。ベンチにいて、今使える手札の入れ替えるカードがあるか、
    * 今のバトルポケモンがにげられれば benchedWithWayToActiveThisTurn。入れ替えるカードが見えていないカードにあり、手札か
    * 場の探す手段で 1 段で持ってこられれば switchCardSearchable。どれでもなければ noWayToActive。にげるエネルギーを
    * 0 にするカード(ラティアスex 046248 の「スカイライン」)は、ベンチに出す手を試した後の場で canRetreatActive が
