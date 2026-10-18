@@ -169,12 +169,28 @@ function listRetreatPayments(
   return payments;
 }
 
-function listRetreatActions(state: GameState): PlayerAction[] {
+/**
+ * 今のバトルポケモンがにげるときの支払いの組。にげられなければ空(この番にもうにげた、バトル場かベンチが空、にげる
+ * エネルギーを払える組が無い)。にげるのは 1 回の番に 1 回まで(docs/pokemon-tcg/basic-rules.md 79 行)。
+ */
+function listRetreatPaymentsIfAllowed(state: GameState): Card[][] {
   const { active } = state;
   if (active === undefined || state.hasRetreated || state.bench.length === 0) {
     return [];
   }
-  const payments = listRetreatPayments(state, active);
+  return listRetreatPayments(state, active);
+}
+
+/**
+ * 今のバトルポケモンがにげられるか(この番にまだにげていない、ベンチにポケモンがいる、にげるエネルギーを払える組が
+ * ある)。行動の一覧と場の評価(バトル場に出せる見込み)が同じ判定を使うため、ここに 1 つだけ置く。
+ */
+export function canRetreatActive(state: GameState): boolean {
+  return listRetreatPaymentsIfAllowed(state).length > 0;
+}
+
+function listRetreatActions(state: GameState): PlayerAction[] {
+  const payments = listRetreatPaymentsIfAllowed(state);
   return state.bench.flatMap((_, benchIndex) =>
     payments.map(
       (energiesToDiscard): PlayerAction => ({

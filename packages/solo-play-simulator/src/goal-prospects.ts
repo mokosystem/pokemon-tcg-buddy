@@ -5,8 +5,20 @@
  */
 
 import { calculateAttackDamage } from "./attack-damage.ts";
-import type { CardRecord, PokemonType } from "./card-record-schema.ts";
-import { buildCardFromRecord, type Card, isEnergy } from "./cards.ts";
+import { canPlayTrainerFromHand } from "./card-effects.ts";
+import {
+  CardCategory,
+  type CardFilter,
+  type CardRecord,
+  type EffectStep,
+  type PokemonType,
+} from "./card-record-schema.ts";
+import {
+  buildCardFromRecord,
+  type Card,
+  isEnergy,
+  matchesCardFilter,
+} from "./cards.ts";
 import {
   calculateAttackCost,
   listEnergyUnits,
@@ -16,8 +28,10 @@ import {
 import { type DeadlineTiming, toDeadlineTiming } from "./deadline-timing.ts";
 import {
   assignDeckFetchSources,
+  canFetchInOneStep,
   countUnseenByRecord,
   type DeckFetchRelay,
+  type DeckFetchSource,
   type FetchRequirement,
   type FetchRoute,
   listDeckFetchRelays,
@@ -29,6 +43,9 @@ import type {
   RequiredCard,
   ResolvedDeclaration,
 } from "./declaration.ts";
+import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
+import { findCardEffects } from "./effect-operations.ts";
+import { canRetreatActive } from "./player-actions.ts";
 import type { EvaluationInput } from "./search-policy.ts";
 import {
   ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN,
@@ -44,16 +61,22 @@ import {
  * 「場の評価の数え漏れの修正(Issue 51)」)に記録している。
  */
 export const PROGRESS_WEIGHTS = {
+  /** 主軸の系統のポケモンがベンチにいて、この番にバトル場に出す手段(今使える手札の入れ替えるカード、にげる)がある。 */
+  benchedWithWayToActiveThisTurn: 0.8,
   /** 必要なカードが山札かサイドにあるが、引くしかない(探す手段を割り当てられなかった)。 */
   drawOnly: 0.1,
   /** ワザに必要なエネルギーが手札にある(締め切りまでに手札からつけられる枚数まで)。場に出す必要なカードが手札にあるのと同じ尺度。 */
   energyInHand: 0.8,
   /** 場やスタジアムに必要なカードが手札にある(出す・進化させる・使うだけ)。 */
   inHandForPlace: 0.8,
+  /** 主軸の系統のポケモンがベンチにいて、バトル場に出す手段が見当たらない。 */
+  noWayToActive: 0.1,
   /** 必要なカードが山札かサイドにあり、手札や場の探す手段 1 枚を割り当てて山札から持ってこられる。 */
   searchableFromDeck: 0.4,
   /** 同上で、持ってくるのに 2 段(探すカードを探す)かかる。 */
   searchableInTwoSteps: 0.3,
+  /** 主軸の系統のポケモンがベンチにいて、入れ替えるカードが山札かサイドにあり、手札や場の探す手段で持ってこられる。 */
+  switchCardSearchable: 0.4,
   /** 狙いが成り立っていないときの見込みにかける重み。成り立っている狙い(1)より必ず小さくする。 */
   unachievedGoal: 0.5,
 } as const;
@@ -255,6 +278,60 @@ function listEvolutionLineNames(main: MainAttack): Set<string> {
   ]);
 }
 
+/**
+ * 効果の操作のうち、バトルポケモンをベンチポケモンと入れ替える操作(switchActiveWithBench)の、バトル場に出すベンチ
+ * ポケモンの条件(条件が無ければ undefined)。条件の分かれ道とコインの中も、山札から持ってくる操作の条件を集めるとき
+ * (deck-fetch-sources.ts)と同じ辿り方で見る。
+ */
+function listSwitchBenchFilters(
+  steps: readonly EffectStep[]
+): (CardFilter | undefined)[] {
+  return steps.flatMap((step): (CardFilter | undefined)[] => {
+    switch (step.operation) {
+      case "switchActiveWithBench":
+        return [step.benchFilter];
+      case "branchOnCondition":
+        return listSwitchBenchFilters([
+          ...step.stepsWhenMet,
+          ...step.stepsOtherwise,
+        ]);
+      case "branchOnCoinFlip":
+        return listSwitchBenchFilters(step.stepsWhenHeads);
+      default:
+        return [];
+    }
+  });
+}
+
+const switchBenchFiltersByRecord = new WeakMap<
+  CardRecord,
+  readonly (CardFilter | undefined)[]
+>();
+
+/**
+ * card が、ベンチの pokemon をバトル場に出せる入れ替えるカード(グッズかサポートで、使ったときの効果に入れ替えがあり、
+ * 条件が pokemon に合う)か。ワザで入れ替えるもの(ノコッチ 047086 の「いれかわる」)は、ワザを使うと番が終わる
+ * (docs/pokemon-tcg/basic-rules.md 67 行)ので数えない。
+ */
+function canSwitchIntoActive(card: Card, pokemon: PokemonInPlay): boolean {
+  if (
+    card.category !== CardCategory.Goods &&
+    card.category !== CardCategory.Supporter
+  ) {
+    return false;
+  }
+  let filters = switchBenchFiltersByRecord.get(card.record);
+  if (filters === undefined) {
+    filters = findCardEffects(card, "whenPlayed").flatMap((cardEffect) =>
+      listSwitchBenchFilters(cardEffect.effect.steps)
+    );
+    switchBenchFiltersByRecord.set(card.record, filters);
+  }
+  return filters.some(
+    (filter) => filter === undefined || matchesCardFilter(pokemon.card, filter)
+  );
+}
+
 const detachedCardsByRecord = new WeakMap<CardRecord, Card>();
 
 /** 場に出たとみなした主軸(場には置かない)。主軸が場にいないときに、ダメージやつけたエネルギーの供給を数えるため。 */
@@ -381,6 +458,7 @@ export class GoalProspects {
   private readonly achievements = new Map<number, boolean>();
   private readonly standProspects = new Map<DeadlineTiming, number>();
   private readonly attackProspects = new Map<number, number>();
+  private readonly activeSpotProspects = new Map<PokemonInPlay, number>();
   private readonly detachedMains = new Map<CardRecord, PokemonInPlay>();
   /** つけるポケモンごと・エネルギーの記録ごとの供給。締め切りによらないので使い回す。 */
   private readonly provisions = new Map<
@@ -389,6 +467,8 @@ export class GoalProspects {
   >();
   private view: PathView | undefined;
   private damageRatio: number | undefined;
+  private canRetreat: boolean | undefined;
+  private oneStepSources: readonly DeckFetchSource[] | undefined;
 
   constructor(declaration: ResolvedDeclaration, input: EvaluationInput) {
     this.declaration = declaration;
@@ -433,8 +513,9 @@ export class GoalProspects {
   }
 
   /**
-   * 2 段目(打てる)の見込み(0 以上 1 以下)。立つ見込み(立っていれば 1)と、主軸のワザごと・系統の場のポケモンごとの
-   * エネルギーの見込みのうちいちばん高いものの平均。系統のポケモンが場にいなければエネルギーの見込みは 0。
+   * 2 段目(打てる)の見込み(0 以上 1 以下)。主軸のワザごと・系統の場のポケモン p ごとに、立つ見込み(立っていれば 1)、
+   * p のエネルギーの見込み、p をバトル場に出せる見込みの 3 つを平均し、いちばん高いものを採る。系統のポケモンが場に
+   * いなければ、エネルギーの見込みを 0、バトル場に出せる見込みを noWayToActive として平均する。
    */
   calculateAttackProspect(deadline: number): number {
     let prospect = this.attackProspects.get(deadline);
@@ -445,22 +526,88 @@ export class GoalProspects {
             toDeadlineTiming(deadline, this.input.fromTurn)
           );
       const { state } = this.input;
-      const energyProspects = this.declaration.mainAttacks.flatMap((main) => {
+      let bestLineScore: number = PROGRESS_WEIGHTS.noWayToActive;
+      for (const main of this.declaration.mainAttacks) {
         const lineNames = listEvolutionLineNames(main);
-        return state
-          .listPokemonInPlay()
-          .filter((pokemon) => lineNames.has(pokemon.name))
-          .map((attacker) =>
-            this.calculateAttackEnergyProspect(main, attacker, deadline)
-          );
-      });
-      prospect =
-        (standScore +
-          (energyProspects.length === 0 ? 0 : Math.max(...energyProspects))) /
-        2;
+        for (const attacker of state.listPokemonInPlay()) {
+          if (lineNames.has(attacker.name)) {
+            bestLineScore = Math.max(
+              bestLineScore,
+              this.calculateAttackEnergyProspect(main, attacker, deadline) +
+                this.calculateActiveSpotProspect(attacker)
+            );
+          }
+        }
+      }
+      prospect = (standScore + bestLineScore) / 3;
       this.attackProspects.set(deadline, prospect);
     }
     return prospect;
+  }
+
+  /**
+   * 場のポケモン pokemon(主軸の進化の系統)を、ワザを使うバトル場に出せる見込み(0 以上 1 以下。締め切りによらない)。
+   * バトル場にいれば 1(対戦の準備でバトル場に置いたたねも)。ベンチにいて、今使える手札の入れ替えるカードがあるか、
+   * 今のバトルポケモンがにげられれば benchedWithWayToActiveThisTurn。入れ替えるカードが見えていないカードにあり、手札か
+   * 場の探す手段で 1 段で持ってこられれば switchCardSearchable。どれでもなければ noWayToActive。にげるエネルギーを
+   * 0 にするカード(ラティアスex 046248 の「スカイライン」)は、ベンチに出す手を試した後の場で canRetreatActive が
+   * 真になることで数え、手札にあるそのカードを先回りして数えない(Issue 51 の数え漏れ 4)。
+   */
+  calculateActiveSpotProspect(pokemon: PokemonInPlay): number {
+    let prospect = this.activeSpotProspects.get(pokemon);
+    if (prospect === undefined) {
+      prospect = this.measureActiveSpotProspect(pokemon);
+      this.activeSpotProspects.set(pokemon, prospect);
+    }
+    return prospect;
+  }
+
+  private measureActiveSpotProspect(pokemon: PokemonInPlay): number {
+    const { state } = this.input;
+    if (state.active === pokemon) {
+      return 1;
+    }
+    const context: EffectContext = { choices: firstCandidateChoices, state };
+    const hasUsableSwitchCard = state.hand.some(
+      (card) =>
+        canSwitchIntoActive(card, pokemon) &&
+        canPlayTrainerFromHand(context, card)
+    );
+    this.canRetreat ??= canRetreatActive(state);
+    if (hasUsableSwitchCard || this.canRetreat) {
+      return PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn;
+    }
+    return this.canFetchSwitchCardFor(pokemon)
+      ? PROGRESS_WEIGHTS.switchCardSearchable
+      : PROGRESS_WEIGHTS.noWayToActive;
+  }
+
+  /**
+   * ベンチの pokemon をバトル場に出せる入れ替えるカードが見えていないカードにあり、手札か場の探す手段 1 枚で山札から
+   * 持ってこられるか。バトル場に出せる見込みは締め切りによらない 1 つの値なので、探す手段を道やエネルギーと分け合わず、
+   * 割り当てでなく記録の単位で見る。この番に使えるかで探す手段を絞らない(「この番に出す手段」は手札の入れ替えるカードと
+   * にげるで数え、この段は後の番を含めて持ってこられるかを見るため)。
+   */
+  private canFetchSwitchCardFor(pokemon: PokemonInPlay): boolean {
+    const view = this.countPathViewOnce();
+    this.oneStepSources ??= listDeckFetchSources(
+      this.input.state,
+      "laterTurn",
+      new Map()
+    );
+    const sources = this.oneStepSources;
+    if (sources.length === 0) {
+      return false;
+    }
+    for (const { card } of view.unseen.values()) {
+      if (
+        canSwitchIntoActive(card, pokemon) &&
+        canFetchInOneStep(sources, card)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -624,8 +771,8 @@ export class GoalProspects {
  * 締め切り deadline についての、狙いの段ごとの点。成り立っていれば 1、成り立っていなければ見込みに unachievedGoal の
  * 重みをかけたもの。
  * 1 段目(立つ): 主軸への道ごとの見込み(必要なカードの揃い具合の積)から、少なくとも 1 本揃う見込み。
- * 2 段目(打てる): 1 段目の見込み(成り立っていれば 1)とワザのエネルギーの見込みの平均(GoalProspects の
- * calculateAttackProspect)。
+ * 2 段目(打てる): 1 段目の見込み(成り立っていれば 1)、ワザのエネルギーの見込み、バトル場に出せる見込みの平均
+ * (GoalProspects の calculateAttackProspect)。
  * 3 段目(N 以上): 2 段目の見込みと、ダメージの見込みの下限に対する割合の平均。
  */
 export function scoreGoalsByPathProgress(

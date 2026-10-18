@@ -141,6 +141,17 @@ function matchesAnyFilter(filters: readonly CardFilter[], card: Card): boolean {
   return matched;
 }
 
+/**
+ * card(見えていないカードの代表の 1 枚)を、sources のどれか 1 枚で山札から 1 段で持ってこられるか。割り当てをせず
+ * 記録の単位で見る。締め切りによらない 1 つの値を出す見込み(バトル場に出せる見込み)が使う。
+ */
+export function canFetchInOneStep(
+  sources: readonly DeckFetchSource[],
+  card: Card
+): boolean {
+  return sources.some((source) => matchesAnyFilter(source.filters, card));
+}
+
 /** 見えていないカード(山札とサイド)の、記録ごとの枚数と代表の 1 枚。 */
 export function countUnseenByRecord(
   state: GameState

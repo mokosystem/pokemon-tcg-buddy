@@ -14,8 +14,10 @@ import {
   scoreGoalsByPathProgress,
 } from "./goal-prospects.ts";
 import {
+  BAKEGAKURE_DECLARATION,
   DRAGAPULT_DECLARATION,
   MEGA_CHARIZARD_DECLARATION,
+  MEGA_GARDEVOIR_DECLARATION,
 } from "./issue22-decks.ts";
 import type { TurnStage } from "./search-policy.ts";
 import type { GameState } from "./state.ts";
@@ -319,6 +321,146 @@ describe("ワザのエネルギーの見込み(置き場所とタイプ)", () =>
       calculateActiveEnergyProspect(MEGA_CHARIZARD, "プロージョンY", state, 3)
     ).toBeCloseTo(
       (1 + PROGRESS_WEIGHTS.searchableFromDeck + PROGRESS_WEIGHTS.drawOnly) / 3,
+      9
+    );
+  });
+});
+
+describe("バトル場に出せる見込み", () => {
+  // ニャースex(たね、にげる 1)、ポケモンいれかえ(バトルポケモンをベンチポケモンと入れ替える)、スグリ(サポート。効果の中で
+  // バトルポケモンをベンチポケモンと入れ替える)、ポケギア3.0(山札の上から 7 枚を見て、サポートを 1 枚まで手札に加える)、
+  // 基本超エネルギー、ボスの指令(効果の翻訳が無い)。記録 049694、049602、047894、049376、049463、050467
+  const MEOWTH_EX = buildRecordedCard("049694");
+  const SWITCH = buildRecordedCard("049602");
+  const KIERAN = buildRecordedCard("047894");
+  const POKEGEAR = buildRecordedCard("049376");
+  const PSYCHIC_ENERGY = buildRecordedCard("049463");
+  const BOSS_ORDERS = buildRecordedCard("050467");
+  const MEGA_GARDEVOIR_DECK = resolveDeclaration(
+    MEGA_GARDEVOIR_DECLARATION,
+    cardRecordTable
+  );
+
+  /** バトル場にエネルギー 0 個のニャースex(にげるエネルギーを払えない)、ベンチにメガサーナイトex がいる場。 */
+  function buildBenchedMegaGardevoir(
+    hand: readonly Card[],
+    deck: readonly Card[]
+  ): GameState {
+    return buildState({
+      active: MEOWTH_EX,
+      bench: [MEGA_GARDEVOIR],
+      deck,
+      hand,
+    });
+  }
+
+  function calculateBenchProspect(state: GameState): number {
+    const [benched] = state.bench;
+    if (benched === undefined) {
+      throw new Error("ベンチにポケモンがいない");
+    }
+    return createProspects(
+      MEGA_GARDEVOIR_DECK,
+      state
+    ).calculateActiveSpotProspect(benched);
+  }
+
+  test("ベンチの主軸は、手札にポケモンいれかえがあれば、この番にバトル場に出す手段がある重みになる", () => {
+    const state = buildBenchedMegaGardevoir([SWITCH], [BOSS_ORDERS]);
+    expect(calculateBenchProspect(state)).toBe(
+      PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn
+    );
+  });
+
+  // サポートは 1 回の番に 1 枚だけ(docs/pokemon-tcg/basic-rules.md 75 行)
+  test("この番にサポートを使った後は、手札のスグリをこの番にバトル場に出す手段に数えない", () => {
+    const state = buildBenchedMegaGardevoir([KIERAN], [BOSS_ORDERS]);
+    expect(calculateBenchProspect(state)).toBe(
+      PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn
+    );
+    state.hasUsedSupporter = true;
+    expect(calculateBenchProspect(state)).toBe(PROGRESS_WEIGHTS.noWayToActive);
+  });
+
+  // にげるエネルギーの分のエネルギーをトラッシュして、ベンチポケモンと交代する(docs/pokemon-tcg/basic-rules.md 79 行)
+  test("ベンチの主軸は、バトルポケモンのニャースex がにげるエネルギーを払えれば、この番にバトル場に出す手段がある重みになる", () => {
+    const state = buildBenchedMegaGardevoir([BOSS_ORDERS], [BOSS_ORDERS]);
+    state.active?.energies.push(PSYCHIC_ENERGY);
+    expect(calculateBenchProspect(state)).toBe(
+      PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn
+    );
+  });
+
+  test("手札に入れ替えるカードが無く、山札のスグリを手札のポケギア3.0で持ってこられるとき、探して持ってこられる重みになる", () => {
+    const state = buildBenchedMegaGardevoir([POKEGEAR], [KIERAN, BOSS_ORDERS]);
+    expect(calculateBenchProspect(state)).toBe(
+      PROGRESS_WEIGHTS.switchCardSearchable
+    );
+  });
+
+  test("手札にも探して持ってこられる入れ替えるカードも無く、バトルポケモンがにげられないとき、手段が見当たらない重みになる", () => {
+    const state = buildBenchedMegaGardevoir(
+      [BOSS_ORDERS],
+      [KIERAN, BOSS_ORDERS]
+    );
+    expect(calculateBenchProspect(state)).toBe(PROGRESS_WEIGHTS.noWayToActive);
+  });
+
+  // 対戦の準備: 手札のたねポケモン 1 枚をバトル場に、残りをベンチに出せる(docs/pokemon-tcg/basic-rules.md 43〜44 行)。
+  // ダダリン(たね、にげる 3)、カゲボウズ(たね、にげる 1)。記録 050308、050250
+  test("対戦の準備でバトル場に置いたダダリンは 1 で、ベンチに置いたダダリンはにげられないカゲボウズの後ろで手段が見当たらない", () => {
+    const dhelmise = buildRecordedCard("050308");
+    const shuppet = buildRecordedCard("050250");
+    const bakegakure = resolveDeclaration(
+      BAKEGAKURE_DECLARATION,
+      cardRecordTable
+    );
+    const createSetupProspects = (state: GameState) =>
+      new GoalProspects(bakegakure, {
+        fromTurn: 1,
+        seed: 0,
+        stage: "actionsRemain",
+        state,
+        statistics: { clones: 0, evaluations: 0 },
+      });
+    const dhelmiseActive = buildState({
+      active: dhelmise,
+      bench: [shuppet],
+      deck: [BOSS_ORDERS],
+      turn: 0,
+    });
+    const shuppetActive = buildState({
+      active: shuppet,
+      bench: [dhelmise],
+      deck: [BOSS_ORDERS],
+      turn: 0,
+    });
+    const [benchedDhelmise] = shuppetActive.bench;
+    if (dhelmiseActive.active === undefined || benchedDhelmise === undefined) {
+      throw new Error("場が作れていない");
+    }
+    expect(
+      createSetupProspects(dhelmiseActive).calculateActiveSpotProspect(
+        dhelmiseActive.active
+      )
+    ).toBe(1);
+    expect(
+      createSetupProspects(shuppetActive).calculateActiveSpotProspect(
+        benchedDhelmise
+      )
+    ).toBe(PROGRESS_WEIGHTS.noWayToActive);
+  });
+
+  test("打てるの見込みは、立つ見込み・エネルギーの見込み・バトル場に出せる見込みの平均になる", () => {
+    // メガサーナイトex は立っていて、メガシンフォニア(超 1 個。記録 048464)のエネルギーはついている。ベンチにいて、手札の
+    // ポケモンいれかえでバトル場に出せる
+    const state = buildBenchedMegaGardevoir([SWITCH], [BOSS_ORDERS]);
+    state.bench[0]?.energies.push(PSYCHIC_ENERGY);
+    const prospects = createProspects(MEGA_GARDEVOIR_DECK, state);
+    expect(prospects.isGoalAchieved(0)).toBe(true);
+    expect(prospects.isGoalAchieved(1)).toBe(false);
+    expect(prospects.calculateAttackProspect(3)).toBeCloseTo(
+      (1 + 1 + PROGRESS_WEIGHTS.benchedWithWayToActiveThisTurn) / 3,
       9
     );
   });
