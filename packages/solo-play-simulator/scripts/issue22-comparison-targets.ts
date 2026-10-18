@@ -11,14 +11,20 @@
 import { listUsableAttacksOfActive } from "../src/card-effects.ts";
 import { CardCategory, type CardRecord } from "../src/card-record-schema.ts";
 import { cardRecordTable } from "../src/card-record-table.ts";
-import type { Declaration } from "../src/declaration.ts";
+import {
+  type Declaration,
+  type ResolvedDeclaration,
+  resolveDeclaration,
+} from "../src/declaration.ts";
 import { firstCandidateChoices } from "../src/effect-choices.ts";
 import type { DeckVariant, Goal } from "../src/engine.ts";
 import {
   BAKEGAKURE_DECLARATION,
   DRAGAPULT_DECLARATION,
+  ISSUE22_DECKS,
   MEGA_CHARIZARD_DECLARATION,
   MEGA_GARDEVOIR_DECLARATION,
+  type RecordedDeck,
 } from "../src/issue22-decks.ts";
 import type { GameState } from "../src/state.ts";
 
@@ -156,7 +162,7 @@ const DRAKLOAK_GOAL: Goal = {
   name: "ドロンチが場にいる(ていさつしれいを使える)",
 };
 
-export const ISSUE22_COMPARISON_TARGETS: Readonly<
+const ISSUE22_COMPARISON_TARGETS: Readonly<
   Record<string, Issue22ComparisonTarget>
 > = {
   bakegakure: {
@@ -718,3 +724,42 @@ export const ISSUE22_COMPARISON_TARGETS: Readonly<
     ],
   },
 };
+
+/** デッキの名前(ISSUE22_COMPARISON_TARGETS のキー)から、答え合わせの相手と 60 枚の内容を引く。 */
+function findIssue22ComparisonTarget(deckName: string): {
+  deck: RecordedDeck;
+  target: Issue22ComparisonTarget;
+} {
+  const target = ISSUE22_COMPARISON_TARGETS[deckName];
+  if (target === undefined) {
+    throw new Error(
+      `デッキの名前を渡す(${Object.keys(ISSUE22_COMPARISON_TARGETS).join("、")})`
+    );
+  }
+  const deck = ISSUE22_DECKS.find(
+    (entry) => entry.deckCode === target.deckCode
+  );
+  if (deck === undefined) {
+    throw new Error(`デッキ ${target.deckCode} が無い`);
+  }
+  return { deck, target };
+}
+
+/**
+ * 答え合わせの道具の引数(デッキの名前、先攻・後攻それぞれの試行回数)から、答え合わせの相手、60 枚の内容、宣言を
+ * 記録で引き当てたもの、試行回数を引く。
+ */
+export function parseIssue22ComparisonArguments(argv: readonly string[]): {
+  deck: RecordedDeck;
+  resolved: ResolvedDeclaration;
+  target: Issue22ComparisonTarget;
+  trials: number;
+} {
+  const { deck, target } = findIssue22ComparisonTarget(argv[0] ?? "");
+  return {
+    deck,
+    resolved: resolveDeclaration(target.declaration, cardRecordTable),
+    target,
+    trials: Number(argv[1] ?? "20000"),
+  };
+}

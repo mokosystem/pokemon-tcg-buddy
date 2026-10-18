@@ -1,20 +1,18 @@
 /**
- * 題材の局面 A〜F(search-positions.ts)で、探索が正しい手を選ぶかを確かめる。20 通りの並べ方での結果は
- * `bun run compare:search-evaluators 20` で出し、docs/solo-play-simulator-design.md「順 7 で決めたこと(2 セッション目)」に記録した。
- * ここでは並べ方 5 通りで確かめる。今は正しい手を選べない局面は test.failing にし、選べるようになったら落ちて知らせる。
+ * 正しい手の局面 A〜F と 1〜10(search-positions.ts)で、探索が正しい手を選ぶかを確かめる。20 通りの並べ方での結果は
+ * `bun run compare:search-evaluators 20` で出し、docs/solo-play-simulator-design.md「順 7 で決めたこと(2 セッション目)」
+ * (A〜F)と「場の評価の数え漏れの修正(Issue 51)」(1〜10)に記録した。ここでは並べ方 5 通りで確かめる。今は正しい手を
+ * 選べない局面は test.failing にし、選べるようになったら落ちて知らせる。
  */
 
 import { describe, expect, test } from "bun:test";
+import type { ResolvedDeclaration } from "./declaration.ts";
 import {
   createNextTurnTrialEvaluator,
   createPathProgressEvaluator,
 } from "./search-evaluators.ts";
 import { createSearchPolicy, type Evaluator } from "./search-policy.ts";
-import {
-  playSearchPosition,
-  RESOLVED_MEGA_GARDEVOIR_DECLARATION,
-  SEARCH_POSITIONS,
-} from "./search-positions.ts";
+import { playSearchPosition, SEARCH_POSITIONS } from "./search-positions.ts";
 
 const ARRANGEMENTS = [0, 1, 2, 3, 4];
 
@@ -26,18 +24,19 @@ function findPosition(id: string) {
   return position;
 }
 
-/** 並べ方ごとに、正しい手を選んだかを並べる。 */
+/** 並べ方ごとに、局面のデッキの宣言で探索と評価を作り、正しい手を選んだかを並べる。 */
 function playArrangements(
   id: string,
-  createEvaluator: () => Evaluator,
+  createEvaluator: (declaration: ResolvedDeclaration) => Evaluator,
   arrangements: readonly number[]
 ): boolean[] {
+  const position = findPosition(id);
   return arrangements.map((variation) =>
     playSearchPosition(
-      findPosition(id),
+      position,
       createSearchPolicy(
-        RESOLVED_MEGA_GARDEVOIR_DECLARATION,
-        createEvaluator(),
+        position.declaration,
+        createEvaluator(position.declaration),
         {
           samplesForUncertainOutcome: 4,
           searchesEffectChoices: true,
@@ -49,10 +48,9 @@ function playArrangements(
   );
 }
 
-const pathProgress = () =>
-  createPathProgressEvaluator(RESOLVED_MEGA_GARDEVOIR_DECLARATION);
+const pathProgress = createPathProgressEvaluator;
 
-describe("道の揃い具合を見る評価で、題材の局面の正しい手を選ぶ", () => {
+describe("道の揃い具合を見る評価で、正しい手の局面の正しい手を選ぶ", () => {
   for (const id of ["A", "B", "C", "F"]) {
     const position = findPosition(id);
     test(`局面 ${id}: ${position.correctPlay}`, () => {
@@ -77,12 +75,69 @@ describe("道の揃い具合を見る評価で、題材の局面の正しい手�
   });
 });
 
+describe("道の揃い具合を見る評価で、Issue 51 の局面 1〜10 の正しい手を選ぶ", () => {
+  // 局面 5・8 は、正しい手を打った番に「打てる」が成り立つため、数え漏れを直す前から選ぶ
+  for (const id of ["5", "8"]) {
+    const position = findPosition(id);
+    test(`局面 ${id}: ${position.correctPlay}`, () => {
+      expect(playArrangements(id, pathProgress, ARRANGEMENTS)).toEqual(
+        ARRANGEMENTS.map(() => true)
+      );
+    });
+  }
+
+  // 今は選べない局面と、Issue 51 の表がその局面に当てた数え漏れ。数え漏れを直して選べるようになったら test に直す
+  const failingPositions: readonly { id: string; omission: string }[] = [
+    {
+      // 数え漏れ 1: 手札の探すカード 1 枚を道の必要なカードそれぞれに重ねて数えるため、使うと取らなかった側の見込みが落ちる
+      id: "1",
+      omission: "数え漏れ 1",
+    },
+    {
+      // 数え漏れ 2: この番に届く道と次の番にしか届かない道を区別しないため、番を終える手にもこの番の見込みが残る
+      id: "2",
+      omission: "数え漏れ 2",
+    },
+    {
+      // 数え漏れ 2: 同上で、アクロマの執念とリーリエの決心の差が並べ方によって入れ替わる
+      id: "3",
+      omission: "数え漏れ 2",
+    },
+    {
+      // 数え漏れ 3: ワザのエネルギーの見込みがついているエネルギーの数だけを見るため、引いても見込みが上がらない
+      id: "4",
+      omission: "数え漏れ 3",
+    },
+    {
+      // 数え漏れ 4: 主軸がバトル場にいるかを見ないため、ダダリンとカゲボウズのどちらを前に置いても同点になる
+      id: "6",
+      omission: "数え漏れ 4",
+    },
+    {
+      // 数え漏れ 5: 「N 以上なら加算」の途中経過を見ないため、トラッシュに「ばけがくれ」を送っても見込みが上がらない
+      id: "9",
+      omission: "数え漏れ 5",
+    },
+    {
+      // 数え漏れ 6: ベンチに出してもその場の見込みが変わらず、番を終えると同点になる
+      id: "10",
+      omission: "数え漏れ 6",
+    },
+  ];
+  for (const { id, omission } of failingPositions) {
+    const position = findPosition(id);
+    test.failing(`局面 ${id}(${omission}): ${position.correctPlay}`, () => {
+      expect(playArrangements(id, pathProgress, ARRANGEMENTS)).toEqual(
+        ARRANGEMENTS.map(() => true)
+      );
+    });
+  }
+});
+
 describe("次の番を試す評価", () => {
   test("局面 E で、アクロマの執念から偉大な大樹で進化させる(その番の残りを進めて見積もる)", () => {
-    const trials = () =>
-      createNextTurnTrialEvaluator(RESOLVED_MEGA_GARDEVOIR_DECLARATION, {
-        trials: 4,
-      });
+    const trials = (declaration: ResolvedDeclaration) =>
+      createNextTurnTrialEvaluator(declaration, { trials: 4 });
     expect(playArrangements("E", trials, [0, 1])).toEqual([true, true]);
   });
 });
