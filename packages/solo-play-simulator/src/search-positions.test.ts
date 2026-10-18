@@ -51,7 +51,9 @@ function playArrangements(
 const pathProgress = createPathProgressEvaluator;
 
 describe("道の揃い具合を見る評価で、正しい手の局面の正しい手を選ぶ", () => {
-  for (const id of ["A", "B", "C", "F"]) {
+  // E は Issue 51 の順 2 から選ぶ。「番を終える」を試すときはこの番の成り立っていない狙いの見込みを 0 にし、山札から
+  // 探して持ってこられる重みを 0.5 から 0.4 に下げた(設計文書「場の評価の数え漏れの修正(Issue 51)」の順 2)
+  for (const id of ["A", "B", "C", "E", "F"]) {
     const position = findPosition(id);
     test(`局面 ${id}: ${position.correctPlay}`, () => {
       expect(playArrangements(id, pathProgress, ARRANGEMENTS)).toEqual(
@@ -66,18 +68,13 @@ describe("道の揃い具合を見る評価で、正しい手の局面の正し�
       ARRANGEMENTS.map(() => true)
     );
   });
-
-  // アクロマの執念を混ぜ直し 4 通りの平均で見積もるため、偉大な大樹がサイドに入った通りが多いと「番を終える」を下回る
-  test.failing(`局面 E(並べ方を変えても毎回): ${findPosition("E").correctPlay}`, () => {
-    expect(playArrangements("E", pathProgress, ARRANGEMENTS)).toEqual(
-      ARRANGEMENTS.map(() => true)
-    );
-  });
 });
 
 describe("道の揃い具合を見る評価で、Issue 51 の局面 1〜10 の正しい手を選ぶ", () => {
-  // 局面 5・8 は、正しい手を打った番に「打てる」が成り立つため、数え漏れを直す前から選ぶ
-  for (const id of ["5", "8"]) {
+  // 局面 5・8 は、正しい手を打った番に「打てる」が成り立つため、数え漏れを直す前から選ぶ。局面 1・2・3・4・10 は Issue 51 の
+  // 順 2(締め切りごとに分け、「番を終える」を試すときはこの番の成り立っていない狙いの見込みを 0 にする)から選ぶ。局面 3 は、
+  // 山札から探して持ってこられる重みを 0.5 から 0.4 に下げるまで、並べ方によってリーリエの決心を選んだ
+  for (const id of ["1", "2", "3", "4", "5", "8", "10"]) {
     const position = findPosition(id);
     test(`局面 ${id}: ${position.correctPlay}`, () => {
       expect(playArrangements(id, pathProgress, ARRANGEMENTS)).toEqual(
@@ -89,26 +86,6 @@ describe("道の揃い具合を見る評価で、Issue 51 の局面 1〜10 の�
   // 今は選べない局面と、Issue 51 の表がその局面に当てた数え漏れ。数え漏れを直して選べるようになったら test に直す
   const failingPositions: readonly { id: string; omission: string }[] = [
     {
-      // 数え漏れ 1: 手札の探すカード 1 枚を道の必要なカードそれぞれに重ねて数えるため、使うと取らなかった側の見込みが落ちる
-      id: "1",
-      omission: "数え漏れ 1",
-    },
-    {
-      // 数え漏れ 2: この番に届く道と次の番にしか届かない道を区別しないため、番を終える手にもこの番の見込みが残る
-      id: "2",
-      omission: "数え漏れ 2",
-    },
-    {
-      // 数え漏れ 2: 同上で、アクロマの執念とリーリエの決心の差が並べ方によって入れ替わる
-      id: "3",
-      omission: "数え漏れ 2",
-    },
-    {
-      // 数え漏れ 3: ワザのエネルギーの見込みがついているエネルギーの数だけを見るため、引いても見込みが上がらない
-      id: "4",
-      omission: "数え漏れ 3",
-    },
-    {
       // 数え漏れ 4: 主軸がバトル場にいるかを見ないため、ダダリンとカゲボウズのどちらを前に置いても同点になる
       id: "6",
       omission: "数え漏れ 4",
@@ -117,11 +94,6 @@ describe("道の揃い具合を見る評価で、Issue 51 の局面 1〜10 の�
       // 数え漏れ 5: 「N 以上なら加算」の途中経過を見ないため、トラッシュに「ばけがくれ」を送っても見込みが上がらない
       id: "9",
       omission: "数え漏れ 5",
-    },
-    {
-      // 数え漏れ 6: ベンチに出してもその場の見込みが変わらず、番を終えると同点になる
-      id: "10",
-      omission: "数え漏れ 6",
     },
   ];
   for (const { id, omission } of failingPositions) {

@@ -5,7 +5,8 @@
  *
  * - その番の狙いだけを見る評価: 成り立っていなければ 0。1 番先を見ない基準
  * - 道の揃い具合を見る評価: 成り立っていなければ、主軸への道の必要なカードの揃い具合、ワザのエネルギー、ダメージの
- *   下限までの距離から 0 以上 1 未満の見込みを出す。1 番先を数え上げだけで見る。見込みは goal-prospects.ts で出す
+ *   下限までの距離から 0 以上 1 未満の見込みを締め切りごとに出す。1 番先を数え上げだけで見る。見込みは
+ *   goal-prospects.ts で出す
  * - 次の番を試す評価: 見えていないカードを混ぜ直した複製で、その番の残りと次の番を軽い探索で進めて数える
  */
 
@@ -13,7 +14,7 @@ import { resolveEndOfTurnTriggers } from "./card-effects.ts";
 import type { ResolvedDeclaration } from "./declaration.ts";
 import type { EffectChoices } from "./effect-choices.ts";
 import { type PlayingPolicy, useAttacksOfTurn } from "./engine.ts";
-import { scoreGoalsByPathProgress } from "./goal-prospects.ts";
+import { GoalProspects, scoreGoalsByPathProgress } from "./goal-prospects.ts";
 import { SeededRandom } from "./random.ts";
 import {
   createSearchPolicy,
@@ -43,20 +44,31 @@ export function createGoalOnlyEvaluator(
 
 // ---- 道の揃い具合を見る評価 ----
 
-/** 道の揃い具合を見る評価。狙いの段ごとの点(scoreGoalsByPathProgress)の合計 × 判定がまだ済んでいない締め切りの数。 */
+function sumScores(scores: readonly number[]): number {
+  return scores.reduce((total, score) => total + score, 0);
+}
+
+/**
+ * 道の揃い具合を見る評価。判定がまだ済んでいない締め切りごとに、狙いの段ごとの点(scoreGoalsByPathProgress)を
+ * 出して合計する。見込みが締め切りによって違う(この番に間に合う進化の元だけを数える、など)ため、1 つの締め切りの
+ * 点を締め切りの数倍にしない。
+ */
 export function createPathProgressEvaluator(
   declaration: ResolvedDeclaration
 ): Evaluator {
-  return ({ fromTurn, state }) => {
-    const openDeadlines = countOpenDeadlines(declaration, fromTurn);
-    if (openDeadlines === 0) {
+  return (input) => {
+    const openDeadlines = declaration.deadlines.filter(
+      (deadline) => deadline >= input.fromTurn
+    );
+    if (openDeadlines.length === 0) {
       return 0;
     }
-    return (
-      scoreGoalsByPathProgress(declaration, state).reduce(
-        (total, score) => total + score,
-        0
-      ) * openDeadlines
+    const prospects = new GoalProspects(declaration, input);
+    return openDeadlines.reduce(
+      (total, deadline) =>
+        total +
+        sumScores(scoreGoalsByPathProgress(declaration, prospects, deadline)),
+      0
     );
   };
 }
@@ -101,7 +113,7 @@ export function createNextTurnTrialEvaluator(
           if (firstTurn !== undefined && firstTurn <= deadline) {
             total += 1;
           } else if (deadline > lastTurn) {
-            total += result.leafScores[index] ?? 0;
+            total += result.leafScores.get(deadline)?.[index] ?? 0;
           }
         }
       });
@@ -112,14 +124,17 @@ export function createNextTurnTrialEvaluator(
 
 /**
  * 見えていないカードを混ぜ直した複製で、fromTurn の番から lastTurn の番までを軽い探索で進める。狙いごとに最初に
- * 成り立った番と、最後の番の終わりの道の揃い具合を見る評価の点を返す。
+ * 成り立った番と、lastTurn より後の締め切りごとの、最後の番の終わりの道の揃い具合を見る評価の点を返す。
  */
 function playTrialTurns(
   declaration: ResolvedDeclaration,
   { fromTurn, stage, state, statistics }: EvaluationInput,
   lastTurn: number,
   trialSeed: number
-): { firstAchievedTurns: (number | undefined)[]; leafScores: number[] } {
+): {
+  firstAchievedTurns: (number | undefined)[];
+  leafScores: Map<number, number[]>;
+} {
   const rollout = createSearchPolicy(
     declaration,
     createPathProgressEvaluator(declaration),
@@ -153,9 +168,25 @@ function playTrialTurns(
   }
   statistics.clones += rollout.statistics.clones;
   statistics.evaluations += rollout.statistics.evaluations;
+  // 山札が尽きて試しが lastTurn の前で止まったときも、葉の場の番から数える。どちらでも lastTurn より後の締め切りは
+  // 葉の場の番より後になる
+  const prospects = new GoalProspects(declaration, {
+    fromTurn: copy.turn,
+    seed: trialSeed,
+    stage: "actionsDone",
+    state: copy,
+    statistics,
+  });
   return {
     firstAchievedTurns,
-    leafScores: scoreGoalsByPathProgress(declaration, copy),
+    leafScores: new Map(
+      declaration.deadlines
+        .filter((deadline) => deadline > lastTurn)
+        .map((deadline) => [
+          deadline,
+          scoreGoalsByPathProgress(declaration, prospects, deadline),
+        ])
+    ),
   };
 }
 
