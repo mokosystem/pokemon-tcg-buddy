@@ -22,6 +22,7 @@ import {
   BAKEGAKURE_DECLARATION,
   DRAGAPULT_DECLARATION,
   ISSUE22_DECKS,
+  MEGA_CHARIZARD_DECLARATION,
   MEGA_GARDEVOIR_DECLARATION,
 } from "./issue22-decks.ts";
 import { createSeededRandom } from "./random.ts";
@@ -51,6 +52,10 @@ function buildPositionDeck(
 const POSITION_DECKS = {
   bakegakure: buildPositionDeck("9nnnLP-Wejgk5-gn6gn9", BAKEGAKURE_DECLARATION),
   dragapult: buildPositionDeck("9gngnQ-zAMw9G-96H9nn", DRAGAPULT_DECLARATION),
+  megaCharizard: buildPositionDeck(
+    "DxKGxx-6pqCKy-xxJ8Yc",
+    MEGA_CHARIZARD_DECLARATION
+  ),
   megaGardevoir: buildPositionDeck(
     "xG8Kax-DHob4e-84xcca",
     MEGA_GARDEVOIR_DECLARATION
@@ -62,6 +67,9 @@ type PositionDeckKey = keyof typeof POSITION_DECKS;
 export const RESOLVED_MEGA_GARDEVOIR_DECLARATION =
   POSITION_DECKS.megaGardevoir.declaration;
 
+export const RESOLVED_MEGA_CHARIZARD_DECLARATION =
+  POSITION_DECKS.megaCharizard.declaration;
+
 /**
  * 局面に使うカード。カード ID はカードの記録を引くためのもので、そのデッキに入っている印刷と違ってよい(ドラパルトex の
  * ハイパーボールは 049600、ばけがくれのリーリエの決心は 050468)。60 枚からは記録の単位で照らして抜く。
@@ -70,6 +78,7 @@ const CARD_IDS = {
   achroma: "045934",
   bossOrders: "050467",
   budew: "048533",
+  charmander: "048351",
   dhelmise: "050308",
   dragapult: "049264",
   drakloak: "049263",
@@ -752,6 +761,28 @@ export const SEARCH_POSITIONS: readonly SearchPosition[] = [
       "メガサーナイトex、2 番目の番。バトル場にメガサーナイトex(超エネルギー 1 個つき)。ベンチに 2 匹。手札にラルトス。山札に基本超エネルギーがある(作った場面)",
   },
 ];
+
+/**
+ * メガリザードン(DxKGxx-6pqCKy-xxJ8Yc)の後攻 2 番目の番。バトル場とベンチにヒトカゲ(048351)、手札にハイパーボール
+ * (050461。050742 は同じ記録)、ポケパッド(050424。050743 は同じ記録)、リーリエの決心(049445。050468 は同じ記録)、
+ * 基本炎エネルギー(050746)。混ぜ直しのテスト(`search-policy.test.ts`)のためだけの場面で、正しい手を判断していない
+ * ため、局面(`SEARCH_POSITIONS`)には入れない。
+ */
+export function buildMegaCharizardSecondTurnState(
+  arrangementSeed: number
+): GameState {
+  return buildPositionState(
+    {
+      active: { card: "charmander" },
+      bench: [{ card: "charmander" }],
+      deck: "megaCharizard",
+      hand: ["ultraBall", "pokePad", "lillie", "fireEnergy"],
+      turn: 2,
+      wentFirst: false,
+    },
+    arrangementSeed
+  );
+}
 
 /** 局面 id を作り、探索に選ばせて、正しい手を選んだかを返す。 */
 export function playSearchPosition(
