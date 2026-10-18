@@ -380,6 +380,65 @@ describe("ワザのエネルギーの見込み(置き場所とタイプ)", () =>
     );
   });
 
+  // 手札からつけるのは 1 回の番に 1 枚(docs/pokemon-tcg/basic-rules.md 72 行)。アカマツ(記録 049412)は山札から違う
+  // タイプの基本エネルギーを 2 枚まで選び、1 枚を手札に加え、残りを自分のポケモン(つける先の条件なし)につける。効果で
+  // つけるのは手札からつける 1 回の制限に数えない(state.ts の attachEnergyByEffect)。ポケギア3.0(記録 049376)は
+  // 山札の上 7 枚からサポートを手札に加える
+  describe("効果でつけるアカマツ", () => {
+    const AKAMATSU = buildRecordedCard("049412");
+    const POKEGEAR = buildRecordedCard("049376");
+
+    /** 3 番目の番、ドラパルトex に基本超エネルギー 1 個がついていて、この番に手札からつけ済みの場。 */
+    function buildAfterAttachingOnThirdTurn(
+      hand: readonly Card[],
+      deck: readonly Card[]
+    ): GameState {
+      const state = buildState({ active: DRAGAPULT_EX, deck, hand, turn: 3 });
+      // サイドの基本超エネルギー 6 枚(buildState が置く)を除き、見えていないカードを山札だけにする
+      state.prizes.length = 0;
+      state.active?.energies.push(PSYCHIC_ENERGY);
+      state.hasAttachedEnergy = true;
+      return state;
+    }
+
+    test("この番に手札からつけた後でも、この番の締め切りで、手札のアカマツで山札の基本炎エネルギーをつけられる要求は 1 段の重みで数え、ひふきやろうで手札に加える要求は数えない", () => {
+      const withAkamatsu = buildAfterAttachingOnThirdTurn(
+        [AKAMATSU],
+        [PSYCHIC_ENERGY, FIRE_ENERGY, BOSS_ORDERS]
+      );
+      expect(
+        calculateActiveEnergyProspect(
+          DRAGAPULT,
+          "ファントムダイブ",
+          withAkamatsu,
+          3
+        )
+      ).toBeCloseTo((1 + PROGRESS_WEIGHTS.searchableFromDeck) / 2, 9);
+      const withFireSpitter = buildAfterAttachingOnThirdTurn(
+        [FIRE_SPITTER],
+        [PSYCHIC_ENERGY, FIRE_ENERGY, BOSS_ORDERS]
+      );
+      expect(
+        calculateActiveEnergyProspect(
+          DRAGAPULT,
+          "ファントムダイブ",
+          withFireSpitter,
+          3
+        )
+      ).toBeCloseTo(1 / 2, 9);
+    });
+
+    test("この番に手札からつけた後でも、この番の締め切りで、手札のポケギア3.0で山札のアカマツを手札に加えて基本炎エネルギーをつけられる要求は 2 段の重みで数える", () => {
+      const state = buildAfterAttachingOnThirdTurn(
+        [POKEGEAR],
+        [AKAMATSU, PSYCHIC_ENERGY, FIRE_ENERGY, BOSS_ORDERS]
+      );
+      expect(
+        calculateActiveEnergyProspect(DRAGAPULT, "ファントムダイブ", state, 3)
+      ).toBeCloseTo((1 + PROGRESS_WEIGHTS.searchableInTwoSteps) / 2, 9);
+    });
+  });
+
   test("見えていない基本炎エネルギーが 1 枚なら、ひふきやろうが 2 枚あっても、山札から持ってこられる要求は 1 つ", () => {
     const state = buildState({
       active: MEGA_CHARIZARD_Y,

@@ -41,7 +41,7 @@ function assignFor(
     listDeckFetchRelays(state, timing, unseen),
     unseen,
     timing
-  );
+  ).map(({ route }) => route);
 }
 
 describe("探す手段の割り当て", () => {

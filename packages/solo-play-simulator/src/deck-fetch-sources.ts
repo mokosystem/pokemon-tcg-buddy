@@ -15,14 +15,17 @@ import {
   type CardFilter,
   type CardRecord,
   type EffectStep,
+  type PokemonInPlayFilter,
 } from "./card-record-schema.ts";
 import { type Card, matchesCardFilter } from "./cards.ts";
+import { matchesPokemonFilter } from "./conditions.ts";
 import type { DeadlineTiming } from "./deadline-timing.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
 import {
   classifyOnceInTurnKind,
   type GameState,
   type OnceInTurnKind,
+  type PokemonInPlay,
 } from "./state.ts";
 
 /** 見えていないカード(山札とサイド)の、記録ごとの枚数と代表の 1 枚。 */
@@ -55,10 +58,39 @@ function listDeckFetchFilters(steps: readonly EffectStep[]): CardFilter[] {
   });
 }
 
+/**
+ * 効果の操作のうち、山札から持ってきたエネルギーを効果でポケモンにつけるもの(searchDeckIntoHandAndAttachRest)の、
+ * つける先の条件。条件の分かれ道とコインの中の操作も含める。
+ */
+function listEffectAttachTargetFilters(
+  steps: readonly EffectStep[]
+): PokemonInPlayFilter[] {
+  return steps.flatMap((step): PokemonInPlayFilter[] => {
+    switch (step.operation) {
+      case "searchDeckIntoHandAndAttachRest":
+        return [step.targetFilter];
+      case "branchOnCondition":
+        return listEffectAttachTargetFilters([
+          ...step.stepsWhenMet,
+          ...step.stepsOtherwise,
+        ]);
+      case "branchOnCoinFlip":
+        return listEffectAttachTargetFilters(step.stepsWhenHeads);
+      default:
+        return [];
+    }
+  });
+}
+
 /** カードの置き場所ごとに、使えば山札から持ってこられるカードの条件。 */
 interface FetchFilters {
   /** 手札にあるとき(グッズ・サポートを使う、スタジアムを出して効果を使う、ベンチに出す・進化させる・手札の特性、エネルギーをつける)。 */
   readonly inHand: readonly CardFilter[];
+  /**
+   * 手札にあるときの効果のうち、持ってきたエネルギーを効果でつける操作の、つける先の条件。場にあるときの効果からは
+   * 集めない。この操作を持つ記録はアカマツ(049412。サポート)だけで、場で使う特性やスタジアムの効果には無いため。
+   */
+  readonly inHandEffectAttachTargets: readonly PokemonInPlayFilter[];
   /** 場のポケモンの特性(特性の名前ごと)。この番に使えるかを特性ごとに骨組みで判定するため、名前ごとに分ける。 */
   readonly inPlayAbilities: readonly {
     readonly abilityName: string;
@@ -91,13 +123,15 @@ function listFetchFiltersOf(record: CardRecord): FetchFilters {
           ? [{ abilityName: ability.name, effect: ability.translation.effect }]
           : []
       );
+    const inHandEffects = effectsOf([
+      "activatedFromHand",
+      "triggeredWhenPlacedOnBenchFromHand",
+      "triggeredWhenEvolvedFromHand",
+    ]).map(({ effect }) => effect);
     filters = {
-      inHand: filtersOf(
-        effectsOf([
-          "activatedFromHand",
-          "triggeredWhenPlacedOnBenchFromHand",
-          "triggeredWhenEvolvedFromHand",
-        ]).map(({ effect }) => effect)
+      inHand: filtersOf(inHandEffects),
+      inHandEffectAttachTargets: inHandEffects.flatMap((effect) =>
+        listEffectAttachTargetFilters(effect.steps)
       ),
       inPlayAbilities: effectsOf(["activatedInPlay"])
         .map(({ abilityName, effect }) => ({
@@ -109,17 +143,22 @@ function listFetchFiltersOf(record: CardRecord): FetchFilters {
     };
   } else {
     const cardEffects = "cardEffects" in record ? record.cardEffects : [];
-    const all = filtersOf(
-      cardEffects.flatMap((cardEffect) =>
-        "effect" in cardEffect ? [cardEffect.effect] : []
-      )
+    const allEffects = cardEffects.flatMap((cardEffect) =>
+      "effect" in cardEffect ? [cardEffect.effect] : []
     );
     const inPlayStadium = filtersOf(
       cardEffects.flatMap((cardEffect) =>
         cardEffect.kind === "activatedOncePerTurn" ? [cardEffect.effect] : []
       )
     );
-    filters = { inHand: all, inPlayAbilities: [], inPlayStadium };
+    filters = {
+      inHand: filtersOf(allEffects),
+      inHandEffectAttachTargets: allEffects.flatMap((effect) =>
+        listEffectAttachTargetFilters(effect.steps)
+      ),
+      inPlayAbilities: [],
+      inPlayStadium,
+    };
   }
   fetchFiltersByRecord.set(record, filters);
   return filters;
@@ -183,8 +222,18 @@ function isTrainerPlayedFromHand(card: Card): boolean {
   );
 }
 
+/**
+ * 持ってきたエネルギーを効果でポケモンにつける操作の、つける先の条件(アカマツ 049412)。効果でつけるのは、手札から
+ * つける 1 回の番に 1 枚の制限に数えない(state.ts の attachEnergyByEffect)。この操作の持ってくる条件とつける条件は
+ * 同じ(記録の filter 1 つ)で、この操作を持つ記録はほかに山札から持ってくる操作を持たないため、操作ごとでなく
+ * 探す手段・中継の単位で持つ。
+ */
+export interface EffectAttachTargets {
+  readonly effectAttachTargetFilters?: readonly PokemonInPlayFilter[];
+}
+
 /** 探す手段 1 枚(CONTEXT.md「探す手段」)。 */
-export interface DeckFetchSource {
+export interface DeckFetchSource extends EffectAttachTargets {
   /** 使うと山札から持ってこられるカードの条件。 */
   readonly filters: readonly CardFilter[];
   readonly onceInTurnKind?: OnceInTurnKind;
@@ -194,7 +243,7 @@ export interface DeckFetchSource {
  * 2 段で持ってくるときの中継に使える、見えていないカードの記録 1 つ(CONTEXT.md「見えていないカード」)。
  * 探す手段で手札に加えた後、そのカードの効果で山札からさらに持ってこられる。
  */
-export interface DeckFetchRelay {
+export interface DeckFetchRelay extends EffectAttachTargets {
   /** 見えていないカードのうちの代表の 1 枚。 */
   readonly card: Card;
   /** 手札に来た後に使うと山札から持ってこられるカードの条件。 */
@@ -213,9 +262,43 @@ export interface FetchRequirement {
  */
 export type FetchRoute = "oneStep" | "twoSteps" | "drawOnly" | "noCopyLeft";
 
+/**
+ * 要るもの 1 つの割り当ての結果。isAttachedByEffect は、持ってくる最後の段(1 段なら探す手段、2 段なら中継)が、
+ * 持ってきたエネルギーを効果でつけ先のポケモンにつけるものか(割り当てに効果でつける先を渡したときだけ真になる)。
+ */
+export interface FetchAssignment {
+  readonly isAttachedByEffect: boolean;
+  readonly route: FetchRoute;
+}
+
+/** 持ってきたエネルギーを効果でつける先として見るポケモン。 */
+export interface EffectAttachTarget {
+  readonly pokemon: PokemonInPlay;
+  readonly state: GameState;
+}
+
+/** means(探す手段か中継)が、持ってきたエネルギーを効果で target につけられるか。つける先の条件は骨組みの matchesPokemonFilter で見る。 */
+export function canAttachByEffectTo(
+  means: EffectAttachTargets,
+  target: EffectAttachTarget
+): boolean {
+  return (
+    means.effectAttachTargetFilters?.some((filter) =>
+      matchesPokemonFilter(target.state, target.pokemon, filter)
+    ) ?? false
+  );
+}
+
 function withOnceInTurnKind(card: Card): { onceInTurnKind?: OnceInTurnKind } {
   const onceInTurnKind = classifyOnceInTurnKind(card);
   return onceInTurnKind === undefined ? {} : { onceInTurnKind };
+}
+
+function withEffectAttachTargets(record: CardRecord): EffectAttachTargets {
+  const { inHandEffectAttachTargets } = listFetchFiltersOf(record);
+  return inHandEffectAttachTargets.length === 0
+    ? {}
+    : { effectAttachTargetFilters: inHandEffectAttachTargets };
 }
 
 /** 手札の探す手段。excludedHandCounts の枚数分を除き、この番の締め切りではグッズ・サポート・スタジアムを今使えるものに絞る。 */
@@ -243,7 +326,11 @@ function listHandSources(
     ) {
       continue;
     }
-    sources.push({ filters: inHand, ...withOnceInTurnKind(card) });
+    sources.push({
+      filters: inHand,
+      ...withOnceInTurnKind(card),
+      ...withEffectAttachTargets(card.record),
+    });
   }
   return sources;
 }
@@ -322,18 +409,28 @@ export function listDeckFetchRelays(
     ) {
       continue;
     }
-    relays.push({ card, filters: inHand, ...withOnceInTurnKind(card) });
+    relays.push({
+      card,
+      filters: inHand,
+      ...withOnceInTurnKind(card),
+      ...withEffectAttachTargets(card.record),
+    });
   }
   return relays;
 }
 
 /** 同じ条件・同じ種類の探す手段の束。同じ記録の手札は入れ替えても割り当ての結果が変わらないので、まとめて枚数で数える。 */
 interface SourceGroup {
+  /** 持ってきたエネルギーを効果で、割り当てに渡したつける先につけられるか。 */
+  readonly attachesByEffect: boolean;
   remaining: number;
   readonly source: DeckFetchSource;
 }
 
-function groupSources(sources: readonly DeckFetchSource[]): SourceGroup[] {
+function groupSources(
+  sources: readonly DeckFetchSource[],
+  attachTarget: EffectAttachTarget | undefined
+): SourceGroup[] {
   const groups: SourceGroup[] = [];
   for (const source of sources) {
     const group = groups.find(
@@ -342,7 +439,13 @@ function groupSources(sources: readonly DeckFetchSource[]): SourceGroup[] {
         entry.source.onceInTurnKind === source.onceInTurnKind
     );
     if (group === undefined) {
-      groups.push({ remaining: 1, source });
+      groups.push({
+        attachesByEffect:
+          attachTarget !== undefined &&
+          canAttachByEffectTo(source, attachTarget),
+        remaining: 1,
+        source,
+      });
     } else {
       group.remaining += 1;
     }
@@ -350,8 +453,11 @@ function groupSources(sources: readonly DeckFetchSource[]): SourceGroup[] {
   return groups;
 }
 
-/** 割り当ての良さ。持ってくる先を選べた数、探す手段を割り当てた数、1 段の数の順に比べる。 */
-type AssignmentScore = readonly [number, number, number];
+/**
+ * 割り当ての良さ。持ってくる先を選べた数、探す手段を割り当てた数、1 段の数、効果でつける数の順に比べる。最初の 3 つで
+ * 結果ごとの数が決まり、効果でつける数は 3 つが同じ割り当ての間だけを分ける(道の見込みの割り当てでは常に 0)。
+ */
+type AssignmentScore = readonly [number, number, number, number];
 
 function isGreater(left: AssignmentScore, right: AssignmentScore): boolean {
   for (let index = 0; index < left.length; index += 1) {
@@ -368,13 +474,16 @@ function isGreater(left: AssignmentScore, right: AssignmentScore): boolean {
  * すべて試す。消費はこの 1 回の割り当ての中だけで数える(道ごとに別に割り当てる)。
  */
 class DeckFetchAssignment {
-  private best: { routes: FetchRoute[]; score: AssignmentScore } | undefined;
+  private best:
+    | { assignments: FetchAssignment[]; score: AssignmentScore }
+    | undefined;
+  private readonly attachTarget: EffectAttachTarget | undefined;
   private readonly groups: SourceGroup[];
   private readonly relays: readonly DeckFetchRelay[];
   /** 記録ごとの、この割り当てで使った枚数。残りは unseen の枚数から引いて出す。 */
   private readonly consumed = new Map<CardRecord, number>();
   private readonly requirements: readonly FetchRequirement[];
-  private readonly routes: FetchRoute[] = [];
+  private readonly assignments: FetchAssignment[] = [];
   private readonly timing: DeadlineTiming;
   private readonly unseen: UnseenCards;
   private readonly usedKinds = new Set<OnceInTurnKind>();
@@ -384,18 +493,20 @@ class DeckFetchAssignment {
     sources: readonly DeckFetchSource[],
     relays: readonly DeckFetchRelay[],
     unseen: UnseenCards,
-    timing: DeadlineTiming
+    timing: DeadlineTiming,
+    attachTarget: EffectAttachTarget | undefined
   ) {
     this.requirements = requirements;
-    this.groups = groupSources(sources);
+    this.attachTarget = attachTarget;
+    this.groups = groupSources(sources, attachTarget);
     this.relays = relays;
     this.unseen = unseen;
     this.timing = timing;
   }
 
-  findBestRoutes(): FetchRoute[] {
-    this.search(0, [0, 0, 0]);
-    return this.best?.routes ?? [];
+  findBestAssignments(): FetchAssignment[] {
+    this.search(0, [0, 0, 0, 0]);
+    return this.best?.assignments ?? [];
   }
 
   private countRemaining(record: CardRecord): number {
@@ -449,7 +560,7 @@ class DeckFetchAssignment {
     if (
       this.best !== undefined &&
       !isGreater(
-        [score[0] + left, score[1] + left, score[2] + left],
+        [score[0] + left, score[1] + left, score[2] + left, score[3] + left],
         this.best.score
       )
     ) {
@@ -457,10 +568,10 @@ class DeckFetchAssignment {
     }
     const requirement = this.requirements[index];
     if (requirement === undefined) {
-      this.best = { routes: [...this.routes], score };
+      this.best = { assignments: [...this.assignments], score };
       return;
     }
-    const [fetched, assigned, oneStep] = score;
+    const [fetched, assigned, oneStep, attached] = score;
     for (const record of requirement.candidates) {
       const target = this.unseen.get(record);
       if (target === undefined || this.countRemaining(record) < 1) {
@@ -471,22 +582,38 @@ class DeckFetchAssignment {
         fetched + 1,
         assigned + 1,
         oneStep + 1,
+        attached,
       ]);
       this.tryTwoSteps(index, target.card, [
         fetched + 1,
         assigned + 1,
         oneStep,
+        attached,
       ]);
-      this.descend(index, "drawOnly", [fetched + 1, assigned, oneStep]);
+      this.descend(index, "drawOnly", false, [
+        fetched + 1,
+        assigned,
+        oneStep,
+        attached,
+      ]);
       this.consume(record, -1);
     }
-    this.descend(index, "noCopyLeft", score);
+    this.descend(index, "noCopyLeft", false, score);
   }
 
-  private descend(index: number, route: FetchRoute, next: AssignmentScore) {
-    this.routes.push(route);
-    this.search(index + 1, next);
-    this.routes.pop();
+  /** 要るもの index を route で満たしたとして次へ進む。効果でつけるなら、比べる数の 4 番目(効果でつける数)を 1 足す。 */
+  private descend(
+    index: number,
+    route: FetchRoute,
+    isAttachedByEffect: boolean,
+    next: AssignmentScore
+  ) {
+    this.assignments.push({ isAttachedByEffect, route });
+    this.search(
+      index + 1,
+      isAttachedByEffect ? [next[0], next[1], next[2], next[3] + 1] : next
+    );
+    this.assignments.pop();
   }
 
   private tryOneStep(index: number, target: Card, next: AssignmentScore) {
@@ -495,7 +622,9 @@ class DeckFetchAssignment {
         this.isGroupAvailable(group) &&
         matchesAnyFilter(group.source.filters, target)
       ) {
-        this.withGroupUsed(group, () => this.descend(index, "oneStep", next));
+        this.withGroupUsed(group, () =>
+          this.descend(index, "oneStep", group.attachesByEffect, next)
+        );
       }
     }
   }
@@ -514,7 +643,14 @@ class DeckFetchAssignment {
           if (this.canRelay(group, relay, target)) {
             this.consume(relay.card.record, 1);
             this.markKind(relay.onceInTurnKind, true);
-            this.descend(index, "twoSteps", next);
+            // 2 段では、効果でつけるかは持ってくる最後の段の中継で決まる(中継のアカマツが山札のエネルギーをつける)
+            this.descend(
+              index,
+              "twoSteps",
+              this.attachTarget !== undefined &&
+                canAttachByEffectTo(relay, this.attachTarget),
+              next
+            );
             this.markKind(relay.onceInTurnKind, false);
             this.consume(relay.card.record, -1);
           }
@@ -542,20 +678,24 @@ class DeckFetchAssignment {
  * unseen は、この割り当てで使ってよい見えていないカードの記録ごとの残りの枚数。要るものごとに持ってくる先の 1 枚と、
  * 2 段の中継の 1 枚を同じ残りの枚数から消費し、同じ 1 枚を 2 度使わない。選び方をすべて試し、持ってくる先を選べた数、
  * 探す手段を割り当てた数、1 段の数がいちばん大きいものを返す。この番の締め切りでは、種類のある探す手段と中継
- * (サポート、スタジアム)を種類ごとに 1 回で使い切る(docs/pokemon-tcg/basic-rules.md 75・76 行)。
+ * (サポート、スタジアム)を種類ごとに 1 回で使い切る(docs/pokemon-tcg/basic-rules.md 75・76 行)。attachTarget を
+ * 渡すと、持ってきたエネルギーを効果でそのポケモンにつける探す手段・中継で満たした要るものに isAttachedByEffect を
+ * 付け、前の 3 つの数が同じ割り当ての間では効果でつける数の多いものを選ぶ。
  */
 export function assignDeckFetchSources(
   requirements: readonly FetchRequirement[],
   sources: readonly DeckFetchSource[],
   relays: readonly DeckFetchRelay[],
   unseen: UnseenCards,
-  timing: DeadlineTiming
-): FetchRoute[] {
+  timing: DeadlineTiming,
+  attachTarget?: EffectAttachTarget
+): FetchAssignment[] {
   return new DeckFetchAssignment(
     requirements,
     sources,
     relays,
     unseen,
-    timing
-  ).findBestRoutes();
+    timing,
+    attachTarget
+  ).findBestAssignments();
 }

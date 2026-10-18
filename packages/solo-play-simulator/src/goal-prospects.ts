@@ -29,6 +29,7 @@ import {
 import { type DeadlineTiming, toDeadlineTiming } from "./deadline-timing.ts";
 import {
   assignDeckFetchSources,
+  canAttachByEffectTo,
   canFetchInOneStep,
   countUnseenByRecord,
   type DeckFetchRelay,
@@ -287,15 +288,15 @@ function scorePath(
   if (requirements.length === 0 || product === 0) {
     return product;
   }
-  const routes = assignDeckFetchSources(
+  const assignments = assignDeckFetchSources(
     requirements,
     listDeckFetchSources(view.state, timing, used.countUsedInHand()),
     listRelaysOnce(view, timing),
     used.countRemainingUnseen(),
     timing
   );
-  return routes.reduce(
-    (total, route) => total * FETCH_ROUTE_WEIGHTS[route],
+  return assignments.reduce(
+    (total, { route }) => total * FETCH_ROUTE_WEIGHTS[route],
     product
   );
 }
@@ -749,7 +750,8 @@ export class GoalProspects {
    * ない、見えていないカードにも供給の合うエネルギーが無ければ 0)の合計を要求の数で割る。要求を埋める順は
    * listUnpaidCost(ついているエネルギーの判定 canPayCost と同じ)。手札と見えていないカードのエネルギーは、主軸に
    * つけたとしたら供給するもので数える(プリズムエネルギー 049455 は 2進化の主軸には無色 1 個)。手札のエネルギーと
-   * 山札から持ってくるエネルギーは、合わせて締め切りまでに手札からつけられる回数まで数え、超えた要求は 0 にする。
+   * 山札から手札に持ってくるエネルギーは、合わせて締め切りまでに手札からつけられる回数まで数え、超えた要求は 0 にする。
+   * 山札から持ってきたエネルギーを効果で attacker につける探す手段(アカマツ 049412)で満たした要求は、この回数に数えない。
    */
   calculateAttackEnergyProspect(
     main: MainAttack,
@@ -778,18 +780,43 @@ export class GoalProspects {
       unpaid,
       attachable
     );
-    let total =
-      cost.length -
-      unpaid.length +
-      fromHand.filled * PROGRESS_WEIGHTS.energyInHand;
     // 山札から手札に持ってきたエネルギーも、つけるには手札からつける同じ 1 回を使う(basic-rules.md 72 行)ので、
     // 手札で組に選んだ枚数を引いた残りの回数までしか山札の分を数えない
     const attachableFromDeck =
       attachable -
       [...fromHand.counts.values()].reduce((sum, count) => sum + count, 0);
-    if (fromHand.rest.length === 0 || attachableFromDeck <= 0) {
-      return total / cost.length;
+    return (
+      (cost.length -
+        unpaid.length +
+        fromHand.filled * PROGRESS_WEIGHTS.energyInHand +
+        this.scoreEnergiesFromDeck(
+          { attacker, holder },
+          fromHand,
+          attachableFromDeck,
+          deadline
+        )) /
+      cost.length
+    );
+  }
+
+  /**
+   * 手札で埋めきれなかった要求(fromHand.rest)のうち、山札から持ってこられるものの揃い具合の合計。手札からつける回数の
+   * 残り attachableFromDeck を超えた要求は 0 にし、山札から持ってきたエネルギーを効果で attacker につける探す手段・中継で
+   * 満たした要求は、回数に数えない。
+   */
+  private scoreEnergiesFromDeck(
+    {
+      attacker,
+      holder,
+    }: { readonly attacker: PokemonInPlay; readonly holder: PokemonInPlay },
+    fromHand: HandEnergySelection,
+    attachableFromDeck: number,
+    deadline: number
+  ): number {
+    if (fromHand.rest.length === 0) {
+      return 0;
     }
+    const { fromTurn, state } = this.input;
     const view = this.countPathViewOnce();
     // どの記録を持ってくる先にするかは割り当てが決め、同じ 1 枚を 2 つの要求に使わない。合うエネルギーが見えていない
     // カードに無い要求は 0 のまま割り当てに渡さない
@@ -801,25 +828,47 @@ export class GoalProspects {
       );
       return candidates.length === 0 ? [] : [{ candidates }];
     });
-    if (requirements.length > 0) {
-      const timing = toDeadlineTiming(deadline, fromTurn);
-      // エネルギーの見込みは道の見込みと別の見込みとして平均するので、探す手段と見えていないカードを道と分け合わない
-      const routes = assignDeckFetchSources(
-        requirements,
-        listDeckFetchSources(state, timing, fromHand.counts),
-        listRelaysOnce(view, timing),
-        view.unseen,
-        timing
-      );
-      // 回数の上限を割り当てに渡してやり直さないのは、割り当てが (持ってこられた数, 割り当てた数, 1 段の数) を辞書式に
-      // 最大にしており、その結果を重みの大きい順に残りの回数分だけ採れば、1 段・2 段で持ってこられる要求から先に数えるため
-      total += routes
-        .map((route) => FETCH_ROUTE_WEIGHTS[route])
+    if (requirements.length === 0) {
+      return 0;
+    }
+    const timing = toDeadlineTiming(deadline, fromTurn);
+    // エネルギーの見込みは道の見込みと別の見込みとして平均するので、探す手段と見えていないカードを道と分け合わない
+    const sources = listDeckFetchSources(state, timing, fromHand.counts);
+    const relays = listRelaysOnce(view, timing);
+    // 効果でつける先は、ワザを使う場のポケモン attacker。主軸の進化前でも、ついているエネルギーは進化しても引き継ぐ
+    // (docs/pokemon-tcg/basic-rules.md 82 行)
+    const attachTarget = { pokemon: attacker, state };
+    if (
+      attachableFromDeck === 0 &&
+      !sources.some((source) => canAttachByEffectTo(source, attachTarget)) &&
+      !relays.some((relay) => canAttachByEffectTo(relay, attachTarget))
+    ) {
+      return 0;
+    }
+    const assignments = assignDeckFetchSources(
+      requirements,
+      sources,
+      relays,
+      view.unseen,
+      timing,
+      attachTarget
+    );
+    // 効果でつける要求は、手札からつける 1 回の制限に数えない(state.ts の attachEnergyByEffect)ので、回数の上限を
+    // 掛けずに足す
+    const attachedByEffect = assignments
+      .filter(({ isAttachedByEffect }) => isAttachedByEffect)
+      .reduce((sum, { route }) => sum + FETCH_ROUTE_WEIGHTS[route], 0);
+    // 回数の上限を割り当てに渡してやり直さないのは、割り当てが (持ってこられた数, 割り当てた数, 1 段の数) を辞書式に
+    // 最大にしており、その結果を重みの大きい順に残りの回数分だけ採れば、1 段・2 段で持ってこられる要求から先に数えるため
+    return (
+      attachedByEffect +
+      assignments
+        .filter(({ isAttachedByEffect }) => !isAttachedByEffect)
+        .map(({ route }) => FETCH_ROUTE_WEIGHTS[route])
         .sort((left, right) => right - left)
         .slice(0, attachableFromDeck)
-        .reduce((sum, weight) => sum + weight, 0);
-    }
-    return total / cost.length;
+        .reduce((sum, weight) => sum + weight, 0)
+    );
   }
 
   /** attacker が main のワザを使うのに必要なエネルギーと、ついているエネルギーで払えない分。締め切りによらないので使い回す。 */
