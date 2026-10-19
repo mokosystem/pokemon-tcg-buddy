@@ -212,7 +212,7 @@ export type FetchRoute = "oneStep" | "twoSteps" | "drawOnly" | "noCopyLeft";
 
 /**
  * 要るもの 1 つの割り当ての結果。isAttachedByEffect は、持ってくる最後の段(1 段なら探す手段、2 段なら中継)が、
- * 持ってきたエネルギーを効果でつけ先のポケモンにつけるものか(割り当てに効果でつける先を渡したときだけ真になる)。
+ * 持ってきたエネルギーを効果でつけ先のポケモンにつけるものか(割り当てにエネルギーをつける条件を渡したときだけ真になる)。
  */
 export interface FetchAssignment {
   readonly isAttachedByEffect: boolean;
@@ -223,6 +223,16 @@ export interface FetchAssignment {
 export interface EffectAttachTarget {
   readonly pokemon: PokemonInPlay;
   readonly state: GameState;
+}
+
+/**
+ * ワザのエネルギーの要求に割り当てるときの、エネルギーをつける条件。効果でつけない要求は、手札からつける 1 回の番に
+ * 1 枚の制限(docs/pokemon-tcg/basic-rules.md 72 行)を使うので、手札からつけられる残りの回数分だけを割り当ての良さに
+ * 数える。効果で effectAttachTarget につける要求は、この制限に数えない(state.ts の attachEnergyByEffect)。
+ */
+export interface EnergyAttachConditions {
+  readonly attachableFromHand: number;
+  readonly effectAttachTarget: EffectAttachTarget;
 }
 
 /** means(探す手段か中継)が、持ってきたエネルギーを効果で target につけられるか。つける先の条件は骨組みの matchesPokemonFilter で見る。 */
@@ -406,10 +416,18 @@ function groupSources(
 }
 
 /**
- * 割り当ての良さ。持ってくる先を選べた数、探す手段を割り当てた数、1 段の数、効果でつける数の順に比べる。最初の 3 つで
- * 結果ごとの数が決まり、効果でつける数は 3 つが同じ割り当ての間だけを分ける(道の見込みの割り当てでは常に 0)。
+ * 割り当ての良さ。持ってくる先を選べた数、探す手段を割り当てた数、1 段の数の順に比べる。エネルギーの要求の割り当てでは、
+ * 効果でつけない要求を手札からつけられる残りの回数分(1 段、2 段、引くしかないの順に良いほうから)だけ数え、効果でつける
+ * 要求はすべて数える。3 つの数で、数えた要求の結果ごとの数が決まる。
  */
-type AssignmentScore = readonly [number, number, number, number];
+type AssignmentScore = readonly [number, number, number];
+
+/** 割り当てた要るもののうち、持ってくる先を選べた数、探す手段を割り当てた数、1 段の数。 */
+interface RouteCounts {
+  assigned: number;
+  fetched: number;
+  oneStep: number;
+}
 
 function isGreater(left: AssignmentScore, right: AssignmentScore): boolean {
   for (let index = 0; index < left.length; index += 1) {
@@ -429,13 +447,31 @@ class DeckFetchAssignment {
   private best:
     | { assignments: FetchAssignment[]; score: AssignmentScore }
     | undefined;
-  private readonly attachTarget: EffectAttachTarget | undefined;
+  /** 効果でつけない要求を数える上限(手札からつけられる残りの回数)。道の見込みの割り当てでは上限が無い。 */
+  private readonly attachableFromHand: number;
   private readonly groups: SourceGroup[];
-  private readonly relays: readonly DeckFetchRelay[];
+  /** 2 段の中継と、持ってきたエネルギーを効果でつける先につけるか。 */
+  private readonly relays: readonly {
+    readonly attachesByEffect: boolean;
+    readonly relay: DeckFetchRelay;
+  }[];
+  private readonly hasRelayAttachingByEffect: boolean;
   /** 記録ごとの、この割り当てで使った枚数。残りは unseen の枚数から引いて出す。 */
   private readonly consumed = new Map<CardRecord, number>();
   private readonly requirements: readonly FetchRequirement[];
   private readonly assignments: FetchAssignment[] = [];
+  /** ここまでに割り当てた要るもののうち、効果でつけるものの数。 */
+  private readonly attachedByEffectCounts: RouteCounts = {
+    assigned: 0,
+    fetched: 0,
+    oneStep: 0,
+  };
+  /** ここまでに割り当てた要るもののうち、効果でつけないものの数。 */
+  private readonly limitedCounts: RouteCounts = {
+    assigned: 0,
+    fetched: 0,
+    oneStep: 0,
+  };
   private readonly timing: DeadlineTiming;
   private readonly unseen: UnseenCards;
   private readonly usedKinds = new Set<OnceInTurnKind>();
@@ -446,19 +482,44 @@ class DeckFetchAssignment {
     relays: readonly DeckFetchRelay[],
     unseen: UnseenCards,
     timing: DeadlineTiming,
-    attachTarget: EffectAttachTarget | undefined
+    energyAttach: EnergyAttachConditions | undefined
   ) {
     this.requirements = requirements;
-    this.attachTarget = attachTarget;
+    this.attachableFromHand =
+      energyAttach?.attachableFromHand ?? Number.POSITIVE_INFINITY;
+    const attachTarget = energyAttach?.effectAttachTarget;
     this.groups = groupSources(sources, attachTarget);
-    this.relays = relays;
+    this.relays = relays.map((relay) => ({
+      attachesByEffect:
+        attachTarget !== undefined && canAttachByEffectTo(relay, attachTarget),
+      relay,
+    }));
+    this.hasRelayAttachingByEffect = this.relays.some(
+      ({ attachesByEffect }) => attachesByEffect
+    );
     this.unseen = unseen;
     this.timing = timing;
   }
 
   findBestAssignments(): FetchAssignment[] {
-    this.search(0, [0, 0, 0, 0]);
+    this.search(0);
     return this.best?.assignments ?? [];
+  }
+
+  /**
+   * ここまでの割り当ての良さ。効果でつけない要求は、良いほうから手札からつけられる残りの回数分だけ数える。1 段の要求は
+   * 割り当てた要求に、割り当てた要求は持ってくる先を選べた要求に含まれるので、良いほうから回数分を採ったときの 3 つの
+   * 数は、それぞれの数と回数の小さいほうになる。
+   */
+  private scoreAssignment(): AssignmentScore {
+    const limit = this.attachableFromHand;
+    const byEffect = this.attachedByEffectCounts;
+    const limited = this.limitedCounts;
+    return [
+      byEffect.fetched + Math.min(limited.fetched, limit),
+      byEffect.assigned + Math.min(limited.assigned, limit),
+      byEffect.oneStep + Math.min(limited.oneStep, limit),
+    ];
   }
 
   private countRemaining(record: CardRecord): number {
@@ -506,13 +567,15 @@ class DeckFetchAssignment {
     group.remaining += 1;
   }
 
-  private search(index: number, score: AssignmentScore): void {
+  private search(index: number): void {
+    const score = this.scoreAssignment();
     const left = this.requirements.length - index;
-    // 残りの要るものがすべて 1 段になっても今の最善を超えなければ、これより先を試さない
+    // 残りの要るものがすべて数えられる 1 段になっても今の最善を超えなければ、これより先を試さない。要るもの 1 つで
+    // 3 つの数はそれぞれ 1 までしか増えない(効果でつけない要求が回数を超えても、数える要求が良いほうに入れ替わるだけ)
     if (
       this.best !== undefined &&
       !isGreater(
-        [score[0] + left, score[1] + left, score[2] + left, score[3] + left],
+        [score[0] + left, score[1] + left, score[2] + left],
         this.best.score
       )
     ) {
@@ -523,89 +586,88 @@ class DeckFetchAssignment {
       this.best = { assignments: [...this.assignments], score };
       return;
     }
-    const [fetched, assigned, oneStep, attached] = score;
     for (const record of requirement.candidates) {
       const target = this.unseen.get(record);
       if (target === undefined || this.countRemaining(record) < 1) {
         continue;
       }
       this.consume(record, 1);
-      this.tryOneStep(index, target.card, [
-        fetched + 1,
-        assigned + 1,
-        oneStep + 1,
-        attached,
-      ]);
-      this.tryTwoSteps(index, target.card, [
-        fetched + 1,
-        assigned + 1,
-        oneStep,
-        attached,
-      ]);
-      this.descend(index, "drawOnly", false, [
-        fetched + 1,
-        assigned,
-        oneStep,
-        attached,
-      ]);
+      this.tryOneStep(index, target.card);
+      this.tryTwoSteps(index, target.card);
+      this.descend(index, "drawOnly", false);
       this.consume(record, -1);
     }
-    this.descend(index, "noCopyLeft", false, score);
+    this.descend(index, "noCopyLeft", false);
   }
 
-  /** 要るもの index を route で満たしたとして次へ進む。効果でつけるなら、比べる数の 4 番目(効果でつける数)を 1 足す。 */
+  /** 要るもの index を route で満たしたとして次へ進む。効果でつけるかで、数える数を分ける。 */
   private descend(
     index: number,
     route: FetchRoute,
-    isAttachedByEffect: boolean,
-    next: AssignmentScore
-  ) {
+    isAttachedByEffect: boolean
+  ): void {
+    const counts = isAttachedByEffect
+      ? this.attachedByEffectCounts
+      : this.limitedCounts;
+    const fetched = route === "noCopyLeft" ? 0 : 1;
+    const assigned = route === "oneStep" || route === "twoSteps" ? 1 : 0;
+    const oneStep = route === "oneStep" ? 1 : 0;
+    counts.fetched += fetched;
+    counts.assigned += assigned;
+    counts.oneStep += oneStep;
     this.assignments.push({ isAttachedByEffect, route });
-    this.search(
-      index + 1,
-      isAttachedByEffect ? [next[0], next[1], next[2], next[3] + 1] : next
-    );
+    this.search(index + 1);
     this.assignments.pop();
+    counts.fetched -= fetched;
+    counts.assigned -= assigned;
+    counts.oneStep -= oneStep;
   }
 
-  private tryOneStep(index: number, target: Card, next: AssignmentScore) {
+  private tryOneStep(index: number, target: Card): void {
     for (const group of this.groups) {
       if (
         this.isGroupAvailable(group) &&
         matchesAnyFilter(group.source.filters, target)
       ) {
         this.withGroupUsed(group, () =>
-          this.descend(index, "oneStep", group.attachesByEffect, next)
+          this.descend(index, "oneStep", group.attachesByEffect)
         );
       }
     }
   }
 
-  private tryTwoSteps(index: number, target: Card, next: AssignmentScore) {
+  private tryTwoSteps(index: number, target: Card): void {
     for (const group of this.groups) {
-      // 1 段で持ってこられる手段は 2 段に使わない。同じ手段と持ってくる先を消費して 1 段のほうが必ず良いため
+      if (!this.isGroupAvailable(group)) {
+        continue;
+      }
+      const canFetchTargetDirectly = matchesAnyFilter(
+        group.source.filters,
+        target
+      );
+      // 1 段で持ってこられる手段は、ふつうは 2 段に使わない。同じ手段と持ってくる先を消費して 1 段のほうが必ず良いため。
+      // ただし 1 段では効果でつけず、2 段の中継が効果でつけるときは、手札からつける回数が残っていなければ 2 段のほうが
+      // 良い(ドロンチ 049263 の「ていさつしれい」は山札のどのカードも持ってこられ、山札のアカマツ 049412 にも届く)
       if (
-        !this.isGroupAvailable(group) ||
-        matchesAnyFilter(group.source.filters, target)
+        canFetchTargetDirectly &&
+        (group.attachesByEffect || !this.hasRelayAttachingByEffect)
       ) {
         continue;
       }
       this.withGroupUsed(group, () => {
-        for (const relay of this.relays) {
-          if (this.canRelay(group, relay, target)) {
-            this.consume(relay.card.record, 1);
-            this.markKind(relay.onceInTurnKind, true);
-            // 2 段では、効果でつけるかは持ってくる最後の段の中継で決まる(中継のアカマツが山札のエネルギーをつける)
-            this.descend(
-              index,
-              "twoSteps",
-              this.attachTarget !== undefined &&
-                canAttachByEffectTo(relay, this.attachTarget),
-              next
-            );
-            this.markKind(relay.onceInTurnKind, false);
-            this.consume(relay.card.record, -1);
+        // 2 段では、効果でつけるかは持ってくる最後の段の中継で決まる(中継のアカマツが山札のエネルギーをつける)
+        for (const { attachesByEffect, relay } of this.relays) {
+          if (
+            (canFetchTargetDirectly && !attachesByEffect) ||
+            !this.canRelay(group, relay, target)
+          ) {
+            continue;
           }
+          this.consume(relay.card.record, 1);
+          this.markKind(relay.onceInTurnKind, true);
+          this.descend(index, "twoSteps", attachesByEffect);
+          this.markKind(relay.onceInTurnKind, false);
+          this.consume(relay.card.record, -1);
         }
       });
     }
@@ -630,9 +692,9 @@ class DeckFetchAssignment {
  * unseen は、この割り当てで使ってよい見えていないカードの記録ごとの残りの枚数。要るものごとに持ってくる先の 1 枚と、
  * 2 段の中継の 1 枚を同じ残りの枚数から消費し、同じ 1 枚を 2 度使わない。選び方をすべて試し、持ってくる先を選べた数、
  * 探す手段を割り当てた数、1 段の数がいちばん大きいものを返す。この番の締め切りでは、種類のある探す手段と中継
- * (サポート、スタジアム)を種類ごとに 1 回で使い切る(docs/pokemon-tcg/basic-rules.md 75・76 行)。attachTarget を
- * 渡すと、持ってきたエネルギーを効果でそのポケモンにつける探す手段・中継で満たした要るものに isAttachedByEffect を
- * 付け、前の 3 つの数が同じ割り当ての間では効果でつける数の多いものを選ぶ。
+ * (サポート、スタジアム)を種類ごとに 1 回で使い切る(docs/pokemon-tcg/basic-rules.md 75・76 行)。energyAttach を
+ * 渡すと(ワザのエネルギーの要求)、持ってきたエネルギーを効果でつける先につける探す手段・中継で満たした要るものに
+ * isAttachedByEffect を付け、3 つの数は、効果でつけない要求を手札からつけられる残りの回数分だけ数えて比べる。
  */
 export function assignDeckFetchSources(
   requirements: readonly FetchRequirement[],
@@ -640,7 +702,7 @@ export function assignDeckFetchSources(
   relays: readonly DeckFetchRelay[],
   unseen: UnseenCards,
   timing: DeadlineTiming,
-  attachTarget?: EffectAttachTarget
+  energyAttach?: EnergyAttachConditions
 ): FetchAssignment[] {
   return new DeckFetchAssignment(
     requirements,
@@ -648,6 +710,6 @@ export function assignDeckFetchSources(
     relays,
     unseen,
     timing,
-    attachTarget
+    energyAttach
   ).findBestAssignments();
 }

@@ -784,21 +784,26 @@ export class GoalProspects {
     ) {
       return 0;
     }
+    // 割り当ては、効果でつけない要求を残りの回数分だけ数えて比べる。回数を渡さずに割り当ててから上限を掛けると、効果で
+    // つけない 1 段と効果でつける 2 段が同じ 1 枚を取り合ったときに 1 段を選び、回数が残っていなければ 0 になるため
     const assignments = assignDeckFetchSources(
       requirements,
       sources,
       relays,
       view.unseen,
       timing,
-      attachTarget
+      {
+        attachableFromHand: attachableFromDeck,
+        effectAttachTarget: attachTarget,
+      }
     );
     // 効果でつける要求は、手札からつける 1 回の制限に数えない(state.ts の attachEnergyByEffect)ので、回数の上限を
     // 掛けずに足す
     const attachedByEffect = assignments
       .filter(({ isAttachedByEffect }) => isAttachedByEffect)
       .reduce((sum, { route }) => sum + FETCH_ROUTE_WEIGHTS[route], 0);
-    // 回数の上限を割り当てに渡してやり直さないのは、割り当てが (持ってこられた数, 割り当てた数, 1 段の数) を辞書式に
-    // 最大にしており、その結果を重みの大きい順に残りの回数分だけ採れば、1 段・2 段で持ってこられる要求から先に数えるため
+    // 効果でつけない要求は、重みの大きい順に残りの回数分だけ数える。重みは 1 段、2 段、引くしかないの順に大きいので、
+    // 割り当てが良さを比べたときに数えた要求と同じものを数える
     return (
       attachedByEffect +
       assignments

@@ -16,7 +16,7 @@ import {
   MEGA_GARDEVOIR_DECLARATION,
 } from "./issue22-decks.ts";
 import type { TurnStage } from "./search-policy.ts";
-import type { GameState } from "./state.ts";
+import { type GameState, PokemonInPlay } from "./state.ts";
 
 // ラルトス(たね)、キルリア(1進化)、メガサーナイトex(2進化、ワザ「メガシンフォニア」)、ふしぎなアメ。記録 049714、
 // 049715、048464、050462
@@ -424,6 +424,59 @@ describe("ワザのエネルギーの見込み(置き場所とタイプ)", () =>
       expect(
         calculateActiveEnergyProspect(DRAGAPULT, "ファントムダイブ", state, 3)
       ).toBeCloseTo((1 + PROGRESS_WEIGHTS.searchableInTwoSteps) / 2, 9);
+    });
+
+    // 山札の基本炎エネルギーは 1 枚で、手札に加える 1 段(効果でつけない)とアカマツでつける 2 段が取り合う。この番に
+    // 手札からつけ済みなので、手札に加えても手札からはつけられない(basic-rules.md 72 行)
+    test("この番に手札からつけた後は、手札のひふきやろうで山札の基本炎エネルギーを手札に加えられても、手札のポケギア3.0で山札のアカマツを手札に加えて基本炎エネルギーをつけられる要求を 2 段の重みで数える", () => {
+      const state = buildAfterAttachingOnThirdTurn(
+        [POKEGEAR, FIRE_SPITTER],
+        [AKAMATSU, PSYCHIC_ENERGY, FIRE_ENERGY, BOSS_ORDERS]
+      );
+      expect(
+        calculateActiveEnergyProspect(DRAGAPULT, "ファントムダイブ", state, 3)
+      ).toBeCloseTo((1 + PROGRESS_WEIGHTS.searchableInTwoSteps) / 2, 9);
+    });
+
+    describe("ベンチのドロンチ", () => {
+      // ニャースex(手札からベンチに出したとき、特性「おくのてキャッチ」で山札のサポートを手札に加える)、ドロンチ(場で使う
+      // 特性「ていさつしれい」で山札の上 2 枚から 1 枚を手札に加える。条件が無く、どのカードも持ってこられる)。記録
+      // 049694、049263
+      const MEOWTH_EX = buildRecordedCard("049694");
+      const DRAKLOAK = buildRecordedCard("049263");
+
+      function buildWithBenchedDrakloak(hand: readonly Card[]): GameState {
+        const state = buildAfterAttachingOnThirdTurn(hand, [
+          AKAMATSU,
+          PSYCHIC_ENERGY,
+          FIRE_ENERGY,
+          BOSS_ORDERS,
+        ]);
+        state.bench.push(new PokemonInPlay(DRAKLOAK, 0));
+        return state;
+      }
+
+      test("この番に手札からつけた後は、ていさつしれいで山札の基本炎エネルギーを手札に加えられても、手札のニャースexで山札のアカマツを手札に加えて基本炎エネルギーをつけられる要求を 2 段の重みで数える", () => {
+        expect(
+          calculateActiveEnergyProspect(
+            DRAGAPULT,
+            "ファントムダイブ",
+            buildWithBenchedDrakloak([MEOWTH_EX]),
+            3
+          )
+        ).toBeCloseTo((1 + PROGRESS_WEIGHTS.searchableInTwoSteps) / 2, 9);
+      });
+
+      test("この番に手札からつけた後は、手札に探す手段が無くても、ていさつしれいで山札のアカマツを手札に加えて基本炎エネルギーをつけられる要求を 2 段の重みで数える", () => {
+        expect(
+          calculateActiveEnergyProspect(
+            DRAGAPULT,
+            "ファントムダイブ",
+            buildWithBenchedDrakloak([]),
+            3
+          )
+        ).toBeCloseTo((1 + PROGRESS_WEIGHTS.searchableInTwoSteps) / 2, 9);
+      });
     });
   });
 
