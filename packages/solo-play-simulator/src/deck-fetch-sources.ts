@@ -25,7 +25,11 @@ import {
 } from "./cards.ts";
 import { matchesPokemonFilter } from "./conditions.ts";
 import type { DeadlineTiming } from "./deadline-timing.ts";
-import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
+import {
+  type EffectContext,
+  firstCandidateChoices,
+  hasDistinctProvidedTypes,
+} from "./effect-choices.ts";
 import { listPossibleOperations } from "./effect-operations.ts";
 import { findOrCreate } from "./find-or-create.ts";
 import {
@@ -56,15 +60,22 @@ function listDeckFetchFilters(steps: readonly EffectStep[]): CardFilter[] {
 }
 
 /**
- * 効果の操作のうち、山札から持ってきたエネルギーを効果でポケモンにつけるもの(searchDeckIntoHandAndAttachRest)の、
- * つける先の条件。条件の分かれ道とコインの中の操作も含める。
+ * 効果の操作のうち、山札から持ってきたエネルギーを効果でポケモンにつけるもの(searchDeckIntoHandAndAttachRest)。
+ * 条件の分かれ道とコインの中の操作も含める。この操作は選んだうちの 1 枚を手札に加えて残りをつけ、1 枚だけ選んだときは
+ * つけない(effect-operations.ts の searchIntoHandAndAttachRest)ので、2 枚まで選べない操作は集めない。
  */
-function listEffectAttachTargetFilters(
+function listEffectAttachOperations(
   steps: readonly EffectStep[]
-): PokemonInPlayFilter[] {
+): EffectAttachOperation[] {
   return listPossibleOperations(steps).flatMap((step) =>
-    step.operation === "searchDeckIntoHandAndAttachRest"
-      ? [step.targetFilter]
+    step.operation === "searchDeckIntoHandAndAttachRest" && step.maxCount >= 2
+      ? [
+          {
+            filter: step.filter,
+            requiresDistinctTypes: step.requiresDistinctTypes,
+            targetFilter: step.targetFilter,
+          },
+        ]
       : []
   );
 }
@@ -74,10 +85,10 @@ interface FetchFilters {
   /** 手札にあるとき(グッズ・サポートを使う、スタジアムを出して効果を使う、ベンチに出す・進化させる・手札の特性、エネルギーをつける)。 */
   readonly inHand: readonly CardFilter[];
   /**
-   * 手札にあるときの効果のうち、持ってきたエネルギーを効果でつける操作の、つける先の条件。場にあるときの効果からは
-   * 集めない。この操作を持つ記録はアカマツ(049412。サポート)だけで、場で使う特性やスタジアムの効果には無いため。
+   * 手札にあるときの効果のうち、持ってきたエネルギーを効果でつける操作。場にあるときの効果からは集めない。この操作を
+   * 持つ記録はアカマツ(049412。サポート)だけで、場で使う特性やスタジアムの効果には無いため。
    */
-  readonly inHandEffectAttachTargets: readonly PokemonInPlayFilter[];
+  readonly inHandEffectAttachOperations: readonly EffectAttachOperation[];
   /** 場のポケモンの特性(特性の名前ごと)。この番に使えるかを特性ごとに骨組みで判定するため、名前ごとに分ける。 */
   readonly inPlayAbilities: readonly {
     readonly abilityName: string;
@@ -111,8 +122,8 @@ function readPokemonFetchFilters(record: PokemonRecord): FetchFilters {
   ]).map(({ effect }) => effect);
   return {
     inHand: filtersOf(inHandEffects),
-    inHandEffectAttachTargets: inHandEffects.flatMap((effect) =>
-      listEffectAttachTargetFilters(effect.steps)
+    inHandEffectAttachOperations: inHandEffects.flatMap((effect) =>
+      listEffectAttachOperations(effect.steps)
     ),
     inPlayAbilities: effectsOf(["activatedInPlay"])
       .map(({ abilityName, effect }) => ({
@@ -131,8 +142,8 @@ function readTrainerOrEnergyFetchFilters(record: CardRecord): FetchFilters {
   );
   return {
     inHand: filtersOf(allEffects),
-    inHandEffectAttachTargets: allEffects.flatMap((effect) =>
-      listEffectAttachTargetFilters(effect.steps)
+    inHandEffectAttachOperations: allEffects.flatMap((effect) =>
+      listEffectAttachOperations(effect.steps)
     ),
     inPlayAbilities: [],
     inPlayStadium: filtersOf(
@@ -174,17 +185,27 @@ export function countUnseenByRecord(state: GameState): UnseenCards {
 }
 
 /**
- * 持ってきたエネルギーを効果でポケモンにつける操作の、つける先の条件(アカマツ 049412)。効果でつけるのは、手札から
- * つける 1 回の番に 1 枚の制限に数えない(state.ts の attachEnergyByEffect)。この操作の持ってくる条件とつける条件は
- * 同じ(記録の filter 1 つ)で、この操作を持つ記録はほかに山札から持ってくる操作を持たないため、操作ごとでなく
- * 探す手段・中継の単位で持つ。
+ * 持ってきたエネルギーを効果でポケモンにつける操作(アカマツ 049412)。選んだうちの 1 枚を手札に加え、残りをつける。
+ * 効果でつけるのは、手札からつける 1 回の番に 1 枚の制限に数えない(state.ts の attachEnergyByEffect)。
  */
-export interface EffectAttachTargets {
-  readonly effectAttachTargetFilters?: readonly PokemonInPlayFilter[];
+export interface EffectAttachOperation {
+  /** 山札から選ぶエネルギーの条件。つけるエネルギーも、一緒に選んで手札に加えるエネルギーも、この条件に合う。 */
+  readonly filter: CardFilter;
+  /** 選ぶエネルギーのタイプがすべて違う必要があるか。 */
+  readonly requiresDistinctTypes: boolean;
+  readonly targetFilter: PokemonInPlayFilter;
+}
+
+/**
+ * 持ってきたエネルギーを効果でつける操作。この操作の持ってくる条件はつける条件と同じ(記録の filter 1 つ)で、この操作を
+ * 持つ記録はほかに山札から持ってくる操作を持たないため、操作ごとでなく探す手段・中継の単位で持つ。
+ */
+export interface EffectAttachOperations {
+  readonly effectAttachOperations?: readonly EffectAttachOperation[];
 }
 
 /** 探す手段 1 枚(CONTEXT.md「探す手段」)。 */
-export interface DeckFetchSource extends EffectAttachTargets {
+export interface DeckFetchSource extends EffectAttachOperations {
   /** 使うと山札から持ってこられるカードの条件。 */
   readonly filters: readonly CardFilter[];
   readonly onceInTurnKind?: OnceInTurnKind;
@@ -235,30 +256,41 @@ export interface EnergyAttachConditions {
   readonly effectAttachTarget: EffectAttachTarget;
 }
 
-/** means(探す手段か中継)が、持ってきたエネルギーを効果で target につけられるか。つける先の条件は骨組みの matchesPokemonFilter で見る。 */
+/** means(探す手段か中継)の効果でつける操作のうち、つける先の条件が target に合うもの。条件は骨組みの matchesPokemonFilter で見る。 */
+function listEffectAttachOperationsTo(
+  means: EffectAttachOperations,
+  target: EffectAttachTarget
+): readonly EffectAttachOperation[] {
+  return (
+    means.effectAttachOperations?.filter((operation) =>
+      matchesPokemonFilter(target.state, target.pokemon, operation.targetFilter)
+    ) ?? []
+  );
+}
+
+/**
+ * means(探す手段か中継)に、持ってきたエネルギーを効果で target につける操作があるか。一緒に選ぶもう 1 枚が見えていない
+ * カードにあるかは見ないので、つけられるための必要な条件だけを見る(割り当ての中で、持ってくる先ごとに確かめる)。
+ */
 export function canAttachByEffectTo(
-  means: EffectAttachTargets,
+  means: EffectAttachOperations,
   target: EffectAttachTarget
 ): boolean {
-  return (
-    means.effectAttachTargetFilters?.some((filter) =>
-      matchesPokemonFilter(target.state, target.pokemon, filter)
-    ) ?? false
-  );
+  return listEffectAttachOperationsTo(means, target).length > 0;
 }
 
 /** 手札にある(来た)card を使ったときの探す手段。filters は card の手札にあるときの条件。 */
 function buildHandFetchSource(
   card: Card,
-  { inHand, inHandEffectAttachTargets }: FetchFilters
+  { inHand, inHandEffectAttachOperations }: FetchFilters
 ): DeckFetchSource {
   const onceInTurnKind = classifyOnceInTurnKind(card);
   return {
     filters: inHand,
     ...(onceInTurnKind === undefined ? {} : { onceInTurnKind }),
-    ...(inHandEffectAttachTargets.length === 0
+    ...(inHandEffectAttachOperations.length === 0
       ? {}
-      : { effectAttachTargetFilters: inHandEffectAttachTargets }),
+      : { effectAttachOperations: inHandEffectAttachOperations }),
   };
 }
 
@@ -383,8 +415,8 @@ export function listDeckFetchRelays(
 
 /** 同じ条件・同じ種類の探す手段の束。同じ記録の手札は入れ替えても割り当ての結果が変わらないので、まとめて枚数で数える。 */
 interface SourceGroup {
-  /** 持ってきたエネルギーを効果で、割り当てに渡したつける先につけられるか。 */
-  readonly attachesByEffect: boolean;
+  /** 持ってきたエネルギーを効果でつける操作のうち、割り当てに渡したつける先に合うもの。 */
+  readonly attachOperations: readonly EffectAttachOperation[];
   remaining: number;
   readonly source: DeckFetchSource;
 }
@@ -402,9 +434,10 @@ function groupSources(
     );
     if (group === undefined) {
       groups.push({
-        attachesByEffect:
-          attachTarget !== undefined &&
-          canAttachByEffectTo(source, attachTarget),
+        attachOperations:
+          attachTarget === undefined
+            ? []
+            : listEffectAttachOperationsTo(source, attachTarget),
         remaining: 1,
         source,
       });
@@ -450,9 +483,9 @@ class DeckFetchAssignment {
   /** 効果でつけない要求を数える上限(手札からつけられる残りの回数)。道の見込みの割り当てでは上限が無い。 */
   private readonly attachableFromHand: number;
   private readonly groups: SourceGroup[];
-  /** 2 段の中継と、持ってきたエネルギーを効果でつける先につけるか。 */
+  /** 2 段の中継と、持ってきたエネルギーを効果でつける操作のうち、つける先に合うもの。 */
   private readonly relays: readonly {
-    readonly attachesByEffect: boolean;
+    readonly attachOperations: readonly EffectAttachOperation[];
     readonly relay: DeckFetchRelay;
   }[];
   private readonly hasRelayAttachingByEffect: boolean;
@@ -490,12 +523,14 @@ class DeckFetchAssignment {
     const attachTarget = energyAttach?.effectAttachTarget;
     this.groups = groupSources(sources, attachTarget);
     this.relays = relays.map((relay) => ({
-      attachesByEffect:
-        attachTarget !== undefined && canAttachByEffectTo(relay, attachTarget),
+      attachOperations:
+        attachTarget === undefined
+          ? []
+          : listEffectAttachOperationsTo(relay, attachTarget),
       relay,
     }));
     this.hasRelayAttachingByEffect = this.relays.some(
-      ({ attachesByEffect }) => attachesByEffect
+      ({ attachOperations }) => attachOperations.length > 0
     );
     this.unseen = unseen;
     this.timing = timing;
@@ -530,6 +565,27 @@ class DeckFetchAssignment {
 
   private consume(record: CardRecord, count: number): void {
     this.consumed.set(record, (this.consumed.get(record) ?? 0) + count);
+  }
+
+  /**
+   * operations のどれかで、持ってくる先 target(消費済み)を効果でつけられるか。つけるには、一緒に選んで手札に加える
+   * もう 1 枚が見えていないカードの残りに要る(1 枚だけ選んだときはつけない。effect-operations.ts の
+   * searchIntoHandAndAttachRest)。タイプの違うエネルギーを選ぶ操作では、もう 1 枚は target とタイプが違う必要がある
+   * (骨組みの hasDistinctProvidedTypes)。もう 1 枚は手札に加わるだけなので、ほかの要るものの分からは消費しない。
+   */
+  private attachesByEffect(
+    operations: readonly EffectAttachOperation[],
+    target: Card
+  ): boolean {
+    return operations.some((operation) =>
+      [...this.unseen].some(
+        ([record, { card }]) =>
+          this.countRemaining(record) > 0 &&
+          matchesCardFilter(card, operation.filter) &&
+          (!operation.requiresDistinctTypes ||
+            hasDistinctProvidedTypes([target, card]))
+      )
+    );
   }
 
   /** この番の締め切りでは、種類のある探す手段と中継(サポート、スタジアム)を種類ごとに 1 回で使い切る。 */
@@ -630,7 +686,11 @@ class DeckFetchAssignment {
         matchesAnyFilter(group.source.filters, target)
       ) {
         this.withGroupUsed(group, () =>
-          this.descend(index, "oneStep", group.attachesByEffect)
+          this.descend(
+            index,
+            "oneStep",
+            this.attachesByEffect(group.attachOperations, target)
+          )
         );
       }
     }
@@ -650,23 +710,27 @@ class DeckFetchAssignment {
       // 良い(ドロンチ 049263 の「ていさつしれい」は山札のどのカードも持ってこられ、山札のアカマツ 049412 にも届く)
       if (
         canFetchTargetDirectly &&
-        (group.attachesByEffect || !this.hasRelayAttachingByEffect)
+        (this.attachesByEffect(group.attachOperations, target) ||
+          !this.hasRelayAttachingByEffect)
       ) {
         continue;
       }
       this.withGroupUsed(group, () => {
         // 2 段では、効果でつけるかは持ってくる最後の段の中継で決まる(中継のアカマツが山札のエネルギーをつける)
-        for (const { attachesByEffect, relay } of this.relays) {
-          if (
-            (canFetchTargetDirectly && !attachesByEffect) ||
-            !this.canRelay(group, relay, target)
-          ) {
+        for (const { attachOperations, relay } of this.relays) {
+          if (!this.canRelay(group, relay, target)) {
             continue;
           }
           this.consume(relay.card.record, 1);
-          this.markKind(relay.onceInTurnKind, true);
-          this.descend(index, "twoSteps", attachesByEffect);
-          this.markKind(relay.onceInTurnKind, false);
+          const attachesByEffect = this.attachesByEffect(
+            attachOperations,
+            target
+          );
+          if (!canFetchTargetDirectly || attachesByEffect) {
+            this.markKind(relay.onceInTurnKind, true);
+            this.descend(index, "twoSteps", attachesByEffect);
+            this.markKind(relay.onceInTurnKind, false);
+          }
           this.consume(relay.card.record, -1);
         }
       });

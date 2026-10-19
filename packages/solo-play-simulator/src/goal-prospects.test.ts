@@ -438,6 +438,29 @@ describe("ワザのエネルギーの見込み(置き場所とタイプ)", () =>
       ).toBeCloseTo((1 + PROGRESS_WEIGHTS.searchableInTwoSteps) / 2, 9);
     });
 
+    // アカマツは選んだうちの 1 枚を手札に加えて残りをつけ、1 枚だけ選んだときはつけずに手札に加える(記録 049412 の
+    // 裁定)。選ぶ 2 枚はタイプが違う必要がある
+    test("見えていない基本エネルギーが基本炎エネルギーだけなら、手札のアカマツでも山札のアカマツでも基本炎エネルギーをつけられないので、この番に手札からつけた後は数えない", () => {
+      for (const deck of [
+        [FIRE_ENERGY, BOSS_ORDERS],
+        [FIRE_ENERGY, FIRE_ENERGY, BOSS_ORDERS],
+      ]) {
+        for (const state of [
+          buildAfterAttachingOnThirdTurn([AKAMATSU], deck),
+          buildAfterAttachingOnThirdTurn([POKEGEAR], [AKAMATSU, ...deck]),
+        ]) {
+          expect(
+            calculateActiveEnergyProspect(
+              DRAGAPULT,
+              "ファントムダイブ",
+              state,
+              3
+            )
+          ).toBeCloseTo(1 / 2, 9);
+        }
+      }
+    });
+
     describe("ベンチのドロンチ", () => {
       // ニャースex(手札からベンチに出したとき、特性「おくのてキャッチ」で山札のサポートを手札に加える)、ドロンチ(場で使う
       // 特性「ていさつしれい」で山札の上 2 枚から 1 枚を手札に加える。条件が無く、どのカードも持ってこられる)。記録
