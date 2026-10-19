@@ -19,6 +19,7 @@ import {
   GameState,
   IllegalMove,
   listUnpaidCost,
+  listUnpaidCostChoices,
   PokemonInPlay,
 } from "./state.ts";
 
@@ -389,6 +390,24 @@ describe("ワザのエネルギー", () => {
 
   test("炎と超の要求に超 1 個がついていれば、炎 1 個が払えない", () => {
     expect(listUnpaidCost(["fire", "psychic"], ["psychic"])).toEqual(["fire"]);
+  });
+
+  test("払えない分の選び方は、すべてのタイプとして働く 1 個をどのタイプ指定に充てるかごとに並び、同じ並びはまとめる", () => {
+    expect(
+      listUnpaidCostChoices(["fire", "electric", COLORLESS], ["any", "water"])
+    ).toEqual([["electric"], ["fire"]]);
+    expect(
+      listUnpaidCostChoices(["fire", "fire", "electric"], ["any"])
+    ).toEqual([
+      ["fire", "electric"],
+      ["fire", "fire"],
+    ]);
+    expect(
+      listUnpaidCostChoices(["fire", "psychic", COLORLESS], ["grass"])
+    ).toEqual([["fire", "psychic"]]);
+    expect(listUnpaidCostChoices(["fire", COLORLESS], ["any"])).toEqual([
+      [COLORLESS],
+    ]);
   });
 });
 

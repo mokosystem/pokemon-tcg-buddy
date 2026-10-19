@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { MEGA_RAYQUAZA_DECLARATION } from "./additional-recorded-decks.ts";
 import { cardRecordTable } from "./card-record-table.ts";
 import { buildRecordedCard, buildState } from "./card-test-support.ts";
 import type { Card } from "./cards.ts";
@@ -500,6 +501,103 @@ describe("ワザのエネルギーの見込み(置き場所とタイプ)", () =>
           )
         ).toBeCloseTo((1 + PROGRESS_WEIGHTS.searchableInTwoSteps) / 2, 9);
       });
+    });
+  });
+
+  // メガレックウザex(たね、ワザ「ストームエメラルダ」は炎 1 個、雷 1 個、無色 1 個)、プリズムエネルギー(たねポケモンに
+  // ついている間、すべてのタイプのエネルギー 1 個)、基本雷エネルギー、基本水エネルギー。記録 050396、049455、047906、
+  // 047905
+  describe("メガレックウザex のストームエメラルダ", () => {
+    const MEGA_RAYQUAZA_EX = buildRecordedCard("050396");
+    const PRISM_ENERGY = buildRecordedCard("049455");
+    const LIGHTNING_ENERGY = buildRecordedCard("047906");
+    const WATER_ENERGY = buildRecordedCard("047905");
+    const AKAMATSU = buildRecordedCard("049412");
+    const MEGA_RAYQUAZA = resolveDeclaration(
+      MEGA_RAYQUAZA_DECLARATION,
+      cardRecordTable
+    );
+
+    /** 3 番目の番、メガレックウザex に attached がついている場。見えていないカードは山札だけにする。 */
+    function buildRayquaza(
+      attached: readonly Card[],
+      hand: readonly Card[],
+      deck: readonly Card[]
+    ): GameState {
+      const state = buildState({
+        active: MEGA_RAYQUAZA_EX,
+        deck,
+        hand,
+        turn: 3,
+      });
+      state.prizes.length = 0;
+      state.active?.energies.push(...attached);
+      return state;
+    }
+
+    // 払えない分は雷と無色。手札からつけられるのはこの番の 1 回で、手札の基本雷エネルギーか基本炎エネルギーのどちらで
+    // 埋めても 1 つ。基本雷エネルギーを手札からつければ、残りの無色を、アカマツで山札の基本炎エネルギーか基本水
+    // エネルギーをつけて埋められる(手札からつける 1 回に数えない)
+    test("手札の基本雷エネルギーと基本炎エネルギーのどちらで埋めても同じ数なら、手札の並び順によらず、山札から効果でつけられるほうの残りで数える", () => {
+      for (const hand of [
+        [LIGHTNING_ENERGY, FIRE_ENERGY, AKAMATSU],
+        [FIRE_ENERGY, LIGHTNING_ENERGY, AKAMATSU],
+      ]) {
+        const state = buildRayquaza([FIRE_ENERGY], hand, [
+          FIRE_ENERGY,
+          WATER_ENERGY,
+          BOSS_ORDERS,
+        ]);
+        state.discard.push(LIGHTNING_ENERGY);
+        expect(
+          calculateActiveEnergyProspect(
+            MEGA_RAYQUAZA,
+            "ストームエメラルダ",
+            state,
+            3
+          )
+        ).toBeCloseTo(
+          (1 +
+            PROGRESS_WEIGHTS.energyInHand +
+            PROGRESS_WEIGHTS.searchableFromDeck) /
+            3,
+          9
+        );
+      }
+    });
+
+    // ついているプリズムエネルギーと基本水エネルギーでは、炎と雷の一方が払えない。手札か山札の基本炎エネルギーを
+    // つければ、プリズムエネルギーを雷に充て直してワザを使える
+    test("ついているプリズムエネルギーが充てている炎を、手札の基本炎エネルギーで埋めれば、プリズムエネルギーを雷に充て直せるので手札にある重みで数える", () => {
+      const state = buildRayquaza(
+        [PRISM_ENERGY, WATER_ENERGY],
+        [FIRE_ENERGY],
+        [BOSS_ORDERS]
+      );
+      expect(
+        calculateActiveEnergyProspect(
+          MEGA_RAYQUAZA,
+          "ストームエメラルダ",
+          state,
+          3
+        )
+      ).toBeCloseTo((2 + PROGRESS_WEIGHTS.energyInHand) / 3, 9);
+    });
+
+    test("ついているプリズムエネルギーが充てている炎を、山札の基本炎エネルギーで埋めれば、プリズムエネルギーを雷に充て直せるので引くしかない重みで数える", () => {
+      const state = buildRayquaza(
+        [PRISM_ENERGY, WATER_ENERGY],
+        [],
+        [FIRE_ENERGY, BOSS_ORDERS]
+      );
+      expect(
+        calculateActiveEnergyProspect(
+          MEGA_RAYQUAZA,
+          "ストームエメラルダ",
+          state,
+          3
+        )
+      ).toBeCloseTo((2 + PROGRESS_WEIGHTS.drawOnly) / 3, 9);
     });
   });
 

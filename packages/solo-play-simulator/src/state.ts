@@ -136,17 +136,15 @@ export interface AttackDamageIncrease {
   readonly attackerFilter: PokemonInPlayFilter;
 }
 
-/**
- * ワザに必要なエネルギー(タイプの並び。無色は colorless)のうち、ついているエネルギーの個数分(units)で払えない分。
- * タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして働く 1 個を充て、残りを無色に充てる。
- * すべてのタイプとして働く 1 個を後に回すのは、同じタイプの 1 個で埋められる指定にそれを使うと、別のタイプの指定を
- * 埋められなくなるため。払えるかの判定(canPayCost)と、払えない分を数える場の評価(goal-prospects.ts)が同じ埋め方を
- * 使うよう、埋め方をここ 1 か所に置く。
- */
-export function listUnpaidCost(
+/** タイプ指定の分を同じタイプで埋めた結果。埋められなかった指定と、使わなかった 1 個ずつ。 */
+function matchTypedCost(
   cost: readonly PokemonType[],
   units: readonly EnergyUnit[]
-): PokemonType[] {
+): {
+  readonly colorlessCount: number;
+  readonly remaining: readonly EnergyUnit[];
+  readonly unmatched: readonly PokemonType[];
+} {
   const remaining = [...units];
   const typedCost = cost.filter((required) => required !== COLORLESS);
   const unmatched: PokemonType[] = [];
@@ -158,23 +156,77 @@ export function listUnpaidCost(
       remaining.splice(index, 1);
     }
   }
-  const unpaidTyped: PokemonType[] = [];
-  for (const required of unmatched) {
-    const index = remaining.indexOf("any");
-    if (index < 0) {
-      unpaidTyped.push(required);
-    } else {
-      remaining.splice(index, 1);
-    }
-  }
+  return {
+    colorlessCount: cost.length - typedCost.length,
+    remaining,
+    unmatched,
+  };
+}
+
+/**
+ * ワザに必要なエネルギー(タイプの並び。無色は colorless)のうち、ついているエネルギーの個数分(units)で払えない分。
+ * タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして働く 1 個を充て、残りを無色に充てる。
+ * すべてのタイプとして働く 1 個を後に回すのは、同じタイプの 1 個で埋められる指定にそれを使うと、別のタイプの指定を
+ * 埋められなくなるため。払えるかの判定(canPayCost)と、払えない分を数える場の評価(goal-prospects.ts)が同じ埋め方を
+ * 使うよう、埋め方をここ 1 か所に置く。
+ */
+export function listUnpaidCost(
+  cost: readonly PokemonType[],
+  units: readonly EnergyUnit[]
+): PokemonType[] {
+  const { colorlessCount, remaining, unmatched } = matchTypedCost(cost, units);
+  const anyCount = remaining.filter((unit) => unit === "any").length;
+  const unpaidTyped = unmatched.slice(anyCount);
   const unpaidColorlessCount = Math.max(
     0,
-    cost.length - typedCost.length - remaining.length
+    colorlessCount - (remaining.length - Math.min(anyCount, unmatched.length))
   );
   return [
     ...unpaidTyped,
     ...Array.from({ length: unpaidColorlessCount }, () => COLORLESS),
   ];
+}
+
+/**
+ * listUnpaidCost の払えない分を、すべてのタイプとして働く 1 個をどのタイプ指定に充てるかの選び方ごとに並べる(同じ
+ * 並びは 1 つにまとめる)。払えない数はどの選び方でも同じだが、残る指定のタイプが変わる。これから足すエネルギーで
+ * 払えない分を埋める見込みを数えるとき(goal-prospects.ts)、足したエネルギーが今すべてのタイプとして働く 1 個で
+ * 埋めている指定と同じタイプなら、その 1 個を別の指定に充て直せるため、選び方ごとに残る指定を数える。
+ */
+export function listUnpaidCostChoices(
+  cost: readonly PokemonType[],
+  units: readonly EnergyUnit[]
+): PokemonType[][] {
+  const unpaid = listUnpaidCost(cost, units);
+  const { remaining, unmatched } = matchTypedCost(cost, units);
+  const anyCount = Math.min(
+    remaining.filter((unit) => unit === "any").length,
+    unmatched.length
+  );
+  if (anyCount === 0 || anyCount === unmatched.length) {
+    return [unpaid];
+  }
+  const colorless = unpaid.slice(unmatched.length - anyCount);
+  const choices = new Map<string, PokemonType[]>();
+  const visit = (start: number, coveredLeft: number, open: PokemonType[]) => {
+    if (coveredLeft === 0) {
+      const typed = [...open, ...unmatched.slice(start)];
+      choices.set([...typed].sort().join(","), [...typed, ...colorless]);
+      return;
+    }
+    for (
+      let index = start;
+      index <= unmatched.length - coveredLeft;
+      index += 1
+    ) {
+      visit(index + 1, coveredLeft - 1, [
+        ...open,
+        ...unmatched.slice(start, index),
+      ]);
+    }
+  };
+  visit(0, anyCount, []);
+  return [...choices.values()];
 }
 
 /** ワザに必要なエネルギーを、ついているエネルギーの個数分(units)で払えるか。埋め方は listUnpaidCost。 */

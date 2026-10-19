@@ -62,6 +62,7 @@ import {
   type EnergyUnit,
   type GameState,
   listUnpaidCost,
+  listUnpaidCostChoices,
   PokemonInPlay,
 } from "./state.ts";
 
@@ -350,19 +351,31 @@ function canSwitchIntoActive(card: Card, pokemon: PokemonInPlay): boolean {
 /** 場に出たとみなした主軸のカード。記録ごとに 1 枚だけ作る。 */
 const detachedCardsByRecord = new WeakMap<CardRecord, Card>();
 
+/** ワザに必要なエネルギー、ついているエネルギーの 1 個ずつ、それで払えない分。 */
+interface UnpaidCost {
+  readonly attached: readonly EnergyUnit[];
+  readonly cost: readonly PokemonType[];
+  readonly unpaid: readonly PokemonType[];
+}
+
 /** 手札から主軸につけるエネルギーの組。filled は払えない分のうち埋めた数。 */
 interface HandEnergySelection {
   /** 組に選んだ、記録ごとの枚数。同じ見込みの中で、同じカードを探す手段に重ねて数えないため。 */
   readonly counts: ReadonlyMap<CardRecord, number>;
   readonly filled: number;
-  /** 組で埋めきれなかった払えない分。 */
-  readonly rest: readonly PokemonType[];
+  /**
+   * 組で埋めきれなかった払えない分。すべてのタイプとして働く 1 個をどの指定に充てるかの選び方ごとに並べる(骨組みの
+   * listUnpaidCostChoices)。山札から持ってくるエネルギーが、その 1 個で埋めた指定を埋めれば、1 個を別の指定に充て直せる。
+   */
+  readonly restChoices: readonly (readonly PokemonType[])[];
 }
 
 /**
- * 手札のエネルギーから attachable 枚以下を選ぶ組をすべて試し、払えない分(unpaid)をいちばん多く埋める組を返す。
- * 埋めた数が同じなら枚数の少ない組。埋め方は listUnpaidCost(ついているエネルギーの判定 canPayCost と同じ)。
- * 供給は記録だけで決まるので、記録ごとの枚数で組を数える。
+ * 手札のエネルギーから attachable 枚以下を選ぶ組をすべて試し、払えない分をいちばん多く埋める組を返す。埋めた数が同じ
+ * なら枚数の少ない組で、それも同じ組はすべて返す(残る指定のタイプが違うと、山札から持ってこられる見込みが変わるため)。
+ * 埋め方は、ついているエネルギー attached と組のエネルギーを合わせた listUnpaidCost(ついているエネルギーの判定 canPayCost
+ * と同じ)で、ついているすべてのタイプとして働く 1 個も組と合わせて充て直す。供給は記録だけで決まるので、記録ごとの
+ * 枚数で組を数える。
  */
 function selectHandEnergies(
   handEnergies: readonly {
@@ -370,39 +383,50 @@ function selectHandEnergies(
     readonly record: CardRecord;
     readonly units: readonly EnergyUnit[];
   }[],
-  unpaid: readonly PokemonType[],
+  {
+    attached,
+    cost,
+  }: {
+    readonly attached: readonly EnergyUnit[];
+    readonly cost: readonly PokemonType[];
+  },
   attachable: number
-): HandEnergySelection {
-  let best: HandEnergySelection = {
-    counts: new Map(),
-    filled: 0,
-    rest: unpaid,
-  };
+): HandEnergySelection[] {
+  const unpaidCount = listUnpaidCost(cost, attached).length;
+  let best: HandEnergySelection[] = [];
+  let bestFilled = -1;
   let bestCardCount = 0;
   const chosen: number[] = handEnergies.map(() => 0);
   const visit = (index: number, cardCount: number) => {
     const group = handEnergies[index];
     if (group === undefined) {
-      const units = handEnergies.flatMap((entry, at) =>
-        Array.from({ length: chosen[at] ?? 0 }, () => entry.units).flat()
-      );
-      const rest = listUnpaidCost(unpaid, units);
-      const filled = unpaid.length - rest.length;
+      const units = [
+        ...attached,
+        ...handEnergies.flatMap((entry, at) =>
+          Array.from({ length: chosen[at] ?? 0 }, () => entry.units).flat()
+        ),
+      ];
+      const filled = unpaidCount - listUnpaidCost(cost, units).length;
       if (
-        filled > best.filled ||
-        (filled === best.filled && cardCount < bestCardCount)
+        filled < bestFilled ||
+        (filled === bestFilled && cardCount > bestCardCount)
       ) {
-        best = {
-          counts: new Map(
-            handEnergies.flatMap((entry, at) =>
-              (chosen[at] ?? 0) > 0 ? [[entry.record, chosen[at] ?? 0]] : []
-            )
-          ),
-          filled,
-          rest,
-        };
+        return;
+      }
+      if (filled > bestFilled || cardCount < bestCardCount) {
+        best = [];
+        bestFilled = filled;
         bestCardCount = cardCount;
       }
+      best.push({
+        counts: new Map(
+          handEnergies.flatMap((entry, at) =>
+            (chosen[at] ?? 0) > 0 ? [[entry.record, chosen[at] ?? 0]] : []
+          )
+        ),
+        filled,
+        restChoices: listUnpaidCostChoices(cost, units),
+      });
       return;
     }
     const most = Math.min(group.count, attachable - cardCount);
@@ -460,13 +484,7 @@ export class GoalProspects {
   >();
   private readonly unpaidCosts = new Map<
     MainAttack,
-    Map<
-      PokemonInPlay,
-      {
-        readonly cost: readonly PokemonType[];
-        readonly unpaid: readonly PokemonType[];
-      }
-    >
+    Map<PokemonInPlay, UnpaidCost>
   >();
   private view: PathView | undefined;
   private damageRatio: number | undefined;
@@ -687,7 +705,8 @@ export class GoalProspects {
    * attacker が主軸のワザ main を使うのに必要なエネルギーが、締め切り deadline までに揃う見込み(0 以上 1 以下)。
    * ワザの要求 1 つごとの揃い具合(ついている 1、手札にある energyInHand、山札から 1 段・2 段で持ってこられる、引くしか
    * ない、見えていないカードにも供給の合うエネルギーが無ければ 0)の合計を要求の数で割る。要求を埋める順は
-   * listUnpaidCost(ついているエネルギーの判定 canPayCost と同じ)。手札と見えていないカードのエネルギーは、主軸に
+   * listUnpaidCost(ついているエネルギーの判定 canPayCost と同じ)で、ついているすべてのタイプとして働く 1 個は、
+   * 手札や山札のエネルギーと合わせて充て直す(selectHandEnergies)。手札と見えていないカードのエネルギーは、主軸に
    * つけたとしたら供給するもので数える(プリズムエネルギー 049455 は 2進化の主軸には無色 1 個)。手札のエネルギーと
    * 山札から手札に持ってくるエネルギーは、合わせて締め切りまでに手札からつけられる回数まで数え、超えた要求は 0 にする。
    * 山札から持ってきたエネルギーを効果で attacker につける探す手段(アカマツ 049412)で満たした要求は、この回数に数えない。
@@ -698,7 +717,7 @@ export class GoalProspects {
     deadline: number
   ): number {
     const { fromTurn, stage, state } = this.input;
-    const { cost, unpaid } = this.listUnpaidCostOnce(main, attacker);
+    const { attached, cost, unpaid } = this.listUnpaidCostOnce(main, attacker);
     if (cost.length === 0 || unpaid.length === 0) {
       return 1;
     }
@@ -714,24 +733,19 @@ export class GoalProspects {
     const attachable =
       (deadline - fromTurn + (canAttachThisTurn ? 1 : 0)) *
       ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN;
-    const fromHand = selectHandEnergies(
+    const selections = selectHandEnergies(
       this.listHandEnergies(holder),
-      unpaid,
+      { attached, cost },
       attachable
     );
-    // 山札から手札に持ってきたエネルギーも、つけるには手札からつける同じ 1 回を使う(basic-rules.md 72 行)ので、
-    // 手札で組に選んだ枚数を引いた残りの回数までしか山札の分を数えない
-    const attachableFromDeck =
-      attachable -
-      [...fromHand.counts.values()].reduce((sum, count) => sum + count, 0);
     return (
       (cost.length -
         unpaid.length +
-        fromHand.filled * PROGRESS_WEIGHTS.energyInHand +
-        this.scoreEnergiesFromDeck(
+        (selections[0]?.filled ?? 0) * PROGRESS_WEIGHTS.energyInHand +
+        this.scoreBestEnergiesFromDeck(
           { attacker, holder },
-          fromHand,
-          attachableFromDeck,
+          selections,
+          attachable,
           deadline
         )) /
       cost.length
@@ -739,16 +753,54 @@ export class GoalProspects {
   }
 
   /**
-   * 手札で埋めきれなかった要求(fromHand.rest)のうち、山札から持ってこられるものの揃い具合の合計。手札からつける回数の
-   * 残り attachableFromDeck を超えた要求は 0 にし、山札から持ってきたエネルギーを効果で attacker につける探す手段・中継で
-   * 満たした要求は、回数に数えない。
+   * 埋めた数が同じ手札の組(selections)と、すべてのタイプとして働く 1 個の充て方のうち、山札から持ってこられる見込み
+   * (scoreEnergiesFromDeck)がいちばん大きいもの。
+   */
+  private scoreBestEnergiesFromDeck(
+    owners: {
+      readonly attacker: PokemonInPlay;
+      readonly holder: PokemonInPlay;
+    },
+    selections: readonly HandEnergySelection[],
+    attachable: number,
+    deadline: number
+  ): number {
+    let best = 0;
+    for (const { counts, restChoices } of selections) {
+      // 山札から手札に持ってきたエネルギーも、つけるには手札からつける同じ 1 回を使う(basic-rules.md 72 行)ので、
+      // 手札で組に選んだ枚数を引いた残りの回数までしか山札の分を数えない
+      const attachableFromDeck =
+        attachable -
+        [...counts.values()].reduce((sum, count) => sum + count, 0);
+      for (const rest of restChoices) {
+        best = Math.max(
+          best,
+          this.scoreEnergiesFromDeck(
+            owners,
+            { counts, rest },
+            attachableFromDeck,
+            deadline
+          )
+        );
+      }
+    }
+    return best;
+  }
+
+  /**
+   * 手札で埋めきれなかった要求(fromHand.rest。すべてのタイプとして働く 1 個の充て方の 1 つ)のうち、山札から持って
+   * こられるものの揃い具合の合計。手札からつける回数の残り attachableFromDeck を超えた要求は 0 にし、山札から持ってきた
+   * エネルギーを効果で attacker につける探す手段・中継で満たした要求は、回数に数えない。
    */
   private scoreEnergiesFromDeck(
     {
       attacker,
       holder,
     }: { readonly attacker: PokemonInPlay; readonly holder: PokemonInPlay },
-    fromHand: HandEnergySelection,
+    fromHand: {
+      readonly counts: ReadonlyMap<CardRecord, number>;
+      readonly rest: readonly PokemonType[];
+    },
     attachableFromDeck: number,
     deadline: number
   ): number {
@@ -815,26 +867,25 @@ export class GoalProspects {
     );
   }
 
-  /** attacker が main のワザを使うのに必要なエネルギーと、ついているエネルギーで払えない分。締め切りによらないので使い回す。 */
+  /**
+   * attacker が main のワザを使うのに必要なエネルギー、ついているエネルギーの 1 個ずつ、それで払えない分。締め切りに
+   * よらないので使い回す。
+   */
   private listUnpaidCostOnce(
     main: MainAttack,
     attacker: PokemonInPlay
-  ): {
-    readonly cost: readonly PokemonType[];
-    readonly unpaid: readonly PokemonType[];
-  } {
+  ): UnpaidCost {
     return findOrCreate(
       findOrCreate(this.unpaidCosts, main, () => new Map()),
       attacker,
       () => {
         const { state } = this.input;
         const cost = calculateAttackCost(state, attacker, main.attack);
+        const attached = listEnergyUnits(state, attacker);
         return {
+          attached,
           cost,
-          unpaid:
-            cost.length === 0
-              ? []
-              : listUnpaidCost(cost, listEnergyUnits(state, attacker)),
+          unpaid: cost.length === 0 ? [] : listUnpaidCost(cost, attached),
         };
       }
     );
