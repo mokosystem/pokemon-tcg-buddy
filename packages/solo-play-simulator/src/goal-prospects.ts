@@ -869,7 +869,9 @@ export class GoalProspects {
 
   /**
    * attacker が main のワザを使うのに必要なエネルギー、ついているエネルギーの 1 個ずつ、それで払えない分。締め切りに
-   * よらないので使い回す。
+   * よらないので使い回す。attacker が主軸の進化前なら、ついているエネルギーは主軸に進化したとしたら供給するもので
+   * 数える(手札と見えていないカードのエネルギーと同じ。プリズムエネルギー 049455 は 2進化の主軸には無色 1 個)。
+   * ついているエネルギーは進化しても引き継ぐ(docs/pokemon-tcg/basic-rules.md 82 行)。
    */
   private listUnpaidCostOnce(
     main: MainAttack,
@@ -881,7 +883,15 @@ export class GoalProspects {
       () => {
         const { state } = this.input;
         const cost = calculateAttackCost(state, attacker, main.attack);
-        const attached = listEnergyUnits(state, attacker);
+        const attached =
+          attacker.card.record === main.record
+            ? listEnergyUnits(state, attacker)
+            : attacker.energies.flatMap((energy) =>
+                this.resolveUnitsWhenAttached(
+                  this.placeDetachedMainOnce(main),
+                  energy
+                )
+              );
         return {
           attached,
           cost,

@@ -601,6 +601,29 @@ describe("ワザのエネルギーの見込み(置き場所とタイプ)", () =>
     });
   });
 
+  // ドラメシヤ(たね。記録 049262)についたプリズムエネルギー(記録 049455)は、たねポケモンについている間だけ
+  // すべてのタイプのエネルギー 1 個で、2進化のドラパルトex に進化すると無色 1 個になる。ついているエネルギーは
+  // 進化しても引き継ぐ(docs/pokemon-tcg/basic-rules.md 82 行)
+  test("進化前のバトルポケモンについているエネルギーは、主軸に進化したとしたら供給するもので数える", () => {
+    const DREEPY = buildRecordedCard("049262");
+    const PRISM_ENERGY = buildRecordedCard("049455");
+    const RARE_CANDY_CARD = buildRecordedCard("050462");
+    const state = buildState({
+      active: DREEPY,
+      deck: [BOSS_ORDERS],
+      hand: [RARE_CANDY_CARD, DRAGAPULT_EX],
+      turn: 3,
+    });
+    // サイドの基本超エネルギー 6 枚を除き、見えていないカードを山札だけにする
+    state.prizes.length = 0;
+    state.active?.energies.push(PRISM_ENERGY, PSYCHIC_ENERGY);
+    state.hasAttachedEnergy = true;
+    // ファントムダイブの要求は炎 1 個と超 1 個。進化した後のプリズムエネルギーは無色 1 個なので炎を払えず、払えるのは超だけ
+    expect(
+      calculateActiveEnergyProspect(DRAGAPULT, "ファントムダイブ", state, 3)
+    ).toBeCloseTo(1 / 2, 9);
+  });
+
   test("見えていない基本炎エネルギーが 1 枚なら、ひふきやろうが 2 枚あっても、山札から持ってこられる要求は 1 つ", () => {
     const state = buildState({
       active: MEGA_CHARIZARD_Y,
