@@ -22,6 +22,33 @@ import {
 } from "./cards.ts";
 
 export const BENCH_LIMIT = 5;
+/**
+ * 手札からエネルギーをつけられる回数(1 回の番あたり。docs/pokemon-tcg/basic-rules.md 72 行)。締め切りまでにつけられる
+ * 枚数を数える場の評価(goal-prospects.ts)だけが使う。骨組みの番ごとの判定(attachEnergyFromHand と、player-actions.ts の
+ * 行動の一覧)はこの数を通らず、hasAttachedEnergy の真偽値で 1 回だけを表す。真偽値を数に変えると状態の形が変わるため
+ * 変えておらず、この数と真偽値の 2 か所が同じ制限を表している。
+ */
+export const ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN = 1;
+
+/**
+ * 1 回の番に 1 枚しか使えないトレーナーズの種類。サポートは 1 回の番に 1 枚、スタジアムを出すのは 1 回の番に 1 枚
+ * (docs/pokemon-tcg/basic-rules.md 75・76 行)。骨組みの判定(GameState の hasUsedOnceInTurn を通る canUseSupporter・
+ * playStadium と、card-effects.ts の canPlayTrainerIfInHand)と、締め切りまでに使える探す手段を数える場の評価
+ * (deck-fetch-sources.ts)が、どのカードがこの制限を受けるかを classifyOnceInTurnKind から借りる。
+ */
+export type OnceInTurnKind = "supporter" | "stadium";
+
+/** card が 1 回の番に 1 枚しか使えない種類のトレーナーズなら、その種類。制限の無いカードは undefined。 */
+export function classifyOnceInTurnKind(card: Card): OnceInTurnKind | undefined {
+  switch (card.category) {
+    case CardCategory.Supporter:
+      return "supporter";
+    case CardCategory.Stadium:
+      return "stadium";
+    default:
+      return undefined;
+  }
+}
 export const HAND_SIZE_AT_SETUP = 7;
 export const PRIZE_COUNT = 6;
 export const COLORLESS: PokemonType = "colorless";
@@ -42,10 +69,44 @@ function compareCardIds(left: Card, right: Card): number {
 }
 
 /**
+ * sortByCardId で最近並べ直した入力と結果。探索は同じ状態の複製を何度も混ぜ直すため、同じ並びの入力が続けて来る。
+ * 結果は入力の並びだけで決まるので、並びがまったく同じ入力には覚えた結果の写しを返す(並びの比べは参照の比較だけで済み、
+ * 数え直して並べ直すより速い)。入力はその場で作った配列で、呼んだ側が後から書き換えないので、写さずに覚える。
+ */
+const RECENT_SORT_SLOTS = 16;
+const recentSorts: {
+  readonly cards: readonly Card[];
+  readonly sorted: readonly Card[];
+}[] = [];
+let nextSortSlot = 0;
+
+function isSameSequence(
+  left: readonly Card[],
+  right: readonly Card[]
+): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * カード ID の順に並べ直した写し。見えていないカードを混ぜ直すとき、同じ組み合わせのカードからは元の並びによらず
- * 同じ結果にするために使う。同じ参照のカードをまとめてから種類だけを並べるので、枚数が多くても速い。
+ * 同じ結果にするために使う。同じ参照のカードをまとめてから種類だけを並べるので、枚数が多くても速い。cards は
+ * その場で作った配列を渡す(recentSorts に写さずに覚えるため)。
  */
 function sortByCardId(cards: readonly Card[]): Card[] {
+  const recent = recentSorts.find((entry) =>
+    isSameSequence(cards, entry.cards)
+  );
+  if (recent !== undefined) {
+    return [...recent.sorted];
+  }
   const counts = new Map<Card, number>();
   for (const card of cards) {
     counts.set(card, (counts.get(card) ?? 0) + 1);
@@ -56,7 +117,9 @@ function sortByCardId(cards: readonly Card[]): Card[] {
       sorted.push(card);
     }
   }
-  return sorted;
+  recentSorts[nextSortSlot] = { cards, sorted };
+  nextSortSlot = (nextSortSlot + 1) % RECENT_SORT_SLOTS;
+  return [...sorted];
 }
 
 export type CardSource = "hand" | "deck" | "discard";
@@ -73,16 +136,15 @@ export interface AttackDamageIncrease {
   readonly attackerFilter: PokemonInPlayFilter;
 }
 
-/**
- * ワザに必要なエネルギー(タイプの並び。無色は colorless)を、ついているエネルギーの
- * 個数分(units)で払えるか。タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして
- * 働く 1 個を充て、残りを無色に充てる。すべてのタイプとして働く 1 個を後に回すのは、同じタイプの
- * 1 個で埋められる指定にそれを使うと、別のタイプの指定を埋められなくなるため。
- */
-export function canPayCost(
+/** タイプ指定の分を同じタイプで埋めた結果。埋められなかった指定と、使わなかった 1 個ずつ。 */
+function matchTypedCost(
   cost: readonly PokemonType[],
   units: readonly EnergyUnit[]
-): boolean {
+): {
+  readonly colorlessCount: number;
+  readonly remaining: readonly EnergyUnit[];
+  readonly unmatched: readonly PokemonType[];
+} {
   const remaining = [...units];
   const typedCost = cost.filter((required) => required !== COLORLESS);
   const unmatched: PokemonType[] = [];
@@ -94,15 +156,85 @@ export function canPayCost(
       remaining.splice(index, 1);
     }
   }
-  for (const _ of unmatched) {
-    const index = remaining.indexOf("any");
-    if (index < 0) {
-      return false;
-    }
-    remaining.splice(index, 1);
+  return {
+    colorlessCount: cost.length - typedCost.length,
+    remaining,
+    unmatched,
+  };
+}
+
+/**
+ * ワザに必要なエネルギー(タイプの並び。無色は colorless)のうち、ついているエネルギーの個数分(units)で払えない分。
+ * タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして働く 1 個を充て、残りを無色に充てる。
+ * すべてのタイプとして働く 1 個を後に回すのは、同じタイプの 1 個で埋められる指定にそれを使うと、別のタイプの指定を
+ * 埋められなくなるため。払えるかの判定(canPayCost)と、払えない分を数える場の評価(goal-prospects.ts)が同じ埋め方を
+ * 使うよう、埋め方をここ 1 か所に置く。
+ */
+export function listUnpaidCost(
+  cost: readonly PokemonType[],
+  units: readonly EnergyUnit[]
+): PokemonType[] {
+  const { colorlessCount, remaining, unmatched } = matchTypedCost(cost, units);
+  const anyCount = remaining.filter((unit) => unit === "any").length;
+  const unpaidTyped = unmatched.slice(anyCount);
+  const unpaidColorlessCount = Math.max(
+    0,
+    colorlessCount - (remaining.length - Math.min(anyCount, unmatched.length))
+  );
+  return [
+    ...unpaidTyped,
+    ...Array.from({ length: unpaidColorlessCount }, () => COLORLESS),
+  ];
+}
+
+/**
+ * listUnpaidCost の払えない分を、すべてのタイプとして働く 1 個をどのタイプ指定に充てるかの選び方ごとに並べる(同じ
+ * 並びは 1 つにまとめる)。払えない数はどの選び方でも同じだが、残る指定のタイプが変わる。これから足すエネルギーで
+ * 払えない分を埋める見込みを数えるとき(goal-prospects.ts)、足したエネルギーが今すべてのタイプとして働く 1 個で
+ * 埋めている指定と同じタイプなら、その 1 個を別の指定に充て直せるため、選び方ごとに残る指定を数える。
+ */
+export function listUnpaidCostChoices(
+  cost: readonly PokemonType[],
+  units: readonly EnergyUnit[]
+): PokemonType[][] {
+  const unpaid = listUnpaidCost(cost, units);
+  const { remaining, unmatched } = matchTypedCost(cost, units);
+  const anyCount = Math.min(
+    remaining.filter((unit) => unit === "any").length,
+    unmatched.length
+  );
+  if (anyCount === 0 || anyCount === unmatched.length) {
+    return [unpaid];
   }
-  const colorlessNeeded = cost.length - typedCost.length;
-  return remaining.length >= colorlessNeeded;
+  const colorless = unpaid.slice(unmatched.length - anyCount);
+  const choices = new Map<string, PokemonType[]>();
+  const visit = (start: number, coveredLeft: number, open: PokemonType[]) => {
+    if (coveredLeft === 0) {
+      const typed = [...open, ...unmatched.slice(start)];
+      choices.set([...typed].sort().join(","), [...typed, ...colorless]);
+      return;
+    }
+    for (
+      let index = start;
+      index <= unmatched.length - coveredLeft;
+      index += 1
+    ) {
+      visit(index + 1, coveredLeft - 1, [
+        ...open,
+        ...unmatched.slice(start, index),
+      ]);
+    }
+  };
+  visit(0, anyCount, []);
+  return [...choices.values()];
+}
+
+/** ワザに必要なエネルギーを、ついているエネルギーの個数分(units)で払えるか。埋め方は listUnpaidCost。 */
+export function canPayCost(
+  cost: readonly PokemonType[],
+  units: readonly EnergyUnit[]
+): boolean {
+  return listUnpaidCost(cost, units).length === 0;
 }
 
 /** 基本ルールに反する操作が要求されたときに投げる。呼び出し側の書き誤りを示す。 */
@@ -371,12 +503,17 @@ export class GameState {
     return this.wentFirst && this.turn === 1;
   }
 
+  /** この番に、1 回の番に 1 枚の制限の種類 kind のトレーナーズを使ったか(サポートを使った、スタジアムを出した)。 */
+  hasUsedOnceInTurn(kind: OnceInTurnKind): boolean {
+    return kind === "supporter" ? this.hasUsedSupporter : this.hasPlayedStadium;
+  }
+
   /** usableOnFirstTurnGoingFirst は、先攻の最初の番でも使える印を持つサポート(ゼイユ)のときに真にする。 */
   canUseSupporter(
     options: { usableOnFirstTurnGoingFirst?: boolean } = {}
   ): boolean {
     return !(
-      this.hasUsedSupporter ||
+      this.hasUsedOnceInTurn("supporter") ||
       (this.isFirstTurnGoingFirst() && !options.usableOnFirstTurnGoingFirst)
     );
   }
@@ -710,7 +847,7 @@ export class GameState {
     if (card.category !== CardCategory.Stadium) {
       throw new IllegalMove(`${card.name} はスタジアムではない`);
     }
-    if (this.hasPlayedStadium) {
+    if (this.hasUsedOnceInTurn("stadium")) {
       throw new IllegalMove("この番はもうスタジアムを出した");
     }
     if (this.stadium?.name === card.name) {

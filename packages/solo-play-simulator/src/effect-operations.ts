@@ -1294,6 +1294,26 @@ function resolveBranch(step: EffectStep, run: OperationRun): BasicOperation[] {
   }
 }
 
+/**
+ * 操作の列に含まれる、起こりうる基本操作の並び。条件の分かれ道は両側、コインはオモテの側を含める(ウラの側は何も
+ * 起こさない)。効果を実行せずに、効果が持つ操作の条件を読み取るとき(山札から持ってくるカードの条件、入れ替えて
+ * バトル場に出すポケモンの条件)に使う。
+ */
+export function listPossibleOperations(
+  steps: readonly EffectStep[]
+): BasicOperation[] {
+  return steps.flatMap((step): BasicOperation[] => {
+    switch (step.operation) {
+      case "branchOnCondition":
+        return [...step.stepsWhenMet, ...step.stepsOtherwise];
+      case "branchOnCoinFlip":
+        return step.stepsWhenHeads;
+      default:
+        return [step];
+    }
+  });
+}
+
 /** 効果を実行する。「のぞむなら」の効果は、起こすかを問い合わせてから実行する。 */
 export function runEffect(
   context: EffectContext,

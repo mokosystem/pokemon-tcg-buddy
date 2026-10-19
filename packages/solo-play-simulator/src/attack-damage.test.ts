@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { calculateAttackDamage } from "./attack-damage.ts";
+import {
+  calculateAttackDamage,
+  estimateAttackDamageWithPartialThresholds,
+} from "./attack-damage.ts";
 import type { Attack } from "./card-record-schema.ts";
 import {
   activeOf,
@@ -52,6 +55,8 @@ const ZACIAN = buildRecordedCard("050697");
 const IGGLYBUFF = buildRecordedCard("050708");
 const BALLOON = buildRecordedCard("050464");
 const BOSS = buildRecordedCard("050467");
+const POLTCHAGEIST = buildRecordedCard("050224");
+const SHUPPET = buildRecordedCard("050250");
 
 describe("ワザのダメージ", () => {
   test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
@@ -302,5 +307,56 @@ describe("ワザのダメージ", () => {
         findAttack(CYNTHIAS_SPIRITOMB, "レイジングカース")
       )
     ).toBe(0);
+  });
+});
+
+describe("場の評価に使うダメージの見込み", () => {
+  // むねんのイカリ(ダダリン 050308)は 30。トラッシュに特性「ばけがくれ」を持つポケモン(チャデス 050224、
+  // カゲボウズ 050250)が 4 枚以上なら 140 を足す
+  const discards = [
+    [],
+    [POLTCHAGEIST],
+    [POLTCHAGEIST, SHUPPET],
+    [POLTCHAGEIST, SHUPPET, POLTCHAGEIST, SHUPPET],
+  ];
+  const resentfulAnchor = findAttack(DHELMISE, "むねんのイカリ");
+
+  test("むねんのイカリの見込みは、トラッシュの「ばけがくれ」が 0・1・2・4 枚のとき 30・65・100・170", () => {
+    expect(
+      discards.map((discard) => {
+        const state = buildState({ active: DHELMISE, discard });
+        return estimateAttackDamageWithPartialThresholds(
+          state,
+          activeOf(state),
+          resentfulAnchor
+        );
+      })
+    ).toEqual([30, 65, 100, 170]);
+  });
+
+  test("同じ場のむねんのイカリの本当のダメージは 30・30・30・170", () => {
+    expect(
+      discards.map((discard) => {
+        const state = buildState({ active: DHELMISE, discard });
+        return calculateAttackDamage(state, activeOf(state), resentfulAnchor);
+      })
+    ).toEqual([30, 30, 30, 170]);
+  });
+
+  test("メガシンフォニア(メガサーナイトex 048464)の見込みは、本当のダメージと同じ", () => {
+    const state = buildState({ active: GARDEVOIR, bench: [RALTS] });
+    state.active?.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    state.bench[0]?.energies.push(PSYCHIC_ENERGY);
+    const symphonia = findAttack(GARDEVOIR, "メガシンフォニア");
+    expect(
+      estimateAttackDamageWithPartialThresholds(
+        state,
+        activeOf(state),
+        symphonia
+      )
+    ).toBe(calculateAttackDamage(state, activeOf(state), symphonia) ?? 0);
+    expect(calculateAttackDamage(state, activeOf(state), symphonia)).toBe(
+      3 * 50
+    );
   });
 });

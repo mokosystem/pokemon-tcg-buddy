@@ -6,6 +6,7 @@
  * Issue 22 の 4 デッキと並んで記録をそろえる対象になっている。記録だけで 60 枚を最後まで回せるかのテストに使う。
  */
 
+import type { Declaration } from "./declaration.ts";
 import type { RecordedDeck } from "./issue22-decks.ts";
 
 export const ADDITIONAL_RECORDED_DECKS: readonly RecordedDeck[] = [
@@ -70,3 +71,41 @@ export const ADDITIONAL_RECORDED_DECKS: readonly RecordedDeck[] = [
     name: "メガレックウザex(開発責任者)",
   },
 ];
+
+/**
+ * シロナのガブリアスex デッキ(6nNQgQ-y6q3om-9HnnLL)の宣言。Issue 51 の追試に使う。主軸はシロナのガブリアスex(047381)の
+ * 「リューノバスター」(闘 2 個、260)。ダメージの下限 320 は、シロナのロズレイド(047366)の特性「グローリーエール」が
+ * 2 匹ぶん働いたとき(1 匹ごとに +30、2 匹で +60 は記録 047366 の裁定のデータ)。デッキにふしぎなアメが無いため、道は
+ * 素の進化の道だけで、2 番目の番は進化のルール上 0 % になる(docs/pokemon-tcg/basic-rules.md 77 行)。開発責任者の本来の
+ * 狙い(3 番目の番の終わりの場の形)は今の宣言で書けず、Issue 56 で扱う。締め切りは既定(2 番目と 3 番目の番)。
+ */
+export const CYNTHIAS_GARCHOMP_DECLARATION: Declaration = {
+  mainAttacks: [{ attackName: "リューノバスター", cardId: "047381" }],
+  minimumDamage: 320,
+  pathsToMainAttacker: [
+    {
+      name: "素の進化の道",
+      requiredCards: [
+        { cardId: "049093", place: "inPlaySincePreviousTurn" },
+        { cardId: "047381", place: "hand" },
+      ],
+    },
+  ],
+};
+
+/**
+ * メガレックウザex デッキ(xcGKc8-NGuFdn-D8c88x)の宣言。Issue 51 の追試に使う。主軸はたねポケモンのメガレックウザex(050396)の
+ * 「ストームエメラルダ」(炎・雷・無色。自分の場の炎と雷のエネルギー 1 個につき 50)で、350 は 7 個ぶん。後攻 1 番目の番の
+ * ファイアローex(050400)の「かぎづめハント」は主軸ではないため宣言に入れず、追試の道具が測るだけの狙いとして数える。
+ * 締め切りは既定(2 番目と 3 番目の番)。
+ */
+export const MEGA_RAYQUAZA_DECLARATION: Declaration = {
+  mainAttacks: [{ attackName: "ストームエメラルダ", cardId: "050396" }],
+  minimumDamage: 350,
+  pathsToMainAttacker: [
+    {
+      name: "メガレックウザex の道",
+      requiredCards: [{ cardId: "050396", place: "inPlay" }],
+    },
+  ],
+};

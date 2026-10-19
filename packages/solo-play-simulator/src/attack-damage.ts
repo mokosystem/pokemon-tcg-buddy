@@ -1,6 +1,6 @@
 /**
- * ワザのダメージを、カードの記録の規則と今の場から求める。狙いの 3 段目「ワザを N 以上で打てる」の判定に使う。
- * 求めるのは相手のバトルポケモンに与えるダメージ。
+ * ワザのダメージを、カードの記録の規則と今の場から求める。狙いの 3 段目「ワザを N 以上で打てる」の判定と、場の評価の
+ * ダメージの見込みに使う。求めるのは相手のバトルポケモンに与えるダメージ。
  *
  * 相手がいないため、弱点・抵抗力と相手の側で決まる上乗せは計算しない。記録はそうした上乗せを持たず、
  * 含めなかった効果に書いている(docs/solo-play-simulator-design.md「カードの記録の形」)。自分の側のカードが
@@ -97,16 +97,24 @@ function countDamageTarget<Name extends DamageCountTarget["count"]>(
   return count(target, state, attacker);
 }
 
+/**
+ * 上乗せの量。countsPartialThreshold が真なら、「N 以上なら M を足す」で数がまだ N に届かないとき M × 数 ÷ N を足す。
+ * 場の評価の見込みだけに使い、狙いの判定(calculateAttackDamage)では届くまで足さない(Issue 51「数え漏れ 5」)。
+ */
 function calculateBonus(
   state: GameState,
   attacker: PokemonInPlay,
-  bonus: DamageBonus
+  bonus: DamageBonus,
+  countsPartialThreshold: boolean
 ): number {
   const count = countDamageTarget(state, attacker, bonus.target);
   if (bonus.kind === "perCount") {
     return count * bonus.unit;
   }
-  return count >= bonus.atLeast ? bonus.add : 0;
+  if (count >= bonus.atLeast) {
+    return bonus.add;
+  }
+  return countsPartialThreshold ? (bonus.add * count) / bonus.atLeast : 0;
 }
 
 function sumAttackDamageIncreaseThisTurn(
@@ -119,6 +127,31 @@ function sumAttackDamageIncreaseThisTurn(
         ? total + increase.amount
         : total,
     0
+  );
+}
+
+function calculateDamage(
+  state: GameState,
+  attacker: PokemonInPlay,
+  attack: Attack,
+  countsPartialThreshold: boolean
+): number | undefined {
+  const { damage } = attack;
+  if (damage.kind === "none") {
+    return undefined;
+  }
+  const base =
+    damage.amount +
+    (damage.bonus === undefined
+      ? 0
+      : calculateBonus(state, attacker, damage.bonus, countsPartialThreshold));
+  if (base === 0) {
+    return 0;
+  }
+  return (
+    base +
+    sumAttackDamageIncrease(state, attacker) +
+    sumAttackDamageIncreaseThisTurn(state, attacker)
   );
 }
 
@@ -136,21 +169,18 @@ export function calculateAttackDamage(
   attacker: PokemonInPlay,
   attack: Attack
 ): number | undefined {
-  const { damage } = attack;
-  if (damage.kind === "none") {
-    return undefined;
-  }
-  const base =
-    damage.amount +
-    (damage.bonus === undefined
-      ? 0
-      : calculateBonus(state, attacker, damage.bonus));
-  if (base === 0) {
-    return 0;
-  }
-  return (
-    base +
-    sumAttackDamageIncrease(state, attacker) +
-    sumAttackDamageIncreaseThisTurn(state, attacker)
-  );
+  return calculateDamage(state, attacker, attack, false);
+}
+
+/**
+ * 場の評価に使うダメージの見込み。calculateAttackDamage と同じ規則で求め、上乗せ「N 以上なら M を足す」だけは、数が
+ * N に届く前でも M × 数 ÷ N を足す(階段を坂にする。Issue 51「数え漏れ 5」)。届くまで見込みが変わらないと、数を
+ * 増やす手(トラッシュに送るなど)が評価に出ないため。狙いが成り立ったかの判定には使わない。
+ */
+export function estimateAttackDamageWithPartialThresholds(
+  state: GameState,
+  attacker: PokemonInPlay,
+  attack: Attack
+): number | undefined {
+  return calculateDamage(state, attacker, attack, true);
 }

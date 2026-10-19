@@ -140,18 +140,16 @@ function collectContinuousEffects(
       listCardContinuousEffects(stadium)
     );
   }
-  const stadiumEffectCount = collected.length;
+  const stadiumEffects = [...collected];
   const isNegatedBy = (
     change: "negateAbilities" | "negateToolEffects",
     pokemon: PokemonInPlay
   ) =>
-    collected
-      .slice(0, stadiumEffectCount)
-      .some(
-        (entry) =>
-          entry.effect.change.change === change &&
-          appliesTo(state, entry, pokemon)
-      );
+    stadiumEffects.some(
+      (entry) =>
+        entry.effect.change.change === change &&
+        appliesTo(state, entry, pokemon)
+    );
   for (const pokemon of state.listPokemonInPlay()) {
     const abilities = listAbilityContinuousEffects(pokemon.card);
     if (abilities.length > 0 && !isNegatedBy("negateAbilities", pokemon)) {
@@ -243,6 +241,35 @@ export function resolveEnergyProvision(
 }
 
 /**
+ * 手札か山札のエネルギー 1 枚を holder につけたとしたら供給するもの。energy 自身の場にある間ずっと働く効果
+ * (プリズムエネルギー 049455、イグニッションエネルギー 049452)と、holder に働く場の効果を当てる。場にある効果を
+ * 集める collectContinuousEffects は場のカードしか見ないため、つける前のエネルギー自身の効果をここで足す。
+ * holder は場にいなくてよい(場の評価が、場に出たとみなした主軸で数えるため)。つけたことで場のほかの効果が
+ * 変わることは見ない。
+ */
+export function resolveEnergyProvisionWhenAttached(
+  state: GameState,
+  holder: PokemonInPlay,
+  energy: Card
+): EnergyProvision {
+  const collected = collectContinuousEffects(state);
+  const energyEffects: CollectedContinuousEffect[] = [];
+  collectMet(
+    state,
+    energyEffects,
+    energy,
+    holder,
+    listCardContinuousEffects(energy)
+  );
+  return resolveEnergyProvisionFrom(
+    [...energyEffects, ...collected],
+    listCollectedApplyingTo(state, collected, holder),
+    holder,
+    energy
+  );
+}
+
+/**
  * 集めた効果(all)と、そのうち pokemon に働く効果(applying)から、ついているエネルギー 1 枚が供給するものを求める。
  * 同じポケモンのエネルギーをまとめて求めるとき、効果を 1 回だけ集めるために分けてある。
  */
@@ -294,7 +321,18 @@ export function listEnergyUnits(
     return [];
   }
   const all = collectContinuousEffects(state);
-  const applying = listCollectedApplyingTo(state, all, pokemon);
+  return listEnergyUnitsFrom(
+    all,
+    listCollectedApplyingTo(state, all, pokemon),
+    pokemon
+  );
+}
+
+function listEnergyUnitsFrom(
+  all: readonly CollectedContinuousEffect[],
+  applying: readonly CollectedContinuousEffect[],
+  pokemon: PokemonInPlay
+): EnergyUnit[] {
   return pokemon.energies.flatMap((energy) =>
     toEnergyUnits(resolveEnergyProvisionFrom(all, applying, pokemon, energy))
   );
@@ -394,7 +432,14 @@ export function calculateAttackCost(
   pokemon: PokemonInPlay,
   attack: Attack
 ): PokemonType[] {
-  const added = listEffectsApplyingTo(state, pokemon).reduce(
+  return calculateAttackCostFrom(listEffectsApplyingTo(state, pokemon), attack);
+}
+
+function calculateAttackCostFrom(
+  applying: readonly CollectedContinuousEffect[],
+  attack: Attack
+): PokemonType[] {
+  const added = applying.reduce(
     (total, collected) =>
       collected.effect.change.change === "addColorlessToAttackCost"
         ? total + collected.effect.change.count
@@ -526,13 +571,13 @@ function listBenchedAttacksUsedAs(
 
 /**
  * 1 回目のワザを使ったあとに、2 回目として使えるワザ(「おまつりおんど」)。2 回目を使える効果が働いていれば、
- * このポケモンが記録に持つワザ(ほかのワザを「このワザとして使う」ワザを除く)を返す。
+ * このポケモンが記録に持つワザ(ほかのワザを「このワザとして使う」ワザを除く)を返す。applying は pokemon に働く効果。
  */
-export function listSecondAttacks(
-  state: GameState,
+function listSecondAttacks(
+  applying: readonly CollectedContinuousEffect[],
   pokemon: PokemonInPlay
 ): UsableAttack[] {
-  const allowsSecondAttack = listEffectsApplyingTo(state, pokemon).some(
+  const allowsSecondAttack = applying.some(
     (collected) => collected.effect.change.change === "useAttacksTwice"
   );
   if (
@@ -554,9 +599,11 @@ export function listSecondAttacks(
  * Nのゾロアークex の「ナイトジョーカー」)なら、自身のワザと同じく選べるワザに置き換える。そのワザ自体は
  * ベンチのポケモンが持っているワザなので、ミュウex の「きおくのらせん」で使える(カードテキスト「ベンチポケモンが
  * 持つワザを、すべて使える」による。この組み合わせを問う公式 Q&A は無い、2026-09-24 確認)。
+ * applying は pokemon に働く効果。
  */
-export function listUsableAttacks(
+function listUsableAttacks(
   state: GameState,
+  applying: readonly CollectedContinuousEffect[],
   pokemon: PokemonInPlay
 ): UsableAttack[] {
   const own =
@@ -565,7 +612,7 @@ export function listUsableAttacks(
           listAttacksUsedAs(state, pokemon, pokemon, attack)
         )
       : [];
-  const allowsBenchAttacks = listEffectsApplyingTo(state, pokemon).some(
+  const allowsBenchAttacks = applying.some(
     (collected) =>
       collected.effect.change.change === "allowBenchedPokemonAttacks"
   );
@@ -582,4 +629,34 @@ export function listUsableAttacks(
         : []
     );
   return [...own, ...fromBench];
+}
+
+/**
+ * pokemon のワザの候補(この番にワザを使った後なら 2 回目に使えるワザ listSecondAttacks、まだなら listUsableAttacks)と、
+ * 候補ごとに必要なエネルギー(cost。calculateAttackCost と同じ)、pokemon についているエネルギーの 1 個ずつのタイプ
+ * (listEnergyUnits)。どれも働いている効果から求めるので、効果を 1 回だけ集めて使い回す。探索は評価のたびにバトル
+ * ポケモンの使えるワザを出すため、3 つを別々に呼んで効果を何度も集めない。
+ */
+export function listAttackCandidatesWithCosts(
+  state: GameState,
+  pokemon: PokemonInPlay
+): {
+  readonly candidates: {
+    readonly cost: PokemonType[];
+    readonly usable: UsableAttack;
+  }[];
+  readonly units: EnergyUnit[];
+} {
+  const all = collectContinuousEffects(state);
+  const applying = listCollectedApplyingTo(state, all, pokemon);
+  const usables = state.attacks.has(state.turn)
+    ? listSecondAttacks(applying, pokemon)
+    : listUsableAttacks(state, applying, pokemon);
+  return {
+    candidates: usables.map((usable) => ({
+      cost: calculateAttackCostFrom(applying, usable.attack),
+      usable,
+    })),
+    units: listEnergyUnitsFrom(all, applying, pokemon),
+  };
 }

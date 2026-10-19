@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { buildRecordedCard, buildState } from "./card-test-support.ts";
 import { firstCandidateChoices } from "./effect-choices.ts";
 import {
+  canRetreatActive,
   describeAction,
   listAvailableActions,
   type PlayerAction,
@@ -86,5 +87,29 @@ describe("今できる行動の一覧", () => {
     );
     expect(state.bench[0]?.energies).toEqual([PSYCHIC_ENERGY]);
     expect(state.active?.energies).toEqual([]);
+  });
+});
+
+describe("にげられるか", () => {
+  // にげるのは 1 回の番に 1 回まで。にげるエネルギーの分のエネルギーをトラッシュする(docs/pokemon-tcg/basic-rules.md 79 行)。
+  // ニャースex はにげる 1(記録 049694)
+  test("にげるエネルギーを払えないバトルポケモンはにげられず、払えればにげられる", () => {
+    const state = buildState({ active: MEOWTH, bench: [RALTS] });
+    expect(canRetreatActive(state)).toBe(false);
+    state.active?.energies.push(PSYCHIC_ENERGY);
+    expect(canRetreatActive(state)).toBe(true);
+  });
+
+  test("この番にもうにげたら、にげるエネルギーを払えてもにげられない", () => {
+    const state = buildState({ active: MEOWTH, bench: [RALTS] });
+    state.active?.energies.push(PSYCHIC_ENERGY);
+    state.hasRetreated = true;
+    expect(canRetreatActive(state)).toBe(false);
+  });
+
+  test("ベンチにポケモンがいなければ、にげるエネルギーを払えてもにげられない", () => {
+    const state = buildState({ active: MEOWTH });
+    state.active?.energies.push(PSYCHIC_ENERGY);
+    expect(canRetreatActive(state)).toBe(false);
   });
 });

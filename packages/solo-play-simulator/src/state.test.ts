@@ -15,8 +15,11 @@ import {
   BENCH_LIMIT,
   COLORLESS,
   canPayCost,
+  classifyOnceInTurnKind,
   GameState,
   IllegalMove,
+  listUnpaidCost,
+  listUnpaidCostChoices,
   PokemonInPlay,
 } from "./state.ts";
 
@@ -86,6 +89,15 @@ describe("番のルール", () => {
     expect(state.hand).toHaveLength(1);
     expect(state.hasUsedSupporter).toBe(false);
     expect(state.hasAttachedEnergy).toBe(false);
+  });
+
+  // サポートは 1 回の番に 1 枚、スタジアムを出すのは 1 回の番に 1 枚(docs/pokemon-tcg/basic-rules.md 75・76 行)
+  test("1 回の番に 1 枚の制限の種類は、サポートとスタジアムだけにあり、グッズとエネルギーとポケモンには無い", () => {
+    expect(classifyOnceInTurnKind(SUPPORTER)).toBe("supporter");
+    expect(classifyOnceInTurnKind(STADIUM)).toBe("stadium");
+    for (const card of [GOODS, ENERGY, BASIC]) {
+      expect(classifyOnceInTurnKind(card)).toBeUndefined();
+    }
   });
 
   test("同じ名前のスタジアムは出せない", () => {
@@ -362,6 +374,40 @@ describe("ワザのエネルギー", () => {
     expect(canPayCost(["fire", "psychic"], ["any", "fire"])).toBe(true);
     expect(canPayCost(["fire", "psychic"], ["any", "grass"])).toBe(false);
     expect(canPayCost(["fire", COLORLESS], ["any", "grass"])).toBe(true);
+  });
+
+  test("払えない分は、タイプ指定を同じタイプで埋め、すべてのタイプとして働く 1 個を後に回した残り", () => {
+    expect(listUnpaidCost(["fire", "psychic"], ["any", "fire"])).toEqual([]);
+    expect(
+      listUnpaidCost(["fire", "psychic", COLORLESS], ["any", "grass"])
+    ).toEqual(["psychic"]);
+    expect(listUnpaidCost(["fire", COLORLESS, COLORLESS], [])).toEqual([
+      "fire",
+      COLORLESS,
+      COLORLESS,
+    ]);
+  });
+
+  test("炎と超の要求に超 1 個がついていれば、炎 1 個が払えない", () => {
+    expect(listUnpaidCost(["fire", "psychic"], ["psychic"])).toEqual(["fire"]);
+  });
+
+  test("払えない分の選び方は、すべてのタイプとして働く 1 個をどのタイプ指定に充てるかごとに並び、同じ並びはまとめる", () => {
+    expect(
+      listUnpaidCostChoices(["fire", "electric", COLORLESS], ["any", "water"])
+    ).toEqual([["electric"], ["fire"]]);
+    expect(
+      listUnpaidCostChoices(["fire", "fire", "electric"], ["any"])
+    ).toEqual([
+      ["fire", "electric"],
+      ["fire", "fire"],
+    ]);
+    expect(
+      listUnpaidCostChoices(["fire", "psychic", COLORLESS], ["grass"])
+    ).toEqual([["fire", "psychic"]]);
+    expect(listUnpaidCostChoices(["fire", COLORLESS], ["any"])).toEqual([
+      [COLORLESS],
+    ]);
   });
 });
 

@@ -10,15 +10,12 @@ import { CardCategory } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { areConditionsMet, type EffectSource } from "./conditions.ts";
 import {
-  calculateAttackCost,
   calculateBenchLimit,
   calculateRetreatCost,
   findEvolutionNameAllowedByEffect,
   isAbilityNegated,
   isFreshEvolutionAllowedByEffect,
-  listEnergyUnits,
-  listSecondAttacks,
-  listUsableAttacks,
+  listAttackCandidatesWithCosts,
   resolveEnergyProvision,
   toEnergyUnits,
   type UsableAttack,
@@ -36,6 +33,7 @@ import {
 } from "./effect-operations.ts";
 import {
   canPayCost,
+  classifyOnceInTurnKind,
   type GameState,
   IllegalMove,
   type PokemonInPlay,
@@ -54,13 +52,18 @@ function supporterOptionsOf(card: Card): {
   };
 }
 
-/** グッズ・サポート・スタジアムを手札から使えるか。基本ルールの制限と、翻訳の使える条件の両方を見る。 */
-export function canPlayTrainerFromHand(
+/**
+ * グッズ・サポート・スタジアムを、手札にあるとしたら使えるか(手札にあるかは見ない)。基本ルールの制限と、翻訳の
+ * 使える条件の両方を見る。山札のカードを手札に加えた後に使えるかを、加える前に見積もるときにも使う。
+ * そのときの手札は今の手札のままとして見る(加える前に使ったカードが手札から減ることは見ない)。
+ */
+export function canPlayTrainerIfInHand(
   context: EffectContext,
   card: Card
 ): boolean {
   const { state } = context;
-  if (!state.hand.includes(card)) {
+  const onceInTurnKind = classifyOnceInTurnKind(card);
+  if (onceInTurnKind !== undefined && state.hasUsedOnceInTurn(onceInTurnKind)) {
     return false;
   }
   const source: EffectSource = { card, pokemon: undefined };
@@ -71,14 +74,25 @@ export function canPlayTrainerFromHand(
     case CardCategory.Goods:
       return effectsAreUsable;
     case CardCategory.Supporter:
+      // 先攻の最初の番の制限は canUseSupporter が見る
       return (
         state.canUseSupporter(supporterOptionsOf(card)) && effectsAreUsable
       );
     case CardCategory.Stadium:
-      return !state.hasPlayedStadium && state.stadium?.name !== card.name;
+      return state.stadium?.name !== card.name;
     default:
       return false;
   }
+}
+
+/** グッズ・サポート・スタジアムを手札から使えるか。基本ルールの制限と、翻訳の使える条件の両方を見る。 */
+export function canPlayTrainerFromHand(
+  context: EffectContext,
+  card: Card
+): boolean {
+  return (
+    context.state.hand.includes(card) && canPlayTrainerIfInHand(context, card)
+  );
 }
 
 /** グッズ・サポートを使う、またはスタジアムを出す。グッズとサポートは基本処理の後に効果の翻訳を実行する。 */
@@ -412,18 +426,17 @@ export function listUsableAttacksOfActive(
   ) {
     return [];
   }
-  const units = listEnergyUnits(state, active);
   const source: EffectSource = { card: active.card, pokemon: active };
-  const candidates = state.attacks.has(state.turn)
-    ? listSecondAttacks(state, active)
-    : listUsableAttacks(state, active);
-  return candidates.filter(
-    ({ attack }) =>
-      canPayCost(calculateAttackCost(state, active, attack), units) &&
-      (attack.effect === undefined ||
-        (areConditionsMet(state, attack.effect.useConditions, source) &&
-          !wouldLeaveFieldEmpty(state, attack.effect)))
-  );
+  const { candidates, units } = listAttackCandidatesWithCosts(state, active);
+  return candidates
+    .filter(
+      ({ cost, usable: { attack } }) =>
+        canPayCost(cost, units) &&
+        (attack.effect === undefined ||
+          (areConditionsMet(state, attack.effect.useConditions, source) &&
+            !wouldLeaveFieldEmpty(state, attack.effect)))
+    )
+    .map(({ usable }) => usable);
 }
 
 /**

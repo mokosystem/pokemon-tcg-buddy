@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  canPlayTrainerFromHand,
+  canPlayTrainerIfInHand,
   canUseStadiumEffect,
   listUsableAttacksOfActive,
   playTrainerFromHand,
@@ -97,5 +99,28 @@ describe("スタジアム", () => {
     expect(canUseStadiumEffect(context)).toBe(false);
     playTrainerFromHand(context, prismTower);
     expect(canUseStadiumEffect(context)).toBe(true);
+  });
+});
+
+describe("トレーナーズを使えるか", () => {
+  // サポートは 1 回の番に 1 枚(docs/pokemon-tcg/basic-rules.md 75 行)。アクロマの執念は山札からスタジアムとエネルギーを
+  // 手札に加える(記録 045934)
+  test("canPlayTrainerIfInHand は手札に無いサポートでも、この番にサポートを使っていなければ真、使った後は偽", () => {
+    const achroma = buildRecordedCard("045934");
+    const state = buildState({
+      deck: [achroma, buildRecordedCard("049463")],
+    });
+    const context = buildContext(state);
+    expect(canPlayTrainerIfInHand(context, achroma)).toBe(true);
+    state.hasUsedSupporter = true;
+    expect(canPlayTrainerIfInHand(context, achroma)).toBe(false);
+  });
+
+  test("canPlayTrainerFromHand は手札に無いカードには偽", () => {
+    const achroma = buildRecordedCard("045934");
+    const state = buildState({
+      deck: [achroma, buildRecordedCard("049463")],
+    });
+    expect(canPlayTrainerFromHand(buildContext(state), achroma)).toBe(false);
   });
 });

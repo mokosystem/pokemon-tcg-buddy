@@ -11,16 +11,33 @@
 import { listUsableAttacksOfActive } from "../src/card-effects.ts";
 import { CardCategory, type CardRecord } from "../src/card-record-schema.ts";
 import { cardRecordTable } from "../src/card-record-table.ts";
-import type { Declaration } from "../src/declaration.ts";
+import {
+  type Declaration,
+  type ResolvedDeclaration,
+  resolveDeclaration,
+} from "../src/declaration.ts";
 import { firstCandidateChoices } from "../src/effect-choices.ts";
 import type { DeckVariant, Goal } from "../src/engine.ts";
 import {
   BAKEGAKURE_DECLARATION,
   DRAGAPULT_DECLARATION,
+  findRecordedDeck,
+  ISSUE22_DECKS,
   MEGA_CHARIZARD_DECLARATION,
   MEGA_GARDEVOIR_DECLARATION,
+  type RecordedDeck,
 } from "../src/issue22-decks.ts";
 import type { GameState } from "../src/state.ts";
+import { findDeckTargetByName } from "./run-search-trials.ts";
+
+/** 2 万回のときの割合の揺れ(95 % の範囲、ポイント)。答え合わせの基準(Issue 27 の決定事項)。 */
+export const NOISE_POINTS = 0.7;
+
+/**
+ * Issue 51 の完了の物差し: 宣言の狙いの 2 番目と 3 番目の番で、探索の成立率が #22 の成立率からこれより大きく
+ * 下回らないこと(ポイント)。2 万回の揺れ(両側で ±0.7)とメガリザードンのワザの後のトラッシュの違い(約 1)を合わせた幅。
+ */
+export const ALLOWED_SHORTFALL_POINTS = 2;
 
 /** #22 の成立率の 1 つ。先攻・後攻の割合(%)。 */
 export interface Issue22Rate {
@@ -107,7 +124,7 @@ const DRAGAPULT_ATTACK = "ファントムダイブ を打てる";
 const TALONFLAME = findRecord("050400");
 
 /** #22 の is_active_talonflame_ready と同じく、バトル場のファイアローex が今「かぎづめハント」を使えるか。 */
-const TALON_HUNT_GOAL: Goal = {
+export const TALON_HUNT_GOAL: Goal = {
   explainFailure: (state) =>
     state
       .listPokemonInPlay()
@@ -156,7 +173,7 @@ const DRAKLOAK_GOAL: Goal = {
   name: "ドロンチが場にいる(ていさつしれいを使える)",
 };
 
-export const ISSUE22_COMPARISON_TARGETS: Readonly<
+const ISSUE22_COMPARISON_TARGETS: Readonly<
   Record<string, Issue22ComparisonTarget>
 > = {
   bakegakure: {
@@ -718,3 +735,25 @@ export const ISSUE22_COMPARISON_TARGETS: Readonly<
     ],
   },
 };
+
+/**
+ * 答え合わせの道具の引数(デッキの名前、先攻・後攻それぞれの試行回数)から、答え合わせの相手、60 枚の内容、宣言を
+ * 記録で引き当てたもの、試行回数を引く。
+ */
+export function parseIssue22ComparisonArguments(argv: readonly string[]): {
+  deck: RecordedDeck;
+  resolved: ResolvedDeclaration;
+  target: Issue22ComparisonTarget;
+  trials: number;
+} {
+  const target = findDeckTargetByName(
+    ISSUE22_COMPARISON_TARGETS,
+    argv[0] ?? ""
+  );
+  return {
+    deck: findRecordedDeck(ISSUE22_DECKS, target.deckCode),
+    resolved: resolveDeclaration(target.declaration, cardRecordTable),
+    target,
+    trials: Number(argv[1] ?? "20000"),
+  };
+}
