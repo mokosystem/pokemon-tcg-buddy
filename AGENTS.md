@@ -17,6 +17,12 @@
 
 文書を書く・直すときは [CONTEXT.md](CONTEXT.md) の用語を使い、各用語の _Avoid_ に挙げた表記を使わない。公式用語は公式サイトで確認した名称、プロジェクト定義用語はこのプロジェクトが付けた名前で、CONTEXT.md がその区別を示す。新しい概念に名前を付けるときや、用語の揺れに気づいたときは、CONTEXT.md を先に直してから文書を直す。プレイヤーの俗語(逃げエネ、手張りなど)の意味は [docs/pokemon-tcg/glossary.md](docs/pokemon-tcg/glossary.md) で確認し、CONTEXT.md の用語へ対応付けて扱う。ユーザーとの会話でどの俗語を使ってよいかも、同じ文書の「エージェントの使い方」に従う。
 
+## 文書に書く版
+
+- 今使っている道具や依存の版(Bun、TypeScript、Biome など)を文書に書き写さない。版の正は `mise.toml`(Bun)と各 `package.json`(依存)で、書き写すと版を上げるたびに直す必要があり、直し忘れると食い違う。文書には、版をどこで固定しているかだけを書く
+- 版を上げた理由や経緯は文書に書かず、コミットメッセージと Pull Request に書く
+- 版を書くのは、確認や計測の結果に「その版で確かめた」という条件を添えるときだけにする(例:「2026-10-08 に Bun 1.4.2 で確認」)。版を外すと、結果がどの環境で得たものか分からなくなるため。版を上げてもこの版は書き換えない。書き換えると、新しい版で確かめていない結果を確かめたように見せることになる
+
 ## ポケモンカードの情報の扱い
 
 カード、ルール、レギュレーションについて書くときは、README の「情報源の方針」に従う。具体的な確認手順は docs/pokemon-tcg/ の手順書にある。公式サイトを参照する前に [docs/pokemon-tcg/site-usage-notes.md](docs/pokemon-tcg/site-usage-notes.md) を読み、カードの確認は [docs/pokemon-tcg/card-lookup.md](docs/pokemon-tcg/card-lookup.md)、対戦の基本ルールは [docs/pokemon-tcg/basic-rules.md](docs/pokemon-tcg/basic-rules.md)、公式 Q&A の検索は [docs/pokemon-tcg/faq-lookup.md](docs/pokemon-tcg/faq-lookup.md)、デッキコードの読み取りとデッキ登録は [docs/pokemon-tcg/deck-tool.md](docs/pokemon-tcg/deck-tool.md)、環境(どの環境デッキが使われているか)の確認と通称の解決は [docs/pokemon-tcg/metagame-lookup.md](docs/pokemon-tcg/metagame-lookup.md) に従い、既存デッキの診断で避ける誤りの類型は [docs/pokemon-tcg/deck-diagnosis-pitfalls.md](docs/pokemon-tcg/deck-diagnosis-pitfalls.md) にある。エージェントとしての要点は次の通り。
