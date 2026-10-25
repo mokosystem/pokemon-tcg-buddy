@@ -75,7 +75,7 @@ README は「コーディングエージェント上で動くスキルとして�
 
 | 項目 | 内容 |
 | --- | --- |
-| 実行環境 | Bun 1.4.2。`mise.toml` の `[tools]` で固定し、`mise install` で入る |
+| 実行環境 | Bun 1.4.4(2026-10-25 に 1.4.2 から更新。1.4.2 に組み込まれたルート証明書の一覧が、秘密鍵の漏洩した eMudhra の中間 CA 証明書をまだ信頼していたため)。`mise.toml` の `[tools]` で固定し、`mise install` で入る |
 | パッケージ管理 | Bun の workspaces(`packages/*`)。最上位の `package.json` は `private` で、`bun.lock` を 1 つだけ持つ。依存の版は範囲指定なしでパッチまで書く。最上位の `bunfig.toml` の `[install] exact = true` で、版を指定しない `bun add` が固定の版を書き、`bun run verify:exact-dependency-versions` がすべての `package.json` を検証する(「Issue 43 で決めたこと」) |
 | 計算の骨組みの置き場所 | `packages/solo-play-simulator`(パッケージ名 `@pokemon-tcg-buddy/solo-play-simulator`)。「一人回し」(相手なしでデッキを回すこと)を模擬する道具であることが名前から読めるようにした。当初の `setup-rate` は「成立率」の直訳で、準備の速さや割合と読めてしまい、デッキの計算だと分からないため改名した。この設計文書のファイル名は順 9 で `solo-play-simulator-design.md` に合わせ、`pokemon-tcg-estimate-setup-rate` スキルの名前は利用者のために何をするかを表す名前として残した(「順 9 で決めたこと」) |
 | Linter と Formatter | Ultracite 7.12.0(Biome 2.5.12)。`biome.jsonc` は `ultracite/biome/core` だけを継承する |
