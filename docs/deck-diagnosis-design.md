@@ -1,6 +1,6 @@
 # デッキ診断・改良スキルの設計
 
-`pokemon-tcg-diagnose-deck` スキル([.claude/skills/pokemon-tcg-diagnose-deck/SKILL.md](../.claude/skills/pokemon-tcg-diagnose-deck/SKILL.md))の設計の理由を記録する。手順そのものはスキルに書き、この文書には「なぜその手順にしたか」と「何を扱わないと決めたか」を書く。避けるべき誤りの類型は [docs/pokemon-tcg/deck-diagnosis-pitfalls.md](pokemon-tcg/deck-diagnosis-pitfalls.md) にある。用語は [CONTEXT.md](../CONTEXT.md)「デッキ診断」の節に従う。
+`pokemon-tcg-diagnose-deck` スキル([.claude/skills/pokemon-tcg-diagnose-deck/SKILL.md](../.claude/skills/pokemon-tcg-diagnose-deck/SKILL.md))の設計の理由を記録する。手順そのものはスキルに書き、この文書には「なぜその手順にしたか」と「何を扱わないと決めたか」を書く。避けるべき誤りの類型は [docs/pokemon-tcg/deck-diagnosis-pitfalls.md](pokemon-tcg/deck-diagnosis-pitfalls.md) にある。用語は [GLOSSARY.md](../GLOSSARY.md)「デッキ診断」の節に従う。
 
 対応する Issue: [#6](https://github.com/mokosystem/pokemon-tcg-buddy/issues/6)。設計日: 2026-09-14。
 

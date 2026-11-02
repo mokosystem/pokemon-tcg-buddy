@@ -7,7 +7,7 @@ description: ポケモンカードのスタンダードの既存デッキにつ�
 
 構築済みのスタンダードのデッキを、公式サイトを一次情報として診断し、主軸を保ったまま改良する。最終アウトプットは、改良後のデッキを公式デッキ構築ツールに登録して得たデッキコードと、確認記録。診断だけで終わる相談では、診断の内容と確認記録がアウトプットになる。
 
-作業前に `docs/pokemon-tcg/site-usage-notes.md` を読む。設計の理由は `docs/deck-diagnosis-design.md`、避けるべき誤りの類型は `docs/pokemon-tcg/deck-diagnosis-pitfalls.md` にある。用語は `CONTEXT.md`「デッキ診断」の節に従う。
+作業前に `docs/pokemon-tcg/site-usage-notes.md` を読む。設計の理由は `docs/deck-diagnosis-design.md`、避けるべき誤りの類型は `docs/pokemon-tcg/deck-diagnosis-pitfalls.md` にある。用語は `GLOSSARY.md`「デッキ診断」の節に従う。
 
 ## このスキルで扱わないもの
 

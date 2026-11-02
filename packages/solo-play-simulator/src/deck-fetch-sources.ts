@@ -1,6 +1,6 @@
 /**
  * 道の揃い具合を見る評価(goal-prospects.ts)が使う、山札から持ってくる効果の読み取りと割り当て。手札と場のカードの
- * 記録の効果の翻訳から、山札のカードを手札か場に持ってくる操作の条件を集めて探す手段(CONTEXT.md「探す手段」)の
+ * 記録の効果の翻訳から、山札のカードを手札か場に持ってくる操作の条件を集めて探す手段(GLOSSARY.md「探す手段」)の
  * 一覧にし、見えていないカード(山札とサイド)から持ってくる必要のあるものに、探す手段を 1 枚につき 1 つずつ割り当てる。
  */
 
@@ -204,7 +204,7 @@ export interface EffectAttachOperations {
   readonly effectAttachOperations?: readonly EffectAttachOperation[];
 }
 
-/** 探す手段 1 枚(CONTEXT.md「探す手段」)。 */
+/** 探す手段 1 枚(GLOSSARY.md「探す手段」)。 */
 export interface DeckFetchSource extends EffectAttachOperations {
   /** 使うと山札から持ってこられるカードの条件。 */
   readonly filters: readonly CardFilter[];
@@ -212,7 +212,7 @@ export interface DeckFetchSource extends EffectAttachOperations {
 }
 
 /**
- * 2 段で持ってくるときの中継に使える、見えていないカードの記録 1 つ(CONTEXT.md「見えていないカード」)。
+ * 2 段で持ってくるときの中継に使える、見えていないカードの記録 1 つ(GLOSSARY.md「見えていないカード」)。
  * 探す手段で手札に加えた後、そのカードの効果で山札からさらに持ってこられる。
  */
 export interface DeckFetchRelay extends DeckFetchSource {

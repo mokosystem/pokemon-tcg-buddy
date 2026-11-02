@@ -10,7 +10,7 @@
 
 ### 理由
 
-たねポケモンは進化を経ずに場に出せるポケモンで、進化前のポケモンが無い(用語の定義は [CONTEXT.md](../CONTEXT.md)「たねポケモン」「進化ポケモン」。出典はあそびかたページ「カードの種類と見かた」 https://www.pokemon-card.com/howtoplay/ 、2026-09-03 確認)。それを `evolvesFrom: null` と書くと、「進化前の名前」という欄があって値が空であるように読める。欄そのものを持たない(`evolvesFrom?: string`)ほうが概念に合う。null と undefined(省略)が混在すると、「値が無い」の表し方が箇所ごとに違い、判定の書き方もそろわない。
+たねポケモンは進化を経ずに場に出せるポケモンで、進化前のポケモンが無い(用語の定義は [GLOSSARY.md](../GLOSSARY.md)「たねポケモン」「進化ポケモン」。出典はあそびかたページ「カードの種類と見かた」 https://www.pokemon-card.com/howtoplay/ 、2026-09-03 確認)。それを `evolvesFrom: null` と書くと、「進化前の名前」という欄があって値が空であるように読める。欄そのものを持たない(`evolvesFrom?: string`)ほうが概念に合う。null と undefined(省略)が混在すると、「値が無い」の表し方が箇所ごとに違い、判定の書き方もそろわない。
 
 方針が書かれていないと、コードを書く人やエージェントごとに判断が分かれ、同じ指摘を繰り返すことになる([#44](https://github.com/mokosystem/pokemon-tcg-buddy/issues/44))。
 
