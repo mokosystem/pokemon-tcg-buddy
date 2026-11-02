@@ -1,6 +1,6 @@
 ---
 name: create-github-issue
-description: GitHub Issue を新規作成・更新するときに使う。目的を起票時に必ず書かせる構成、完了の定義を着手前までに固める運用、決定事項の追記、`gh issue create` / `gh issue edit` / `gh issue comment` の実行方法を定義する。
+description: GitHub Issue を新規作成・更新し、完了したら閉じるときに使う。目的を起票時に必ず書かせる構成、完了の定義を着手前までに固める運用、決定事項の追記、PR のマージ後に閉じる手順、`gh issue create` / `gh issue edit` / `gh issue comment` / `gh issue close` の実行方法を定義する。
 ---
 
 # GitHub Issue 作成ガイド
@@ -77,6 +77,16 @@ gh issue edit <番号> --body-file <path>
 ```bash
 gh issue comment <番号> --body-file <path>
 ```
+
+## 閉じる
+
+Issue に対応する PR がマージされたら、`main` で完了の定義を 1 項目ずつ確かめ、満たした項目にチェックを入れる。すべて満たしていれば、確かめた者がその場で閉じる。開いたままの Issue は残っている作業として読まれ、次に何をするかの判断を誤らせるため。
+
+```bash
+gh issue close <番号> --reason completed --comment "<マージした PR の URL> のマージで完了の定義をすべて満たしたため閉じる。"
+```
+
+満たしていない項目が残るときは閉じず、残っている項目とその理由をコメントに書く。
 
 ## 投稿方法
 
