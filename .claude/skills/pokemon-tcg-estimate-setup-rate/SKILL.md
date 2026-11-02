@@ -5,7 +5,7 @@ description: ポケモンカードのスタンダードのデッキについて�
 
 # 主軸の成立率を計算する
 
-デッキの主軸が何番目の番までに立つか、主軸のワザを何番目の番までに打てるかを、乱数試行(手札を配り、宣言した狙いの成立確率を最大にする手を探索で選んで番を進め、成立した割合を数える)で求める。設計の理由は [docs/solo-play-simulator-design.md](../../../docs/solo-play-simulator-design.md) にある。用語は [CONTEXT.md](../../../CONTEXT.md)「デッキ診断」の節に従う。
+デッキの主軸が何番目の番までに立つか、主軸のワザを何番目の番までに打てるかを、乱数試行(手札を配り、宣言した狙いの成立確率を最大にする手を探索で選んで番を進め、成立した割合を数える)で求める。設計の理由は [docs/solo-play-simulator-design.md](../../../docs/solo-play-simulator-design.md) にある。用語は [GLOSSARY.md](../../../GLOSSARY.md)「デッキ診断」の節に従う。
 
 ## いつ使うか
 

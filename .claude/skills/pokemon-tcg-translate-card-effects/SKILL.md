@@ -5,7 +5,7 @@ description: ポケモンカードのカードの記録(属性、ワザと特性
 
 # カードの記録を書く
 
-カード 1 種について、成立率の計算の骨組み(`packages/solo-play-simulator`)が読むカードの記録を書く。記録は公式のカード詳細ページと公式 Q&A で確かめた事実だけで書き、記憶で書かない。用語は [CONTEXT.md](../../../CONTEXT.md)「デッキ診断」の節(効果の記法、効果の翻訳、場にある間ずっと働く効果、カードの記録、裁定のデータ、計算の前提)に従う。記法の部品、欄の識別子、検査の設計の理由は [docs/solo-play-simulator-design.md](../../../docs/solo-play-simulator-design.md)「効果の記法と裁定のデータ」にある。
+カード 1 種について、成立率の計算の骨組み(`packages/solo-play-simulator`)が読むカードの記録を書く。記録は公式のカード詳細ページと公式 Q&A で確かめた事実だけで書き、記憶で書かない。用語は [GLOSSARY.md](../../../GLOSSARY.md)「デッキ診断」の節(効果の記法、効果の翻訳、場にある間ずっと働く効果、カードの記録、裁定のデータ、計算の前提)に従う。記法の部品、欄の識別子、検査の設計の理由は [docs/solo-play-simulator-design.md](../../../docs/solo-play-simulator-design.md)「効果の記法と裁定のデータ」にある。
 
 ## いつ使うか
 
