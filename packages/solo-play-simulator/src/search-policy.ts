@@ -330,7 +330,7 @@ function answerOptional(answer: ChoiceAnswer): boolean {
 }
 
 /** きぜつした後にバトル場に出すベンチポケモンの問い合わせを、効果の中の選択と同じ形の求めにする。 */
-function promoteRequestOf(
+function buildPromoteRequest(
   candidates: readonly PokemonInPlay[]
 ): PokemonChoiceRequest {
   return {
@@ -399,7 +399,7 @@ class ScriptedChoices implements EffectChoices {
     state: GameState,
     candidates: readonly PokemonInPlay[]
   ): PokemonInPlay {
-    const request = promoteRequestOf(candidates);
+    const request = buildPromoteRequest(candidates);
     const answer = this.takeAnswer(state, { kind: "pokemon", request });
     const [chosen] =
       answer === undefined
@@ -618,7 +618,7 @@ class ChoiceSearch implements EffectChoices {
       candidates,
       this.choose(state, {
         kind: "pokemon",
-        request: promoteRequestOf(candidates),
+        request: buildPromoteRequest(candidates),
       }),
       "pokemon"
     );
