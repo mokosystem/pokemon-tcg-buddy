@@ -187,3 +187,31 @@ describe("探索の判断基準の、相手の番の選択", () => {
     expect(state.bench).toHaveLength(4);
   });
 });
+
+describe("探索は場のポケモンをダメカンで見分ける", () => {
+  test("ダメカンの量だけが違う 2 匹から、アドレナブレインでダメカンを取り除くポケモンを選ぶとき、両方を試して相手の場のダメージが大きくなるほうを選ぶ", () => {
+    // マシマシラ(049074)のアドレナブレインは、悪エネルギー(047909)がついていれば自分のポケモン 1 匹のダメカンを 3 個まで
+    // 相手の場のダメージに移す。ラルトス(049714)の 2 匹は、のっているダメカン(1 個と 5 個)だけが違う
+    const ralts = buildRecordedCard("049714");
+    const state = buildState({
+      active: buildRecordedCard("049074"),
+      bench: [ralts, ralts],
+      random: createSeededRandom(1),
+    });
+    state.active?.energies.push(buildRecordedCard("047909"));
+    const [fewer, more] = state.bench;
+    if (fewer === undefined || more === undefined) {
+      throw new Error("ベンチのラルトスがいない");
+    }
+    fewer.damage = 10;
+    more.damage = 50;
+    const policy = createSearchPolicy(
+      ({ state: evaluated }) => evaluated.opponentFieldDamage,
+      { samplesForUncertainOutcome: 1, searchesEffectChoices: true, seed: 1 }
+    );
+    policy.playTurn({ choices: policy, state });
+    expect(state.opponentFieldDamage).toBe(30);
+    expect(more.damage).toBe(20);
+    expect(fewer.damage).toBe(10);
+  });
+});

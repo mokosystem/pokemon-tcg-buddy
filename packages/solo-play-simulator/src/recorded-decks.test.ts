@@ -66,7 +66,7 @@ describe("記録を見直した 2 デッキ", () => {
     expect(cardRecordTable.get("048468")?.name).toBe("ふしぎなアメ");
   });
 
-  test("2 デッキのカード ID から引ける記録にだけ、対戦風の一人回しのルールで見直した日が入っている", () => {
+  test("2 デッキのカード ID から引ける記録には、すべて対戦風の一人回しのルールで見直した日が入っている", () => {
     const reviewedRecords = new Set(
       RECORDED_DECKS.filter((deck) =>
         BATTLE_STYLE_REVIEWED_DECK_CODES.includes(deck.deckCode)
@@ -74,17 +74,25 @@ describe("記録を見直した 2 デッキ", () => {
         deck.decklist.map((entry) => cardRecordTable.get(entry.cardId))
       )
     );
-    const records = [...new Set(cardRecordTable.values())];
-    const namesWithReviewedDate = (expected: boolean) =>
-      records
-        .filter((record) => reviewedRecords.has(record) === expected)
+    expect(reviewedRecords.size).toBe(44);
+    expect(
+      [...reviewedRecords]
+        .filter((record) => record?.battleStyleSoloPlayReviewedOn === undefined)
+        .map((record) => record?.name)
+    ).toEqual([]);
+  });
+
+  // 2 デッキの外の記録が見直した日を持たないことは確かめない。新しく書く記録も対戦風の一人回しのルールで書くので
+  // 見直した日を入れ(pokemon-tcg-translate-card-effects スキルの手順 5)、60 枚をリポジトリに置かないデッキの記録もあるため
+  test("見直した日を持つ記録は、確認日(詳細ページを読み直した日)も同じ日", () => {
+    expect(
+      [...new Set(cardRecordTable.values())]
         .filter(
           (record) =>
-            (record.battleStyleSoloPlayReviewedOn !== undefined) !== expected
+            record.battleStyleSoloPlayReviewedOn !== undefined &&
+            record.battleStyleSoloPlayReviewedOn !== record.verifiedOn
         )
-        .map((record) => record.name);
-    expect(reviewedRecords.size).toBe(44);
-    expect(namesWithReviewedDate(true)).toEqual([]);
-    expect(namesWithReviewedDate(false)).toEqual([]);
+        .map((record) => record.name)
+    ).toEqual([]);
   });
 });
