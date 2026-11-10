@@ -2,7 +2,28 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "アドレナブレイン"
+      "name": "アドレナブレイン",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "maxCount": 3,
+              "operation": "moveDamageCountersToOpponentField"
+            }
+          ],
+          "useConditions": [
+            {
+              "condition": "selfHasEnergyAttached",
+              "energyFilter": {
+                "providedEnergyTypes": ["dark"]
+              }
+            }
+          ]
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
     }
   ],
   "attacks": [
@@ -15,13 +36,10 @@
       "name": "サイコトリップ"
     }
   ],
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardIds": ["049074", "046736", "045849"],
   "category": "ポケモン",
   "excludedEffects": [
-    {
-      "description": "特性「アドレナブレイン」(自分のポケモンのダメカンを相手のポケモンにのせ替える)",
-      "reason": "requiresOpponent"
-    },
     {
       "description": "ワザ「サイコトリップ」の、相手のバトルポケモンをこんらんにする効果",
       "reason": "requiresOpponent"
@@ -35,6 +53,6 @@
   "retreatCost": 1,
   "rulings": [],
   "stage": "たね",
-  "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-11"
 }

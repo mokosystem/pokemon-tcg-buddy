@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardEffects": [
     {
       "effect": {
@@ -43,5 +44,5 @@
   "name": "ヒカリ",
   "rulings": [],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-11"
 }

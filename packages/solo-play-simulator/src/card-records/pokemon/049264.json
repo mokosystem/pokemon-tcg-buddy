@@ -16,24 +16,31 @@
         "amount": 200,
         "kind": "fixed"
       },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "amount": 60,
+            "operation": "addDamageToOpponentField"
+          }
+        ],
+        "useConditions": []
+      },
       "name": "ファントムダイブ"
     }
   ],
   "basicPokemonOfEvolutionLine": "ドラメシヤ",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardIds": ["049264"],
   "category": "ポケモン",
   "evolvesFrom": "ドロンチ",
+  "exRule": "pokemonEx",
   "excludedEffects": [
     {
-      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)",
-      "reason": "requiresOpponent"
-    },
-    {
-      "description": "ワザ「ファントムダイブ」の、相手のベンチポケモンにダメカンを 6 個のせる効果",
+      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)。相手の攻撃はバトルポケモンだけが受けるため、働く場面が無い",
       "reason": "requiresOpponent"
     }
   ],
-  "exRule": "pokemonEx",
   "hasRuleBox": true,
   "hp": 320,
   "isTerastal": true,
@@ -42,6 +49,6 @@
   "retreatCost": 1,
   "rulings": [],
   "stage": "2進化",
-  "translationStatus": "irrelevantToCalculation",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-11"
 }

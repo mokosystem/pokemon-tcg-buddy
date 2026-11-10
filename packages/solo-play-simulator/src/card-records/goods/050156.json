@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardEffects": [],
   "cardIds": ["050156", "050205"],
   "category": "グッズ",
@@ -12,5 +13,5 @@
   "name": "スペシャルレッドカード",
   "rulings": [],
   "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-11"
 }

@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardEffects": [
     {
       "effect": {
@@ -33,5 +34,5 @@
   "name": "ロケット団のラムダ",
   "rulings": [],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-24"
+  "verifiedOn": "2026-11-11"
 }

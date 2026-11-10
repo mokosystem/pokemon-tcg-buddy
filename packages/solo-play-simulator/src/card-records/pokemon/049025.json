@@ -2,7 +2,24 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "カースドボム"
+      "name": "カースドボム",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "knockOutSelf"
+            },
+            {
+              "amount": 50,
+              "operation": "addDamageToOpponentField"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "activatedInPlay",
+        "usageLimit": "oncePerTurnPerPokemon"
+      }
     }
   ],
   "attacks": [
@@ -15,23 +32,31 @@
       "name": "おにび"
     }
   ],
-  "cardIds": ["049025"],
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "cardIds": ["049025", "045894"],
   "category": "ポケモン",
   "evolvesFrom": "ヨマワル",
-  "excludedEffects": [
-    {
-      "description": "特性「カースドボム」(自身をきぜつさせ、相手のポケモン 1 匹にダメカンを 5 個のせる)",
-      "reason": "requiresOpponent"
-    }
-  ],
+  "excludedEffects": [],
   "hasRuleBox": false,
   "hp": 90,
   "isTerastal": false,
   "name": "サマヨール",
   "pokemonType": "psychic",
   "retreatCost": 2,
-  "rulings": [],
+  "rulings": [
+    {
+      "interpretation": "相手はサイドを取る(相手の攻撃によるきぜつと同じに扱う)。公式 Q&A の回答は、実際の対戦で両者のポケモンが同時にきぜつしておたがいがサイドを取り切ったときの勝ち負けの決め方まで述べているが、対戦風の一人回しでは自分のサイドを番の終わりにだけ取るため、この特性で相手がサイドを取り切ったら、その時点で負けにする(Issue 69 の決定事項「勝敗」)",
+      "question": "この特性で自分のポケモンがきぜつしたとき、相手はサイドを取るか。おたがいのサイドが残り 1 枚のときはどうなるか",
+      "reflectedIn": "knockOutSelf はきぜつの処理(battle-style-solo-play-rules.ts の knockOutOwnPokemon)を通し、相手がサイドを取る。相手がサイドを取り切るか、場に自分のポケモンがいなくなったら勝敗が決まり、続く addDamageToOpponentField は実行しない(effect-operations.ts の runEffect)",
+      "source": {
+        "checkedOn": "2026-11-11",
+        "kind": "officialQa",
+        "questionSummary": "おたがいのサイドが残り 1 枚のとき、相手のサマヨールのカースドボムで自分のバトルポケモンと相手のサマヨールが同時にきぜつしたら、勝ち負けはどうなるか(両者がサイドを取る前提で回答されている)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%AB%E3%83%BC%E3%82%B9%E3%83%89%E3%83%9C%E3%83%A0&regulation_faq_main_item1=all"
+      }
+    }
+  ],
   "stage": "1進化",
-  "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-11"
 }

@@ -8,7 +8,6 @@
         "amount": 100,
         "kind": "fixed"
       },
-      "name": "スクリューダイブ",
       "effect": {
         "isOptional": true,
         "steps": [
@@ -21,7 +20,8 @@
           }
         ],
         "useConditions": []
-      }
+      },
+      "name": "スクリューダイブ"
     },
     {
       "cost": ["fighting", "fighting"],
@@ -29,17 +29,28 @@
         "amount": 260,
         "kind": "fixed"
       },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "all"
+            },
+            "operation": "discardEnergyAttachedToSelf"
+          }
+        ],
+        "useConditions": []
+      },
       "name": "リューノバスター"
     }
   ],
-  "cardIds": ["047381"],
+  "basicPokemonOfEvolutionLine": "シロナのフカマル",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "cardIds": ["047381", "047388", "047392"],
   "category": "ポケモン",
-  "excludedEffects": [
-    {
-      "description": "ワザ「リューノバスター」は、相手のバトルポケモンに 260 ダメージを与えたあと、自身のエネルギーをすべてトラッシュする。260 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
-      "reason": "damageOrDamageCounters"
-    }
-  ],
+  "evolvesFrom": "シロナのガバイト",
+  "exRule": "pokemonEx",
+  "excludedEffects": [],
   "hasRuleBox": true,
   "hp": 330,
   "isTerastal": false,
@@ -49,8 +60,5 @@
   "rulings": [],
   "stage": "2進化",
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23",
-  "exRule": "pokemonEx",
-  "evolvesFrom": "シロナのガバイト",
-  "basicPokemonOfEvolutionLine": "シロナのフカマル"
+  "verifiedOn": "2026-11-11"
 }

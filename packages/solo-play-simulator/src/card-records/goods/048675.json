@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardEffects": [
     {
       "effect": {
@@ -28,7 +29,7 @@
     {
       "interpretation": "4 匹なら使えて 1 枚だけ出せる。5 匹なら使えない",
       "question": "ベンチのポケモンが 4 匹・5 匹のときに使えるか",
-      "reflectedIn": "山札からベンチに出す枚数をベンチの空きまでにし、空きが無ければ使えない(card-effects.ts の hasTargetForFirstStep)",
+      "reflectedIn": "山札からベンチに出す枚数をベンチの空きまでにし、空きが無ければ使えない(effect-operations.ts の firstStepTargetChecks)",
       "source": {
         "checkedOn": "2026-09-23",
         "kind": "officialQa",
@@ -38,5 +39,5 @@
     }
   ],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-11"
 }

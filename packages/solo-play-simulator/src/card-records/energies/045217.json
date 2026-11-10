@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardEffects": [
     {
       "continuousEffect": {
@@ -36,5 +37,5 @@
   },
   "rulings": [],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-24"
+  "verifiedOn": "2026-11-11"
 }

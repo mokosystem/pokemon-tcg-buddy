@@ -1,16 +1,37 @@
 {
   "$schema": "../card-record.schema.json",
-  "cardEffects": [],
-  "cardIds": ["049708"],
-  "category": "サポート",
-  "excludedEffects": [
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "cardEffects": [
     {
-      "description": "自分のサイドの残り枚数が相手より多いときにしか使えない(トラッシュから基本エネルギーを 2 進化ポケモンにつける効果も、この条件のため使えない)",
-      "reason": "requiresOpponent"
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "energyFilter": {
+              "categories": ["基本エネルギー"]
+            },
+            "maxCount": 2,
+            "minCount": 1,
+            "operation": "attachEnergyFromDiscardToOnePokemon",
+            "targetFilter": {
+              "stages": ["2進化"]
+            }
+          }
+        ],
+        "useConditions": [
+          {
+            "condition": "ownRemainingPrizesExceedOpponents"
+          }
+        ]
+      },
+      "kind": "whenPlayed"
     }
   ],
+  "cardIds": ["049708"],
+  "category": "サポート",
+  "excludedEffects": [],
   "name": "メイのはげまし",
   "rulings": [],
-  "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-11"
 }

@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardIds": ["050746", "047904", "050478", "050609"],
   "category": "基本エネルギー",
   "excludedEffects": [],
@@ -11,5 +12,5 @@
   },
   "rulings": [],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-11"
 }

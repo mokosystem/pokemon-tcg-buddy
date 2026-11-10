@@ -5,6 +5,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { calculateAttackDamage } from "./attack-damage.ts";
+import { playOpponentTurn } from "./battle-style-solo-play-rules.ts";
 import {
   attachEnergyFromHandToPokemon,
   attachToolFromHand,
@@ -38,11 +39,13 @@ import {
 import type { Card } from "./cards.ts";
 import {
   calculateBenchLimit,
+  calculateMaxHp,
   calculateRetreatCost,
   countEmptyBenchSlots,
   listEnergyUnits,
 } from "./continuous-effects.ts";
 import { setupGame } from "./engine.ts";
+import { listAvailableActions } from "./player-actions.ts";
 import { type GameState, IllegalMove, PokemonInPlay } from "./state.ts";
 
 const RALTS = buildRecordedCard("049714");
@@ -102,6 +105,13 @@ const CYNTHIAS_GABITE = buildRecordedCard("049093");
 const CYNTHIAS_GIBLE = buildRecordedCard("049092");
 const CYNTHIAS_ROSELIA = buildRecordedCard("048748");
 const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
+const CYNTHIAS_SPIRITOMB = buildRecordedCard("049968");
+const CYNTHIAS_POWER_WEIGHT = buildRecordedCard("049398");
+const DUSCLOPS = buildRecordedCard("049025");
+const DUSKNOIR = buildRecordedCard("049026");
+const MUNKIDORI = buildRecordedCard("049074");
+const UNFAIR_STAMP = buildRecordedCard("049349");
+const MEIS_ENCOURAGEMENT = buildRecordedCard("049708");
 const AZURILL = buildRecordedCard("050392");
 const FIGHT_GONG = buildRecordedCard("048677");
 const POWER_PROTEIN = buildRecordedCard("049368");
@@ -130,7 +140,7 @@ const N_ZOROARK = buildRecordedCard("048634");
 const N_ZEKROM = buildRecordedCard("048651");
 const N_DARUMAKA = buildRecordedCard("048834");
 const YVELTAL = buildRecordedCard("049197");
-const MUNKIDORI = buildRecordedCard("049207");
+const PECHARUNT_EX = buildRecordedCard("049207");
 const TATSUGIRI = buildRecordedCard("048657");
 const N_POINT_UP = buildRecordedCard("049351");
 const N_CASTLE = buildRecordedCard("048703");
@@ -1300,6 +1310,32 @@ describeTranslation("シロナのガブリアスex", () => {
     );
     expect(state.hand).toEqual([]);
   });
+
+  test("リューノバスターを使うと、相手の場のダメージに 260 を足した後、自身のエネルギーをすべてトラッシュする", () => {
+    // リューノバスターは闘闘で 260、使った後に自身のエネルギーをすべてトラッシュする(記録 047381)
+    const state = buildState({ active: CYNTHIAS_GARCHOMP });
+    activeOf(state).energies.push(
+      FIGHTING_ENERGY,
+      FIGHTING_ENERGY,
+      NEO_UPPER_ENERGY
+    );
+    useAttackNamed(buildContext(state), "リューノバスター");
+    expect(state.opponentFieldDamage).toBe(260);
+    expect(activeOf(state).energies).toEqual([]);
+    expect(namesOf(state.discard)).toEqual([
+      "基本闘エネルギー",
+      "基本闘エネルギー",
+      "ネオアッパーエネルギー",
+    ]);
+    const damageIndex = state.events.findIndex((event) =>
+      event.includes("相手の場のダメージ +260")
+    );
+    const discardIndex = state.events.findIndex((event) =>
+      event.includes("エネルギー 3 枚をトラッシュ")
+    );
+    expect(damageIndex).toBeGreaterThanOrEqual(0);
+    expect(discardIndex).toBeGreaterThan(damageIndex);
+  });
 });
 
 describeTranslation("シロナのガバイト", () => {
@@ -2127,7 +2163,7 @@ describeTranslation("モモワロウex", () => {
   test("しはいのくさりは、ベンチの悪ポケモン(モモワロウex を除く)をバトルポケモンと入れ替える", () => {
     const state = buildState({
       active: N_DARUMAKA,
-      bench: [MUNKIDORI, N_ZEKROM, MUNKIDORI, YVELTAL],
+      bench: [PECHARUNT_EX, N_ZEKROM, PECHARUNT_EX, YVELTAL],
     });
     useAbility(buildContext(state), benchAt(state, 0), "しはいのくさり");
     expect(activeOf(state).name).toBe("イベルタル");
@@ -2138,8 +2174,8 @@ describeTranslation("モモワロウex", () => {
 
   test("ベンチにモモワロウex 以外の悪ポケモンがいなければ使えず、別のしはいのくさりを使った番も使えない", () => {
     const noTarget = buildState({
-      active: MUNKIDORI,
-      bench: [MUNKIDORI, N_ZEKROM],
+      active: PECHARUNT_EX,
+      bench: [PECHARUNT_EX, N_ZEKROM],
     });
     expect(
       canUseAbility(
@@ -2151,7 +2187,7 @@ describeTranslation("モモワロウex", () => {
 
     const state = buildState({
       active: YVELTAL,
-      bench: [MUNKIDORI, MUNKIDORI, N_ZORUA],
+      bench: [PECHARUNT_EX, PECHARUNT_EX, N_ZORUA],
     });
     const context = buildContext(state);
     useAbility(context, benchAt(state, 0), "しはいのくさり");
@@ -4253,6 +4289,369 @@ describeTranslation("メタモン", () => {
     useAttackNamed(buildContext(state), "どっきりへんしん");
     expect(activeOf(state).name).toBe("メタモン");
     expect(namesOf(state.deck)).toEqual(["メガサーナイトex"]);
+  });
+});
+
+// ---- Issue 69 で対戦風の一人回しのルールに照らして翻訳した記録 ----
+// 相手の攻撃、きぜつ、相手の場のダメージの決まりは docs/solo-play-simulator-design.md「対戦風の一人回し」
+
+// 翻訳の状態は irrelevantToCalculation(ダメージの規則はワザのダメージの欄に持つ)のため describeTranslation を使わない
+describe("シロナのミカルゲ", () => {
+  test("レイジングカースのダメージは、ベンチの「シロナのポケモン」にのっているダメカンの数 × 10 で、バトル場やシロナのポケモンでないポケモンのダメカンは数えない", () => {
+    // 記録 049968。シロナのフカマル 049092 とシロナのロゼリア 048748 は「シロナのポケモン」、ラルトス 049714 は違う
+    const state = buildState({
+      active: CYNTHIAS_SPIRITOMB,
+      bench: [CYNTHIAS_GIBLE, CYNTHIAS_ROSELIA, RALTS],
+    });
+    activeOf(state).damage = 50;
+    benchAt(state, 0).damage = 30;
+    benchAt(state, 1).damage = 20;
+    benchAt(state, 2).damage = 40;
+    expect(
+      damageOf(state, activeOf(state), CYNTHIAS_SPIRITOMB, "レイジングカース")
+    ).toBe(50);
+  });
+
+  test("ダメカンがあればグローリーエールの分が足され、ダメカンが 0 なら 0 のまま", () => {
+    // ダメカン 1 個のシロナのロズレイドだけがベンチにいれば 40(記録 049968 の裁定のデータ、公式 Q&A「レイジングカース」)。
+    // 基本のダメージが 0 なら増やす効果を足さない(attack-damage.ts の calculateAttackDamage)
+    const state = buildState({
+      active: CYNTHIAS_SPIRITOMB,
+      bench: [CYNTHIAS_ROSERADE],
+    });
+    benchAt(state, 0).damage = 10;
+    expect(
+      damageOf(state, activeOf(state), CYNTHIAS_SPIRITOMB, "レイジングカース")
+    ).toBe(40);
+    benchAt(state, 0).damage = 0;
+    expect(
+      damageOf(state, activeOf(state), CYNTHIAS_SPIRITOMB, "レイジングカース")
+    ).toBe(0);
+  });
+});
+
+describeTranslation("シロナのパワーウエイト", () => {
+  test("つけている「シロナのポケモン」の最大 HP が 70 増え、増えた後の HP で相手の攻撃によるきぜつを判定する", () => {
+    // シロナのフカマルは HP 70(記録 049092)、パワーウエイトは +70(記録 049398)。相手の 2 回目の番は 100、3 回目は 200
+    const state = buildState({
+      active: CYNTHIAS_GIBLE,
+      bench: [RALTS],
+      hand: [CYNTHIAS_POWER_WEIGHT],
+    });
+    const context = buildContext(state);
+    const gible = activeOf(state);
+    attachToolFromHand(context, CYNTHIAS_POWER_WEIGHT, gible);
+    expect(calculateMaxHp(state, gible)).toBe(140);
+    state.opponentTurnCount = 1;
+    playOpponentTurn(context);
+    expect(activeOf(state)).toBe(gible);
+    expect(gible.damage).toBe(100);
+    playOpponentTurn(context);
+    expect(state.listPokemonInPlay()).not.toContain(gible);
+  });
+
+  test("シロナのポケモンでないポケモンにつけても最大 HP は変わらない", () => {
+    // ラルトスは HP 70(記録 049714)。つけられるが +70 されない(記録 049398 の裁定のデータ)
+    const state = buildState({
+      active: RALTS,
+      hand: [CYNTHIAS_POWER_WEIGHT],
+    });
+    attachToolFromHand(
+      buildContext(state),
+      CYNTHIAS_POWER_WEIGHT,
+      activeOf(state)
+    );
+    expect(calculateMaxHp(state, activeOf(state))).toBe(70);
+  });
+
+  test("シロナのパワーウエイトをつけたシロナのフカマル(049092、HP 70。最大 HP 140)に 100 のダメージがのり、ベンチにポケモンがいるとき、手札からジャミングタワー(047214。どうぐの効果を無くす)を出すと、その時点でフカマルがパワーウエイトごときぜつしてトラッシュされ、相手がサイドを 1 枚取り、プレイングの判断基準が選んだベンチポケモンがバトル場に出る", () => {
+    // HP 以上のダメージを受けたポケモンはきぜつし、ついているカードごとトラッシュされる(docs/pokemon-tcg/basic-rules.md 90 行)
+    const state = buildState({
+      active: CYNTHIAS_GIBLE,
+      bench: [RALTS, CYNTHIAS_ROSELIA],
+      hand: [CYNTHIAS_POWER_WEIGHT, JAMMING_TOWER],
+    });
+    const context = buildContext(state, {
+      choosePokemonToPromoteAfterKnockOut: (_, candidates) => {
+        const [, second] = candidates;
+        if (second === undefined) {
+          throw new Error("ベンチの 2 番目がいない");
+        }
+        return second;
+      },
+    });
+    const gible = activeOf(state);
+    attachToolFromHand(context, CYNTHIAS_POWER_WEIGHT, gible);
+    gible.damage = 100;
+    expect(state.listPokemonInPlay()).toContain(gible);
+    playTrainerFromHand(context, JAMMING_TOWER);
+    expect(state.listPokemonInPlay()).not.toContain(gible);
+    expect(namesOf(state.discard)).toEqual([
+      "シロナのフカマル",
+      "シロナのパワーウエイト",
+    ]);
+    expect(state.opponentRemainingPrizeCount).toBe(5);
+    expect(activeOf(state).name).toBe("シロナのロゼリア");
+    expect(state.decision).toBeUndefined();
+  });
+
+  test("同じ場面でベンチにポケモンがいなければ、ジャミングタワーを出した時点で場に自分のポケモンがいなくなって負けになる", () => {
+    const state = buildState({
+      active: CYNTHIAS_GIBLE,
+      hand: [CYNTHIAS_POWER_WEIGHT, JAMMING_TOWER],
+    });
+    const context = buildContext(state);
+    attachToolFromHand(context, CYNTHIAS_POWER_WEIGHT, activeOf(state));
+    activeOf(state).damage = 100;
+    playTrainerFromHand(context, JAMMING_TOWER);
+    expect(state.listPokemonInPlay()).toEqual([]);
+    expect(state.decision?.reason).toBe("noOwnPokemonInPlay");
+  });
+});
+
+describeTranslation("ドラパルトex", () => {
+  test("ファントムダイブを使うと、相手の場のダメージに 200 と 60 を足す", () => {
+    // ファントムダイブは炎超で 200、相手のベンチポケモンにダメカン 6 個(記録 049264)。ダメカン 1 個は 10
+    const state = buildState({ active: DRAGAPULT });
+    activeOf(state).energies.push(FIRE_ENERGY, PSYCHIC_ENERGY);
+    useAttackNamed(buildContext(state), "ファントムダイブ");
+    expect(state.opponentFieldDamage).toBe(260);
+  });
+});
+
+describeTranslation("ヨノワール", () => {
+  test("カースドボムを使うと自身がきぜつして相手がサイドを 1 枚取り、相手の場のダメージに 130 を足す", () => {
+    // カースドボムは自身をきぜつさせ、相手のポケモン 1 匹にダメカン 13 個(記録 049026)。ヨノワールはルールを持たない
+    const state = buildState({ active: DUSKNOIR, bench: [RALTS] });
+    useAbility(buildContext(state), activeOf(state), "カースドボム");
+    expect(namesOf(state.discard)).toEqual(["ヨノワール"]);
+    expect(state.opponentRemainingPrizeCount).toBe(5);
+    expect(state.opponentFieldDamage).toBe(130);
+    expect(activeOf(state).name).toBe("ラルトス");
+  });
+
+  test("ベンチのヨノワールがきぜつしてもバトルポケモンは変わらない", () => {
+    const state = buildState({ active: RALTS, bench: [DUSKNOIR] });
+    const ralts = activeOf(state);
+    useAbility(buildContext(state), benchAt(state, 0), "カースドボム");
+    expect(activeOf(state)).toBe(ralts);
+    expect(state.bench).toEqual([]);
+    expect(state.opponentFieldDamage).toBe(130);
+  });
+});
+
+describeTranslation("サマヨール", () => {
+  test("場がサマヨール 1 匹だけのとき、カースドボムを使うと、場に自分のポケモンがいなくなった時点で負けになり、相手の場のダメージは足されず、番を終えるしか選べない", () => {
+    // 勝敗が決まったら効果の残りの操作は実行せず、今できる行動は番を終えるだけになる
+    const state = buildState({ active: DUSCLOPS });
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "カースドボム");
+    expect(state.decision).toEqual({
+      decidedTurn: { ordinal: 2, owner: "self" },
+      reason: "noOwnPokemonInPlay",
+    });
+    expect(state.opponentFieldDamage).toBe(0);
+    expect(listAvailableActions(context)).toEqual([{ kind: "endTurn" }]);
+  });
+
+  test("相手のサイドの残りが 1 枚のとき、カースドボムで自身がきぜつすると、相手がサイドを取り切った時点で負けになる", () => {
+    // 自分のカードの効果できぜつしても相手はサイドを取り、取り切ったらその時点で負け(記録 049025 の裁定のデータ)
+    const state = buildState({ active: DUSCLOPS, bench: [RALTS] });
+    state.opponentRemainingPrizeCount = 1;
+    useAbility(buildContext(state), activeOf(state), "カースドボム");
+    expect(state.opponentRemainingPrizeCount).toBe(0);
+    expect(state.decision?.reason).toBe("opponentPrizesTaken");
+    expect(state.opponentFieldDamage).toBe(0);
+  });
+
+  test("ベンチにポケモンがいれば、カースドボムで自身がきぜつした後、相手の場のダメージに 50 を足し、プレイングの判断基準が選んだベンチポケモンがバトル場に出る", () => {
+    // カースドボムのダメカンは 5 個(記録 049025)
+    const state = buildState({
+      active: DUSCLOPS,
+      bench: [RALTS, CYNTHIAS_ROSELIA],
+    });
+    const context = buildContext(state, {
+      choosePokemonToPromoteAfterKnockOut: (_, candidates) => {
+        const [, second] = candidates;
+        if (second === undefined) {
+          throw new Error("ベンチの 2 番目がいない");
+        }
+        return second;
+      },
+    });
+    useAbility(context, activeOf(state), "カースドボム");
+    expect(state.opponentFieldDamage).toBe(50);
+    expect(activeOf(state).name).toBe("シロナのロゼリア");
+    expect(state.decision).toBeUndefined();
+  });
+});
+
+describeTranslation("マシマシラ", () => {
+  test("悪エネルギーがついているときだけ使え、選んだ自分のポケモンのダメカンを 3 個まで取り除いて、相手の場のダメージに 1 個につき 10 を足し、番に 1 回だけ使える", () => {
+    // アドレナブレインは悪エネルギーがついていれば自分の番に 1 回、ダメカンを 3 個までのせ替える(記録 049074)
+    const state = buildState({ active: MUNKIDORI, bench: [RALTS] });
+    const context = buildContext(state);
+    benchAt(state, 0).damage = 50;
+    expect(canUseAbility(context, activeOf(state), "アドレナブレイン")).toBe(
+      false
+    );
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    expect(canUseAbility(context, activeOf(state), "アドレナブレイン")).toBe(
+      false
+    );
+    activeOf(state).energies.push(DARK_ENERGY);
+    useAbility(context, activeOf(state), "アドレナブレイン");
+    expect(benchAt(state, 0).damage).toBe(20);
+    expect(state.opponentFieldDamage).toBe(30);
+    expect(canUseAbility(context, activeOf(state), "アドレナブレイン")).toBe(
+      false
+    );
+  });
+
+  test("のっているダメカンが 3 個より少なければ、のっている数だけ動かす", () => {
+    const state = buildState({ active: MUNKIDORI, bench: [RALTS] });
+    activeOf(state).energies.push(DARK_ENERGY);
+    benchAt(state, 0).damage = 20;
+    useAbility(buildContext(state), activeOf(state), "アドレナブレイン");
+    expect(benchAt(state, 0).damage).toBe(0);
+    expect(state.opponentFieldDamage).toBe(20);
+  });
+
+  test("ダメカンののった自分のポケモンがいなければ使えない", () => {
+    const state = buildState({ active: MUNKIDORI, bench: [RALTS] });
+    activeOf(state).energies.push(DARK_ENERGY);
+    expect(
+      canUseAbility(buildContext(state), activeOf(state), "アドレナブレイン")
+    ).toBe(false);
+  });
+});
+
+describeTranslation("キチキギスex", () => {
+  test("前の相手の番に自分のポケモンがきぜつしていれば 3 枚引け、きぜつしていなければ使えない", () => {
+    // さかてにとるは前の相手の番に自分のポケモンがきぜつしていれば 3 枚引く(記録 049205)。ラルトスは HP 70 で、
+    // 相手の 2 回目の番の 100 できぜつする
+    const state = buildState({
+      active: RALTS,
+      bench: [FEZANDIPITI],
+      deck: repeat(PSYCHIC_ENERGY, 5),
+    });
+    const context = buildContext(state);
+    expect(canUseAbility(context, benchAt(state, 0), "さかてにとる")).toBe(
+      false
+    );
+    state.opponentTurnCount = 1;
+    playOpponentTurn(context);
+    state.turnOwner = "self";
+    expect(activeOf(state).name).toBe("キチキギスex");
+    useAbility(context, activeOf(state), "さかてにとる");
+    expect(state.hand).toHaveLength(3);
+  });
+
+  test("この番に別のキチキギスex の「さかてにとる」を使っていれば使えない", () => {
+    const state = buildState({
+      active: FEZANDIPITI,
+      bench: [FEZANDIPITI],
+      deck: repeat(PSYCHIC_ENERGY, 6),
+    });
+    state.opponentTurnCount = 2;
+    state.latestOpponentTurnWithOwnKnockOut = 2;
+    const context = buildContext(state);
+    useAbility(context, activeOf(state), "さかてにとる");
+    expect(canUseAbility(context, benchAt(state, 0), "さかてにとる")).toBe(
+      false
+    );
+  });
+});
+
+describeTranslation("アンフェアスタンプ", () => {
+  test("前の相手の番に自分のポケモンがきぜつしていれば使え、手札を山札に戻して切り 5 枚引く", () => {
+    // アンフェアスタンプは記録 049349。相手が手札を戻して 2 枚引く部分は含めない
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 10),
+      hand: [UNFAIR_STAMP, LILLIE, TOUKO],
+    });
+    state.opponentTurnCount = 2;
+    state.latestOpponentTurnWithOwnKnockOut = 2;
+    playTrainerFromHand(buildContext(state), UNFAIR_STAMP);
+    expect(state.hand).toHaveLength(5);
+    expect(state.deck).toHaveLength(7);
+    expect(namesOf(state.discard)).toEqual(["アンフェアスタンプ"]);
+  });
+
+  test("前の相手の番に自分のポケモンがきぜつしていなければ使えない", () => {
+    const state = buildState({
+      active: RALTS,
+      deck: repeat(PSYCHIC_ENERGY, 10),
+      hand: [UNFAIR_STAMP],
+    });
+    state.opponentTurnCount = 2;
+    state.latestOpponentTurnWithOwnKnockOut = 1;
+    expect(canPlayTrainerFromHand(buildContext(state), UNFAIR_STAMP)).toBe(
+      false
+    );
+  });
+
+  test("自分の山札が 0 枚でも使え、山札に戻した手札からある分だけ引く", () => {
+    // 自分か相手の手札か山札が 1 枚以上あれば使える(記録 049349 の裁定のデータ、公式 Q&A「アンフェアスタンプ」)
+    const state = buildState({
+      active: RALTS,
+      hand: [UNFAIR_STAMP, LILLIE],
+    });
+    state.opponentTurnCount = 1;
+    state.latestOpponentTurnWithOwnKnockOut = 1;
+    playTrainerFromHand(buildContext(state), UNFAIR_STAMP);
+    expect(namesOf(state.hand)).toEqual(["リーリエの決心"]);
+    expect(state.deck).toEqual([]);
+  });
+});
+
+describeTranslation("メイのはげまし", () => {
+  test("自分のサイドの残りが相手より多いときに使え、トラッシュの基本エネルギーを 2 枚まで 2進化ポケモン 1 匹につける", () => {
+    // メイのはげましは記録 049708。シロナのガブリアスex は 2進化(記録 047381)、シロナのフカマルはたね(記録 049092)
+    const state = buildState({
+      active: CYNTHIAS_GIBLE,
+      bench: [CYNTHIAS_GARCHOMP],
+      discard: [FIGHTING_ENERGY, FIGHTING_ENERGY, FIGHTING_ENERGY],
+      hand: [MEIS_ENCOURAGEMENT],
+    });
+    state.opponentRemainingPrizeCount = 5;
+    playTrainerFromHand(buildContext(state), MEIS_ENCOURAGEMENT);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本闘エネルギー",
+      "基本闘エネルギー",
+    ]);
+    expect(activeOf(state).energies).toEqual([]);
+  });
+
+  test("自分のサイドの残りが相手と同じか少なければ使えない", () => {
+    const state = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      discard: [FIGHTING_ENERGY],
+      hand: [MEIS_ENCOURAGEMENT],
+    });
+    const context = buildContext(state);
+    expect(canPlayTrainerFromHand(context, MEIS_ENCOURAGEMENT)).toBe(false);
+    state.opponentRemainingPrizeCount = 5;
+    state.prizes.splice(0, 2);
+    expect(canPlayTrainerFromHand(context, MEIS_ENCOURAGEMENT)).toBe(false);
+  });
+
+  test("トラッシュに基本エネルギーがあるとき、エネルギーを 0 枚選ぶと IllegalMove になる", () => {
+    // トレーナーズの「〜まで」は 1 枚以上選ぶ(pokemon-tcg-translate-card-effects スキルの手順 5、上級プレイヤー用
+    // ルールガイド D-05)
+    const state = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      discard: [FIGHTING_ENERGY],
+      hand: [MEIS_ENCOURAGEMENT],
+    });
+    state.opponentRemainingPrizeCount = 5;
+    expect(() =>
+      playTrainerFromHand(
+        buildContext(state, { chooseCards: () => [] }),
+        MEIS_ENCOURAGEMENT
+      )
+    ).toThrow(IllegalMove);
   });
 });
 

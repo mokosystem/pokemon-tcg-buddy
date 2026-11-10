@@ -1,16 +1,53 @@
 {
   "$schema": "../card-record.schema.json",
-  "cardEffects": [],
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "cardEffects": [
+    {
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "shuffleHandIntoDeck"
+          },
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 5
+            },
+            "operation": "drawCards"
+          }
+        ],
+        "useConditions": [
+          {
+            "condition": "ownPokemonKnockedOutDuringPreviousOpponentTurn"
+          }
+        ]
+      },
+      "kind": "whenPlayed"
+    }
+  ],
   "cardIds": ["049349", "045640"],
   "category": "グッズ",
   "excludedEffects": [
     {
-      "description": "前の相手の番に自分のポケモンがきぜつしていないと使えず、おたがいの手札を山札に戻して自分は 5 枚、相手は 2 枚引く",
+      "description": "相手も手札をすべて山札に戻して切り、2 枚引く(相手の手札に働く部分)",
       "reason": "requiresOpponent"
     }
   ],
   "name": "アンフェアスタンプ",
-  "rulings": [],
-  "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-09-23"
+  "rulings": [
+    {
+      "interpretation": "使える。公式 Q&A は、自分か相手の手札か山札が 1 枚以上あれば使えると回答している。対戦風の一人回しに相手の手札と山札は無いが、実際の対戦では相手の手札か山札が残るため、自分の手札と山札の枚数によらず使えるものとする",
+      "question": "前の相手の番に自分のポケモンがきぜつしていて、自分の山札が 0 枚のときに使えるか",
+      "reflectedIn": "最初の操作 shuffleHandIntoDeck は対象の検査で常に使える(effect-operations.ts の firstStepTargetChecks)。山札が 5 枚に満たなければ、ある分だけ引く",
+      "source": {
+        "checkedOn": "2026-11-11",
+        "kind": "officialQa",
+        "questionSummary": "前の相手の番に自分のポケモンがきぜつしていて、自分の山札が 0 枚のとき、アンフェアスタンプを使えるか(使える)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A2%E3%83%B3%E3%83%95%E3%82%A7%E3%82%A2%E3%82%B9%E3%82%BF%E3%83%B3%E3%83%97&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-11"
 }
