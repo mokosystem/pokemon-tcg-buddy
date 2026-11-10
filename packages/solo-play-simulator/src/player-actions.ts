@@ -1,6 +1,6 @@
 /**
  * 今できる行動の一覧(番の中でプレイヤーが選べる行動)と、その実行。何が合法かはルールの側の責任なので、
- * プレイングの判断基準(探索)ではなくここに置く(docs/solo-play-simulator-design.md「探索の形」)。
+ * プレイングの判断基準(探索)ではなくここに置く(AGENTS.md「ポケモンカードの情報の扱い」の、ルールの判定を骨組みから借りる方針)。
  *
  * 場のポケモンは listPokemonInPlay の並び(バトル場が先頭)の何番目か、ベンチのポケモンはベンチの何番目かで指す。
  * 探索は状態を複製して同じ行動を試し、複製では場のポケモンの参照が変わるため。カードは同じ参照を枚数分並べて
@@ -32,7 +32,7 @@ import {
   toEnergyUnits,
 } from "./continuous-effects.ts";
 import type { EffectContext } from "./effect-choices.ts";
-import type { GameState, PokemonInPlay } from "./state.ts";
+import { type GameState, IllegalMove, type PokemonInPlay } from "./state.ts";
 
 export type PlayerAction =
   | { readonly kind: "playTrainer"; readonly card: Card }
@@ -183,7 +183,7 @@ function listRetreatPaymentsIfAllowed(state: GameState): Card[][] {
 
 /**
  * 今のバトルポケモンがにげられるか(この番にまだにげていない、ベンチにポケモンがいる、にげるエネルギーを払える組が
- * ある)。行動の一覧と場の評価(バトル場に出せる見込み)が同じ判定を使うため、ここに 1 つだけ置く。
+ * ある)。にげられるかの判定はルールの側の責任なので、プレイングの判断基準ではなくここに置く。
  */
 export function canRetreatActive(state: GameState): boolean {
   return listRetreatPaymentsIfAllowed(state).length > 0;
@@ -204,10 +204,13 @@ function listRetreatActions(state: GameState): PlayerAction[] {
 
 /**
  * 今できる行動の一覧。最後は必ず「番を終える」(endTurn)。手札の同じカードは 1 枚にまとめ、場のポケモンごと・
- * ベンチのポケモンごとに分ける。
+ * ベンチのポケモンごとに分ける。勝敗が決まった後は、その時点で対戦が終わるので「番を終える」だけを返す。
  */
 export function listAvailableActions(context: EffectContext): PlayerAction[] {
   const { state } = context;
+  if (state.decision !== undefined) {
+    return [{ kind: "endTurn" }];
+  }
   const inPlay = state.listPokemonInPlay();
   const actions = listDistinctCards(state.hand).flatMap((card) =>
     listHandCardActions(context, card, inPlay)
@@ -299,10 +302,14 @@ function runAction<Kind extends PlayerAction["kind"]>(
   run(context, action);
 }
 
+/** 行動を行う。勝敗が決まった後に「番を終える」以外を渡されたら IllegalMove を投げる。 */
 export function performAction(
   context: EffectContext,
   action: PlayerAction
 ): void {
+  if (context.state.decision !== undefined && action.kind !== "endTurn") {
+    throw new IllegalMove("勝敗が決まった後は番を終えるしか選べない");
+  }
   runAction(context, action);
 }
 

@@ -1,11 +1,15 @@
 /**
- * 1 回の対戦(自分側だけ)の準備と進行。
+ * 1 回の対戦風の一人回しの準備と進行。自分の番と相手の番を交互に、勝敗が決まるまで進める。
  *
- * 番の中で何をするか(プレイングの判断基準)はここでは決めず、PlayingPolicy として
- * 呼び出し側から受け取る。#22 の規則ファイルにあった行動の優先順位の並びを移していないのは、
- * Issue 27 の順 7 で「宣言した狙いの成立確率を最大にする手を探索で選ぶ」形に置き換えるため。
+ * 番の中で何をするか(プレイングの判断基準)はここでは決めず、PlayingPolicy として呼び出し側から受け取る。
+ * 相手の攻撃、きぜつ、サイド、勝敗の判定は battle-style-solo-play-rules.ts の関数を呼ぶ。
  */
 
+import {
+  beginOwnTurn,
+  playOpponentTurn,
+  takePrizesForOpponentFieldDamage,
+} from "./battle-style-solo-play-rules.ts";
 import {
   listUsableAttacksOfActive,
   resolveEndOfTurnTriggers,
@@ -19,7 +23,14 @@ import {
   type UsableAttack,
 } from "./continuous-effects.ts";
 import type { EffectChoices, EffectContext } from "./effect-choices.ts";
-import { GameState, HAND_SIZE_AT_SETUP, type RandomSource } from "./state.ts";
+import {
+  type BattleStyleSoloPlayDecisionReason,
+  type BattleTurn,
+  GameState,
+  HAND_SIZE_AT_SETUP,
+  PRIZE_COUNT,
+  type RandomSource,
+} from "./state.ts";
 
 /** デッキの 60 枚の内容の 1 行。カードは印刷のカード ID で指す(デッキコードの読み取りはカード ID を返す)。 */
 export interface DecklistEntry {
@@ -39,9 +50,9 @@ export interface DeckVariant {
 }
 
 /**
- * 対戦の準備と番の中で、何を選ぶか。GLOSSARY.md「プレイングの判断基準」にあたる。
- * 効果の中の選択(EffectChoices)もここに含む。順 7 で探索に置き換えるまでは、テストと答え合わせが
- * 固定の手順をここに書く。
+ * 対戦の準備と番の中で、何を選ぶか。GLOSSARY.md「プレイングの判断基準」にあたる。決める点は、対戦の準備でバトル場と
+ * ベンチに出すたねポケモン、番の中の行動、使うワザ、効果の中の選択、バトルポケモンがきぜつした後に出すベンチポケモン。
+ * 後の 2 つは効果の実行の中から問い合わせるため EffectChoices に置き、ここではそれを継承する。
  */
 export interface PlayingPolicy extends EffectChoices {
   /** 対戦の準備でバトル場に出すたねポケモン。basics は手札のたねポケモン。 */
@@ -55,25 +66,6 @@ export interface PlayingPolicy extends EffectChoices {
   ) => readonly Card[];
   /** 番の最初に 1 枚引いた後、ワザを選ぶ前までの行動をすべて行う。card-effects.ts の関数で行動する。 */
   playTurn: (context: EffectContext) => void;
-}
-
-/** 狙い。番の終わり(ワザを使う前)の場を見て判定する。 */
-export interface Goal {
-  /** 成立しなかった番の場を見て、要因を短い語で返す。集計の内訳の見出しになる。 */
-  readonly explainFailure: (state: GameState) => string;
-  readonly isAchieved: (state: GameState) => boolean;
-  readonly name: string;
-}
-
-export interface GameResult {
-  /** 番 → 使ったワザの名前。 */
-  readonly attacks: ReadonlyMap<number, string>;
-  readonly events: readonly string[];
-  /** 狙いごとの、成立しなかった番 → 要因。すべての狙いが入る(最初の番で成立した狙いは空の Map)。 */
-  readonly failureLabels: ReadonlyMap<string, ReadonlyMap<number, string>>;
-  /** 狙いごとの、最初に成立した番。maxTurn までに成立しなかった狙いは入らない。 */
-  readonly goalFirstTurn: ReadonlyMap<string, number>;
-  readonly mulligans: number;
 }
 
 /** デッキに入っているカード ID のうち、記録が無いもの。記録が無いカードがあるデッキは計算しない。 */
@@ -142,13 +134,9 @@ function countCards(decklist: Decklist): number {
 
 /**
  * 番の終わりにワザを使う。使えるワザがある間だけ選ばせ、1 回使ったあとは 2 回目を使える効果(「おまつりおんど」)が
- * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。次の番を試す評価(search-evaluators.ts)も、
- * 試しの番の終わりに同じ進め方をする。
+ * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。
  */
-export function useAttacksOfTurn(
-  context: EffectContext,
-  policy: PlayingPolicy
-): void {
+function useAttacksOfTurn(context: EffectContext, policy: PlayingPolicy): void {
   while (listUsableAttacksOfActive(context).length > 0) {
     const attack = policy.chooseAttack(context);
     if (attack === undefined) {
@@ -202,65 +190,81 @@ export function placeBenchAtSetup(
   }
 }
 
-export interface RunGameOptions {
+export interface BattleStyleSoloPlayGameOptions {
   /** 60 枚の内容。buildDeck で作る。 */
   readonly cards: readonly Card[];
-  readonly goals: readonly Goal[];
-  /** 何番目の自分の番まで進めるか。 */
-  readonly maxTurn: number;
   readonly policy: PlayingPolicy;
   readonly random: RandomSource;
   readonly wentFirst: boolean;
 }
 
-interface GoalProgress {
-  readonly failureLabels: Map<number, string>;
-  firstTurn: number | undefined;
-  readonly goal: Goal;
+/** 1 回の対戦風の一人回しの結果。 */
+export interface BattleStyleSoloPlayResult {
+  readonly decidedTurn: BattleTurn;
+  readonly events: readonly string[];
+  /** 相手が取ったサイドの枚数。 */
+  readonly opponentTakenPrizeCount: number;
+  readonly outcome: "win" | "loss";
+  readonly reason: BattleStyleSoloPlayDecisionReason;
+  /** 自分が取ったサイドの枚数。 */
+  readonly takenPrizeCount: number;
 }
 
-export function runGame(options: RunGameOptions): GameResult {
-  const { policy, maxTurn } = options;
+/**
+ * 対戦の準備から勝敗が決まるまで進める。先攻なら自分の番から、後攻なら相手の番から交互に進める
+ * (docs/solo-play-simulator-design.md「対戦風の一人回し」の番の並び)。番の回数に上限は置かない。
+ */
+export function runBattleStyleSoloPlayGame(
+  options: BattleStyleSoloPlayGameOptions
+): BattleStyleSoloPlayResult {
+  const { policy } = options;
   const state = new GameState(options.random, options.cards, options.wentFirst);
   const context: EffectContext = { choices: policy, state };
   setupGame(state, policy);
-  const progresses: GoalProgress[] = options.goals.map((goal) => ({
-    failureLabels: new Map(),
-    firstTurn: undefined,
-    goal,
-  }));
-  for (let turnIndex = 0; turnIndex < maxTurn; turnIndex += 1) {
-    state.beginTurn();
-    policy.playTurn(context);
-    for (const progress of progresses) {
-      if (progress.firstTurn !== undefined) {
-        continue;
-      }
-      if (progress.goal.isAchieved(state)) {
-        progress.firstTurn = state.turn;
-      } else {
-        progress.failureLabels.set(
-          state.turn,
-          progress.goal.explainFailure(state)
-        );
-      }
+  if (!state.wentFirst) {
+    playOpponentTurn(context);
+  }
+  while (state.decision === undefined) {
+    playOwnTurn(context, policy);
+    if (state.decision === undefined) {
+      playOpponentTurn(context);
     }
-    useAttacksOfTurn(context, policy);
-    resolveEndOfTurnTriggers(context);
+  }
+  return summarizeBattleStyleSoloPlay(state);
+}
+
+/** 自分の番を 1 回行う。勝敗が決まったら、その時点で番を打ち切る。 */
+function playOwnTurn(context: EffectContext, policy: PlayingPolicy): void {
+  const { state } = context;
+  beginOwnTurn(state);
+  if (state.decision !== undefined) {
+    return;
+  }
+  policy.playTurn(context);
+  if (state.decision !== undefined) {
+    return;
+  }
+  useAttacksOfTurn(context, policy);
+  if (state.decision !== undefined) {
+    return;
+  }
+  resolveEndOfTurnTriggers(context);
+  takePrizesForOpponentFieldDamage(state);
+}
+
+function summarizeBattleStyleSoloPlay(
+  state: GameState
+): BattleStyleSoloPlayResult {
+  const { decision } = state;
+  if (decision === undefined) {
+    throw new Error("勝敗が決まる前に結果をまとめようとした");
   }
   return {
-    attacks: new Map(state.attacks),
+    decidedTurn: decision.decidedTurn,
     events: [...state.events],
-    failureLabels: new Map(
-      progresses.map((progress) => [progress.goal.name, progress.failureLabels])
-    ),
-    goalFirstTurn: new Map(
-      progresses.flatMap((progress) =>
-        progress.firstTurn === undefined
-          ? []
-          : [[progress.goal.name, progress.firstTurn] as const]
-      )
-    ),
-    mulligans: state.mulligans,
+    opponentTakenPrizeCount: PRIZE_COUNT - state.opponentRemainingPrizeCount,
+    outcome: decision.reason === "ownPrizesTaken" ? "win" : "loss",
+    reason: decision.reason,
+    takenPrizeCount: PRIZE_COUNT - state.prizes.length,
   };
 }

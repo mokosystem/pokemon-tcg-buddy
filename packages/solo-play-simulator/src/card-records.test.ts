@@ -366,7 +366,7 @@ describeTranslation("ニャースex", () => {
     );
   });
 
-  test("しっぽをまくは自身をついているカードごと手札に戻し、ベンチのポケモンをバトル場に出す。場が空になるなら使えない", () => {
+  test("しっぽをまくは自身をついているカードごと手札に戻し、ベンチのポケモンをバトル場に出す", () => {
     const state = buildState({ active: MEOWTH, bench: [RALTS] });
     activeOf(state).energies.push(...repeat(DARK_ENERGY, 3));
     useAttackNamed(buildContext(state), "しっぽをまく");
@@ -377,12 +377,15 @@ describeTranslation("ニャースex", () => {
       "基本悪エネルギー",
     ]);
     expect(activeOf(state).name).toBe("ラルトス");
+  });
 
+  test("場がニャースex だけのとき、しっぽをまくは使え、自身を手札に戻すと場に自分のポケモンがいなくなった時点で負けになる", () => {
+    // 効果で場からポケモンがいなくなったプレイヤーは負ける(記録 049694 の裁定のデータ、公式 Q&A「ワナイダー」)
     const alone = buildState({ active: MEOWTH });
     activeOf(alone).energies.push(...repeat(DARK_ENERGY, 3));
-    expect(() => useAttackNamed(buildContext(alone), "しっぽをまく")).toThrow(
-      IllegalMove
-    );
+    useAttackNamed(buildContext(alone), "しっぽをまく");
+    expect(alone.listPokemonInPlay()).toEqual([]);
+    expect(alone.decision?.reason).toBe("noOwnPokemonInPlay");
   });
 });
 
@@ -590,14 +593,19 @@ describeTranslation("ノココッチ", () => {
     expect(state.countInDeck("基本悪エネルギー")).toBe(1);
   });
 
-  test("場がノココッチだけのときと、山札が 0 枚のときは使えない", () => {
+  test("場がノココッチだけのとき、にげあしドローは使え、3 枚引いて自身を山札に戻すと負けになる", () => {
+    // 効果で場からポケモンがいなくなったプレイヤーは負ける(記録 045203 の裁定のデータ、公式 Q&A「ワナイダー」)
     const alone = buildState({
       active: DUDUNSPARCE,
       deck: repeat(PSYCHIC_ENERGY, 4),
     });
-    expect(
-      canUseAbility(buildContext(alone), activeOf(alone), "にげあしドロー")
-    ).toBe(false);
+    useAbility(buildContext(alone), activeOf(alone), "にげあしドロー");
+    expect(alone.hand).toHaveLength(3);
+    expect(alone.listPokemonInPlay()).toEqual([]);
+    expect(alone.decision?.reason).toBe("noOwnPokemonInPlay");
+  });
+
+  test("山札が 0 枚のときは使えない", () => {
     const emptyDeck = buildState({ active: SHUPPET, bench: [DUDUNSPARCE] });
     expect(
       canUseAbility(
@@ -804,7 +812,7 @@ describeTranslation("エネルギー回収", () => {
 });
 
 describeTranslation("ポケモン回収サイクロン", () => {
-  test("選んだ自分のポケモンをついているカードごと手札に戻し、場のポケモンが 1 匹なら使えない", () => {
+  test("選んだ自分のポケモンをついているカードごと手札に戻し、バトル場ならベンチから出す", () => {
     const state = buildState({
       active: GARDEVOIR,
       bench: [RALTS],
@@ -820,10 +828,17 @@ describeTranslation("ポケモン回収サイクロン", () => {
       "基本超エネルギー",
     ]);
     expect(activeOf(state).name).toBe("ラルトス");
-    state.hand.push(SCOOP_UP_CYCLONE);
+  });
+
+  test("場のポケモンが 1 匹のときも使え、そのポケモンを手札に戻すと負けになる", () => {
+    // 効果で場からポケモンがいなくなったプレイヤーは負ける(記録 049380 の裁定のデータ、公式 Q&A「ワナイダー」)
+    const state = buildState({ active: RALTS, hand: [SCOOP_UP_CYCLONE] });
     expect(canPlayTrainerFromHand(buildContext(state), SCOOP_UP_CYCLONE)).toBe(
-      false
+      true
     );
+    playTrainerFromHand(buildContext(state), SCOOP_UP_CYCLONE);
+    expect(namesOf(state.hand)).toEqual(["ラルトス"]);
+    expect(state.decision?.reason).toBe("noOwnPokemonInPlay");
   });
 });
 
@@ -1828,6 +1843,17 @@ describeTranslation("シロナのロズレイド", () => {
     expect(
       damageOf(state, activeOf(state), CYNTHIAS_GARCHOMP, "リューノバスター")
     ).toBe(320);
+  });
+
+  test("グローリーエールが働くシロナのロズレイドがベンチに 2 匹いるとき、シロナのガブリアスex がリューノバスターを使うと、相手の場のダメージに 320 が足される", () => {
+    // リューノバスターは闘闘で 260(記録 047381)、グローリーエールは 1 匹につき +30(記録 047366 の裁定のデータ)
+    const state = buildState({
+      active: CYNTHIAS_GARCHOMP,
+      bench: [CYNTHIAS_ROSERADE, CYNTHIAS_ROSERADE],
+    });
+    activeOf(state).energies.push(FIGHTING_ENERGY, FIGHTING_ENERGY);
+    useAttackNamed(buildContext(state), "リューノバスター");
+    expect(state.opponentFieldDamage).toBe(320);
   });
 
   test("パワープロテインと重ねて足す", () => {

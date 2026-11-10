@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  calculateAttackDamage,
-  estimateAttackDamageWithPartialThresholds,
-} from "./attack-damage.ts";
+import { calculateAttackDamage } from "./attack-damage.ts";
 import type { Attack } from "./card-record-schema.ts";
 import {
   activeOf,
@@ -310,7 +307,7 @@ describe("ワザのダメージ", () => {
   });
 });
 
-describe("場の評価に使うダメージの見込み", () => {
+describe("「N 以上なら M を足す」の上乗せ", () => {
   // むねんのイカリ(ダダリン 050308)は 30。トラッシュに特性「ばけがくれ」を持つポケモン(チャデス 050224、
   // カゲボウズ 050250)が 4 枚以上なら 140 を足す
   const discards = [
@@ -321,42 +318,12 @@ describe("場の評価に使うダメージの見込み", () => {
   ];
   const resentfulAnchor = findAttack(DHELMISE, "むねんのイカリ");
 
-  test("むねんのイカリの見込みは、トラッシュの「ばけがくれ」が 0・1・2・4 枚のとき 30・65・100・170", () => {
-    expect(
-      discards.map((discard) => {
-        const state = buildState({ active: DHELMISE, discard });
-        return estimateAttackDamageWithPartialThresholds(
-          state,
-          activeOf(state),
-          resentfulAnchor
-        );
-      })
-    ).toEqual([30, 65, 100, 170]);
-  });
-
-  test("同じ場のむねんのイカリの本当のダメージは 30・30・30・170", () => {
+  test("トラッシュの「ばけがくれ」が 0・1・2・4 枚のとき、むねんのイカリのダメージは 30・30・30・170", () => {
     expect(
       discards.map((discard) => {
         const state = buildState({ active: DHELMISE, discard });
         return calculateAttackDamage(state, activeOf(state), resentfulAnchor);
       })
     ).toEqual([30, 30, 30, 170]);
-  });
-
-  test("メガシンフォニア(メガサーナイトex 048464)の見込みは、本当のダメージと同じ", () => {
-    const state = buildState({ active: GARDEVOIR, bench: [RALTS] });
-    state.active?.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
-    state.bench[0]?.energies.push(PSYCHIC_ENERGY);
-    const symphonia = findAttack(GARDEVOIR, "メガシンフォニア");
-    expect(
-      estimateAttackDamageWithPartialThresholds(
-        state,
-        activeOf(state),
-        symphonia
-      )
-    ).toBe(calculateAttackDamage(state, activeOf(state), symphonia) ?? 0);
-    expect(calculateAttackDamage(state, activeOf(state), symphonia)).toBe(
-      3 * 50
-    );
   });
 });

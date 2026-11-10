@@ -29,7 +29,7 @@ export interface PokemonChoiceRequest {
   readonly purpose: string;
 }
 
-/** 効果の中の選択。順 7 の探索が実装する。テストは固定の手順を書く。 */
+/** 効果の中の選択。探索(search-policy.ts)と、手を選ばない手順(action-list-playing-policies.ts)が実装する。 */
 export interface EffectChoices {
   chooseCards: (
     state: GameState,
@@ -39,6 +39,14 @@ export interface EffectChoices {
     state: GameState,
     request: PokemonChoiceRequest
   ) => readonly PokemonInPlay[];
+  /**
+   * バトルポケモンがきぜつした後に、バトル場に出すベンチポケモン(candidates は今のベンチ。1 匹以上)。
+   * 効果の中の選択ではないがここに置くのは、自分の番の効果できぜつしたときも効果の実行の中から問い合わせるため。
+   */
+  choosePokemonToPromoteAfterKnockOut: (
+    state: GameState,
+    candidates: readonly PokemonInPlay[]
+  ) => PokemonInPlay;
   /** 「のぞむなら」の効果や、使うかを選べるきっかけの効果を起こすか。 */
   choosesToApplyOptionalEffect: (state: GameState, purpose: string) => boolean;
 }
@@ -163,6 +171,23 @@ export function chooseOnePokemon(
   return chosen[0];
 }
 
+/** きぜつした後にバトル場に出すベンチポケモンを問い合わせる。返ったポケモンが候補に無ければ IllegalMove を投げる。 */
+export function chooseOnePokemonToPromote(
+  context: EffectContext,
+  candidates: readonly PokemonInPlay[]
+): PokemonInPlay {
+  const chosen = context.choices.choosePokemonToPromoteAfterKnockOut(
+    context.state,
+    candidates
+  );
+  if (!candidates.includes(chosen)) {
+    throw new IllegalMove(
+      "きぜつした後にバトル場に出すベンチポケモン: 候補に無いものを選んだ"
+    );
+  }
+  return chosen;
+}
+
 /** タイプの違うエネルギーを選ぶ求め(アカマツ)では、同じタイプの 2 枚目以降を候補から外す。 */
 function listCandidatesToChoose(request: CardChoiceRequest): readonly Card[] {
   if (!request.mustHaveDistinctTypes) {
@@ -180,13 +205,19 @@ function listCandidatesToChoose(request: CardChoiceRequest): readonly Card[] {
 }
 
 /**
- * 候補の先頭から選べるだけ選び、「のぞむなら」の効果は必ず起こす。テストの固定の手順と、探索が 1 つの選択を試した後の
- * 残りの選択に使う。
+ * 候補の先頭から選べるだけ選び、「のぞむなら」の効果は必ず起こす。きぜつした後はベンチの先頭を出す。テストの固定の
+ * 手順と、探索が 1 つの選択を試した後の残りの選択に使う。
  */
 export const firstCandidateChoices: EffectChoices = {
   chooseCards: (_state, request) =>
     listCandidatesToChoose(request).slice(0, request.maxCount),
   choosePokemon: (_state, request) =>
     request.candidates.slice(0, request.maxCount),
+  choosePokemonToPromoteAfterKnockOut: (_state, [first]) => {
+    if (first === undefined) {
+      throw new Error("きぜつした後にバトル場に出すベンチポケモンの候補が無い");
+    }
+    return first;
+  },
   choosesToApplyOptionalEffect: () => true,
 };

@@ -4,6 +4,8 @@
  * card-record-schema.ts の部品とこの 2 つの表に 1 行ずつ足す(docs/solo-play-simulator-design.md「部品を足す手順」)。
  */
 
+import { decideLossIfNoOwnPokemonInPlay } from "./battle-style-solo-play-rules.ts";
+import { trimBenchToLimit } from "./bench-limit.ts";
 import {
   type AttachCount,
   type BasicOperation,
@@ -270,24 +272,8 @@ function hasTargetForStep<Name extends EffectStep["operation"]>(
 }
 
 /**
- * 効果で自分の場のポケモンがいなくなるか。場にポケモンが 1 匹もいなくなったプレイヤーは負けになる
- * (docs/pokemon-tcg/basic-rules.md「きぜつと勝敗」)。相手のいない乱数試行では負けを扱えないため、
- * そうなる効果は使えないものとする(ノココッチ、ポケモン回収サイクロン、ニャースex の裁定のデータ)。
- */
-export function wouldLeaveFieldEmpty(
-  state: GameState,
-  effect: Effect
-): boolean {
-  const removesPokemon = effect.steps.some(
-    (step) =>
-      step.operation === "returnSelfToDeck" ||
-      step.operation === "returnPokemonToHand"
-  );
-  return removesPokemon && state.listPokemonInPlay().length < 2;
-}
-
-/**
- * 効果を使い始められるか(使える条件、最初の操作の対象、場が空にならないこと)。
+ * 効果を使い始められるか(使える条件、最初の操作の対象)。効果で自分の場のポケモンがいなくなるときも使え、使った時点で
+ * 負けになる(battle-style-solo-play-rules.ts の decideLossIfNoOwnPokemonInPlay)。
  * cardBeingPlayed は手札から使おうとしているカード。手札を対象にする判定では、その 1 枚を除いた手札で数える。
  */
 export function canStartEffect(
@@ -305,8 +291,7 @@ export function canStartEffect(
   return (
     areConditionsMet(state, effect.useConditions, source) &&
     firstStep !== undefined &&
-    hasTargetForStep(firstStep, input) &&
-    !wouldLeaveFieldEmpty(state, effect)
+    hasTargetForStep(firstStep, input)
   );
 }
 
@@ -348,27 +333,6 @@ type OperationRunner<Name extends BasicOperation["operation"]> = (
   run: OperationRun
 ) => void;
 
-/**
- * ベンチのポケモンが上限を超えていれば、上限になるまでベンチのポケモンを選んで、ついているカードごとトラッシュする
- * (ゼロの大空洞が場を離れたとき、場に「テラスタル」のポケモンがいなくなったとき)。どれをトラッシュするかは
- * プレイングの判断基準が選ぶ。トラッシュしたポケモンはきぜつではない(公式 Q&A「ゼロの大空洞」、2026-09-23 確認)。
- */
-export function trimBenchToLimit(context: EffectContext): void {
-  const { state } = context;
-  const limit = calculateBenchLimit(state);
-  while (state.bench.length > limit) {
-    const target = chooseOnePokemon(
-      context,
-      state.bench,
-      `ベンチを ${limit} 匹にするためにトラッシュするベンチポケモン`
-    );
-    if (target === undefined) {
-      return;
-    }
-    state.discardBenchedPokemon(target);
-  }
-}
-
 function promoteIfActiveIsEmpty(context: EffectContext): void {
   const { state } = context;
   if (state.active !== undefined) {
@@ -400,7 +364,10 @@ function returnToZone(
   // 場に「テラスタル」のポケモンがいなくなってベンチの上限が下がったときは、ベンチをトラッシュしてから
   // バトル場に出す(公式 Q&A「ゼロの大空洞」、2026-09-23 確認)
   trimBenchToLimit(context);
-  promoteIfActiveIsEmpty(context);
+  decideLossIfNoOwnPokemonInPlay(context.state);
+  if (context.state.decision === undefined) {
+    promoteIfActiveIsEmpty(context);
+  }
 }
 
 /**
@@ -1295,26 +1262,9 @@ function resolveBranch(step: EffectStep, run: OperationRun): BasicOperation[] {
 }
 
 /**
- * 操作の列に含まれる、起こりうる基本操作の並び。条件の分かれ道は両側、コインはオモテの側を含める(ウラの側は何も
- * 起こさない)。効果を実行せずに、効果が持つ操作の条件を読み取るとき(山札から持ってくるカードの条件、入れ替えて
- * バトル場に出すポケモンの条件)に使う。
+ * 効果を実行する。「のぞむなら」の効果は、起こすかを問い合わせてから実行する。途中で勝敗が決まったら、その時点で対戦が
+ * 終わるので残りの操作は実行しない。
  */
-export function listPossibleOperations(
-  steps: readonly EffectStep[]
-): BasicOperation[] {
-  return steps.flatMap((step): BasicOperation[] => {
-    switch (step.operation) {
-      case "branchOnCondition":
-        return [...step.stepsWhenMet, ...step.stepsOtherwise];
-      case "branchOnCoinFlip":
-        return step.stepsWhenHeads;
-      default:
-        return [step];
-    }
-  });
-}
-
-/** 効果を実行する。「のぞむなら」の効果は、起こすかを問い合わせてから実行する。 */
 export function runEffect(
   context: EffectContext,
   effect: Effect,
@@ -1338,7 +1288,13 @@ export function runEffect(
     source,
   };
   for (const step of effect.steps) {
+    if (context.state.decision !== undefined) {
+      return;
+    }
     for (const inner of resolveBranch(step, run)) {
+      if (context.state.decision !== undefined) {
+        return;
+      }
       runOperation(inner, run);
     }
   }
