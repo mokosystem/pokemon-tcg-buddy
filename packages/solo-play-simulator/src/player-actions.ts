@@ -183,7 +183,7 @@ function listRetreatPaymentsIfAllowed(state: GameState): Card[][] {
 
 /**
  * 今のバトルポケモンがにげられるか(この番にまだにげていない、ベンチにポケモンがいる、にげるエネルギーを払える組が
- * ある)。行動の一覧と場の評価(バトル場に出せる見込み)が同じ判定を使うため、ここに 1 つだけ置く。
+ * ある)。にげられるかの判定はルールの側の責任なので、プレイングの判断基準ではなくここに置く。
  */
 export function canRetreatActive(state: GameState): boolean {
   return listRetreatPaymentsIfAllowed(state).length > 0;

@@ -57,22 +57,10 @@ export interface PlayingPolicy extends EffectChoices {
   playTurn: (context: EffectContext) => void;
 }
 
-/** 狙い。番の終わり(ワザを使う前)の場を見て判定する。 */
-export interface Goal {
-  /** 成立しなかった番の場を見て、要因を短い語で返す。集計の内訳の見出しになる。 */
-  readonly explainFailure: (state: GameState) => string;
-  readonly isAchieved: (state: GameState) => boolean;
-  readonly name: string;
-}
-
 export interface GameResult {
   /** 番 → 使ったワザの名前。 */
   readonly attacks: ReadonlyMap<number, string>;
   readonly events: readonly string[];
-  /** 狙いごとの、成立しなかった番 → 要因。すべての狙いが入る(最初の番で成立した狙いは空の Map)。 */
-  readonly failureLabels: ReadonlyMap<string, ReadonlyMap<number, string>>;
-  /** 狙いごとの、最初に成立した番。maxTurn までに成立しなかった狙いは入らない。 */
-  readonly goalFirstTurn: ReadonlyMap<string, number>;
   readonly mulligans: number;
 }
 
@@ -142,8 +130,7 @@ function countCards(decklist: Decklist): number {
 
 /**
  * 番の終わりにワザを使う。使えるワザがある間だけ選ばせ、1 回使ったあとは 2 回目を使える効果(「おまつりおんど」)が
- * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。次の番を試す評価(search-evaluators.ts)も、
- * 試しの番の終わりに同じ進め方をする。
+ * あるときだけもう一度選ばせる(使えるワザの一覧が空になれば終える)。
  */
 export function useAttacksOfTurn(
   context: EffectContext,
@@ -205,7 +192,6 @@ export function placeBenchAtSetup(
 export interface RunGameOptions {
   /** 60 枚の内容。buildDeck で作る。 */
   readonly cards: readonly Card[];
-  readonly goals: readonly Goal[];
   /** 何番目の自分の番まで進めるか。 */
   readonly maxTurn: number;
   readonly policy: PlayingPolicy;
@@ -213,54 +199,20 @@ export interface RunGameOptions {
   readonly wentFirst: boolean;
 }
 
-interface GoalProgress {
-  readonly failureLabels: Map<number, string>;
-  firstTurn: number | undefined;
-  readonly goal: Goal;
-}
-
 export function runGame(options: RunGameOptions): GameResult {
   const { policy, maxTurn } = options;
   const state = new GameState(options.random, options.cards, options.wentFirst);
   const context: EffectContext = { choices: policy, state };
   setupGame(state, policy);
-  const progresses: GoalProgress[] = options.goals.map((goal) => ({
-    failureLabels: new Map(),
-    firstTurn: undefined,
-    goal,
-  }));
   for (let turnIndex = 0; turnIndex < maxTurn; turnIndex += 1) {
     state.beginTurn();
     policy.playTurn(context);
-    for (const progress of progresses) {
-      if (progress.firstTurn !== undefined) {
-        continue;
-      }
-      if (progress.goal.isAchieved(state)) {
-        progress.firstTurn = state.turn;
-      } else {
-        progress.failureLabels.set(
-          state.turn,
-          progress.goal.explainFailure(state)
-        );
-      }
-    }
     useAttacksOfTurn(context, policy);
     resolveEndOfTurnTriggers(context);
   }
   return {
     attacks: new Map(state.attacks),
     events: [...state.events],
-    failureLabels: new Map(
-      progresses.map((progress) => [progress.goal.name, progress.failureLabels])
-    ),
-    goalFirstTurn: new Map(
-      progresses.flatMap((progress) =>
-        progress.firstTurn === undefined
-          ? []
-          : [[progress.goal.name, progress.firstTurn] as const]
-      )
-    ),
     mulligans: state.mulligans,
   };
 }

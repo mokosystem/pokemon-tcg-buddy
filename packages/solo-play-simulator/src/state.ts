@@ -23,18 +23,10 @@ import {
 
 export const BENCH_LIMIT = 5;
 /**
- * 手札からエネルギーをつけられる回数(1 回の番あたり。docs/pokemon-tcg/basic-rules.md 72 行)。締め切りまでにつけられる
- * 枚数を数える場の評価(goal-prospects.ts)だけが使う。骨組みの番ごとの判定(attachEnergyFromHand と、player-actions.ts の
- * 行動の一覧)はこの数を通らず、hasAttachedEnergy の真偽値で 1 回だけを表す。真偽値を数に変えると状態の形が変わるため
- * 変えておらず、この数と真偽値の 2 か所が同じ制限を表している。
- */
-export const ENERGY_ATTACHMENTS_FROM_HAND_PER_TURN = 1;
-
-/**
  * 1 回の番に 1 枚しか使えないトレーナーズの種類。サポートは 1 回の番に 1 枚、スタジアムを出すのは 1 回の番に 1 枚
  * (docs/pokemon-tcg/basic-rules.md 75・76 行)。骨組みの判定(GameState の hasUsedOnceInTurn を通る canUseSupporter・
- * playStadium と、card-effects.ts の canPlayTrainerIfInHand)と、締め切りまでに使える探す手段を数える場の評価
- * (deck-fetch-sources.ts)が、どのカードがこの制限を受けるかを classifyOnceInTurnKind から借りる。
+ * playStadium と、card-effects.ts の canPlayTrainerIfInHand)が、どのカードがこの制限を受けるかを
+ * classifyOnceInTurnKind から借りる。
  */
 export type OnceInTurnKind = "supporter" | "stadium";
 
@@ -167,8 +159,7 @@ function matchTypedCost(
  * ワザに必要なエネルギー(タイプの並び。無色は colorless)のうち、ついているエネルギーの個数分(units)で払えない分。
  * タイプ指定の分を同じタイプで先に埋め、足りなければすべてのタイプとして働く 1 個を充て、残りを無色に充てる。
  * すべてのタイプとして働く 1 個を後に回すのは、同じタイプの 1 個で埋められる指定にそれを使うと、別のタイプの指定を
- * 埋められなくなるため。払えるかの判定(canPayCost)と、払えない分を数える場の評価(goal-prospects.ts)が同じ埋め方を
- * 使うよう、埋め方をここ 1 か所に置く。
+ * 埋められなくなるため。
  */
 export function listUnpaidCost(
   cost: readonly PokemonType[],
@@ -185,48 +176,6 @@ export function listUnpaidCost(
     ...unpaidTyped,
     ...Array.from({ length: unpaidColorlessCount }, () => COLORLESS),
   ];
-}
-
-/**
- * listUnpaidCost の払えない分を、すべてのタイプとして働く 1 個をどのタイプ指定に充てるかの選び方ごとに並べる(同じ
- * 並びは 1 つにまとめる)。払えない数はどの選び方でも同じだが、残る指定のタイプが変わる。これから足すエネルギーで
- * 払えない分を埋める見込みを数えるとき(goal-prospects.ts)、足したエネルギーが今すべてのタイプとして働く 1 個で
- * 埋めている指定と同じタイプなら、その 1 個を別の指定に充て直せるため、選び方ごとに残る指定を数える。
- */
-export function listUnpaidCostChoices(
-  cost: readonly PokemonType[],
-  units: readonly EnergyUnit[]
-): PokemonType[][] {
-  const unpaid = listUnpaidCost(cost, units);
-  const { remaining, unmatched } = matchTypedCost(cost, units);
-  const anyCount = Math.min(
-    remaining.filter((unit) => unit === "any").length,
-    unmatched.length
-  );
-  if (anyCount === 0 || anyCount === unmatched.length) {
-    return [unpaid];
-  }
-  const colorless = unpaid.slice(unmatched.length - anyCount);
-  const choices = new Map<string, PokemonType[]>();
-  const visit = (start: number, coveredLeft: number, open: PokemonType[]) => {
-    if (coveredLeft === 0) {
-      const typed = [...open, ...unmatched.slice(start)];
-      choices.set([...typed].sort().join(","), [...typed, ...colorless]);
-      return;
-    }
-    for (
-      let index = start;
-      index <= unmatched.length - coveredLeft;
-      index += 1
-    ) {
-      visit(index + 1, coveredLeft - 1, [
-        ...open,
-        ...unmatched.slice(start, index),
-      ]);
-    }
-  };
-  visit(0, anyCount, []);
-  return [...choices.values()];
 }
 
 /** ワザに必要なエネルギーを、ついているエネルギーの個数分(units)で払えるか。埋め方は listUnpaidCost。 */
@@ -486,7 +435,7 @@ export class GameState {
     return countByName(this.deck, name) + countByName(this.prizes, name);
   }
 
-  /** 山札にある枚数。山札を見てよい効果(検索)の実行と、失敗要因の事後分析にだけ使う。 */
+  /** 山札にある枚数。山札を見てよい効果(検索)の実行にだけ使う。 */
   countInDeck(name: string): number {
     return countByName(this.deck, name);
   }

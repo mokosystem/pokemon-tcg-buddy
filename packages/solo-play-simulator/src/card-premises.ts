@@ -1,6 +1,7 @@
 /**
- * 計算の前提(GLOSSARY.md「計算の前提」)。デッキによらない固定の文と、デッキのカードの記録から作る
- * カードごとの前提からなる。docs/solo-play-simulator-design.md「翻訳が無いカードと計算の前提」の 3 つの分け方に従う。
+ * 計算の前提(GLOSSARY.md「計算の前提」)のうち、デッキのカードの記録から作るカードごとの前提。
+ * docs/solo-play-simulator-design.md「翻訳が無いカードと計算の前提」の 3 つの分け方に従う。デッキによらない前提の
+ * 文面は、対戦風の一人回しに合わせて Issue 71 で作る。
  */
 
 import type {
@@ -9,17 +10,6 @@ import type {
   Ruling,
 } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
-
-/** デッキによらない前提。成立率の出力の先頭に、カードごとの前提より先に出す。 */
-export const DECK_INDEPENDENT_PREMISES: readonly string[] = [
-  "相手の行動を含めない。相手の妨害、きぜつ、サイドの進みは起きない(サイドは常に 6 枚)",
-  "特殊状態を含めない。ねむりとマヒは自分のワザとにげるを妨げるため、含めないと成立率が実際より高く出うる",
-  "コインはオモテとウラを 1/2 ずつとする",
-  "回復、ダメージ、ダメカンを含めない",
-  "相手の引き直しによる追加の 1 枚は扱わない",
-  "相手の攻撃を見越した判断(ベンチにたねポケモンを増やして倒されたときの保険にする、壁になるポケモンをバトル場に置く、相手を妨害するワザを使う)は評価に含めない。相手を含めないため。対戦の準備で探索が主軸の系統を前に置くのは、この前提の下での計算上の手で、実戦の正しい手とは違うことがある",
-  "成立率は、相手の妨害が無いときのデッキの回りやすさの上限であり、実戦の成立率ではない",
-];
 
 /** デッキにある 1 種のカード。同じ記録の印刷が複数入っていれば、カード ID を全部並べる。 */
 export interface CardInDeck {
@@ -116,7 +106,7 @@ function formatCardInDeck(card: CardInDeck): string {
   return `${card.name}(${card.cardIds.join("、")})`;
 }
 
-/** カードごとの前提を、formatAssumptions に渡す箇条書きの文にする。 */
+/** カードごとの前提を、箇条書きの文にする。 */
 export function formatCardPremises(premises: CardPremises): string[] {
   const lines = [
     ...premises.untranslatedCards.map(

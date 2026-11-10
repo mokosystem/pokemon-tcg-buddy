@@ -4,13 +4,11 @@ import {
   evolvePokemonFromHand,
   listUsableAttacksOfActive,
 } from "./card-effects.ts";
-import { countEnergyUnitsOfTypes } from "./continuous-effects.ts";
 import { firstCandidateChoices } from "./effect-choices.ts";
 import {
   applyVariant,
   buildDeck,
   type Decklist,
-  type Goal,
   MissingCardRecordsError,
   type PlayingPolicy,
   runGame,
@@ -61,12 +59,6 @@ const evolvingPolicy: PlayingPolicy = {
       }
     }
   },
-};
-
-const stage1InPlay: Goal = {
-  explainFailure: () => "1進化 が無い",
-  isAchieved: (state) => state.countInPlay("1進化") > 0,
-  name: "1進化 が場にいる",
 };
 
 describe("対戦の準備", () => {
@@ -159,36 +151,12 @@ describe("枚数の変更", () => {
 });
 
 describe("対戦の進行", () => {
-  test("狙いが最初に成立した番と、成立しなかった番の要因を記録する", () => {
-    const outcome = runGame({
-      cards: buildDeck(SAMPLE_RECORD_TABLE, BASICS_AND_ENERGIES),
-      goals: [
-        {
-          explainFailure: () => "まだ",
-          isAchieved: (state) =>
-            state.active !== undefined &&
-            countEnergyUnitsOfTypes(state, state.active, ["psychic"]) >= 2,
-          name: "エネルギー 2 個",
-        },
-      ],
-      maxTurn: 3,
-      policy: { ...evolvingPolicy, chooseBenchAtSetup: () => [] },
-      random: createSeededRandom(3),
-      wentFirst: true,
-    });
-    expect(outcome.goalFirstTurn.get("エネルギー 2 個")).toBe(2);
-    expect(outcome.failureLabels.get("エネルギー 2 個")).toEqual(
-      new Map([[1, "まだ"]])
-    );
-  });
-
   test("先攻の最初の番はワザを選ばせない", () => {
     const random = createSeededRandom(8);
     const cards = buildDeck(SAMPLE_RECORD_TABLE, BASICS_AND_ENERGIES);
     for (let game = 0; game < 200; game += 1) {
       const outcome = runGame({
         cards,
-        goals: [],
         maxTurn: 3,
         policy: evolvingPolicy,
         random,
@@ -199,29 +167,7 @@ describe("対戦の進行", () => {
     }
   });
 
-  test("進化が要る狙いは最初の番には成立しない", () => {
-    const random = createSeededRandom(9);
-    const cards = buildDeck(SAMPLE_RECORD_TABLE, [
-      { cardId: BASIC.cardId, count: 4 },
-      { cardId: STAGE1.cardId, count: 4 },
-      { cardId: ENERGY.cardId, count: 52 },
-    ]);
-    for (const wentFirst of [true, false]) {
-      for (let game = 0; game < 200; game += 1) {
-        const outcome = runGame({
-          cards,
-          goals: [stage1InPlay],
-          maxTurn: 3,
-          policy: evolvingPolicy,
-          random,
-          wentFirst,
-        });
-        expect(outcome.goalFirstTurn.get(stage1InPlay.name)).not.toBe(1);
-      }
-    }
-  });
-
-  test("先攻・後攻とも 200 回の対戦が基本ルールに反さず最後まで進み、すべての狙いに結果が付く", () => {
+  test("先攻・後攻とも 200 回の対戦が基本ルールに反さず最後まで進む", () => {
     const random = createSeededRandom(7);
     const cards = buildDeck(SAMPLE_RECORD_TABLE, [
       { cardId: BASIC.cardId, count: 4 },
@@ -229,27 +175,15 @@ describe("対戦の進行", () => {
       { cardId: STAGE2.cardId, count: 2 },
       { cardId: ENERGY.cardId, count: 51 },
     ]);
-    const goals = [
-      stage1InPlay,
-      {
-        explainFailure: () => "2進化 が無い",
-        isAchieved: (state: GameState) => state.countInPlay("2進化") > 0,
-        name: "2進化 が場にいる",
-      },
-    ];
     for (const wentFirst of [true, false]) {
       for (let game = 0; game < 200; game += 1) {
         const outcome = runGame({
           cards,
-          goals,
           maxTurn: 3,
           policy: evolvingPolicy,
           random,
           wentFirst,
         });
-        expect([...outcome.failureLabels.keys()]).toEqual(
-          goals.map((goal) => goal.name)
-        );
         expect(outcome.events.at(-1)).toStartWith("[3] ");
       }
     }
@@ -259,7 +193,6 @@ describe("対戦の進行", () => {
     expect(() =>
       runGame({
         cards: buildDeck(SAMPLE_RECORD_TABLE, BASICS_AND_ENERGIES),
-        goals: [],
         maxTurn: 1,
         policy: {
           ...idlePolicy,

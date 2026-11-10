@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  buildCardPremises,
-  DECK_INDEPENDENT_PREMISES,
-  formatCardPremises,
-} from "./card-premises.ts";
+import { buildCardPremises, formatCardPremises } from "./card-premises.ts";
 import { buildRecordedCard } from "./card-test-support.ts";
 
 const deck = [
@@ -57,22 +53,6 @@ describe("カードごとの前提", () => {
     );
     expect(lines.at(-1)).toBe(
       "計算に関係ないと判断したカード: ダダリン(050308、050256)"
-    );
-  });
-
-  test("デッキによらない前提に、相手の行動、特殊状態、コインの扱い、相手の攻撃を見越した判断、成立率の位置付けを含める", () => {
-    expect(DECK_INDEPENDENT_PREMISES.join("\n")).toContain(
-      "相手の行動を含めない"
-    );
-    expect(DECK_INDEPENDENT_PREMISES.join("\n")).toContain(
-      "特殊状態を含めない"
-    );
-    expect(DECK_INDEPENDENT_PREMISES.join("\n")).toContain("1/2");
-    expect(DECK_INDEPENDENT_PREMISES).toContain(
-      "相手の攻撃を見越した判断(ベンチにたねポケモンを増やして倒されたときの保険にする、壁になるポケモンをバトル場に置く、相手を妨害するワザを使う)は評価に含めない。相手を含めないため。対戦の準備で探索が主軸の系統を前に置くのは、この前提の下での計算上の手で、実戦の正しい手とは違うことがある"
-    );
-    expect(DECK_INDEPENDENT_PREMISES).toContain(
-      "成立率は、相手の妨害が無いときのデッキの回りやすさの上限であり、実戦の成立率ではない"
     );
   });
 });

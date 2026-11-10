@@ -241,35 +241,6 @@ export function resolveEnergyProvision(
 }
 
 /**
- * 手札か山札のエネルギー 1 枚を holder につけたとしたら供給するもの。energy 自身の場にある間ずっと働く効果
- * (プリズムエネルギー 049455、イグニッションエネルギー 049452)と、holder に働く場の効果を当てる。場にある効果を
- * 集める collectContinuousEffects は場のカードしか見ないため、つける前のエネルギー自身の効果をここで足す。
- * holder は場にいなくてよい(場の評価が、場に出たとみなした主軸で数えるため)。つけたことで場のほかの効果が
- * 変わることは見ない。
- */
-export function resolveEnergyProvisionWhenAttached(
-  state: GameState,
-  holder: PokemonInPlay,
-  energy: Card
-): EnergyProvision {
-  const collected = collectContinuousEffects(state);
-  const energyEffects: CollectedContinuousEffect[] = [];
-  collectMet(
-    state,
-    energyEffects,
-    energy,
-    holder,
-    listCardContinuousEffects(energy)
-  );
-  return resolveEnergyProvisionFrom(
-    [...energyEffects, ...collected],
-    listCollectedApplyingTo(state, collected, holder),
-    holder,
-    energy
-  );
-}
-
-/**
  * 集めた効果(all)と、そのうち pokemon に働く効果(applying)から、ついているエネルギー 1 枚が供給するものを求める。
  * 同じポケモンのエネルギーをまとめて求めるとき、効果を 1 回だけ集めるために分けてある。
  */
@@ -426,16 +397,11 @@ export function isFreshEvolutionAllowedByEffect(
   );
 }
 
-/** pokemon がワザを使うときに必要なエネルギー。ワザのエネルギーを増やす効果(夜の鉱山)の分の無色を足す。 */
-export function calculateAttackCost(
-  state: GameState,
-  pokemon: PokemonInPlay,
-  attack: Attack
-): PokemonType[] {
-  return calculateAttackCostFrom(listEffectsApplyingTo(state, pokemon), attack);
-}
-
-function calculateAttackCostFrom(
+/**
+ * ワザを使うポケモンに働く効果(applying)から求めた、ワザに必要なエネルギー。ワザのエネルギーを増やす効果(夜の鉱山)の
+ * 分の無色を足す。
+ */
+function calculateAttackCost(
   applying: readonly CollectedContinuousEffect[],
   attack: Attack
 ): PokemonType[] {
@@ -633,7 +599,7 @@ function listUsableAttacks(
 
 /**
  * pokemon のワザの候補(この番にワザを使った後なら 2 回目に使えるワザ listSecondAttacks、まだなら listUsableAttacks)と、
- * 候補ごとに必要なエネルギー(cost。calculateAttackCost と同じ)、pokemon についているエネルギーの 1 個ずつのタイプ
+ * 候補ごとに必要なエネルギー(cost。calculateAttackCost で求める)、pokemon についているエネルギーの 1 個ずつのタイプ
  * (listEnergyUnits)。どれも働いている効果から求めるので、効果を 1 回だけ集めて使い回す。探索は評価のたびにバトル
  * ポケモンの使えるワザを出すため、3 つを別々に呼んで効果を何度も集めない。
  */
@@ -654,7 +620,7 @@ export function listAttackCandidatesWithCosts(
     : listUsableAttacks(state, applying, pokemon);
   return {
     candidates: usables.map((usable) => ({
-      cost: calculateAttackCostFrom(applying, usable.attack),
+      cost: calculateAttackCost(applying, usable.attack),
       usable,
     })),
     units: listEnergyUnitsFrom(all, applying, pokemon),

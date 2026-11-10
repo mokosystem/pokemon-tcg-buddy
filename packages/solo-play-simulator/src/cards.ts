@@ -152,7 +152,7 @@ export function matchesCardFilter(card: Card, filter: CardFilter): boolean {
     createRecordMatches
   );
   // 記録ごとの結果は findOrCreate を使わずに引く。探索でいちばん多く呼ばれる所で、card と filter を閉じ込めた関数を
-  // 呼ぶたびに作ると、所要時間の計測(measure:search-time path-progress 1500)が 53.1 秒から 56 秒台に延びたため
+  // 呼ぶたびに作ると、探索の所要時間の計測(Issue 51、2026-10)が 53.1 秒から 56 秒台に延びたため
   const found = byRecord.get(card.record);
   if (found !== undefined) {
     return found;
@@ -200,28 +200,4 @@ function isExcludedByFilter(card: Card, filter: CardFilter): boolean {
     (filter.excludesPokemonWithRuleBox === true && card.hasRuleBox) ||
     (filter.excludesNames?.includes(card.name) ?? false)
   );
-}
-
-/** 同じ記録のカードの枚数と、そのうち最初に数えた 1 枚(代表)。 */
-export interface CardsOfRecord {
-  readonly card: Card;
-  readonly count: number;
-}
-
-/** zones のカードを並びの順に数えた、記録ごとの枚数と代表の 1 枚(記録は最初に出てきた順に並ぶ)。 */
-export function countCardsByRecord(
-  ...zones: readonly (readonly Card[])[]
-): Map<CardRecord, CardsOfRecord> {
-  const counts = new Map<CardRecord, { card: Card; count: number }>();
-  for (const zone of zones) {
-    for (const card of zone) {
-      const entry = counts.get(card.record);
-      if (entry === undefined) {
-        counts.set(card.record, { card, count: 1 });
-      } else {
-        entry.count += 1;
-      }
-    }
-  }
-  return counts;
 }

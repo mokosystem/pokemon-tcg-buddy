@@ -1,6 +1,6 @@
 /**
- * 探索によるプレイングの判断基準(Issue 27 の順 7)。宣言した狙いの成立確率の合計を最大にする手を、状態を複製して
- * 試しながら 1 手ずつ選ぶ。形の理由は docs/solo-play-simulator-design.md「宣言と探索(Issue 27 の順 7)」の「探索の形」にある。
+ * 探索によるプレイングの判断基準。評価(Evaluator)のいちばん高い手を、状態を複製して試しながら 1 手ずつ選ぶ。
+ * 評価と、相手の番とサイドの判定を含む進め方は Issue 70 で決める。
  *
  * - 番の中は、今できる行動の一覧の行動ごとに状態を複製して行い、評価の高い行動を実際に行う。「番を終える」が
  *   いちばん高ければ終える
@@ -17,10 +17,6 @@ import {
 } from "./card-effects.ts";
 import type { Card } from "./cards.ts";
 import type { UsableAttack } from "./continuous-effects.ts";
-import {
-  isMainAttackCandidate,
-  type ResolvedDeclaration,
-} from "./declaration.ts";
 import {
   type CardChoiceRequest,
   type EffectChoices,
@@ -52,14 +48,11 @@ export interface SearchStatistics {
 }
 
 export interface EvaluationInput {
-  /**
-   * 判定がまだ済んでいない最初の番。番の中の行動を比べるときはその番、ワザを比べるときは次の番(その番の狙いは
-   * ワザの前に判定済み)、対戦の準備では 1。これより前の締め切りは評価に含めない。
-   */
+  /** 評価する状態の番。番の中の行動を比べるときはその番、ワザを比べるときは次の番、対戦の準備では 1。 */
   readonly fromTurn: number;
-  /** 評価が乱数を使うとき(次の番を試す評価)の種。同じ場面で比べる候補には同じ種を渡す。 */
+  /** 評価が乱数を使うときの種。同じ場面で比べる候補には同じ種を渡す。 */
   readonly seed: number;
-  /** 評価する状態が番のどこにあるか。次の番を試す評価が、試しをどこから始めるかを決めるのに使う。 */
+  /** 評価する状態が番のどこにあるか。 */
   readonly stage: TurnStage;
   /** 評価する状態。評価は状態を変えない(試すときは複製する)。 */
   readonly state: GameState;
@@ -70,12 +63,12 @@ export interface EvaluationInput {
 /**
  * 評価する状態が番のどこにあるか。
  * - actionsRemain: fromTurn の番の中で、この後も行動を続けられる(番の中の行動を試した後)
- * - actionsDone: fromTurn の番の行動を終えた(「番を終える」を試すとき)。狙いの判定とワザはまだ
+ * - actionsDone: fromTurn の番の行動を終えた(「番を終える」を試すとき)。ワザはまだ
  * - beforeDraw: fromTurn の番の最初の 1 枚を引く前(ワザを試して次の番に進めた後、対戦の準備)
  */
 export type TurnStage = "actionsRemain" | "actionsDone" | "beforeDraw";
 
-/** 状態の良さ。大きいほど良い。宣言の狙い(3 段 × 締め切り)の成立確率の合計の見積もりにする。 */
+/** 状態の良さ。大きいほど良い状態の点数。何を点数にするかは Issue 70 で決める。 */
 export type Evaluator = (input: EvaluationInput) => number;
 
 export interface SearchOptions {
@@ -84,9 +77,7 @@ export interface SearchOptions {
    * 行動(ベンチに出す、進化させる、エネルギーをつける)は 1 回だけ試す。
    */
   readonly samplesForUncertainOutcome: number;
-  /**
-   * 効果の中の選択を、候補を再生して試して選ぶか。偽なら候補の先頭から選ぶ(次の番を試す評価が、試しの中で使う軽い探索)。
-   */
+  /** 効果の中の選択を、候補を再生して試して選ぶか。偽なら候補の先頭から選ぶ。 */
   readonly searchesEffectChoices: boolean;
   /** 探索が使う乱数の種。実際の対戦の乱数とは別に持ち、探索が試した回数で実際の対戦の山札の順が変わらないようにする。 */
   readonly seed: number;
@@ -106,16 +97,13 @@ const EVALUATION_TOLERANCE = 1e-9;
 type ReplayableAction = (context: EffectContext) => void;
 
 /**
- * 行動を試した後、評価の前に複製に行うこと。ワザは番の狙いを判定した後に使うため、ワザを試した複製は番の終わりの
- * 効果を起こして次の番に進め(引く 1 枚は引かない)、次の番の側から評価する。
+ * 行動を試した後、評価の前に複製に行うこと。ワザは番の最後に使うため、ワザを試した複製は番の終わりの効果を起こして
+ * 次の番に進め(引く 1 枚は引かない)、次の番の側から評価する。
  */
 type TrialEnding = (state: GameState) => void;
 
-/**
- * ワザを試した複製の番の終わりの効果を起こし、次の番に進める。道の揃い具合を見る評価が、主軸の系統のほかのワザを
- * 試した後の場を数えるときも(goal-prospects.ts)、探索と同じ進め方にするためこれを使う。
- */
-export function endTurnForEvaluation(state: GameState): void {
+/** ワザを試した複製の番の終わりの効果を起こし、次の番に進める。 */
+function endTurnForEvaluation(state: GameState): void {
   resolveEndOfTurnTriggers({ choices: firstCandidateChoices, state });
   state.advanceToNextTurn();
 }
@@ -637,18 +625,6 @@ function listSetupOptions(basics: readonly Card[]): SetupOption[] {
   });
 }
 
-function isMainAttackOf(
-  declaration: ResolvedDeclaration,
-  context: EffectContext,
-  index: number
-): boolean {
-  const candidate = listUsableAttacksOfActive(context)[index];
-  return (
-    candidate !== undefined &&
-    isMainAttackCandidate(candidate, declaration.mainAttacks)
-  );
-}
-
 function useAttackAt(index: number): ReplayableAction {
   return (context) => {
     const candidate = listUsableAttacksOfActive(context)[index];
@@ -660,11 +636,10 @@ function useAttackAt(index: number): ReplayableAction {
 }
 
 /**
- * 宣言と評価から、探索でプレイングの判断基準を作る。evaluator は search-evaluators.ts の 3 つのどれか。
- * 1 つの判断基準を試行をまたいで使ってよい(試行ごとの記憶は対戦の状態ごとに持つ)。
+ * 評価から、探索でプレイングの判断基準を作る。1 つの判断基準を試行をまたいで使ってよい(試行ごとの記憶は対戦の
+ * 状態ごとに持つ)。
  */
 export function createSearchPolicy(
-  declaration: ResolvedDeclaration,
   evaluator: Evaluator,
   options: SearchOptions
 ): SearchPolicy {
@@ -674,8 +649,6 @@ export function createSearchPolicy(
     Array.from({ length: options.samplesForUncertainOutcome }, () =>
       searchRandom.nextSeed()
     );
-  const hasOpenDeadline = (fromTurn: number): boolean =>
-    declaration.deadlines.some((deadline) => deadline >= fromTurn);
   const benchChosenAtSetup = new WeakMap<GameState, readonly Card[]>();
   /** runGame がワザを使うときの効果の中の選択。chooseAttack で用意する。 */
   let choicesForAttack: EffectChoices | undefined;
@@ -707,7 +680,7 @@ export function createSearchPolicy(
   ): PlayerAction | undefined => {
     const { state } = context;
     const actions = listAvailableActions(context);
-    if (actions.length === 1 || !hasOpenDeadline(state.turn)) {
+    if (actions.length === 1) {
       return;
     }
     const seeds = drawSeeds();
@@ -765,40 +738,31 @@ export function createSearchPolicy(
       const { state } = context;
       const candidates = listUsableAttacksOfActive(context);
       const fromTurn = state.turn + 1;
-      // 評価が同じなら主軸のワザ、ほかのワザ、使わないの順に選ぶ
-      const order = candidates
-        .map((_, index) => index)
-        .sort(
-          (left, right) =>
-            Number(isMainAttackOf(declaration, context, right)) -
-            Number(isMainAttackOf(declaration, context, left))
-        );
-      let best: number | undefined = order[0];
-      if (hasOpenDeadline(fromTurn)) {
-        const seeds = drawSeeds();
-        const [firstSeed = 0] = seeds;
-        let bestValue = Number.NEGATIVE_INFINITY;
-        for (const index of [...order, undefined]) {
-          const value =
-            index === undefined
-              ? tools.evaluateByTrying(
-                  state,
-                  () => undefined,
-                  fromTurn,
-                  [firstSeed],
-                  endTurnForEvaluation
-                )
-              : tools.evaluateByTrying(
-                  state,
-                  useAttackAt(index),
-                  fromTurn,
-                  seeds,
-                  endTurnForEvaluation
-                );
-          if (value > bestValue + EVALUATION_TOLERANCE) {
-            best = index;
-            bestValue = value;
-          }
+      // 候補は使えるワザの一覧の順に試し、評価が同じなら先に並んだ候補(最後に「使わない」)を選ぶ
+      const seeds = drawSeeds();
+      const [firstSeed = 0] = seeds;
+      let best: number | undefined;
+      let bestValue = Number.NEGATIVE_INFINITY;
+      for (const index of [...candidates.keys(), undefined]) {
+        const value =
+          index === undefined
+            ? tools.evaluateByTrying(
+                state,
+                () => undefined,
+                fromTurn,
+                [firstSeed],
+                endTurnForEvaluation
+              )
+            : tools.evaluateByTrying(
+                state,
+                useAttackAt(index),
+                fromTurn,
+                seeds,
+                endTurnForEvaluation
+              );
+        if (value > bestValue + EVALUATION_TOLERANCE) {
+          best = index;
+          bestValue = value;
         }
       }
       if (best === undefined) {

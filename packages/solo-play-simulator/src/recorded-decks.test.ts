@@ -84,7 +84,6 @@ describe("記録をそろえたデッキ", () => {
           for (let game = 0; game < 100; game += 1) {
             const result = runGame({
               cards,
-              goals: [],
               maxTurn: 3,
               policy,
               random,
