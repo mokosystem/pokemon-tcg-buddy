@@ -32,7 +32,7 @@ import {
   toEnergyUnits,
 } from "./continuous-effects.ts";
 import type { EffectContext } from "./effect-choices.ts";
-import type { GameState, PokemonInPlay } from "./state.ts";
+import { type GameState, IllegalMove, type PokemonInPlay } from "./state.ts";
 
 export type PlayerAction =
   | { readonly kind: "playTrainer"; readonly card: Card }
@@ -204,10 +204,13 @@ function listRetreatActions(state: GameState): PlayerAction[] {
 
 /**
  * 今できる行動の一覧。最後は必ず「番を終える」(endTurn)。手札の同じカードは 1 枚にまとめ、場のポケモンごと・
- * ベンチのポケモンごとに分ける。
+ * ベンチのポケモンごとに分ける。勝敗が決まった後は、その時点で対戦が終わるので「番を終える」だけを返す。
  */
 export function listAvailableActions(context: EffectContext): PlayerAction[] {
   const { state } = context;
+  if (state.decision !== undefined) {
+    return [{ kind: "endTurn" }];
+  }
   const inPlay = state.listPokemonInPlay();
   const actions = listDistinctCards(state.hand).flatMap((card) =>
     listHandCardActions(context, card, inPlay)
@@ -299,10 +302,14 @@ function runAction<Kind extends PlayerAction["kind"]>(
   run(context, action);
 }
 
+/** 行動を行う。勝敗が決まった後に「番を終える」以外を渡されたら IllegalMove を投げる。 */
 export function performAction(
   context: EffectContext,
   action: PlayerAction
 ): void {
+  if (context.state.decision !== undefined && action.kind !== "endTurn") {
+    throw new IllegalMove("勝敗が決まった後は番を終えるしか選べない");
+  }
   runAction(context, action);
 }
 

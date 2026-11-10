@@ -6,6 +6,9 @@
  * (docs/solo-play-simulator-design.md「翻訳が無いカードと計算の前提」)。
  */
 
+import { calculateAttackDamage } from "./attack-damage.ts";
+import { addDamageToOpponentField } from "./battle-style-solo-play-rules.ts";
+import { trimBenchToLimit } from "./bench-limit.ts";
 import { CardCategory } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { areConditionsMet, type EffectSource } from "./conditions.ts";
@@ -28,8 +31,6 @@ import {
   resolveAbilityTriggers,
   resolveAttachedFromHandTriggers,
   runEffect,
-  trimBenchToLimit,
-  wouldLeaveFieldEmpty,
 } from "./effect-operations.ts";
 import {
   canPayCost,
@@ -409,15 +410,18 @@ export function retreatActive(
 /**
  * バトルポケモンが今使えるワザ(エネルギーが足り、先攻の最初の番ではなく、効果の使える条件を満たすもの)。
  * この番にワザを 1 回使ったあとは、1 回目を使ったポケモンがバトル場に残っていて、2 回目を使える効果(「おまつりおんど」)が
- * あるときだけ、2 回目に使えるワザを返す。
- * 効果で自分の場のポケモンがいなくなるワザ(場がニャースex だけのときの「しっぽをまく」)は含めない(wouldLeaveFieldEmpty)。
+ * あるときだけ、2 回目に使えるワザを返す。勝敗が決まった後は空を返す。
  */
 export function listUsableAttacksOfActive(
   context: EffectContext
 ): UsableAttack[] {
   const { state } = context;
   const { active } = state;
-  if (active === undefined || !state.canAttack()) {
+  if (
+    active === undefined ||
+    !state.canAttack() ||
+    state.decision !== undefined
+  ) {
     return [];
   }
   if (
@@ -433,8 +437,7 @@ export function listUsableAttacksOfActive(
       ({ cost, usable: { attack } }) =>
         canPayCost(cost, units) &&
         (attack.effect === undefined ||
-          (areConditionsMet(state, attack.effect.useConditions, source) &&
-            !wouldLeaveFieldEmpty(state, attack.effect)))
+          areConditionsMet(state, attack.effect.useConditions, source))
     )
     .map(({ usable }) => usable);
 }
@@ -453,8 +456,10 @@ function isSameUsableAttack(left: UsableAttack, right: UsableAttack): boolean {
 }
 
 /**
- * バトルポケモンでワザを使い、ダメージ以外の効果の翻訳を実行する。ダメージは相手がいないため与えない。
- * 使うワザは、使えるワザの一覧(listUsableAttacksOfActive)の候補の 1 つで受け取る。
+ * バトルポケモンでワザを使う。記録の規則で求めたダメージを相手の場のダメージに足してから、効果の翻訳を実行する。
+ * ダメージを効果より先に足すのは、カードテキストがダメージ、効果の順に書かれ、効果がダメージの数え方を変える記録が
+ * 無いため(docs/solo-play-simulator-design.md「対戦風の一人回し」)。使うワザは、使えるワザの一覧
+ * (listUsableAttacksOfActive)の候補の 1 つで受け取る。
  */
 export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   const { state } = context;
@@ -479,6 +484,10 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   }
   if (usable.discardsDeckTopFirst) {
     state.discardFromDeckTop(1);
+  }
+  const damage = calculateAttackDamage(state, active, usable.attack);
+  if (damage !== undefined) {
+    addDamageToOpponentField(state, damage, attackName);
   }
   const { effect } = usable.attack;
   if (effect !== undefined) {

@@ -1,6 +1,7 @@
 /**
  * テストで使う小さなカードの記録と、効果の中の選択。実在のカードではなく、たね → 1進化 → 2進化の
- * 1 本の線とトレーナーズ 3 種、基本エネルギー 1 種だけを持つ。カード ID は実在のカードと重ならない 9 から始まる番号。
+ * 1 本の線とトレーナーズ 3 種、基本エネルギー 1 種、対戦風の一人回しのテストに使うたねポケモン 2 種だけを持つ。
+ * カード ID は実在のカードと重ならない 9 から始まる番号。
  */
 
 import {
@@ -28,6 +29,7 @@ type SamplePokemonAttributes = Pick<
   PokemonRecord,
   "hasRuleBox" | "hp" | "retreatCost"
 > &
+  Partial<Pick<PokemonRecord, "attacks" | "exRule">> &
   (
     | { stage: typeof EvolutionStage.Basic }
     | { evolvesFrom: string; stage: typeof EvolutionStage.Stage1 }
@@ -45,7 +47,6 @@ function definePokemonRecord(
 ): CardRecord {
   return {
     ...commonEntries,
-    ...attributes,
     abilities: [],
     attacks: [
       {
@@ -54,6 +55,7 @@ function definePokemonRecord(
         name: "ワザ",
       },
     ],
+    ...attributes,
     cardIds: [cardId],
     category: CardCategory.Pokemon,
     isTerastal: false,
@@ -114,6 +116,25 @@ const SAMPLE_RECORDS: readonly CardRecord[] = [
   defineTrainerRecord("900005", "サポート", CardCategory.Supporter),
   defineTrainerRecord("900006", "グッズ", CardCategory.Goods),
   defineTrainerRecord("900007", "スタジアム", CardCategory.Stadium),
+  // 相手の攻撃を何度受けてもきぜつしない(4 回目以降の 300 を 66 回受けても HP に届かない)たね。ワザは必要な
+  // エネルギーが無く 300 ダメージで、使えば 1 回で相手の場のダメージからサイドを 3 枚取れる
+  definePokemonRecord("900008", "HPの高いたね", {
+    attacks: [
+      { cost: [], damage: { amount: 300, kind: "fixed" }, name: "大きなワザ" },
+    ],
+    hasRuleBox: false,
+    hp: 20_000,
+    retreatCost: 1,
+    stage: EvolutionStage.Basic,
+  }),
+  // きぜつすると相手がサイドを 3 枚取るたね(HP 60 で、相手の 2 回目の番の 100 できぜつする)
+  definePokemonRecord("900009", "メガシンカexのたね", {
+    exRule: "megaEvolutionEx",
+    hasRuleBox: true,
+    hp: 60,
+    retreatCost: 1,
+    stage: EvolutionStage.Basic,
+  }),
 ];
 
 export const SAMPLE_RECORD_TABLE: CardRecordTable = new Map(
@@ -135,6 +156,8 @@ export const ENERGY = buildSampleCard("900004");
 export const SUPPORTER = buildSampleCard("900005");
 export const GOODS = buildSampleCard("900006");
 export const STADIUM = buildSampleCard("900007");
+export const STURDY_BASIC = buildSampleCard("900008");
+export const FRAGILE_MEGA_BASIC = buildSampleCard("900009");
 
 /** 山札を切らないテスト用。乱数の値は使われない。 */
 export const neverShuffled: RandomSource = { nextFloat: () => 0 };

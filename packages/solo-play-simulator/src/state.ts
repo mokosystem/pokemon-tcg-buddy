@@ -1,10 +1,10 @@
 /**
  * 対戦の自分側の状態と基本操作。
  *
- * 相手の行動は含めない。相手がいないため、サイドは 6 枚のまま減らず、
- * 自分のポケモンはきぜつしない。ルールの出典は docs/pokemon-tcg/basic-rules.md。
- * カードの効果(何を探し、何を捨てるか)はここでは決めず、card-effects.ts が記録の翻訳に従って
- * この基本操作を呼ぶ。
+ * 相手は置かず、対戦風の一人回しで要る相手の側の値(相手のサイドの残り枚数、相手の場のダメージ、相手の番の回数)だけを
+ * 数で持つ。ルールの出典は docs/pokemon-tcg/basic-rules.md と docs/solo-play-simulator-design.md「対戦風の一人回し」。
+ * 相手の攻撃、きぜつ、サイド、勝敗の判定は battle-style-solo-play-rules.ts が行う。カードの効果(何を探し、何を捨てるか)は
+ * ここでは決めず、card-effects.ts が記録の翻訳に従ってこの基本操作を呼ぶ。
  */
 
 import {
@@ -186,6 +186,30 @@ export function canPayCost(
   return listUnpaidCost(cost, units).length === 0;
 }
 
+/** 誰の番か。対戦風の一人回しでは、相手の番に起きるのは相手の攻撃だけ(docs/solo-play-simulator-design.md「対戦風の一人回し」)。 */
+export type TurnOwner = "self" | "opponent";
+
+/** 誰の、何回目の番か。ordinal は 1 から数える。 */
+export interface BattleTurn {
+  readonly ordinal: number;
+  readonly owner: TurnOwner;
+}
+
+/**
+ * 勝敗が決まった理由。docs/pokemon-tcg/basic-rules.md「きぜつと勝敗」の 1〜3 のどれか。
+ * 自分の勝ちは ownPrizesTaken だけで、残りは自分の負け(対戦風の一人回しに引き分けは無い)。
+ */
+export type BattleStyleSoloPlayDecisionReason =
+  | "ownPrizesTaken"
+  | "opponentPrizesTaken"
+  | "noOwnPokemonInPlay"
+  | "cannotDrawAtTurnStart";
+
+export interface BattleStyleSoloPlayDecision {
+  readonly decidedTurn: BattleTurn;
+  readonly reason: BattleStyleSoloPlayDecisionReason;
+}
+
 /** 基本ルールに反する操作が要求されたときに投げる。呼び出し側の書き誤りを示す。 */
 export class IllegalMove extends Error {
   constructor(message: string) {
@@ -217,6 +241,8 @@ export class PokemonInPlay {
   readonly energies: Card[] = [];
   readonly underneath: Card[] = [];
   tool: Card | undefined = undefined;
+  /** 受けたダメージの合計(ダメカン 1 個 = 10)。進化しても同じ PokemonInPlay のまま残る(docs/pokemon-tcg/basic-rules.md 82 行)。 */
+  damage = 0;
   /** この番にこのポケモンが使った特性の名前。「番に 1 回」はポケモンごとに数える。 */
   readonly abilitiesUsedThisTurn = new Set<string>();
 
@@ -232,6 +258,7 @@ export class PokemonInPlay {
     copied.energies.push(...this.energies);
     copied.underneath.push(...this.underneath);
     copied.tool = this.tool;
+    copied.damage = this.damage;
     for (const abilityName of this.abilitiesUsedThisTurn) {
       copied.abilitiesUsedThisTurn.add(abilityName);
     }
@@ -300,6 +327,18 @@ export class GameState {
    */
   firstAttackerThisTurn: PokemonInPlay | undefined = undefined;
   readonly events: string[] = [];
+  /** 相手のサイドの残り枚数。中身は持たない(docs/solo-play-simulator-design.md「対戦風の一人回し」)。 */
+  opponentRemainingPrizeCount = PRIZE_COUNT;
+  /** 相手の場のダメージ。自分の番の終わりにサイドを取るかの判定に使う。 */
+  opponentFieldDamage = 0;
+  /** 相手の番を何回行ったか。 */
+  opponentTurnCount = 0;
+  /** 自分のポケモンがきぜつした最後の相手の番の回数。自分の番のきぜつ(自分のカードの効果)は数えない。 */
+  latestOpponentTurnWithOwnKnockOut: number | undefined = undefined;
+  /** いま誰の番か。勝敗が決まった番を記録するのに使う。 */
+  turnOwner: TurnOwner;
+  /** 勝敗。決まったら以後は変えない。 */
+  decision: BattleStyleSoloPlayDecision | undefined = undefined;
   /**
    * 見えていないカード(山札とサイド)の中身や並び、コインの結果で決まることが起きた回数。山札から引く・探す・上から見る、
    * コインを投げるたびに増える。探索が、行動の結果が混ぜ直しの仕方で変わりうるか(数回試して平均をとるか)を見分けるのに使う。
@@ -320,12 +359,18 @@ export class GameState {
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
     this.hasUsedSecondAttack = false;
+    this.turnOwner = "self";
   }
 
   // ---- 記録 ----
 
+  /** 履歴に 1 行足す。自分の番は「[番]」、相手の番は「[相手 回数]」を前に付ける。 */
   record(event: string): void {
-    this.events.push(`[${this.turn}] ${event}`);
+    const label =
+      this.turnOwner === "opponent"
+        ? `相手 ${this.opponentTurnCount}`
+        : String(this.turn);
+    this.events.push(`[${label}] ${event}`);
   }
 
   noteUncertainOutcome(): void {
@@ -375,6 +420,13 @@ export class GameState {
         ? undefined
         : copies.get(this.firstAttackerThisTurn);
     copied.uncertainOutcomeCount = this.uncertainOutcomeCount;
+    copied.opponentRemainingPrizeCount = this.opponentRemainingPrizeCount;
+    copied.opponentFieldDamage = this.opponentFieldDamage;
+    copied.opponentTurnCount = this.opponentTurnCount;
+    copied.latestOpponentTurnWithOwnKnockOut =
+      this.latestOpponentTurnWithOwnKnockOut;
+    copied.turnOwner = this.turnOwner;
+    copied.decision = this.decision;
     return copied;
   }
 
@@ -906,6 +958,27 @@ export class GameState {
     this.deck.push(target.card);
     this.record(`${target.name} を山札の ${card.name} と入れ替える`);
     target.card = card;
+  }
+
+  /** きぜつした場のポケモンを、ついているカード(進化前、エネルギー、どうぐ)ごとトラッシュする(docs/pokemon-tcg/basic-rules.md 90 行)。 */
+  discardKnockedOutPokemon(target: PokemonInPlay): void {
+    this.removeFromPlay(target);
+    this.discard.push(...target.listCardsIncludingAttached());
+    this.record(`${target.name} がきぜつ`);
+  }
+
+  /**
+   * サイドから 1 枚を乱数で選んで手札に加える。サイドはウラ向きで中身が分からないため、どれを取るかを選ばせない
+   * (docs/solo-play-simulator-design.md「対戦風の一人回し」の相手の場のダメージとサイド)。
+   */
+  takePrizeIntoHand(): void {
+    this.noteUncertainOutcome();
+    const index = Math.floor(this.random.nextFloat() * this.prizes.length);
+    const [prize] = this.prizes.splice(index, 1);
+    if (prize !== undefined) {
+      this.hand.push(prize);
+      this.record(`サイドを手札に加える: ${prize.name}`);
+    }
   }
 
   /** ベンチのポケモンを、ついているカードごとトラッシュする(ベンチの上限を超えたとき。きぜつではない)。 */

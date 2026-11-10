@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./action-list-playing-policies": "./src/action-list-playing-policies.ts",
     "./attack-damage": "./src/attack-damage.ts",
     "./card-effects": "./src/card-effects.ts",
     "./card-premises": "./src/card-premises.ts",
@@ -16,6 +17,7 @@
     "./player-actions": "./src/player-actions.ts",
     "./random": "./src/random.ts",
     "./search-policy": "./src/search-policy.ts",
+    "./simulate": "./src/simulate.ts",
     "./state": "./src/state.ts"
   },
   "scripts": {

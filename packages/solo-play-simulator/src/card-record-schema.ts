@@ -884,6 +884,14 @@ export type ExcludedEffect = InferOutput<typeof ExcludedEffectSchema>;
 
 // ---- 記録 ----
 
+/**
+ * 翻訳の状態。
+ * - translated: 効果の翻訳がある(エネルギーは供給そのものが翻訳にあたる)
+ * - notTranslatable: 効果を記法で書けない
+ * - irrelevantToCalculation: 効果の翻訳が要らない(ダメージだけのワザしか持たないポケモン、効果を持たないカード)。
+ *   ワザのダメージは計算する
+ * - notYetTranslated: まだ書いていない
+ */
 export const TranslationStatusSchema = picklist([
   "translated",
   "notTranslatable",

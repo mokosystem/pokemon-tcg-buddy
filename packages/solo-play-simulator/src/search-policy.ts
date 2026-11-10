@@ -329,6 +329,18 @@ function answerOptional(answer: ChoiceAnswer): boolean {
   return answer.applies;
 }
 
+/** きぜつした後にバトル場に出すベンチポケモンの問い合わせを、効果の中の選択と同じ形の求めにする。 */
+function promoteRequestOf(
+  candidates: readonly PokemonInPlay[]
+): PokemonChoiceRequest {
+  return {
+    candidates,
+    maxCount: 1,
+    minCount: 1,
+    purpose: "きぜつした後にバトル場に出すベンチポケモン",
+  };
+}
+
 /**
  * 決めた答えを順に返す選択。prefix を返し終えたら次の 1 つに forced を返し、その直前に onForced を呼ぶ。
  * それより後の選択は候補の先頭から選ぶ。効果の中の選択の候補を 1 つ試すときに使う。
@@ -381,6 +393,22 @@ class ScriptedChoices implements EffectChoices {
     return answer === undefined
       ? firstCandidateChoices.choosePokemon(state, request)
       : pickByIndices(request.candidates, answer, "pokemon");
+  }
+
+  choosePokemonToPromoteAfterKnockOut(
+    state: GameState,
+    candidates: readonly PokemonInPlay[]
+  ): PokemonInPlay {
+    const request = promoteRequestOf(candidates);
+    const answer = this.takeAnswer(state, { kind: "pokemon", request });
+    const [chosen] =
+      answer === undefined
+        ? firstCandidateChoices.choosePokemon(state, request)
+        : pickByIndices(candidates, answer, "pokemon");
+    if (chosen === undefined) {
+      throw new Error("きぜつした後にバトル場に出すベンチポケモンの候補が無い");
+    }
+    return chosen;
   }
 
   choosesToApplyOptionalEffect(state: GameState, purpose: string): boolean {
@@ -582,6 +610,24 @@ class ChoiceSearch implements EffectChoices {
     );
   }
 
+  choosePokemonToPromoteAfterKnockOut(
+    state: GameState,
+    candidates: readonly PokemonInPlay[]
+  ): PokemonInPlay {
+    const [chosen] = pickByIndices(
+      candidates,
+      this.choose(state, {
+        kind: "pokemon",
+        request: promoteRequestOf(candidates),
+      }),
+      "pokemon"
+    );
+    if (chosen === undefined) {
+      throw new Error("きぜつした後にバトル場に出すベンチポケモンの候補が無い");
+    }
+    return chosen;
+  }
+
   choosesToApplyOptionalEffect(state: GameState): boolean {
     return answerOptional(this.choose(state, { kind: "optional" }));
   }
@@ -650,7 +696,7 @@ export function createSearchPolicy(
       searchRandom.nextSeed()
     );
   const benchChosenAtSetup = new WeakMap<GameState, readonly Card[]>();
-  /** runGame がワザを使うときの効果の中の選択。chooseAttack で用意する。 */
+  /** runBattleStyleSoloPlayGame がワザを使うときの効果の中の選択。chooseAttack で用意する。 */
   let choicesForAttack: EffectChoices | undefined;
 
   /** 実際の状態で行動を行う。効果の中の選択は、行動の前の状態から再生して試して選ぶ。 */
@@ -789,6 +835,13 @@ export function createSearchPolicy(
       }
       return choicesForAttack.choosePokemon(state, request);
     },
+    // 自分の番のワザの効果できぜつしたら、ワザのために用意した選択に渡す。相手の番(相手の攻撃)できぜつしたときは
+    // 候補の先頭を出す。相手の番を試す探索は Issue 70 で作るため
+    choosePokemonToPromoteAfterKnockOut: (state, candidates) =>
+      (state.turnOwner === "self" && choicesForAttack !== undefined
+        ? choicesForAttack
+        : firstCandidateChoices
+      ).choosePokemonToPromoteAfterKnockOut(state, candidates),
     choosesToApplyOptionalEffect: (state, purpose) => {
       if (choicesForAttack === undefined) {
         throw new Error("探索が用意していない行動で、効果の中の選択を問われた");
