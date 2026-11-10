@@ -22,6 +22,12 @@ const DECISION_REASONS = [
   "cannotDrawAtTurnStart",
 ];
 
+/** Issue 69 で対戦風の一人回しのルールに照らして記録を見直した 2 デッキ(シロナのガブリアスex の今のデッキと、ドラパルトex)。 */
+const BATTLE_STYLE_REVIEWED_DECK_CODES = [
+  "RS3MMy-FuGPRu-MypM2X",
+  "9gngnQ-zAMw9G-96H9nn",
+];
+
 describe("記録済みのデッキ", () => {
   for (const deck of RECORDED_DECKS) {
     test(`${deck.name}: 60 枚すべてをカードの記録から組み立てられる`, () => {
@@ -51,4 +57,34 @@ describe("記録済みのデッキ", () => {
       });
     }
   }
+});
+
+describe("記録を見直した 2 デッキ", () => {
+  test("カード ID 047388 と 047392 からシロナのガブリアスex の記録を、048468 からふしぎなアメの記録を引ける", () => {
+    expect(cardRecordTable.get("047388")?.name).toBe("シロナのガブリアスex");
+    expect(cardRecordTable.get("047392")?.name).toBe("シロナのガブリアスex");
+    expect(cardRecordTable.get("048468")?.name).toBe("ふしぎなアメ");
+  });
+
+  test("2 デッキのカード ID から引ける記録にだけ、対戦風の一人回しのルールで見直した日が入っている", () => {
+    const reviewedRecords = new Set(
+      RECORDED_DECKS.filter((deck) =>
+        BATTLE_STYLE_REVIEWED_DECK_CODES.includes(deck.deckCode)
+      ).flatMap((deck) =>
+        deck.decklist.map((entry) => cardRecordTable.get(entry.cardId))
+      )
+    );
+    const records = [...new Set(cardRecordTable.values())];
+    const namesWithReviewedDate = (expected: boolean) =>
+      records
+        .filter((record) => reviewedRecords.has(record) === expected)
+        .filter(
+          (record) =>
+            (record.battleStyleSoloPlayReviewedOn !== undefined) !== expected
+        )
+        .map((record) => record.name);
+    expect(reviewedRecords.size).toBe(44);
+    expect(namesWithReviewedDate(true)).toEqual([]);
+    expect(namesWithReviewedDate(false)).toEqual([]);
+  });
 });
