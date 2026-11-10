@@ -358,7 +358,7 @@ export function sumAttackDamageIncrease(
 
 /**
  * このポケモンの最大 HP。記録の HP に、このポケモンに働く最大 HP を増やす効果(シロナのパワーウエイト)の量を足す。
- * どうぐの効果を無くすスタジアム(ジャミングタワー)が出ていれば、どうぐの効果は集めた中に入らず増えない。
+ * ポケモンのどうぐの効果を無くすスタジアム(ジャミングタワー)が出ていれば、ポケモンのどうぐの効果は集めた中に入らず増えない。
  */
 export function calculateMaxHp(
   state: GameState,

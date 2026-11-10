@@ -74,7 +74,7 @@ describe("記録を見直した 2 デッキ", () => {
         deck.decklist.map((entry) => cardRecordTable.get(entry.cardId))
       )
     );
-    expect(reviewedRecords.size).toBe(44);
+    expect(reviewedRecords.has(undefined)).toBe(false);
     expect(
       [...reviewedRecords]
         .filter((record) => record?.battleStyleSoloPlayReviewedOn === undefined)

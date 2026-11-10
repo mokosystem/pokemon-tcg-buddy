@@ -116,7 +116,7 @@ export function playTrainerFromHand(context: EffectContext, card: Card): void {
       state.playStadium(card);
       // 前のスタジアム(ゼロの大空洞)がトラッシュされてベンチの上限が下がったら、ベンチをトラッシュする
       trimBenchToLimit(context);
-      // どうぐの効果を無くすスタジアム(ジャミングタワー)で最大 HP が下がり、のっているダメージが最大 HP 以上になった
+      // ポケモンのどうぐの効果を無くすスタジアム(ジャミングタワー)で最大 HP が下がり、のっているダメージが最大 HP 以上になった
       // ポケモンはこの時点できぜつする。ベンチを減らしてから判定する順は、きぜつの後にベンチを減らしてからバトル場に
       // 出す順と同じ
       knockOutOwnPokemonAtOrAboveMaxHp(context);

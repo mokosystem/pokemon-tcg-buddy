@@ -31,7 +31,7 @@
     {
       "interpretation": "つけられるが、最大 HP は増えない",
       "question": "「シロナのポケモン」でないポケモンにつけられるか。つけたとき最大 HP は増えるか",
-      "reflectedIn": "働く条件を attachedPokemonMatches(nameIncludes「シロナの」)にした。どうぐはどのポケモンにもつけられ、条件を満たさなければ最大 HP を増やす効果は働かない(continuous-effects.ts の calculateMaxHp)",
+      "reflectedIn": "働く条件を attachedPokemonMatches(nameIncludes「シロナの」)にした。ポケモンのどうぐはどのポケモンにもつけられ、条件を満たさなければ最大 HP を増やす効果は働かない(continuous-effects.ts の calculateMaxHp)",
       "source": {
         "checkedOn": "2026-11-11",
         "kind": "officialQa",
