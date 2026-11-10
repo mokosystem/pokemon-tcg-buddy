@@ -227,7 +227,7 @@ describe("相手の場のダメージとサイド", () => {
 });
 
 describe("勝敗", () => {
-  test("相手の場の最後のきぜつと同時に相手がサイドを取り切ったときは、理由を相手がサイドを取り切ったにする", () => {
+  test("自分の場の最後の 1 匹がきぜつし、同時に相手がサイドを取り切ったときは、理由を相手がサイドを取り切ったにする", () => {
     const state = buildState({ active: GIBLE });
     state.opponentRemainingPrizeCount = 1;
     playOpponentTurnAt(state, 2);

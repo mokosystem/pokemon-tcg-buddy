@@ -6,6 +6,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import { playOpponentTurn } from "./battle-style-solo-play-rules.ts";
 import { buildRecordedCard, buildState, namesOf } from "./card-test-support.ts";
 import type { Card } from "./cards.ts";
 import { createSeededRandom } from "./random.ts";
@@ -159,5 +160,30 @@ describe("探索は山札の順とサイドの中身を知らない", () => {
     const chosen = policy.chooseAttack({ choices: policy, state });
     expect(chosen?.attack.name).toBe("ファントムダイブ");
     expect(state.random.nextFloat()).toBe(createSeededRandom(1001).nextFloat());
+  });
+});
+
+describe("探索の判断基準の、相手の番の選択", () => {
+  test("相手の番にきぜつしてベンチの上限が下がると、ベンチを減らすポケモンとバトル場に出すポケモンを候補の先頭から選ぶ", () => {
+    // ゼロの大空洞(048706)は場に「テラスタル」のポケモンがいればベンチの上限 8。イーブイex(049282、「テラスタル」、
+    // HP 200)が相手の 3 回目の番(200)できぜつすると、上限が 5 に戻る
+    const gible = buildRecordedCard("049092");
+    const state = buildState({
+      active: buildRecordedCard("049282"),
+      bench: [gible, gible, gible, gible, gible, gible],
+      random: createSeededRandom(1),
+    });
+    state.stadium = buildRecordedCard("048706");
+    if (state.active !== undefined) {
+      state.active.damage = 100;
+    }
+    state.opponentTurnCount = 2;
+    const { policy } = createRecordingPolicy(
+      () => 0,
+      () => false
+    );
+    playOpponentTurn({ choices: policy, state });
+    expect(state.active?.card.name).toBe("シロナのフカマル");
+    expect(state.bench).toHaveLength(4);
   });
 });

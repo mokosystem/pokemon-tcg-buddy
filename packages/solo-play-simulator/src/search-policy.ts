@@ -721,6 +721,21 @@ export function createSearchPolicy(
     });
   };
 
+  /**
+   * 番の中の行動の外で問われた選択に答えるもの。自分の番のワザの効果の選択は、ワザのために用意した選択に渡す。
+   * 相手の番(相手の攻撃によるきぜつと、その後にベンチを減らす選択)は候補の先頭から選ぶ。相手の番を試す探索は
+   * Issue 70 で作るため。
+   */
+  const choicesOutsideTurnActions = (state: GameState): EffectChoices => {
+    if (state.turnOwner === "opponent") {
+      return firstCandidateChoices;
+    }
+    if (choicesForAttack === undefined) {
+      throw new Error("探索が用意していない行動で、効果の中の選択を問われた");
+    }
+    return choicesForAttack;
+  };
+
   const chooseTurnAction = (
     context: EffectContext
   ): PlayerAction | undefined => {
@@ -823,31 +838,20 @@ export function createSearchPolicy(
       return candidates[best];
     },
     chooseBenchAtSetup: (state) => benchChosenAtSetup.get(state) ?? [],
-    chooseCards: (state, request) => {
-      if (choicesForAttack === undefined) {
-        throw new Error("探索が用意していない行動で、効果の中の選択を問われた");
-      }
-      return choicesForAttack.chooseCards(state, request);
-    },
-    choosePokemon: (state, request) => {
-      if (choicesForAttack === undefined) {
-        throw new Error("探索が用意していない行動で、効果の中の選択を問われた");
-      }
-      return choicesForAttack.choosePokemon(state, request);
-    },
-    // 自分の番のワザの効果できぜつしたら、ワザのために用意した選択に渡す。相手の番(相手の攻撃)できぜつしたときは
-    // 候補の先頭を出す。相手の番を試す探索は Issue 70 で作るため
+    chooseCards: (state, request) =>
+      choicesOutsideTurnActions(state).chooseCards(state, request),
+    choosePokemon: (state, request) =>
+      choicesOutsideTurnActions(state).choosePokemon(state, request),
     choosePokemonToPromoteAfterKnockOut: (state, candidates) =>
-      (state.turnOwner === "self" && choicesForAttack !== undefined
-        ? choicesForAttack
-        : firstCandidateChoices
-      ).choosePokemonToPromoteAfterKnockOut(state, candidates),
-    choosesToApplyOptionalEffect: (state, purpose) => {
-      if (choicesForAttack === undefined) {
-        throw new Error("探索が用意していない行動で、効果の中の選択を問われた");
-      }
-      return choicesForAttack.choosesToApplyOptionalEffect(state, purpose);
-    },
+      choicesOutsideTurnActions(state).choosePokemonToPromoteAfterKnockOut(
+        state,
+        candidates
+      ),
+    choosesToApplyOptionalEffect: (state, purpose) =>
+      choicesOutsideTurnActions(state).choosesToApplyOptionalEffect(
+        state,
+        purpose
+      ),
     playTurn: (context) => {
       choicesForAttack = undefined;
       const { state } = context;
