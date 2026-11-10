@@ -336,7 +336,7 @@ export class GameState {
   /** 自分のポケモンがきぜつした最後の相手の番の回数。自分の番のきぜつ(自分のカードの効果)は数えない。 */
   latestOpponentTurnWithOwnKnockOut: number | undefined = undefined;
   /** いま誰の番か。勝敗が決まった番を記録するのに使う。 */
-  turnOwner: TurnOwner;
+  turnOwner: TurnOwner = "self";
   /** 勝敗。決まったら以後は変えない。 */
   decision: BattleStyleSoloPlayDecision | undefined = undefined;
   /**
@@ -359,7 +359,6 @@ export class GameState {
     this.hasUsedStadiumEffect = false;
     this.hasRetreated = false;
     this.hasUsedSecondAttack = false;
-    this.turnOwner = "self";
   }
 
   // ---- 記録 ----

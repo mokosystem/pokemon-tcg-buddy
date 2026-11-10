@@ -35,9 +35,9 @@ const GARCHOMP_EX = buildRecordedCard("047381");
 const MEGA_GARDEVOIR = buildRecordedCard("048464");
 // ラルトス(たね、HP 70)。記録 049714
 const RALTS = buildRecordedCard("049714");
-// 基本闘エネルギー(049464)、シロナのパワーウエイト(ポケモンのどうぐ。049398)
+// 基本闘エネルギー(049464)、ふうせん(にげるエネルギーを減らすポケモンのどうぐ。HP は変えない。050464)
 const FIGHTING_ENERGY = buildRecordedCard("049464");
-const POWER_WEIGHT = buildRecordedCard("049398");
+const BALLOON = buildRecordedCard("050464");
 // ゼロの大空洞(場に「テラスタル」のポケモンがいればベンチの上限 8。記録 048706)、イーブイex(「テラスタル」、HP 200、
 // ポケモンex。記録 049282)
 const ZERO_CAVERN = buildRecordedCard("048706");
@@ -73,13 +73,13 @@ describe("ダメージときぜつ", () => {
     const state = buildState({ active: GIBLE, bench: [RALTS] });
     const gible = activeOf(state);
     gible.energies.push(FIGHTING_ENERGY);
-    gible.tool = POWER_WEIGHT;
+    gible.tool = BALLOON;
     playOpponentTurnAt(state, 2);
     expect(state.listPokemonInPlay()).not.toContain(gible);
     expect(namesOf(state.discard)).toEqual([
       "シロナのフカマル",
       "基本闘エネルギー",
-      "シロナのパワーウエイト",
+      "ふうせん",
     ]);
   });
 
