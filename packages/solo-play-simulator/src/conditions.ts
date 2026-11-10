@@ -92,10 +92,24 @@ const conditionEvaluators: {
       .some((pokemon) =>
         matchesPokemonFilter(state, pokemon, condition.filter)
       ),
+  // 「前の相手の番」は、自分の番から見て最後に行った相手の番。自分の番のきぜつ(カースドボム)は数えない
+  ownPokemonKnockedOutDuringPreviousOpponentTurn: (_, state) =>
+    state.opponentTurnCount > 0 &&
+    state.latestOpponentTurnWithOwnKnockOut === state.opponentTurnCount,
   ownRemainingPrizesAre: (condition, state) =>
     state.prizes.length === condition.count,
-  selfHasEnergyAttached: (_, __, source) =>
-    source.pokemon !== undefined && source.pokemon.energies.length > 0,
+  ownRemainingPrizesExceedOpponents: (_, state) =>
+    state.prizes.length > state.opponentRemainingPrizeCount,
+  // エネルギーの絞り込みは記録の供給(cards.ts の listBaseProvidedTypes)で見て、場にある間ずっと働く効果で変わった供給は
+  // 見ない。continuous-effects.ts がこのファイルの areConditionsMet を使うため、効果を集める判定を呼ぶと読み込みが
+  // 循環する。そのため、たねポケモンのマシマシラについたプリズムエネルギー(すべてのタイプになる)を悪エネルギーとして
+  // 数えない。記録済みのデッキにこの組み合わせは無い
+  selfHasEnergyAttached: (condition, _, source) =>
+    source.pokemon?.energies.some(
+      (energy) =>
+        condition.energyFilter === undefined ||
+        matchesCardFilter(energy, condition.energyFilter)
+    ) ?? false,
   selfHasNoEnergyAttached: (_, __, source) =>
     source.pokemon !== undefined && source.pokemon.energies.length === 0,
   selfIsActive: (_, state, source) =>

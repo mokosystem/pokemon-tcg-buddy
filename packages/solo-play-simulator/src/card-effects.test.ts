@@ -1,31 +1,68 @@
 import { describe, expect, test } from "bun:test";
 import {
+  knockOutOwnPokemon,
+  playOpponentTurn,
+} from "./battle-style-solo-play-rules.ts";
+import {
   canPlayTrainerFromHand,
   canPlayTrainerIfInHand,
+  canUseAbility,
   canUseStadiumEffect,
   listUsableAttacksOfActive,
   playTrainerFromHand,
   useAttack,
   useStadiumEffect,
 } from "./card-effects.ts";
-import { CardCategory, type PokemonRecord } from "./card-record-schema.ts";
 import {
+  CardCategory,
+  type Effect,
+  type PokemonRecord,
+} from "./card-record-schema.ts";
+import {
+  activeOf,
+  benchAt,
   buildContext,
   buildRecordedCard,
   buildState,
   useAttackNamed,
 } from "./card-test-support.ts";
 import { buildCardFromRecord } from "./cards.ts";
-import { BASIC, SAMPLE_RECORD_TABLE } from "./sample-cards.ts";
+import { areConditionsMet } from "./conditions.ts";
+import {
+  BASIC,
+  ENERGY,
+  SAMPLE_RECORD_TABLE,
+  STURDY_BASIC,
+} from "./sample-cards.ts";
 import { IllegalMove } from "./state.ts";
 
-function buildPokemonWithConditionalAttack() {
+/** テスト用のたねポケモン(BASIC)の記録の欄を差し替えたカード。部品ごとのテストで、部品を 1 つだけ持つ記録を作る。 */
+function buildBasicWith(
+  overrides: Pick<Partial<PokemonRecord>, "abilities" | "attacks">
+) {
   const basicRecord = SAMPLE_RECORD_TABLE.get(BASIC.cardId);
   if (basicRecord?.category !== CardCategory.Pokemon) {
     throw new Error("テスト用のたねポケモンの記録が無い");
   }
   const record: PokemonRecord = {
     ...basicRecord,
+    ...overrides,
+    translationStatus: "translated",
+  };
+  return buildCardFromRecord(record, BASIC.cardId);
+}
+
+/** 必要なエネルギーもダメージも無く、効果だけを持つワザ「部品のワザ」を持つたねポケモン。 */
+function buildBasicWithAttackEffect(effect: Effect) {
+  return buildBasicWith({
+    attacks: [
+      { cost: [], damage: { kind: "none" }, effect, name: "部品のワザ" },
+    ],
+  });
+}
+
+function buildPokemonWithConditionalAttack() {
+  return buildBasicWith({
     attacks: [
       {
         cost: [],
@@ -40,9 +77,7 @@ function buildPokemonWithConditionalAttack() {
         name: "条件つきのワザ",
       },
     ],
-    translationStatus: "translated",
-  };
-  return buildCardFromRecord(record, BASIC.cardId);
+  });
 }
 
 describe("ワザ", () => {
@@ -122,5 +157,134 @@ describe("トレーナーズを使えるか", () => {
       deck: [achroma, buildRecordedCard("049463")],
     });
     expect(canPlayTrainerFromHand(buildContext(state), achroma)).toBe(false);
+  });
+});
+
+describe("Issue 69 で足した記法の部品", () => {
+  test("discardEnergyAttachedToSelf の fixed は、決まった数のエネルギーを選んでトラッシュし、all はすべてトラッシュする", () => {
+    for (const [count, remaining] of [
+      [{ kind: "fixed", value: 2 }, 1],
+      [{ kind: "all" }, 0],
+    ] as const) {
+      const state = buildState({
+        active: buildBasicWithAttackEffect({
+          isOptional: false,
+          steps: [{ count, operation: "discardEnergyAttachedToSelf" }],
+          useConditions: [],
+        }),
+      });
+      activeOf(state).energies.push(ENERGY, ENERGY, ENERGY);
+      useAttackNamed(buildContext(state), "部品のワザ");
+      expect(activeOf(state).energies).toHaveLength(remaining);
+      expect(state.discard).toHaveLength(3 - remaining);
+    }
+  });
+
+  test("selfHasEnergyAttached に energyFilter を書くと、条件に合うエネルギーがついているときだけ満たす", () => {
+    const pokemon = buildBasicWith({
+      abilities: [
+        {
+          name: "部品の特性",
+          translation: {
+            effect: {
+              isOptional: false,
+              steps: [
+                { count: { kind: "fixed", value: 1 }, operation: "drawCards" },
+              ],
+              useConditions: [
+                {
+                  condition: "selfHasEnergyAttached",
+                  energyFilter: { providedEnergyTypes: ["dark"] },
+                },
+              ],
+            },
+            kind: "activatedInPlay",
+            usageLimit: "oncePerTurnPerPokemon",
+          },
+        },
+      ],
+    });
+    const state = buildState({ active: pokemon, deck: [BASIC] });
+    const context = buildContext(state);
+    // 基本超エネルギー(テスト用の記録 900004)は超を供給する
+    activeOf(state).energies.push(ENERGY);
+    expect(canUseAbility(context, activeOf(state), "部品の特性")).toBe(false);
+    // 基本悪エネルギー(記録 047909)は悪を供給する
+    activeOf(state).energies.push(buildRecordedCard("047909"));
+    expect(canUseAbility(context, activeOf(state), "部品の特性")).toBe(true);
+  });
+
+  test("ownPokemonKnockedOutDuringPreviousOpponentTurn は、最後に行った相手の番に自分のポケモンがきぜつしたときだけ満たし、自分の番のきぜつは数えない", () => {
+    // 相手の 2 回目の番は 100、3 回目は 200 のダメージ(docs/solo-play-simulator-design.md「対戦風の一人回し」)。
+    // BASIC は HP 60、STURDY_BASIC は HP 20000(テスト用の記録)
+    const state = buildState({
+      active: BASIC,
+      bench: [STURDY_BASIC, BASIC],
+    });
+    const context = buildContext(state);
+    const isMet = () =>
+      areConditionsMet(
+        state,
+        [{ condition: "ownPokemonKnockedOutDuringPreviousOpponentTurn" }],
+        { card: BASIC, pokemon: undefined }
+      );
+    expect(isMet()).toBe(false);
+    state.opponentTurnCount = 1;
+    playOpponentTurn(context);
+    expect(activeOf(state).name).toBe("HPの高いたね");
+    expect(isMet()).toBe(true);
+    playOpponentTurn(context);
+    expect(isMet()).toBe(false);
+    state.turnOwner = "self";
+    knockOutOwnPokemon(context, benchAt(state, 0));
+    expect(state.bench).toEqual([]);
+    expect(isMet()).toBe(false);
+  });
+
+  test("ownRemainingPrizesExceedOpponents は、自分のサイドの残りが相手より多いときだけ満たす", () => {
+    const state = buildState({ active: BASIC });
+    const isMet = () =>
+      areConditionsMet(
+        state,
+        [{ condition: "ownRemainingPrizesExceedOpponents" }],
+        {
+          card: BASIC,
+          pokemon: undefined,
+        }
+      );
+    expect(isMet()).toBe(false);
+    state.opponentRemainingPrizeCount = 5;
+    expect(isMet()).toBe(true);
+    state.prizes.pop();
+    expect(isMet()).toBe(false);
+  });
+
+  test("attachEnergyFromDiscardToOnePokemon に minCount を書くと、それより少ない枚数の選択は IllegalMove になり、minCount を省略すると 0 枚を選べる(ミュウツー 050573 の「ちからをあたえる」と同じ)", () => {
+    const choosesNothing = { chooseCards: () => [] };
+    const buildWithMinCount = (minCount: 1 | undefined) =>
+      buildState({
+        active: buildBasicWithAttackEffect({
+          isOptional: false,
+          steps: [
+            {
+              energyFilter: { categories: [CardCategory.BasicEnergy] },
+              maxCount: 2,
+              ...(minCount === undefined ? {} : { minCount }),
+              operation: "attachEnergyFromDiscardToOnePokemon",
+              targetFilter: {},
+            },
+          ],
+          useConditions: [],
+        }),
+        discard: [ENERGY, ENERGY],
+      });
+    const withMinCount = buildWithMinCount(1);
+    expect(() =>
+      useAttackNamed(buildContext(withMinCount, choosesNothing), "部品のワザ")
+    ).toThrow(IllegalMove);
+    const withoutMinCount = buildWithMinCount(undefined);
+    useAttackNamed(buildContext(withoutMinCount, choosesNothing), "部品のワザ");
+    expect(activeOf(withoutMinCount).energies).toEqual([]);
+    expect(withoutMinCount.discard).toHaveLength(2);
   });
 });

@@ -6,6 +6,7 @@
 
 import { trimBenchToLimit } from "./bench-limit.ts";
 import type { Card } from "./cards.ts";
+import { calculateMaxHp } from "./continuous-effects.ts";
 import {
   chooseOnePokemonToPromote,
   type EffectContext,
@@ -112,15 +113,17 @@ export function knockOutOwnPokemon(
 }
 
 /**
- * のっているダメージが HP 以上になった自分の場のポケモンを、すべてきぜつさせる(docs/pokemon-tcg/basic-rules.md 90 行)。
- * ダメージと HP を比べてきぜつさせる処理はここだけに置く。最大 HP を下げる部品を足したら、その処理の後にもこの関数を
- * 呼ぶ。バトルポケモンを最後にするのは、バトル場に出すベンチポケモンの候補に、同時にきぜつするポケモンを入れないため。
+ * のっているダメージが最大 HP 以上になった自分の場のポケモンを、すべてきぜつさせる(docs/pokemon-tcg/basic-rules.md
+ * 90 行)。最大 HP は HP を増やす効果を足した値(continuous-effects.ts の calculateMaxHp)。ダメージと HP を比べて
+ * きぜつさせる処理はここだけに置き、相手の攻撃の後と、スタジアムを出した後(どうぐの効果が無くなって最大 HP が下がる)に
+ * 呼ぶ。最大 HP を下げる部品をほかに足したら、その処理の後にもこの関数を呼ぶ。バトルポケモンを最後にするのは、バトル場に
+ * 出すベンチポケモンの候補に、同時にきぜつするポケモンを入れないため。
  */
 export function knockOutOwnPokemonAtOrAboveMaxHp(context: EffectContext): void {
   const { state } = context;
   // きぜつさせながら探すと、バトル場に出したポケモンを同じ回で調べ直すことになるため、先に対象をすべて集める
   const isAtOrAboveMaxHp = (pokemon: PokemonInPlay) =>
-    pokemon.damage >= pokemon.card.hp;
+    pokemon.damage >= calculateMaxHp(state, pokemon);
   const targets = [
     ...state.bench.filter(isAtOrAboveMaxHp),
     ...(state.active !== undefined && isAtOrAboveMaxHp(state.active)

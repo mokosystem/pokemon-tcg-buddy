@@ -8,6 +8,10 @@
             "$schema": {
               "const": "../card-record.schema.json"
             },
+            "battleStyleSoloPlayReviewedOn": {
+              "type": "string",
+              "format": "date"
+            },
             "cardIds": {
               "type": "array",
               "items": {
@@ -110,6 +114,10 @@
           "properties": {
             "$schema": {
               "const": "../card-record.schema.json"
+            },
+            "battleStyleSoloPlayReviewedOn": {
+              "type": "string",
+              "format": "date"
             },
             "cardIds": {
               "type": "array",
@@ -218,6 +226,10 @@
           "properties": {
             "$schema": {
               "const": "../card-record.schema.json"
+            },
+            "battleStyleSoloPlayReviewedOn": {
+              "type": "string",
+              "format": "date"
             },
             "cardIds": {
               "type": "array",
@@ -334,6 +346,10 @@
         "$schema": {
           "const": "../card-record.schema.json"
         },
+        "battleStyleSoloPlayReviewedOn": {
+          "type": "string",
+          "format": "date"
+        },
         "cardIds": {
           "type": "array",
           "items": {
@@ -399,6 +415,10 @@
       "properties": {
         "$schema": {
           "const": "../card-record.schema.json"
+        },
+        "battleStyleSoloPlayReviewedOn": {
+          "type": "string",
+          "format": "date"
         },
         "cardIds": {
           "type": "array",
@@ -466,6 +486,10 @@
         "$schema": {
           "const": "../card-record.schema.json"
         },
+        "battleStyleSoloPlayReviewedOn": {
+          "type": "string",
+          "format": "date"
+        },
         "cardIds": {
           "type": "array",
           "items": {
@@ -531,6 +555,10 @@
       "properties": {
         "$schema": {
           "const": "../card-record.schema.json"
+        },
+        "battleStyleSoloPlayReviewedOn": {
+          "type": "string",
+          "format": "date"
         },
         "cardIds": {
           "type": "array",
@@ -598,6 +626,10 @@
         "$schema": {
           "const": "../card-record.schema.json"
         },
+        "battleStyleSoloPlayReviewedOn": {
+          "type": "string",
+          "format": "date"
+        },
         "cardIds": {
           "type": "array",
           "items": {
@@ -660,6 +692,10 @@
       "properties": {
         "$schema": {
           "const": "../card-record.schema.json"
+        },
+        "battleStyleSoloPlayReviewedOn": {
+          "type": "string",
+          "format": "date"
         },
         "cardIds": {
           "type": "array",
@@ -944,6 +980,29 @@
           "properties": {
             "condition": {
               "const": "selfHasEnergyAttached"
+            },
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "ownPokemonKnockedOutDuringPreviousOpponentTurn"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "ownRemainingPrizesExceedOpponents"
             }
           },
           "required": ["condition"],
@@ -1597,6 +1656,10 @@
               "type": "integer",
               "minimum": 1
             },
+            "minCount": {
+              "type": "integer",
+              "minimum": 1
+            },
             "operation": {
               "const": "attachEnergyFromDiscardToOnePokemon"
             },
@@ -1843,6 +1906,82 @@
           "properties": {
             "operation": {
               "const": "discardStadiumInPlay"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "all"
+                    }
+                  },
+                  "required": ["kind"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "fixed"
+                    },
+                    "value": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": ["kind", "value"],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "operation": {
+              "const": "discardEnergyAttachedToSelf"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "addDamageToOpponentField"
+            }
+          },
+          "required": ["amount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "moveDamageCountersToOpponentField"
+            }
+          },
+          "required": ["maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "knockOutSelf"
             }
           },
           "required": ["operation"],
@@ -2115,6 +2254,29 @@
           "properties": {
             "condition": {
               "const": "selfHasEnergyAttached"
+            },
+            "energyFilter": {
+              "$ref": "#/$defs/CardFilter"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "ownPokemonKnockedOutDuringPreviousOpponentTurn"
+            }
+          },
+          "required": ["condition"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "const": "ownRemainingPrizesExceedOpponents"
             }
           },
           "required": ["condition"],
@@ -2456,6 +2618,20 @@
           },
           "required": ["amount", "change"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "change": {
+              "const": "increaseMaxHp"
+            }
+          },
+          "required": ["amount", "change"],
+          "additionalProperties": false
         }
       ]
     },
@@ -2685,6 +2861,19 @@
           "properties": {
             "count": {
               "const": "ownPokemonInPlay"
+            },
+            "filter": {
+              "$ref": "#/$defs/PokemonInPlayFilter"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "const": "damageCountersOnOwnPokemon"
             },
             "filter": {
               "$ref": "#/$defs/PokemonInPlayFilter"
@@ -3273,6 +3462,10 @@
               "type": "integer",
               "minimum": 1
             },
+            "minCount": {
+              "type": "integer",
+              "minimum": 1
+            },
             "operation": {
               "const": "attachEnergyFromDiscardToOnePokemon"
             },
@@ -3519,6 +3712,82 @@
           "properties": {
             "operation": {
               "const": "discardStadiumInPlay"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "all"
+                    }
+                  },
+                  "required": ["kind"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "fixed"
+                    },
+                    "value": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": ["kind", "value"],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "operation": {
+              "const": "discardEnergyAttachedToSelf"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "addDamageToOpponentField"
+            }
+          },
+          "required": ["amount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "maxCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "moveDamageCountersToOpponentField"
+            }
+          },
+          "required": ["maxCount", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "knockOutSelf"
             }
           },
           "required": ["operation"],

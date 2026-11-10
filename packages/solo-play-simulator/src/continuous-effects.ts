@@ -356,6 +356,23 @@ export function sumAttackDamageIncrease(
   );
 }
 
+/**
+ * このポケモンの最大 HP。記録の HP に、このポケモンに働く最大 HP を増やす効果(シロナのパワーウエイト)の量を足す。
+ * どうぐの効果を無くすスタジアム(ジャミングタワー)が出ていれば、どうぐの効果は集めた中に入らず増えない。
+ */
+export function calculateMaxHp(
+  state: GameState,
+  pokemon: PokemonInPlay
+): number {
+  return listEffectsApplyingTo(state, pokemon).reduce(
+    (total, collected) =>
+      collected.effect.change.change === "increaseMaxHp"
+        ? total + collected.effect.change.amount
+        : total,
+    pokemon.card.hp
+  );
+}
+
 export function countEmptyBenchSlots(state: GameState): number {
   return Math.max(0, calculateBenchLimit(state) - state.bench.length);
 }
