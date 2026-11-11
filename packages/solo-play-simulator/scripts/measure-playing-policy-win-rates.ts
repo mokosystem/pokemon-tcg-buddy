@@ -9,7 +9,6 @@
 import { parseArgs } from "node:util";
 import {
   createEmptyDeckMeasurementTally,
-  type DeckMeasurementTally,
   mergeDeckMeasurementTallies,
 } from "../src/battle-style-solo-play-measurement.ts";
 import {
@@ -19,16 +18,10 @@ import {
 import { measureNowEpochMilliseconds } from "./measurement-jobs.ts";
 import {
   calculateCutoff,
-  DECISION_REASON_HEADINGS,
   describeMeasurementEnvironment,
   describePreparation,
   findTrainingGames,
-  formatEnvironmentLines,
-  formatMilliseconds,
-  formatPercent,
-  formatProportion,
-  formatTableHeader,
-  formatTableRow,
+  formatDeckMeasurementMarkdown,
   type LearningPreparation,
   MEASUREMENT_BASE_SEEDS,
   prepareLearnedModel,
@@ -85,106 +78,6 @@ async function prepare(
         processCount,
         trainingGames,
       });
-}
-
-function formatMarkdown(
-  settingName: PlayingPolicySettingName,
-  tally: DeckMeasurementTally,
-  preparation: LearningPreparation | undefined,
-  environment: ReturnType<typeof describeMeasurementEnvironment>
-): string {
-  const first = summarizeTally(tally.firstPlayer);
-  const second = summarizeTally(tally.secondPlayer);
-  const games = tally.firstPlayer.games + tally.secondPlayer.games;
-  const meanOf = (total: (side: typeof tally.firstPlayer) => number) =>
-    games === 0
-      ? Number.NaN
-      : (total(tally.firstPlayer) + total(tally.secondPlayer)) / games;
-  const turnOrders = [
-    ["先攻", tally.firstPlayer],
-    ["後攻", tally.secondPlayer],
-  ] as const;
-  const turns = [
-    ...new Set(
-      turnOrders.flatMap(([, side]) => Object.keys(side.winningTurnCounts))
-    ),
-  ].sort((left, right) => Number(left) - Number(right));
-  return [
-    `# 勝率の計測 ${settingName}(デッキ ${deckCode})`,
-    "",
-    formatEnvironmentLines(environment),
-    "",
-    formatTableHeader([
-      "設定",
-      "候補",
-      "先攻 勝率",
-      "後攻 勝率",
-      "回数(先攻 / 後攻)",
-      "1 回の対戦の時間(ms)",
-      "1 回の対戦の試しの回数",
-      "準備の時間(秒)",
-    ]),
-    formatTableRow([
-      settingName,
-      PLAYING_POLICY_SETTINGS[settingName].candidate,
-      formatProportion(first.winRate),
-      formatProportion(second.winRate),
-      `${first.games} / ${second.games}`,
-      formatMilliseconds(meanOf((side) => side.totalGameMilliseconds)),
-      formatMilliseconds(meanOf((side) => side.totalTrialScores)),
-      preparation === undefined
-        ? "—"
-        : (
-            (preparation.collectMilliseconds + preparation.trainMilliseconds) /
-            1000
-          ).toFixed(1),
-    ]),
-    "",
-    "負けた理由の内訳(すべての対戦に対する割合)",
-    "",
-    formatTableHeader([
-      "先攻・後攻",
-      ...Object.values(DECISION_REASON_HEADINGS),
-    ]),
-    ...turnOrders.map(([label, side]) =>
-      formatTableRow([
-        label,
-        ...Object.keys(DECISION_REASON_HEADINGS).map((reason) =>
-          side.games === 0
-            ? "—"
-            : formatPercent(
-                side.decisionReasonCounts[
-                  reason as keyof typeof DECISION_REASON_HEADINGS
-                ] / side.games
-              )
-        ),
-      ])
-    ),
-    "",
-    "サイドを取り切った自分の番の分布(すべての対戦に対する割合)",
-    "",
-    ...(turns.length === 0
-      ? ["勝った対戦が無い。"]
-      : [
-          formatTableHeader([
-            "先攻・後攻",
-            ...turns.map((turn) => `${turn} 番`),
-          ]),
-          ...turnOrders.map(([label, side]) =>
-            formatTableRow([
-              label,
-              ...turns.map((turn) =>
-                side.games === 0
-                  ? "—"
-                  : formatPercent(
-                      (side.winningTurnCounts[turn] ?? 0) / side.games
-                    )
-              ),
-            ])
-          ),
-        ]),
-    "",
-  ].join("\n");
 }
 
 for (const settingName of readSettingNames(values.setting)) {
@@ -247,7 +140,19 @@ for (const settingName of readSettingNames(values.setting)) {
       tally,
       wallMilliseconds,
     },
-    markdown: formatMarkdown(settingName, tally, preparation, environment),
+    markdown: formatDeckMeasurementMarkdown({
+      candidate: PLAYING_POLICY_SETTINGS[settingName].candidate,
+      environment,
+      preparationSeconds:
+        preparation === undefined
+          ? undefined
+          : (preparation.collectMilliseconds + preparation.trainMilliseconds) /
+            1000,
+      settingLabel: settingName,
+      tally,
+      title: `勝率の計測 ${settingName}(デッキ ${deckCode})`,
+      trialsColumnLabel: "1 回の対戦の試しの回数",
+    }),
     measurementName: `playing-policy-win-rates-${deckCode}`,
     outputDirectory,
     settingName,

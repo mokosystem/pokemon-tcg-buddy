@@ -57,6 +57,13 @@ export type MeasurementWorkerJob =
       readonly afterLearnedModelPath?: string;
     }
   | {
+      /** 候補 5(Jev)の 1 デッキの計測。API キーは環境変数 TYPESAFE_API_KEY から読む。 */
+      readonly kind: "measureJevDeck";
+      readonly deckCode: string;
+      readonly baseSeeds: TurnOrderBaseSeeds;
+      readonly maxUnits: number;
+    }
+  | {
       readonly kind: "collectLearningSamples";
       readonly deck: LearningDeck;
       /** 学習の対戦の回数。半分を先攻、半分を後攻で回す。 */
@@ -81,9 +88,23 @@ export type MeasurementWorkerReport =
       readonly outcome: MeasurementRunOutcome<CardSwapMeasurementTally>;
     }
   | {
+      readonly kind: "measureJevDeck";
+      readonly outcome: MeasurementRunOutcome<DeckMeasurementTally>;
+      readonly usage: JevRequestUsage;
+    }
+  | {
       readonly kind: "collectLearningSamples";
       readonly samples: readonly LabeledFeatureSample[];
     };
+
+/** 1 プロセスの Jev への問い合わせの回数と入力のトークン数。 */
+export interface JevRequestUsage {
+  /** このプロセスの最初の問い合わせの入力のトークン数(問い合わせが無ければ 0)。 */
+  readonly firstInputTokens: number;
+  readonly inputTokens: number;
+  readonly maxInputTokens: number;
+  readonly requests: number;
+}
 
 /** 今の時刻(エポックからのミリ秒)。複数のプロセスで同じ基準になる。 */
 export function measureNowEpochMilliseconds(): number {

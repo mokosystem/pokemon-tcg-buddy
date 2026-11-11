@@ -14,6 +14,10 @@ import {
 } from "../src/battle-style-solo-play-measurement.ts";
 import type { Card } from "../src/cards.ts";
 import {
+  createJevPlayingPolicy,
+  type JevChoiceRequest,
+} from "../src/jev-playing-policy.ts";
+import {
   collectLearningSamplesOfTrial,
   type LabeledFeatureSample,
   type LearnedWinRateModel,
@@ -25,6 +29,7 @@ import {
   type PlayingPolicySettingName,
 } from "../src/playing-policy-candidates.ts";
 import { deriveTrialSeed } from "../src/random.ts";
+import { createJevChoiceRequester } from "./jev-choice-request.ts";
 import {
   buildMeasuredDeckCards,
   CARD_SWAP_SUBJECT,
@@ -164,6 +169,64 @@ function collectLearningSamples(
   return { kind: "collectLearningSamples", samples };
 }
 
+/** 候補 5(Jev)の 1 デッキの計測。担当の試行の Jev への問い合わせの回数とトークン数も返す。 */
+function measureJevDeck(job: JobOf<"measureJevDeck">): MeasurementWorkerReport {
+  const apiKey = process.env.TYPESAFE_API_KEY;
+  if (
+    apiKey === undefined ||
+    apiKey === "" ||
+    apiKey.startsWith("encrypted:")
+  ) {
+    throw new Error(
+      "TYPESAFE_API_KEY が無い。dotenvx run を通して起動していない"
+    );
+  }
+  const requester = createJevChoiceRequester(apiKey);
+  const usage = {
+    firstInputTokens: 0,
+    inputTokens: 0,
+    maxInputTokens: 0,
+    requests: 0,
+  };
+  const requestJevChoice = (request: JevChoiceRequest) => {
+    const response = requester.requestJevChoice(request);
+    const tokens = response.usage.input_tokens;
+    usage.firstInputTokens ||= tokens;
+    usage.inputTokens += tokens;
+    usage.maxInputTokens = Math.max(usage.maxInputTokens, tokens);
+    usage.requests += 1;
+    return response;
+  };
+  const cards = buildMeasuredDeckCards({ deckCode: job.deckCode });
+  try {
+    const outcome = runMeasurementUntilCutoffs({
+      createEmptyTally: createEmptyDeckMeasurementTally,
+      cutoffsEpochMilliseconds: [Number.MAX_SAFE_INTEGER],
+      firstTrialIndex: job.firstTrialIndex,
+      maxUnits: job.maxUnits,
+      measureNowEpochMilliseconds,
+      runUnit: (trialIndex, tally) =>
+        runDeckMeasurementUnit(
+          {
+            baseSeeds: job.baseSeeds,
+            deck: {
+              cards,
+              createPolicy: () =>
+                createJevPlayingPolicy({ cards, requestJevChoice }),
+            },
+            measureNowEpochMilliseconds,
+          },
+          trialIndex,
+          tally
+        ),
+      trialIndexStride: job.trialIndexStride,
+    });
+    return { kind: "measureJevDeck", outcome, usage };
+  } finally {
+    requester.dispose();
+  }
+}
+
 function runJob(
   job: MeasurementWorkerJob & TrialIndexAssignment
 ): MeasurementWorkerReport {
@@ -172,6 +235,8 @@ function runJob(
       return measureDeck(job);
     case "measureCardSwap":
       return measureCardSwap(job);
+    case "measureJevDeck":
+      return measureJevDeck(job);
     default:
       return collectLearningSamples(job);
   }
