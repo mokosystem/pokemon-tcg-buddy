@@ -70,7 +70,7 @@ export interface PlayingPolicySetting {
   readonly parameters: PlayingPolicyParameters;
 }
 
-/** 候補 4 の 1 つの候補の手を試す回数。学習した場の評価は試し回しより短いため、試し回しの候補より少なくした。 */
+/** 候補 4 の 1 つの候補の手を試す回数(Issue 70 の実装計画「5.4」で決めた値。値を変えて比べた計測は無い)。 */
 const LEARNED_EVALUATION_SAMPLES_PER_CANDIDATE = 4;
 /** 候補 3 の 1 つの並びの試し回しの回数。 */
 const TURN_SEQUENCE_SAMPLES_PER_SEQUENCE = 8;

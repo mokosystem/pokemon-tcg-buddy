@@ -236,7 +236,7 @@ function bisectDecreasing(
  * 種をそろえた対の差(後 - 前)の 95 % の誤差の幅(Tango のスコア区間。Tango, Statistics in Medicine 17, 891–908, 1998)。
  * 対の数が 0 なら undefined を返す。前と後の結果がすべての対で同じでも、幅は 0 にならない。数は整数でなくてよい。
  * 式は R の PropCIs 0.3-0 の scoreci.mp(https://raw.githubusercontent.com/cran/PropCIs/master/R/scoreci.mp.R 、
- * 2026-11-12 に計画の作成時に確認)と同じ。PropCIs は GPL なので、コードは写さず式から書いた。
+ * 2026-11-12 確認)と同じ。端は PropCIs の歩幅を半分にしていく探し方でなく二分法で求める。PropCIs は GPL なので、コードは写さず式から書いた。
  * 正規近似を採らないのは、前と後で結果が違う対が 0 のとき幅が 0 になり、差を観測できなかった設定を最も精密だと
  * 読んでしまうため。
  */
@@ -264,7 +264,7 @@ export function calculatePairedDifferenceInterval(
  * Statistics in Medicine 17, 873–890, 1998 の方法 10)。対の数が 0 なら undefined を返す。数は整数でなくてよい。
  * 式は statsmodels 0.14.4 の confint_proportions_2indep の method="newcomb"
  * (https://raw.githubusercontent.com/statsmodels/statsmodels/v0.14.4/statsmodels/stats/proportion.py 、
- * 2026-11-12 に計画の作成時に確認。差の向きを後 - 前に読み替えた)と同じ。
+ * 2026-11-12 確認。差の向きを後 - 前に読み替えた)と同じ。
  */
 export function calculateUnpairedDifferenceInterval(
   counts: PairedOutcomeCounts
