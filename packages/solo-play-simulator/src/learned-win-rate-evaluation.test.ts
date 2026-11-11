@@ -122,6 +122,7 @@ describe("学習した場の評価の試しの点数", () => {
 
   test("途中で勝ちが決まる複製では、勝率 1 を返す", () => {
     // 相手の場のダメージが 100 以上でサイドが残り 1 枚なら、自分の番の終わりの判定で取り切って勝つ
+    // (docs/solo-play-simulator-design.md「相手の場のダメージとサイド」「勝敗」)
     const state = buildState({
       active: buildRecordedCard("049092"),
       random: createSeededRandom(1),
@@ -134,7 +135,8 @@ describe("学習した場の評価の試しの点数", () => {
   });
 
   test("途中で負けが決まる複製では、勝率 0 を返す", () => {
-    // 相手のサイドが残り 1 枚で、相手の 2 回目の番(100)にシロナのフカマル(HP 70)がきぜつすると、相手が取り切って負け
+    // 相手のサイドが残り 1 枚で、相手の 2 回目の番(100)にシロナのフカマル(049092、HP 70)がきぜつすると、相手が取り切って
+    // 負け(docs/solo-play-simulator-design.md「相手の番」「ダメージときぜつ」「勝敗」)
     const state = buildState({
       active: buildRecordedCard("049092"),
       random: createSeededRandom(1),

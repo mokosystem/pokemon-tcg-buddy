@@ -755,8 +755,8 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
 
   /**
    * 相手の番にバトルポケモンがきぜつした後に出すベンチポケモンを、候補ごとに試して選ぶ。相手の番のきぜつは、ベンチ
-   * ポケモンを先に、バトルポケモンを最後にきぜつさせる(battle-style-solo-play-rules.ts の
-   * knockOutOwnPokemonAtOrAboveMaxHp)ので、出した後に相手の番で起きることは無く、自分の番の最初から続ける。
+   * ポケモンを先に、バトルポケモンを最後にきぜつさせる(docs/solo-play-simulator-design.md「ダメージときぜつ」。
+   * battle-style-solo-play-rules.ts の knockOutOwnPokemonAtOrAboveMaxHp)ので、出した後に相手の番で起きることは無く、自分の番の最初から続ける。
    * 複製では場のポケモンの参照が変わるため、候補はベンチの何番目かで指す。
    */
   const choosePromotionInOpponentTurn = (
