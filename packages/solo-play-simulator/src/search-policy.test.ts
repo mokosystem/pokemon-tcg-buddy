@@ -332,7 +332,7 @@ describe("探索の判断基準の、相手の番の選択", () => {
     const policy = createPolicy(() => scoreOf(0));
     playOpponentTurn({ choices: policy, state });
     expect(state.bench).toHaveLength(4);
-    expect(state.bench.includes(first as never)).toBe(false);
+    expect(state.bench).not.toContain(first);
     expect(activeOf(state).card.name).toBe("シロナのフカマル");
   });
 });
