@@ -228,3 +228,12 @@ export const PLAYING_POLICY_SETTING_NAMES: readonly PlayingPolicySettingName[] =
     "learned-evaluation-500",
     "learned-evaluation-2000",
   ];
+/** 候補 4 の学習用の記録を生成する設定。手を選ばない手順は勝率がほぼ 0 で、勝ちの記録が集まらないため。 */
+export const LEARNING_SAMPLE_GENERATOR_SETTING: PlayingPolicySettingName =
+  "playout-prize-tie-break-8";
+
+export function isPlayingPolicySettingName(
+  name: string
+): name is PlayingPolicySettingName {
+  return (PLAYING_POLICY_SETTING_NAMES as readonly string[]).includes(name);
+}

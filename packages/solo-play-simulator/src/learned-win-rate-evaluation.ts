@@ -22,14 +22,39 @@ export function listDeckCardNames(cards: readonly Card[]): string[] {
   return [...new Set(cards.map((card) => card.name))];
 }
 
-/**
- * 盤面の特徴の名前と値。自分の番に 1 枚引いた後の状態から作る。deckCardNames はデッキの 60 枚の並びで最初に出てきた順の
- * カードの名前(listDeckCardNames)。ルールの値は骨組みの関数から借りる。
- */
-export function extractWinRateFeatures(
-  state: GameState,
+/** 盤面の特徴のうち、デッキのカードの名前によらないものの名前。 */
+const BOARD_FEATURE_NAMES = [
+  "ownRemainingPrizes",
+  "opponentRemainingPrizes",
+  "opponentFieldDamage",
+  "ownTurn",
+  "nextOpponentAttackDamage",
+  "activeRemainingHp",
+  "activeSurvivesNextOpponentAttack",
+  "pokemonInPlay",
+  "benchPokemon",
+  "energiesInPlay",
+  "activeEnergies",
+  "activeMaxAttackDamage",
+  "handCards",
+  "deckCards",
+  "discardCards",
+] as const;
+
+/** 盤面の特徴の名前の並び。extractWinRateFeatures の値と同じ並びで、学習の結果に残す。 */
+export function listWinRateFeatureNames(
   deckCardNames: readonly string[]
-): { readonly names: readonly string[]; readonly values: readonly number[] } {
+): string[] {
+  return [
+    ...BOARD_FEATURE_NAMES,
+    ...deckCardNames.map((name) => `inPlay:${name}`),
+    ...deckCardNames.map((name) => `inHand:${name}`),
+  ];
+}
+
+function measureBoardFeatures(
+  state: GameState
+): Record<(typeof BOARD_FEATURE_NAMES)[number], number> {
   const { active } = state;
   if (active === undefined) {
     // 相手の番にバトルポケモンがきぜつしたら、プレイングの判断基準が選んだベンチポケモンを出すか、場にポケモンが
@@ -45,41 +70,46 @@ export function extractWinRateFeatures(
     state,
   }).map(({ attack }) => calculateAttackDamage(state, active, attack) ?? 0);
   const inPlay = state.listPokemonInPlay();
-  const features: [string, number][] = [
-    ["ownRemainingPrizes", state.prizes.length],
-    ["opponentRemainingPrizes", state.opponentRemainingPrizeCount],
-    ["opponentFieldDamage", state.opponentFieldDamage],
-    ["ownTurn", state.turn],
-    ["nextOpponentAttackDamage", nextOpponentAttackDamage],
-    ["activeRemainingHp", activeRemainingHp],
-    // きぜつは受けたダメージの合計が最大 HP 以上になったとき(docs/solo-play-simulator-design.md「ダメージときぜつ」)
-    [
-      "activeSurvivesNextOpponentAttack",
-      activeRemainingHp > nextOpponentAttackDamage ? 1 : 0,
-    ],
-    ["pokemonInPlay", inPlay.length],
-    ["benchPokemon", state.bench.length],
-    [
-      "energiesInPlay",
-      inPlay.reduce((total, pokemon) => total + pokemon.energies.length, 0),
-    ],
-    ["activeEnergies", active.energies.length],
-    ["activeMaxAttackDamage", Math.max(0, ...usableAttackDamages)],
-    ["handCards", state.hand.length],
-    ["deckCards", state.deck.length],
-    ["discardCards", state.discard.length],
-    ...deckCardNames.map((name): [string, number] => [
-      `inPlay:${name}`,
-      state.countInPlay(name),
-    ]),
-    ...deckCardNames.map((name): [string, number] => [
-      `inHand:${name}`,
-      state.countInHand(name),
-    ]),
-  ];
   return {
-    names: features.map(([name]) => name),
-    values: features.map(([, value]) => value),
+    activeEnergies: active.energies.length,
+    activeMaxAttackDamage: Math.max(0, ...usableAttackDamages),
+    activeRemainingHp,
+    // きぜつは受けたダメージの合計が最大 HP 以上になったとき(docs/solo-play-simulator-design.md「ダメージときぜつ」)
+    activeSurvivesNextOpponentAttack:
+      activeRemainingHp > nextOpponentAttackDamage ? 1 : 0,
+    benchPokemon: state.bench.length,
+    deckCards: state.deck.length,
+    discardCards: state.discard.length,
+    energiesInPlay: inPlay.reduce(
+      (total, pokemon) => total + pokemon.energies.length,
+      0
+    ),
+    handCards: state.hand.length,
+    nextOpponentAttackDamage,
+    opponentFieldDamage: state.opponentFieldDamage,
+    opponentRemainingPrizes: state.opponentRemainingPrizeCount,
+    ownRemainingPrizes: state.prizes.length,
+    ownTurn: state.turn,
+    pokemonInPlay: inPlay.length,
+  };
+}
+
+/**
+ * 盤面の特徴の名前と値。自分の番に 1 枚引いた後の状態から作る。deckCardNames はデッキの 60 枚の並びで最初に出てきた順の
+ * カードの名前(listDeckCardNames)。ルールの値は骨組みの関数から借りる。
+ */
+export function extractWinRateFeatures(
+  state: GameState,
+  deckCardNames: readonly string[]
+): { readonly names: readonly string[]; readonly values: readonly number[] } {
+  const board = measureBoardFeatures(state);
+  return {
+    names: listWinRateFeatureNames(deckCardNames),
+    values: [
+      ...BOARD_FEATURE_NAMES.map((name) => board[name]),
+      ...deckCardNames.map((name) => state.countInPlay(name)),
+      ...deckCardNames.map((name) => state.countInHand(name)),
+    ],
   };
 }
 
