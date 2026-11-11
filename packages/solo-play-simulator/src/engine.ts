@@ -211,8 +211,81 @@ export interface BattleStyleSoloPlayResult {
 }
 
 /**
+ * 対戦をどこから続けるか。1 回の対戦を準備の後から進めるときと、探索が複製の上で先を試すときに使う。
+ * - ownTurnStart: 自分の番の最初に 1 枚引くところから
+ * - ownTurnActions: 自分の番に 1 枚引いた後。番の中の行動(PlayingPolicy の playTurn)から
+ * - ownTurnAttack: 自分の番の行動を終えた後。ワザを選ぶところから
+ * - opponentTurn: 自分の番の終わりのサイドの判定まで済んだ後。相手の番から
+ */
+export type BattleStyleSoloPlayResumePoint =
+  | "ownTurnStart"
+  | "ownTurnActions"
+  | "ownTurnAttack"
+  | "opponentTurn";
+
+/** 続ける場所ごとの 1 歩。1 歩進めて、次に続ける場所を返す。勝敗が決まったかは呼んだ側が state.decision で見る。 */
+const battleStyleSoloPlaySteps: {
+  readonly [Point in BattleStyleSoloPlayResumePoint]: (
+    context: EffectContext,
+    policy: PlayingPolicy
+  ) => BattleStyleSoloPlayResumePoint;
+} = {
+  opponentTurn: (context) => {
+    playOpponentTurn(context);
+    return "ownTurnStart";
+  },
+  ownTurnActions: (context, policy) => {
+    policy.playTurn(context);
+    return "ownTurnAttack";
+  },
+  ownTurnAttack: (context, policy) => {
+    useAttacksOfTurn(context, policy);
+    if (context.state.decision === undefined) {
+      resolveEndOfTurnTriggers(context);
+      takePrizesForOpponentFieldDamage(context.state);
+    }
+    return "opponentTurn";
+  },
+  ownTurnStart: ({ state }) => {
+    beginOwnTurn(state);
+    return "ownTurnActions";
+  },
+};
+
+/**
+ * from から進め、勝敗が決まるか、少なくとも 1 歩進めた後で stopAt に着いたら止める。止めた場所を返し、勝敗が決まったら
+ * undefined を返す。stopAt を省くと勝敗が決まるまで進める(番の回数に上限は置かない。
+ * docs/solo-play-simulator-design.md「対戦風の一人回し」の番の並び)。
+ */
+export function advanceBattleStyleSoloPlay(
+  context: EffectContext,
+  policy: PlayingPolicy,
+  from: BattleStyleSoloPlayResumePoint,
+  stopAt?: BattleStyleSoloPlayResumePoint
+): BattleStyleSoloPlayResumePoint | undefined {
+  let next = from;
+  while (context.state.decision === undefined) {
+    next = battleStyleSoloPlaySteps[next](context, policy);
+    if (next === stopAt) {
+      return context.state.decision === undefined ? next : undefined;
+    }
+  }
+  return undefined;
+}
+
+/** from から勝敗が決まるまで進め、1 回の対戦の結果を返す。 */
+export function continueBattleStyleSoloPlayGame(
+  context: EffectContext,
+  policy: PlayingPolicy,
+  from: BattleStyleSoloPlayResumePoint
+): BattleStyleSoloPlayResult {
+  advanceBattleStyleSoloPlay(context, policy, from);
+  return summarizeBattleStyleSoloPlay(context.state);
+}
+
+/**
  * 対戦の準備から勝敗が決まるまで進める。先攻なら自分の番から、後攻なら相手の番から交互に進める
- * (docs/solo-play-simulator-design.md「対戦風の一人回し」の番の並び)。番の回数に上限は置かない。
+ * (docs/solo-play-simulator-design.md「対戦風の一人回し」の番の並び)。
  */
 export function runBattleStyleSoloPlayGame(
   options: BattleStyleSoloPlayGameOptions
@@ -221,35 +294,11 @@ export function runBattleStyleSoloPlayGame(
   const state = new GameState(options.random, options.cards, options.wentFirst);
   const context: EffectContext = { choices: policy, state };
   setupGame(state, policy);
-  if (!state.wentFirst) {
-    playOpponentTurn(context);
-  }
-  while (state.decision === undefined) {
-    playOwnTurn(context, policy);
-    if (state.decision === undefined) {
-      playOpponentTurn(context);
-    }
-  }
-  return summarizeBattleStyleSoloPlay(state);
-}
-
-/** 自分の番を 1 回行う。勝敗が決まったら、その時点で番を打ち切る。 */
-function playOwnTurn(context: EffectContext, policy: PlayingPolicy): void {
-  const { state } = context;
-  beginOwnTurn(state);
-  if (state.decision !== undefined) {
-    return;
-  }
-  policy.playTurn(context);
-  if (state.decision !== undefined) {
-    return;
-  }
-  useAttacksOfTurn(context, policy);
-  if (state.decision !== undefined) {
-    return;
-  }
-  resolveEndOfTurnTriggers(context);
-  takePrizesForOpponentFieldDamage(state);
+  return continueBattleStyleSoloPlayGame(
+    context,
+    policy,
+    state.wentFirst ? "ownTurnStart" : "opponentTurn"
+  );
 }
 
 function summarizeBattleStyleSoloPlay(
