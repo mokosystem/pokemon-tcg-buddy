@@ -35,16 +35,19 @@ describe("記録済みのデッキ", () => {
     });
 
     for (const [label, createPolicy] of [
-      ["手を選ばず順に使う手順", createFirstActionPolicy],
-      ["乱数で選ぶ手順", () => createRandomActionPolicy(20_260_926)],
+      ["手を選ばず順に使う手順", () => createFirstActionPolicy()],
+      [
+        "乱数で選ぶ手順",
+        (policySeed: number) => createRandomActionPolicy(policySeed),
+      ],
     ] as const) {
       test(`${deck.name}: ${label}で、先攻・後攻それぞれ 1,000 回、すべての対戦が例外なく勝敗まで進む`, () => {
         const cards = buildDeck(cardRecordTable, deck.decklist);
         for (const wentFirst of [true, false]) {
           const results = simulateBattleStyleSoloPlay({
+            baseSeed: 20_260_923,
             cards,
-            policy: createPolicy(),
-            seed: 20_260_923,
+            createPolicy,
             trials: GAMES_PER_TURN_ORDER,
             wentFirst,
           });
