@@ -137,9 +137,21 @@ const basicConditionOptions = [
   strictObject({
     condition: literal("selfHasNoEnergyAttached"),
   }),
-  /** このポケモンにエネルギーがついている(ハクリューの「しんかのみちびき」)。 */
+  /**
+   * このポケモンにエネルギーがついている(ハクリューの「しんかのみちびき」)。energyFilter を書けば、それに合うエネルギーが
+   * ついている(マシマシラの「アドレナブレイン」: 悪エネルギー)。
+   */
   strictObject({
     condition: literal("selfHasEnergyAttached"),
+    energyFilter: optional(CardFilterSchema),
+  }),
+  /** 前の相手の番に、自分のポケモンがきぜつした(キチキギスex の「さかてにとる」、アンフェアスタンプ)。 */
+  strictObject({
+    condition: literal("ownPokemonKnockedOutDuringPreviousOpponentTurn"),
+  }),
+  /** 自分のサイドの残り枚数が、相手のサイドの残り枚数より多い(メイのはげまし)。 */
+  strictObject({
+    condition: literal("ownRemainingPrizesExceedOpponents"),
   }),
   strictObject({
     condition: literal("attachedPokemonMatches"),
@@ -409,12 +421,14 @@ const basicOperationOptions = [
     operation: literal("attachEnergyFromHandToSelf"),
   }),
   /**
-   * トラッシュから条件に合うエネルギーを maxCount 枚まで選び、条件に合う自分のポケモン 1 匹にまとめてつける
-   * (ミュウツーの「ちからをあたえる」)。
+   * トラッシュから条件に合うエネルギーを minCount〜maxCount 枚選び、条件に合う自分のポケモン 1 匹にまとめてつける
+   * (ミュウツーの「ちからをあたえる」、メイのはげまし)。ワザの「〜枚まで」は minCount を省略し(0 枚。上級プレイヤー用
+   * ルールガイド D-05)、トレーナーズの「〜枚まで」は minCount を 1 にする。
    */
   strictObject({
     energyFilter: CardFilterSchema,
     maxCount: countFromOne,
+    minCount: optional(countFromOne),
     operation: literal("attachEnergyFromDiscardToOnePokemon"),
     targetFilter: PokemonInPlayFilterSchema,
   }),
@@ -515,6 +529,31 @@ const basicOperationOptions = [
   /** 場のスタジアムをトラッシュする(イーユイの「グラウンドメルト」)。 */
   strictObject({
     operation: literal("discardStadiumInPlay"),
+  }),
+  /** このポケモン(効果の持ち主)についているエネルギーを、すべてか、決まった数だけトラッシュする(シロナのガブリアスex の「リューノバスター」)。 */
+  strictObject({
+    count: variant("kind", [
+      strictObject({ kind: literal("all") }),
+      strictObject({ kind: literal("fixed"), value: countFromOne }),
+    ]),
+    operation: literal("discardEnergyAttachedToSelf"),
+  }),
+  /** 相手の場のダメージに amount を足す。相手のどのポケモンに与えるかは区別しない(ドラパルトex の「ファントムダイブ」のダメカン 6 個は 60)。 */
+  strictObject({
+    amount: countFromOne,
+    operation: literal("addDamageToOpponentField"),
+  }),
+  /**
+   * 自分の場のポケモン 1 匹を選び、のっているダメカンを maxCount 個まで取り除き、取り除いた 1 個につき 10 を相手の場の
+   * ダメージに足す(マシマシラの「アドレナブレイン」)。取り除く個数は選ばせず、のっている数と maxCount の少ないほうにする。
+   */
+  strictObject({
+    maxCount: countFromOne,
+    operation: literal("moveDamageCountersToOpponentField"),
+  }),
+  /** このポケモン(効果の持ち主)をきぜつさせる(サマヨール、ヨノワールの「カースドボム」)。 */
+  strictObject({
+    operation: literal("knockOutSelf"),
   }),
 ] as const;
 
@@ -642,6 +681,11 @@ export const ContinuousChangeSchema = variant("change", [
     amount: countFromOne,
     change: literal("increaseAttackDamage"),
   }),
+  /** 範囲のポケモンの最大 HP を amount 増やす(シロナのパワーウエイト)。 */
+  strictObject({
+    amount: countFromOne,
+    change: literal("increaseMaxHp"),
+  }),
 ]);
 
 export const ContinuousEffectSchema = strictObject({
@@ -698,6 +742,11 @@ export const DamageCountTargetSchema = variant("count", [
    */
   strictObject({
     count: literal("ownPokemonInPlay"),
+    filter: optional(PokemonInPlayFilterSchema),
+  }),
+  /** 自分の場の、条件に合うポケモンにのっているダメカンの数の合計(シロナのミカルゲの「レイジングカース」: ベンチの「シロナのポケモン」)。 */
+  strictObject({
+    count: literal("damageCountersOnOwnPokemon"),
     filter: optional(PokemonInPlayFilterSchema),
   }),
 ]);
@@ -902,6 +951,11 @@ export type TranslationStatus = InferOutput<typeof TranslationStatusSchema>;
 
 const commonRecordEntries = {
   $schema: literal(CARD_RECORD_SCHEMA_REFERENCE),
+  /**
+   * 対戦風の一人回しのルール(docs/solo-play-simulator-design.md「対戦風の一人回し」)で、含めなかった効果を含めて記録を
+   * 見直した日。見直していない記録は持たない。
+   */
+  battleStyleSoloPlayReviewedOn: optional(pipe(string(), isoDate())),
   /** 印刷のカード ID の並び。先頭が詳細ページを読んだ印刷。 */
   cardIds: pipe(array(pipe(string(), regex(/^[0-9]{6}$/))), minLength(1)),
   excludedEffects: array(ExcludedEffectSchema),

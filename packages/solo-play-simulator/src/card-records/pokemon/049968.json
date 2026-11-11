@@ -6,17 +6,29 @@
       "cost": ["colorless"],
       "damage": {
         "amount": 0,
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "damageCountersOnOwnPokemon",
+            "filter": {
+              "nameIncludes": "シロナの",
+              "positions": ["bench"]
+            }
+          },
+          "unit": 10
+        },
         "kind": "fixed"
       },
       "name": "レイジングカース"
     }
   ],
-  "cardIds": ["049968"],
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "cardIds": ["049968", "047345"],
   "category": "ポケモン",
   "excludedEffects": [
     {
-      "description": "ワザ「レイジングカース」のダメージは、ベンチにいる「シロナのポケモン」のダメカンの合計で決まる(1 個につき 10。弱点は計算しない)。ダメカンを扱わないため、ダメージは 0 で求める。基本のダメージが 0 になるため、シロナのロズレイドの「グローリーエール」などのダメージを増やす効果も足さない(実際はダメカンが 1 個でもあれば足される)",
-      "reason": "damageBonusNotModeled"
+      "description": "ワザ「レイジングカース」の、相手の弱点を計算しない効果",
+      "reason": "requiresOpponent"
     }
   ],
   "hasRuleBox": false,
@@ -25,8 +37,31 @@
   "name": "シロナのミカルゲ",
   "pokemonType": "dark",
   "retreatCost": 1,
-  "rulings": [],
+  "rulings": [
+    {
+      "interpretation": "足される。ダメカンが 1 個のときは 10 で、グローリーエールが働いていれば 30 を足して 40 になる",
+      "question": "ダメカンがのっているとき、ダメージを増やす効果(シロナのロズレイドの「グローリーエール」)は足されるか",
+      "reflectedIn": "ダメージを固定の 0 と、ベンチの「シロナのポケモン」にのっているダメカンの数 × 10 の上乗せ(damageCountersOnOwnPokemon)で持つ。基本のダメージが 0 でなければ増やす効果を足す(attack-damage.ts の calculateAttackDamage)",
+      "source": {
+        "checkedOn": "2026-11-11",
+        "kind": "officialQa",
+        "questionSummary": "ベンチにいるのが、グローリーエールが働きダメカンが 1 個のったシロナのロズレイドだけのとき、レイジングカースのダメージはいくつか(40。関連カードの印刷 047345 は詳細ページを見比べて同じカードテキスト)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AC%E3%82%A4%E3%82%B8%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%82%B9&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "名前に「シロナの」とつくポケモンを「シロナのポケモン」として扱う",
+      "question": "「シロナのポケモン」はどのポケモンか",
+      "reflectedIn": "ワザ「レイジングカース」の数える対象の条件を nameIncludes「シロナの」で書いた",
+      "source": {
+        "basis": "「シロナのポケモン」を定める公式 Q&A は見つからなかった(検索語「シロナのポケモン」の結果 16 件は、個別のカードの効果の処理を問うものだけ)。同じ書き方の「ロケット団のポケモン」について、公式 Q&A(ロケット団のミミッキュGX と ロケット団エネルギー、ロケット団のアテナ。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&regulation_faq_main_item1=all )が、名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱うと回答している",
+        "checkedOn": "2026-11-11",
+        "kind": "noMatchingQa",
+        "searchTerms": ["シロナのポケモン", "ロケット団のポケモン"]
+      }
+    }
+  ],
   "stage": "たね",
   "translationStatus": "irrelevantToCalculation",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-11"
 }

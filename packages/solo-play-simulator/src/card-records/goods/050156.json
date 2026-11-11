@@ -1,16 +1,17 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardEffects": [],
   "cardIds": ["050156", "050205"],
   "category": "グッズ",
   "excludedEffects": [
     {
-      "description": "相手のサイドの残り枚数が条件で、相手の手札を山札に戻させて引かせる",
+      "description": "相手の手札を山札に戻させて引かせる効果(相手の手札に働く)と、相手のサイドの残り枚数が 3 枚以下のときにしか使えない条件。効果に翻訳する操作が無いため条件も持たず、いつでも使え、使っても何も起きない扱いになる",
       "reason": "requiresOpponent"
     }
   ],
   "name": "スペシャルレッドカード",
   "rulings": [],
   "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-11"
 }

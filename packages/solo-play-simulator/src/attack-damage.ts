@@ -18,7 +18,11 @@ import {
   listEnergyUnits,
   sumAttackDamageIncrease,
 } from "./continuous-effects.ts";
-import type { GameState, PokemonInPlay } from "./state.ts";
+import {
+  DAMAGE_PER_COUNTER,
+  type GameState,
+  type PokemonInPlay,
+} from "./state.ts";
 
 type DamageCountTarget = DamageBonus["target"];
 
@@ -51,6 +55,18 @@ const damageTargetCounters: {
       )
     ).size,
   cardsInHand: (_, state) => state.hand.length,
+  damageCountersOnOwnPokemon: (target, state) =>
+    state
+      .listPokemonInPlay()
+      .filter(
+        (pokemon) =>
+          target.filter === undefined ||
+          matchesPokemonFilter(state, pokemon, target.filter)
+      )
+      .reduce(
+        (total, pokemon) => total + pokemon.damage / DAMAGE_PER_COUNTER,
+        0
+      ),
   discardCardsMatching: (target, state) =>
     state.discard.filter((card) => matchesCardFilter(card, target.filter))
       .length,

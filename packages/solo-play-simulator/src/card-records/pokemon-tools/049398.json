@@ -1,16 +1,56 @@
 {
   "$schema": "../card-record.schema.json",
-  "cardEffects": [],
-  "cardIds": ["049398", "047355"],
-  "category": "ポケモンのどうぐ",
-  "excludedEffects": [
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "cardEffects": [
     {
-      "description": "つけている「シロナのポケモン」の最大 HP を増やす。相手がいないためワザのダメージを受けず、最大 HP は成立率に影響しない",
-      "reason": "requiresOpponent"
+      "continuousEffect": {
+        "change": {
+          "amount": 70,
+          "change": "increaseMaxHp"
+        },
+        "conditions": [
+          {
+            "condition": "attachedPokemonMatches",
+            "filter": {
+              "nameIncludes": "シロナの"
+            }
+          }
+        ],
+        "scope": {
+          "scope": "attachedPokemon"
+        }
+      },
+      "kind": "continuous"
     }
   ],
+  "cardIds": ["049398", "047355"],
+  "category": "ポケモンのどうぐ",
+  "excludedEffects": [],
   "name": "シロナのパワーウエイト",
-  "rulings": [],
-  "translationStatus": "irrelevantToCalculation",
-  "verifiedOn": "2026-09-23"
+  "rulings": [
+    {
+      "interpretation": "つけられるが、最大 HP は増えない",
+      "question": "「シロナのポケモン」でないポケモンにつけられるか。つけたとき最大 HP は増えるか",
+      "reflectedIn": "働く条件を attachedPokemonMatches(nameIncludes「シロナの」)にした。ポケモンのどうぐはどのポケモンにもつけられ、条件を満たさなければ最大 HP を増やす効果は働かない(continuous-effects.ts の calculateMaxHp)",
+      "source": {
+        "checkedOn": "2026-11-11",
+        "kind": "officialQa",
+        "questionSummary": "シロナのパワーウエイトを「シロナのポケモン」でないポケモンにつけられるか(つけられるが +70 されない)",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B7%E3%83%AD%E3%83%8A%E3%81%AE%E3%83%91%E3%83%AF%E3%83%BC%E3%82%A6%E3%82%A8%E3%82%A4%E3%83%88&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "名前に「シロナの」とつくポケモンを「シロナのポケモン」として扱う",
+      "question": "「シロナのポケモン」はどのポケモンか",
+      "reflectedIn": "最大 HP を増やす効果の働く条件を nameIncludes「シロナの」で書いた",
+      "source": {
+        "basis": "「シロナのポケモン」を定める公式 Q&A は見つからなかった(検索語「シロナのポケモン」の結果 16 件は、個別のカードの効果の処理を問うものだけ)。同じ書き方の「ロケット団のポケモン」について、公式 Q&A(ロケット団のミミッキュGX と ロケット団エネルギー、ロケット団のアテナ。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AD%E3%82%B1%E3%83%83%E3%83%88%E5%9B%A3%E3%81%AE%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&regulation_faq_main_item1=all )が、名前に「ロケット団の」とつくポケモンを「ロケット団のポケモン」として扱うと回答している",
+        "checkedOn": "2026-11-11",
+        "kind": "noMatchingQa",
+        "searchTerms": ["シロナのポケモン", "ロケット団のポケモン"]
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-11"
 }

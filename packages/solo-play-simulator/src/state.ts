@@ -43,6 +43,8 @@ export function classifyOnceInTurnKind(card: Card): OnceInTurnKind | undefined {
 }
 export const HAND_SIZE_AT_SETUP = 7;
 export const PRIZE_COUNT = 6;
+/** ダメカン 1 個が表すダメージの量(docs/solo-play-simulator-design.md「対戦風の一人回し」のダメージときぜつ)。 */
+export const DAMAGE_PER_COUNTER = 10;
 export const COLORLESS: PokemonType = "colorless";
 
 /** エネルギー 1 個ぶんのタイプ。any はすべてのタイプとして働く 1 個(レガシーエネルギーなど)。 */

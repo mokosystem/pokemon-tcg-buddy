@@ -134,8 +134,8 @@ function keyOfCard(card: Card): number {
 }
 
 /**
- * 場のポケモンの見分けの鍵。場所(バトル場かベンチか)、カード、進化前、ついているカード、場に出た番、進化した番、
- * この番に使った特性が同じポケモンは入れ替えても同じ場になるので、同じ鍵にする。
+ * 場のポケモンの見分けの鍵。場所(バトル場かベンチか)、カード、進化前、ついているカード、のっているダメカン、場に出た番、
+ * 進化した番、この番に使った特性が同じポケモンは入れ替えても同じ場になるので、同じ鍵にする。
  */
 function keyOfPokemon(state: GameState, pokemon: PokemonInPlay): string {
   return [
@@ -144,6 +144,7 @@ function keyOfPokemon(state: GameState, pokemon: PokemonInPlay): string {
     pokemon.underneath.map(keyOfCard).join("."),
     pokemon.energies.map(keyOfCard).sort().join("."),
     pokemon.tool === undefined ? "" : keyOfCard(pokemon.tool),
+    pokemon.damage,
     pokemon.turnEntered,
     pokemon.turnEvolved,
     [...pokemon.abilitiesUsedThisTurn].sort().join("."),

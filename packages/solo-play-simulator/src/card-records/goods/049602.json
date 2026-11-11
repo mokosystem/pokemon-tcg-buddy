@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-11",
   "cardEffects": [
     {
       "effect": {
@@ -22,7 +23,7 @@
     {
       "interpretation": "使えない",
       "question": "ベンチにポケモンがいないときに使えるか",
-      "reflectedIn": "効果の最初の操作(入れ替える)に対象が無いときは使えない(card-effects.ts の hasTargetForFirstStep)",
+      "reflectedIn": "効果の最初の操作(入れ替える)に対象が無いときは使えない(effect-operations.ts の firstStepTargetChecks)",
       "source": {
         "checkedOn": "2026-09-23",
         "kind": "officialQa",
@@ -32,5 +33,5 @@
     }
   ],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-11"
 }

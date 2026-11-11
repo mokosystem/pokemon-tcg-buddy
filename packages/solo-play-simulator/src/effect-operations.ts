@@ -4,7 +4,11 @@
  * card-record-schema.ts の部品とこの 2 つの表に 1 行ずつ足す(docs/solo-play-simulator-design.md「部品を足す手順」)。
  */
 
-import { decideLossIfNoOwnPokemonInPlay } from "./battle-style-solo-play-rules.ts";
+import {
+  addDamageToOpponentField,
+  decideLossIfNoOwnPokemonInPlay,
+  knockOutOwnPokemon,
+} from "./battle-style-solo-play-rules.ts";
 import { trimBenchToLimit } from "./bench-limit.ts";
 import {
   type AttachCount,
@@ -37,7 +41,12 @@ import {
   choosePokemonUpTo,
   type EffectContext,
 } from "./effect-choices.ts";
-import type { CardSource, GameState, PokemonInPlay } from "./state.ts";
+import {
+  type CardSource,
+  DAMAGE_PER_COUNTER,
+  type GameState,
+  type PokemonInPlay,
+} from "./state.ts";
 
 // ---- 対象の候補 ----
 
@@ -96,6 +105,11 @@ function listEvolvableBasics(state: GameState): PokemonInPlay[] {
         pokemon.card.stage === EvolutionStage.Basic &&
         state.canEvolveThisTurn(pokemon)
     );
+}
+
+/** ダメカンがのっている自分のポケモン。 */
+function listPokemonWithDamage(state: GameState): PokemonInPlay[] {
+  return state.listPokemonInPlay().filter((pokemon) => pokemon.damage > 0);
 }
 
 /** 条件に合うエネルギーがついている自分のポケモン。 */
@@ -173,6 +187,7 @@ const firstStepTargetChecks: {
   readonly [Name in EffectStep["operation"]]: TargetCheck<Name>;
 } = {
   addCardsDiscardedFromDeckTopInThisEffectToHand: alwaysHasTarget,
+  addDamageToOpponentField: alwaysHasTarget,
   addFromDiscardToHand: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
@@ -194,6 +209,8 @@ const firstStepTargetChecks: {
     return first !== undefined && hasTargetForStep(first, input);
   },
   branchOnCondition: alwaysHasTarget,
+  discardEnergyAttachedToSelf: (_, { source }) =>
+    source.pokemon !== undefined && source.pokemon.energies.length > 0,
   discardFromDeckTop: deckHasCards,
   discardFromHand: (step, { hand }) =>
     listMatchingOrAll(hand, step.filter).length >= Math.max(step.minCount, 1),
@@ -207,6 +224,7 @@ const firstStepTargetChecks: {
   evolveFromDeck: (_, { state }) =>
     state.deck.length > 0 && listEvolvableBasics(state).length > 0,
   increaseAttackDamageThisTurn: alwaysHasTarget,
+  knockOutSelf: (_, { source }) => source.pokemon !== undefined,
   lookAtDeckTopAndAttachEnergyToOwnPokemon: (step, { state }) =>
     state.deck.length > 0 &&
     listOwnPokemonMatching(state, step.targetFilter).length > 0,
@@ -216,6 +234,8 @@ const firstStepTargetChecks: {
   lookAtDeckTopAndTakeIntoHand: deckHasCards,
   moveAnyEnergyFromOwnPokemonToSelf: (_, { source, state }) =>
     listOtherPokemonWithEnergy(state, source.pokemon).length > 0,
+  moveDamageCountersToOpponentField: (_, { state }) =>
+    listPokemonWithDamage(state).length > 0,
   moveEnergyFromBenchToActive: (_, { state }) =>
     state.active !== undefined &&
     state.bench.some((pokemon) => pokemon.energies.length > 0),
@@ -433,18 +453,20 @@ function attachEnergyChosenFromHand(
   }
 }
 
-/** 山札かトラッシュのエネルギーを、条件に合う自分のポケモンにつける操作の引数。 */
-interface EnergyForOwnPokemonStep {
-  readonly energyFilter: CardFilter;
-  readonly maxCount: number;
-  readonly targetFilter: PokemonInPlayFilter;
-}
+/**
+ * 山札かトラッシュのエネルギーを、条件に合う自分のポケモンにつける操作の引数。minCount を持つのは
+ * attachEnergyFromDiscardToOnePokemon だけで、ほかの部品は省略のまま 0 になる。
+ */
+type EnergyForOwnPokemonStep = Pick<
+  StepOf<"attachEnergyFromDiscardToOnePokemon">,
+  "energyFilter" | "maxCount" | "minCount" | "targetFilter"
+>;
 
 type EnergySourceZone = Extract<CardSource, "deck" | "discard">;
 
 /**
- * 山札かトラッシュから、条件に合うエネルギーを 0〜maxCount 枚選ぶ。つける先の候補(条件に合う自分のポケモン)が
- * いなければ選ばない。
+ * 山札かトラッシュから、条件に合うエネルギーを minCount(省略すれば 0)〜maxCount 枚選ぶ。つける先の候補(条件に合う
+ * 自分のポケモン)がいなければ選ばない。
  */
 function chooseEnergiesForOwnPokemon(
   run: OperationRun,
@@ -460,7 +482,7 @@ function chooseEnergiesForOwnPokemon(
       : chooseCardsWithin(
           run.context,
           listMatching(cards, step.energyFilter).filter(isEnergy),
-          { maxCount: step.maxCount, minCount: 0 },
+          { maxCount: step.maxCount, minCount: step.minCount ?? 0 },
           `${run.label}: ${ZONE_NAMES[zone]}から選ぶエネルギー`,
           zone === "deck" ? "deck" : undefined
         );
@@ -470,8 +492,8 @@ function chooseEnergiesForOwnPokemon(
 const ZONE_NAMES = { deck: "山札", discard: "トラッシュ" } as const;
 
 /**
- * 山札かトラッシュからエネルギーを 0〜maxCount 枚選び、1 匹にまとめてつける(公式 Q&A「バーニングチャージ」:
- * 1 枚も選ばなくてよい)。山札から選んだときは、呼び出し側が山札を切る。
+ * 山札かトラッシュからエネルギーを minCount(省略すれば 0)〜maxCount 枚選び、1 匹にまとめてつける(公式 Q&A
+ * 「バーニングチャージ」: 1 枚も選ばなくてよい)。山札から選んだときは、呼び出し側が山札を切る。
  */
 function attachEnergyToOnePokemon(
   run: OperationRun,
@@ -930,6 +952,56 @@ function searchDeckIntoHandFromOneOfPicks(
   state.shuffleDeck();
 }
 
+/** 効果の持ち主についているエネルギーを、すべてか、決まった数を選んでトラッシュする。 */
+function discardEnergyAttachedToHolder(
+  run: OperationRun,
+  step: Extract<BasicOperation, { operation: "discardEnergyAttachedToSelf" }>
+): void {
+  const { context, label, source } = run;
+  const holder = source.pokemon;
+  if (holder === undefined) {
+    return;
+  }
+  const chosen =
+    step.count.kind === "all"
+      ? [...holder.energies]
+      : chooseCardsWithin(
+          context,
+          holder.energies,
+          { maxCount: step.count.value, minCount: step.count.value },
+          `${label}: ${holder.name} からトラッシュするエネルギー`
+        );
+  // 選んだ並びが holder.energies そのものでも、トラッシュするたびに減る配列を読まないよう写してから回す
+  for (const energy of [...chosen]) {
+    context.state.discardAttachedEnergy(holder, energy);
+  }
+  context.state.record(
+    `${label}: ${holder.name} のエネルギー ${chosen.length} 枚をトラッシュ`
+  );
+}
+
+/** ダメカンののった自分のポケモンを 1 匹選び、ダメカンを maxCount 個まで取り除いて、その分を相手の場のダメージに足す。 */
+function moveDamageCountersToOpponentField(
+  run: OperationRun,
+  maxCount: number
+): void {
+  const { context, label } = run;
+  const { state } = context;
+  const pokemon = chooseOnePokemon(
+    context,
+    listPokemonWithDamage(state),
+    `${label}: ダメカンを相手の場にのせ替えるポケモン`
+  );
+  if (pokemon === undefined) {
+    return;
+  }
+  const moved =
+    Math.min(pokemon.damage / DAMAGE_PER_COUNTER, maxCount) *
+    DAMAGE_PER_COUNTER;
+  pokemon.damage -= moved;
+  addDamageToOpponentField(state, moved, `${label}(${pokemon.name} から)`);
+}
+
 function evolveWithRareCandy(run: OperationRun): void {
   const { context, label } = run;
   const pairs = listRareCandyPairs(context.state);
@@ -977,6 +1049,8 @@ const operationRunners: {
       state.takeFromDiscardToHand(card);
     }
   },
+  addDamageToOpponentField: (step, { context, label }) =>
+    addDamageToOpponentField(context.state, step.amount, label),
   addFromDiscardToHand: (step, { context, label }) => {
     const chosen = chooseCardsWithin(
       context,
@@ -999,6 +1073,8 @@ const operationRunners: {
     attachEnergyFromHandDistributed(run, step),
   attachEnergyFromHandToSelf: (step, run) =>
     attachEnergyFromHandToHolder(run, step),
+  discardEnergyAttachedToSelf: (step, run) =>
+    discardEnergyAttachedToHolder(run, step),
   discardFromDeckTop: (step, { context, progress }) => {
     progress.cardsDiscardedFromDeckTop.push(
       ...context.state.discardFromDeckTop(step.count)
@@ -1046,6 +1122,11 @@ const operationRunners: {
     });
     context.state.record(`${label}: この番のワザのダメージ +${step.amount}`);
   },
+  knockOutSelf: (_, { context, source }) => {
+    if (source.pokemon !== undefined) {
+      knockOutOwnPokemon(context, source.pokemon);
+    }
+  },
   lookAtDeckTopAndAttachEnergyToOwnPokemon: (step, run) =>
     lookAtDeckTopAndAttachToOwnPokemon(run, step),
   lookAtDeckTopAndAttachEnergyToSelf: (step, run) =>
@@ -1063,6 +1144,8 @@ const operationRunners: {
     context.state.takeFromDeckTop(step.lookCount, chosen, step.restPlacement);
   },
   moveAnyEnergyFromOwnPokemonToSelf: (_, run) => moveEnergyToHolder(run),
+  moveDamageCountersToOpponentField: (step, run) =>
+    moveDamageCountersToOpponentField(run, step.maxCount),
   moveEnergyFromBenchToActive: (step, run) => {
     const { active, bench } = run.context.state;
     if (active !== undefined) {
