@@ -1,31 +1,62 @@
 /**
- * 探索の仕組み(状態を複製して手を試す、効果の中の選択を記録して再生する、見えていないカードを混ぜ直す)が残っていることを
- * 確かめる。評価はテストの中に書いた小さな関数を使う。山札の順だけが違う 2 つの状態で、探索が呼ぶ評価の値が実際の状態に
- * 手を加えるまで(または実際に引くまで)すべて同じになるかで、混ぜ直しが抜けていないことを見る。混ぜ直しが抜けていれば、
- * 先を試すときに実際の山札から引くので、値が一致しない。
+ * 探索の仕組み(状態を複製して手を試す、効果の中の選択を記録して再生する、見えていないカードを混ぜ直す)と、試しの点数での
+ * 比べ方を確かめる。試しの点数を出す関数はテストの中に書いた小さな関数を使う。山札の順だけが違う 2 つの状態で、探索が
+ * 試しの点数を出す関数に渡す状態から作った値が、実際の状態に手を加えるまで(または実際に引くまで)すべて同じになるかで、
+ * 混ぜ直しが抜けていないことを見る。混ぜ直しが抜けていれば、先を試すときに実際の山札から引くので、値が一致しない。
  */
 
 import { describe, expect, test } from "bun:test";
+import { createFirstActionPolicy } from "./action-list-playing-policies.ts";
 import { playOpponentTurn } from "./battle-style-solo-play-rules.ts";
-import { buildRecordedCard, buildState, namesOf } from "./card-test-support.ts";
+import {
+  activeOf,
+  buildRecordedCard,
+  buildState,
+  namesOf,
+} from "./card-test-support.ts";
 import type { Card } from "./cards.ts";
+import {
+  advanceBattleStyleSoloPlay,
+  type BattleStyleSoloPlayResumePoint,
+} from "./engine.ts";
 import { createSeededRandom } from "./random.ts";
 import {
   createSearchPolicy,
-  type Evaluator,
+  type SearchOptions,
   type SearchPolicy,
+  type TrialScore,
+  type TrialScorer,
 } from "./search-policy.ts";
-import type { GameState } from "./state.ts";
+import { type GameState, PRIZE_COUNT } from "./state.ts";
 
 const MUKU_DREW = /ムク: \d+ 枚引く/;
 
-/** 手札のカード ID の数値の合計。手札に何が来たかで値が変わるため、引いたカードを知っているかが値に出る。 */
-const sumHandCardIds: Evaluator = ({ state }) =>
-  state.hand.reduce((total, card) => total + Number(card.cardId), 0);
+/** 勝率だけを持つ点数。 */
+function scoreOf(winRate: number): TrialScore {
+  return { prizeDifference: 0, winRate };
+}
 
-/** 評価を呼ぶたびに値を記録する探索。stopWhen が真を返した後の評価は記録しない。 */
+/** 手札のカード ID の数値の合計を勝率の欄に入れる。手札に何が来たかで値が変わるため、引いたカードを知っているかが値に出る。 */
+const sumHandCardIds: TrialScorer = ({ state }) =>
+  scoreOf(state.hand.reduce((total, card) => total + Number(card.cardId), 0));
+
+function createPolicy(
+  scoreTrial: TrialScorer,
+  overrides: Partial<SearchOptions> = {}
+): SearchPolicy {
+  return createSearchPolicy({
+    samplesPerCandidate: 4,
+    scoreTrial,
+    searchesEffectChoices: true,
+    seed: 20_260_927,
+    tieBreak: "none",
+    ...overrides,
+  });
+}
+
+/** 試しの点数を出すたびに値を記録する探索。stopWhen が真を返した後の点数は記録しない。 */
 function createRecordingPolicy(
-  evaluator: Evaluator,
+  scoreTrial: TrialScorer,
   stopWhen: () => boolean
 ): {
   policy: SearchPolicy;
@@ -33,25 +64,18 @@ function createRecordingPolicy(
 } {
   const values: number[] = [];
   let stopped = false;
-  const recording: Evaluator = (input) => {
-    const value = evaluator(input);
+  const recording: TrialScorer = (input) => {
+    const score = scoreTrial(input);
     stopped ||= stopWhen();
     if (!stopped) {
-      values.push(value);
+      values.push(score.winRate);
     }
-    return value;
+    return score;
   };
-  return {
-    policy: createSearchPolicy(recording, {
-      samplesForUncertainOutcome: 4,
-      searchesEffectChoices: true,
-      seed: 20_260_927,
-    }),
-    values,
-  };
+  return { policy: createPolicy(recording), values };
 }
 
-/** 番の中の最初の行動を選ぶまでの評価の値(実際の状態に履歴が増えたら止める)。 */
+/** 番の中の最初の行動を選ぶまでの点数(実際の状態に履歴が増えたら止める)。 */
 function recordFirstTurnDecision(state: GameState): number[] {
   const eventCount = state.events.length;
   const { policy, values } = createRecordingPolicy(
@@ -150,23 +174,151 @@ describe("探索は山札の順とサイドの中身を知らない", () => {
       random: createSeededRandom(1001),
       turn: 2,
     });
-    state.active?.energies.push(
+    activeOf(state).energies.push(
       buildRecordedCard("050746"),
       buildRecordedCard("049463")
     );
-    const usedPhantomDive: Evaluator = ({ state: evaluated }) =>
-      [...evaluated.attacks.values()].includes("ファントムダイブ") ? 1 : 0;
-    const { policy } = createRecordingPolicy(usedPhantomDive, () => false);
+    const usedPhantomDive: TrialScorer = ({ state: tried }) =>
+      scoreOf([...tried.attacks.values()].includes("ファントムダイブ") ? 1 : 0);
+    const policy = createPolicy(usedPhantomDive);
     const chosen = policy.chooseAttack({ choices: policy, state });
     expect(chosen?.attack.name).toBe("ファントムダイブ");
     expect(state.random.nextFloat()).toBe(createSeededRandom(1001).nextFloat());
   });
 });
 
+describe("試しの点数での比べ方", () => {
+  // シロナのフカマル(049092)をバトル場に、手札にラルトス(049714)。ベンチに出す行動と番を終えることを比べる
+  const buildBenchChoice = () =>
+    buildState({
+      active: buildRecordedCard("049092"),
+      hand: [buildRecordedCard("049714")],
+      random: createSeededRandom(1),
+    });
+  /** 勝率はいつも 0 で、ベンチポケモンの数を取ったサイドの差の欄に入れる。 */
+  const benchCountAsPrizeDifference: TrialScorer = ({ state }) => ({
+    prizeDifference: state.bench.length,
+    winRate: 0,
+  });
+
+  test("勝率が並んだとき、取ったサイドの差で比べる設定なら、差の大きい行動を選ぶ", () => {
+    const state = buildBenchChoice();
+    const policy = createPolicy(benchCountAsPrizeDifference, {
+      tieBreak: "prizeDifference",
+    });
+    policy.playTurn({ choices: policy, state });
+    expect(state.bench).toHaveLength(1);
+  });
+
+  test("勝率が並んだとき、取ったサイドの差で比べない設定なら、先に並んだ「番を終える」を選ぶ", () => {
+    const state = buildBenchChoice();
+    const policy = createPolicy(benchCountAsPrizeDifference);
+    policy.playTurn({ choices: policy, state });
+    expect(state.bench).toHaveLength(0);
+  });
+
+  test("勝率が高い行動は、取ったサイドの差より優先する", () => {
+    const state = buildBenchChoice();
+    const policy = createPolicy(
+      ({ state: tried }) => ({
+        prizeDifference: -tried.bench.length,
+        winRate: tried.bench.length,
+      }),
+      { tieBreak: "prizeDifference" }
+    );
+    policy.playTurn({ choices: policy, state });
+    expect(state.bench).toHaveLength(1);
+  });
+});
+
+describe("ワザを試すときの先の進め方", () => {
+  test("ワザを試した先は、サイドの判定と相手の番まで進めてから点数を出し、使わないときはサイドの判定の後の相手の番から続ける", () => {
+    // ドラパルトex(049264)のファントムダイブは 200 ダメージ(相手の場のダメージ 200 で、番の終わりにサイドを 2 枚取る。
+    // docs/solo-play-simulator-design.md「相手の場のダメージとサイド」)
+    const state = buildState({
+      active: buildRecordedCard("049264"),
+      deck: ["050461", "049445", "049463", "050467"].map(buildRecordedCard),
+      random: createSeededRandom(7),
+    });
+    activeOf(state).energies.push(
+      buildRecordedCard("050746"),
+      buildRecordedCard("049463")
+    );
+    const observed: {
+      prizesAfterOpponentTurn: number;
+      resumePoint: BattleStyleSoloPlayResumePoint;
+      usedAttack: boolean;
+    }[] = [];
+    const advanceThroughOpponentTurn: TrialScorer = ({
+      resumePoint,
+      state: tried,
+    }) => {
+      const usedAttack = tried.attacks.has(tried.turn);
+      const policy = createFirstActionPolicy();
+      advanceBattleStyleSoloPlay(
+        { choices: policy, state: tried },
+        { ...policy, chooseAttack: () => undefined },
+        resumePoint,
+        "ownTurnStart"
+      );
+      observed.push({
+        prizesAfterOpponentTurn: tried.prizes.length,
+        resumePoint,
+        usedAttack,
+      });
+      return {
+        prizeDifference: PRIZE_COUNT - tried.prizes.length,
+        winRate: 0,
+      };
+    };
+    const policy = createPolicy(advanceThroughOpponentTurn, {
+      samplesPerCandidate: 1,
+      tieBreak: "prizeDifference",
+    });
+    const chosen = policy.chooseAttack({ choices: policy, state });
+    expect(chosen?.attack.name).toBe("ファントムダイブ");
+    const phantomDive = observed.find(
+      (entry) => entry.usedAttack && entry.prizesAfterOpponentTurn < PRIZE_COUNT
+    );
+    expect(phantomDive).toEqual({
+      prizesAfterOpponentTurn: PRIZE_COUNT - 2,
+      resumePoint: "ownTurnAttack",
+      usedAttack: true,
+    });
+    expect(observed.at(-1)).toEqual({
+      prizesAfterOpponentTurn: PRIZE_COUNT,
+      resumePoint: "opponentTurn",
+      usedAttack: false,
+    });
+  });
+});
+
 describe("探索の判断基準の、相手の番の選択", () => {
-  test("相手の番にきぜつしてベンチの上限が下がると、ベンチを減らすポケモンとバトル場に出すポケモンを候補の先頭から選ぶ", () => {
+  test("相手の番にバトルポケモンがきぜつした後に出すベンチポケモンを、候補ごとに試して選ぶ", () => {
+    // シロナのフカマル(049092、HP 70)が相手の 2 回目の番(100)できぜつする(docs/solo-play-simulator-design.md「相手の番」
+    // 「ダメージときぜつ」)。ベンチはシロナのフカマル、ラルトス(049714)、シロナのロゼリア(048748)
+    const budew = buildRecordedCard("048748");
+    const gible = buildRecordedCard("049092");
+    const state = buildState({
+      active: gible,
+      bench: [gible, buildRecordedCard("049714"), budew],
+      deck: ["050461", "049445", "049463"].map(buildRecordedCard),
+      random: createSeededRandom(1),
+    });
+    state.opponentTurnCount = 1;
+    const resumePoints: BattleStyleSoloPlayResumePoint[] = [];
+    const policy = createPolicy(({ resumePoint, state: tried }) => {
+      resumePoints.push(resumePoint);
+      return scoreOf(tried.active?.card === budew ? 1 : 0);
+    });
+    playOpponentTurn({ choices: policy, state });
+    expect(activeOf(state).card).toBe(budew);
+    expect(new Set(resumePoints)).toEqual(new Set(["ownTurnStart"]));
+  });
+
+  test("相手の番にきぜつしてベンチの上限が下がると、ベンチを減らすポケモンは候補の先頭から選ぶ", () => {
     // ゼロの大空洞(048706)は場に「テラスタル」のポケモンがいればベンチの上限 8。イーブイex(049282、「テラスタル」、
-    // HP 200)が相手の 3 回目の番(200)できぜつすると、上限が 5 に戻る
+    // HP 200)が相手の 3 回目の番(200。docs/solo-play-simulator-design.md「相手の番」)できぜつすると、上限が 5 に戻る
     const gible = buildRecordedCard("049092");
     const state = buildState({
       active: buildRecordedCard("049282"),
@@ -174,17 +326,14 @@ describe("探索の判断基準の、相手の番の選択", () => {
       random: createSeededRandom(1),
     });
     state.stadium = buildRecordedCard("048706");
-    if (state.active !== undefined) {
-      state.active.damage = 100;
-    }
+    activeOf(state).damage = 100;
     state.opponentTurnCount = 2;
-    const { policy } = createRecordingPolicy(
-      () => 0,
-      () => false
-    );
+    const [first] = state.bench;
+    const policy = createPolicy(() => scoreOf(0));
     playOpponentTurn({ choices: policy, state });
-    expect(state.active?.card.name).toBe("シロナのフカマル");
     expect(state.bench).toHaveLength(4);
+    expect(state.bench).not.toContain(first);
+    expect(activeOf(state).card.name).toBe("シロナのフカマル");
   });
 });
 
@@ -198,16 +347,16 @@ describe("探索は場のポケモンをダメカンで見分ける", () => {
       bench: [ralts, ralts],
       random: createSeededRandom(1),
     });
-    state.active?.energies.push(buildRecordedCard("047909"));
+    activeOf(state).energies.push(buildRecordedCard("047909"));
     const [fewer, more] = state.bench;
     if (fewer === undefined || more === undefined) {
       throw new Error("ベンチのラルトスがいない");
     }
     fewer.damage = 10;
     more.damage = 50;
-    const policy = createSearchPolicy(
-      ({ state: evaluated }) => evaluated.opponentFieldDamage,
-      { samplesForUncertainOutcome: 1, searchesEffectChoices: true, seed: 1 }
+    const policy = createPolicy(
+      ({ state: tried }) => scoreOf(tried.opponentFieldDamage / 1000),
+      { samplesPerCandidate: 1 }
     );
     policy.playTurn({ choices: policy, state });
     expect(state.opponentFieldDamage).toBe(30);

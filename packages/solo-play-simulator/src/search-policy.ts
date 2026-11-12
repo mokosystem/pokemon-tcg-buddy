@@ -1,15 +1,18 @@
 /**
- * 探索によるプレイングの判断基準。評価(Evaluator)のいちばん高い手を、状態を複製して試しながら 1 手ずつ選ぶ。
- * 評価と、相手の番とサイドの判定を含む進め方は Issue 70 で決める。
+ * 探索によるプレイングの判断基準。候補の手ごとに、見えていないカードを混ぜ直した複製の上で手を行い、その先を決まった方法で
+ * 進めて 1 回の試しの点数を出し、決まった回数の平均がいちばん高い手を選ぶ。先の進め方は試しの点数を出す関数(TrialScorer)
+ * が決める(試し回し、学習した場の評価)。
  *
- * - 番の中は、今できる行動の一覧の行動ごとに状態を複製して行い、評価の高い行動を実際に行う。「番を終える」が
- *   いちばん高ければ終える
+ * - 番の中は、今できる行動の一覧の行動と「番を終える」を、それぞれ同じ回数だけ試して比べる
+ * - ワザは、使えるワザの一覧の各候補と「使わない」を試す。先はサイドの判定と相手の番まで進めて点数を出す
  * - 効果の中の選択(何を捨て、何を探すか)は、行動の前の状態を複製してそこまでの選択を再生し、候補を 1 つ入れて
- *   効果を最後まで行って評価する。効果の実行(runEffect)は途中で止めて再開できないため
+ *   効果を最後まで行ってから点数を出す。効果の実行(runEffect)は途中で止めて再開できないため
+ * - 相手の番にバトルポケモンがきぜつした後に出すベンチポケモンも、候補ごとに試して選ぶ
  * - 探索は山札の順とサイドの中身を知らない。複製で先を試すときは、見えていないカードを混ぜ直し、実際の対戦とは
- *   別の乱数に差し替えてから試す。結果が見えていないカードやコインで決まった行動は、混ぜ直しを変えて数回試して平均する
+ *   別の乱数に差し替えてから試す
  */
 
+import { takePrizesForOpponentFieldDamage } from "./battle-style-solo-play-rules.ts";
 import {
   listUsableAttacksOfActive,
   resolveEndOfTurnTriggers,
@@ -25,7 +28,11 @@ import {
   hasDistinctProvidedTypes,
   type PokemonChoiceRequest,
 } from "./effect-choices.ts";
-import { type PlayingPolicy, placeBenchAtSetup } from "./engine.ts";
+import {
+  type BattleStyleSoloPlayResumePoint,
+  type PlayingPolicy,
+  placeBenchAtSetup,
+} from "./engine.ts";
 import {
   listAvailableActions,
   type PlayerAction,
@@ -39,73 +46,140 @@ import {
   type RandomSource,
 } from "./state.ts";
 
-/** 探索が数えた仕事の量。1 回の試行あたりの複製と評価の回数を記録するために持つ。 */
+/** 探索が数えた仕事の量。1 回の対戦あたりの複製と試しの回数を記録するために持つ。 */
 export interface SearchStatistics {
   /** 状態を複製した回数。 */
   clones: number;
-  /** 評価を呼んだ回数。 */
-  evaluations: number;
+  /** 試しの点数を出した回数。 */
+  trialScores: number;
 }
 
-export interface EvaluationInput {
-  /** 評価する状態の番。番の中の行動を比べるときはその番、ワザを比べるときは次の番、対戦の準備では 1。 */
-  readonly fromTurn: number;
-  /** 評価が乱数を使うときの種。同じ場面で比べる候補には同じ種を渡す。 */
+/** 1 回の試しの点数。 */
+export interface TrialScore {
+  /** 自分が取ったサイドの枚数から、相手が取ったサイドの枚数を引いた値。 */
+  readonly prizeDifference: number;
+  /** 試し回しで勝てば 1、負ければ 0。学習した場の評価では、勝率の見積もり(0〜1)。 */
+  readonly winRate: number;
+}
+
+export interface TrialScoringInput {
+  /** state をどこから続けるか。 */
+  readonly resumePoint: BattleStyleSoloPlayResumePoint;
+  /** 点数を出す関数が乱数を使うときの種。同じ場面で比べる候補には同じ並びの種を渡す。 */
   readonly seed: number;
-  /** 評価する状態が番のどこにあるか。 */
-  readonly stage: TurnStage;
-  /** 評価する状態。評価は状態を変えない(試すときは複製する)。 */
+  /** 候補の手を行った後の、見えていないカードを混ぜ直した複製。点数を出す関数は書き換えてよい(使い捨て)。 */
   readonly state: GameState;
-  /** 評価の中で状態を複製したり評価を呼んだりしたら、ここに数える。 */
-  readonly statistics: SearchStatistics;
 }
 
-/**
- * 評価する状態が番のどこにあるか。
- * - actionsRemain: fromTurn の番の中で、この後も行動を続けられる(番の中の行動を試した後)
- * - actionsDone: fromTurn の番の行動を終えた(「番を終える」を試すとき)。ワザはまだ
- * - beforeDraw: fromTurn の番の最初の 1 枚を引く前(ワザを試して次の番に進めた後、対戦の準備)
- */
-export type TurnStage = "actionsRemain" | "actionsDone" | "beforeDraw";
+export type TrialScorer = (input: TrialScoringInput) => TrialScore;
 
-/** 状態の良さ。大きいほど良い状態の点数。何を点数にするかは Issue 70 で決める。 */
-export type Evaluator = (input: EvaluationInput) => number;
+/** 試した平均の勝率が並んだとき(差が EVALUATION_TOLERANCE 以下)に、何で比べるか。 */
+export type TrialScoreTieBreak = "none" | "prizeDifference";
 
 export interface SearchOptions {
-  /**
-   * 結果が見えていないカードやコインで決まる行動を、混ぜ直しを変えて何回試して平均するか。結果がそれらで決まらない
-   * 行動(ベンチに出す、進化させる、エネルギーをつける)は 1 回だけ試す。
-   */
-  readonly samplesForUncertainOutcome: number;
+  /** 候補の手 1 つを何回試して平均するか(設定の「試す回数」)。 */
+  readonly samplesPerCandidate: number;
+  readonly scoreTrial: TrialScorer;
   /** 効果の中の選択を、候補を再生して試して選ぶか。偽なら候補の先頭から選ぶ。 */
   readonly searchesEffectChoices: boolean;
   /** 探索が使う乱数の種。実際の対戦の乱数とは別に持ち、探索が試した回数で実際の対戦の山札の順が変わらないようにする。 */
   readonly seed: number;
+  readonly tieBreak: TrialScoreTieBreak;
 }
 
 export interface SearchPolicy extends PlayingPolicy {
+  /**
+   * 番の中の行動を実際の状態で行う。効果の中の選択は、行動の前の状態から再生して試して選ぶ(searchesEffectChoices が
+   * 偽なら候補の先頭から)。番の中の手の並びを探す探索(turn-sequence-search-policy.ts)が、選んだ並びの最初の行動を
+   * 行うときに使う。
+   */
+  readonly performTurnAction: (
+    context: EffectContext,
+    action: PlayerAction
+  ) => void;
   readonly statistics: SearchStatistics;
 }
 
 /** 番の中で同じことを繰り返していないかの歯止め。1 つの番の行動はカードの枚数と番に 1 回の制限で有限になる。 */
 const MAX_ACTIONS_PER_TURN = 100;
 
-/** 評価の差がこれ以下なら同じとみなし、先に並んだ候補(番を終える、使わない、を含む)を選ぶ。 */
+/** 点数の差がこれ以下なら同じとみなし、先に並んだ候補(番を終える、使わない、を含む)を選ぶ。 */
 const EVALUATION_TOLERANCE = 1e-9;
+
+/**
+ * 2 つの試しの点数を比べる。left のほうが良ければ正、right のほうが良ければ負、同じとみなすなら 0。平均の勝率を比べ、
+ * 差が EVALUATION_TOLERANCE 以下なら、tieBreak が "prizeDifference" のときだけ取ったサイドの差で比べる。
+ */
+export function compareTrialScores(
+  left: TrialScore,
+  right: TrialScore,
+  tieBreak: TrialScoreTieBreak
+): number {
+  const winRateDifference = left.winRate - right.winRate;
+  if (Math.abs(winRateDifference) > EVALUATION_TOLERANCE) {
+    return winRateDifference;
+  }
+  if (tieBreak === "none") {
+    return 0;
+  }
+  const prizeDifference = left.prizeDifference - right.prizeDifference;
+  return Math.abs(prizeDifference) > EVALUATION_TOLERANCE ? prizeDifference : 0;
+}
+
+/** 候補を並びの順に点数で比べ、いちばん良い候補を返す。点数が同じなら先に並んだ候補を残す。 */
+export function pickBestCandidate<T>(
+  candidates: readonly T[],
+  scoreCandidate: (candidate: T) => TrialScore,
+  tieBreak: TrialScoreTieBreak
+): T {
+  let best: { candidate: T; score: TrialScore } | undefined;
+  for (const candidate of candidates) {
+    const score = scoreCandidate(candidate);
+    if (
+      best === undefined ||
+      compareTrialScores(score, best.score, tieBreak) > 0
+    ) {
+      best = { candidate, score };
+    }
+  }
+  if (best === undefined) {
+    throw new Error("比べる候補が無い");
+  }
+  return best.candidate;
+}
+
+/** 試しの点数の平均。 */
+function averageTrialScores(scores: readonly TrialScore[]): TrialScore {
+  const count = Math.max(scores.length, 1);
+  return {
+    prizeDifference:
+      scores.reduce((total, score) => total + score.prizeDifference, 0) / count,
+    winRate: scores.reduce((total, score) => total + score.winRate, 0) / count,
+  };
+}
 
 /** 状態に対して行う 1 つの行動。複製した状態にも同じ行動を行えるよう、状態ではなく文脈を受け取る。 */
 type ReplayableAction = (context: EffectContext) => void;
 
-/**
- * 行動を試した後、評価の前に複製に行うこと。ワザは番の最後に使うため、ワザを試した複製は番の終わりの効果を起こして
- * 次の番に進め(引く 1 枚は引かない)、次の番の側から評価する。
- */
-type TrialEnding = (state: GameState) => void;
+/** 行動を試した後の複製を、どこから続けるか。続ける前に複製に行うことがあれば、ここで行う。 */
+type TrialContinuation = (state: GameState) => BattleStyleSoloPlayResumePoint;
 
-/** ワザを試した複製の番の終わりの効果を起こし、次の番に進める。 */
-function endTurnForEvaluation(state: GameState): void {
+/** 番の中の行動を試した後は、番の中の行動から続ける。 */
+const continueTurnActions: TrialContinuation = () => "ownTurnActions";
+/** 番を終えるとき、またはワザを使った後は、ワザを選ぶところから続ける(2 回目のワザを使える効果があれば続ける側が選ぶ)。 */
+const continueFromAttack: TrialContinuation = () => "ownTurnAttack";
+/**
+ * ワザを使わないときは、番の終わりの効果とサイドの判定を行って相手の番から続ける(engine.ts の番の進行と同じ順)。
+ * 番の終わりの効果の中の選択は候補の先頭から選ぶ。
+ */
+const continueWithoutAttack: TrialContinuation = (state) => {
   resolveEndOfTurnTriggers({ choices: firstCandidateChoices, state });
-  state.advanceToNextTurn();
+  takePrizesForOpponentFieldDamage(state);
+  return "opponentTurn";
+};
+
+function doNothing(): void {
+  // 「番を終える」と「使わない」は、複製に何もしない
 }
 
 /** 効果の中の選択の答え。候補は何番目かで持つ(複製では場のポケモンの参照が変わるため)。 */
@@ -183,7 +257,7 @@ function keyOfAction(state: GameState, action: PlayerAction): string {
 }
 
 /** 入れ替えても同じ場になる行動を 1 つにまとめる(先に並んだものを残す)。同じ結果になる行動を何度も試さないため。 */
-function listDistinctActions(
+export function listDistinctActions(
   state: GameState,
   actions: readonly PlayerAction[]
 ): PlayerAction[] {
@@ -420,15 +494,17 @@ class ScriptedChoices implements EffectChoices {
   }
 }
 
-/** 探索の各部分が共有する道具(複製と評価を数え、評価を呼ぶ)。 */
+/** 探索の各部分が共有する道具(複製と試しを数え、試しの点数を出す)。 */
 class SearchTools {
-  readonly statistics: SearchStatistics = { clones: 0, evaluations: 0 };
+  readonly statistics: SearchStatistics = { clones: 0, trialScores: 0 };
   readonly searchesEffectChoices: boolean;
-  private readonly evaluator: Evaluator;
+  readonly tieBreak: TrialScoreTieBreak;
+  private readonly scorer: TrialScorer;
 
-  constructor(evaluator: Evaluator, searchesEffectChoices: boolean) {
-    this.evaluator = evaluator;
-    this.searchesEffectChoices = searchesEffectChoices;
+  constructor(options: SearchOptions) {
+    this.scorer = options.scoreTrial;
+    this.searchesEffectChoices = options.searchesEffectChoices;
+    this.tieBreak = options.tieBreak;
   }
 
   cloneState(state: GameState, random: RandomSource): GameState {
@@ -436,20 +512,13 @@ class SearchTools {
     return state.clone(random);
   }
 
-  evaluate(
+  scoreTrial(
     state: GameState,
-    fromTurn: number,
-    seed: number,
-    stage: TurnStage
-  ): number {
-    this.statistics.evaluations += 1;
-    return this.evaluator({
-      fromTurn,
-      seed,
-      stage,
-      state,
-      statistics: this.statistics,
-    });
+    resumePoint: BattleStyleSoloPlayResumePoint,
+    seed: number
+  ): TrialScore {
+    this.statistics.trialScores += 1;
+    return this.scorer({ resumePoint, seed, state });
   }
 
   /**
@@ -463,58 +532,42 @@ class SearchTools {
   }
 
   /**
-   * 行動を複製で試した評価。seeds の種ごとに見えていないカードを混ぜ直した複製で行動を行い、評価の平均をとる。
-   * 行動の結果が見えていないカードやコインで決まらなかったら、1 回で打ち切る。効果の中の選択は、同じ複製の中で
-   * 候補を試して選ぶ(試す回数は 1 回)。
+   * 行動を複製で試した点数の平均。seeds の種ごとに見えていないカードを混ぜ直した複製で行動を行い、continuation の
+   * 場所から点数を出す。効果の中の選択は、同じ複製の中で候補を試して選ぶ(試す回数は 1 回)。
    */
-  evaluateByTrying(
+  scoreByTrying(
     state: GameState,
     action: ReplayableAction,
-    fromTurn: number,
     seeds: readonly number[],
-    ending?: TrialEnding
-  ): number {
-    let total = 0;
-    let tried = 0;
-    for (const seed of seeds) {
-      const trial = this.cloneWithRemixedUnseenCards(state, seed);
-      const uncertainBefore = trial.uncertainOutcomeCount;
-      action({
-        choices: this.searchesEffectChoices
-          ? new ChoiceSearch({
-              action,
-              createStateBeforeAction: () =>
-                this.cloneWithRemixedUnseenCards(state, seed),
-              ...(ending === undefined ? {} : { ending }),
-              fromTurn,
-              seeds: [seed],
-              tools: this,
-            })
-          : firstCandidateChoices,
-        state: trial,
-      });
-      ending?.(trial);
-      total += this.evaluate(
-        trial,
-        fromTurn,
-        seed,
-        ending === undefined ? "actionsRemain" : "beforeDraw"
-      );
-      tried += 1;
-      if (trial.uncertainOutcomeCount === uncertainBefore) {
-        break;
-      }
-    }
-    return total / tried;
+    continuation: TrialContinuation
+  ): TrialScore {
+    return averageTrialScores(
+      seeds.map((seed) => {
+        const trial = this.cloneWithRemixedUnseenCards(state, seed);
+        action({
+          choices: this.searchesEffectChoices
+            ? new ChoiceSearch({
+                action,
+                continuation,
+                createStateBeforeAction: () =>
+                  this.cloneWithRemixedUnseenCards(state, seed),
+                seeds: [seed],
+                tools: this,
+              })
+            : firstCandidateChoices,
+          state: trial,
+        });
+        return this.scoreTrial(trial, continuation(trial), seed);
+      })
+    );
   }
 }
 
 interface ChoiceSearchParameters {
   readonly action: ReplayableAction;
+  readonly continuation: TrialContinuation;
   /** 行動の前の状態の新しい複製を返す。乱数も行動の前と同じ続きにする(再生が同じ経過をたどるように)。 */
   readonly createStateBeforeAction: () => GameState;
-  readonly ending?: TrialEnding;
-  readonly fromTurn: number;
   /** 候補を試すときの混ぜ直しの種。候補どうしで同じ種を使う。 */
   readonly seeds: readonly number[];
   readonly tools: SearchTools;
@@ -535,61 +588,44 @@ class ChoiceSearch implements EffectChoices {
     this.parameters = parameters;
   }
 
-  private evaluateOption(option: ChoiceAnswer): number {
-    const { action, createStateBeforeAction, ending, fromTurn, seeds, tools } =
+  private scoreOption(option: ChoiceAnswer): TrialScore {
+    const { action, continuation, createStateBeforeAction, seeds, tools } =
       this.parameters;
-    let total = 0;
-    let tried = 0;
-    for (const seed of seeds) {
-      const replay = createStateBeforeAction();
-      let uncertainAtChoice = replay.uncertainOutcomeCount;
-      action({
-        choices: new ScriptedChoices(
-          this.answers,
-          option,
-          (state, hasSeenDeck) => {
-            state.random = new SeededRandom(seed);
-            if (hasSeenDeck) {
-              state.shuffleUnknownDeckOrder();
-            } else {
-              state.remixUnseenCards();
+    return averageTrialScores(
+      seeds.map((seed) => {
+        const replay = createStateBeforeAction();
+        action({
+          choices: new ScriptedChoices(
+            this.answers,
+            option,
+            (state, hasSeenDeck) => {
+              state.random = new SeededRandom(seed);
+              if (hasSeenDeck) {
+                state.shuffleUnknownDeckOrder();
+              } else {
+                state.remixUnseenCards();
+              }
             }
-            uncertainAtChoice = state.uncertainOutcomeCount;
-          }
-        ),
-        state: replay,
-      });
-      ending?.(replay);
-      total += tools.evaluate(
-        replay,
-        fromTurn,
-        seed,
-        ending === undefined ? "actionsRemain" : "beforeDraw"
-      );
-      tried += 1;
-      if (replay.uncertainOutcomeCount === uncertainAtChoice) {
-        break;
-      }
-    }
-    return total / tried;
+          ),
+          state: replay,
+        });
+        return tools.scoreTrial(replay, continuation(replay), seed);
+      })
+    );
   }
 
   private choose(state: GameState, choice: ChoiceRequest): ChoiceAnswer {
     const options = listChoiceOptions(state, choice);
-    const [first] = options;
-    if (first === undefined) {
+    const best =
+      options.length > 1
+        ? pickBestCandidate(
+            options,
+            (option) => this.scoreOption(option),
+            this.parameters.tools.tieBreak
+          )
+        : options[0];
+    if (best === undefined) {
       throw new Error("効果の中の選択に、選べる組が無い");
-    }
-    let best = first;
-    if (options.length > 1) {
-      let bestValue = Number.NEGATIVE_INFINITY;
-      for (const option of options) {
-        const value = this.evaluateOption(option);
-        if (value > bestValue + EVALUATION_TOLERANCE) {
-          best = option;
-          bestValue = value;
-        }
-      }
     }
     this.answers.push(best);
     return best;
@@ -683,29 +719,25 @@ function useAttackAt(index: number): ReplayableAction {
 }
 
 /**
- * 評価から、探索でプレイングの判断基準を作る。1 つの判断基準を試行をまたいで使ってよい(試行ごとの記憶は対戦の
- * 状態ごとに持つ)。
+ * 試しの点数を出す関数から、探索でプレイングの判断基準を作る。判断基準は試行の中で記憶を持つ(対戦の準備で選んだベンチ、
+ * ワザの効果の中の選択)ため、試行ごとに作る。
  */
-export function createSearchPolicy(
-  evaluator: Evaluator,
-  options: SearchOptions
-): SearchPolicy {
-  const tools = new SearchTools(evaluator, options.searchesEffectChoices);
+export function createSearchPolicy(options: SearchOptions): SearchPolicy {
+  const tools = new SearchTools(options);
   const searchRandom = new SeededRandom(options.seed);
   const drawSeeds = (): number[] =>
-    Array.from({ length: options.samplesForUncertainOutcome }, () =>
+    Array.from({ length: options.samplesPerCandidate }, () =>
       searchRandom.nextSeed()
     );
   const benchChosenAtSetup = new WeakMap<GameState, readonly Card[]>();
   /** runBattleStyleSoloPlayGame がワザを使うときの効果の中の選択。chooseAttack で用意する。 */
   let choicesForAttack: EffectChoices | undefined;
 
-  /** 実際の状態で行動を行う。効果の中の選択は、行動の前の状態から再生して試して選ぶ。 */
+  /** 実際の状態で行動を行うときの効果の中の選択。行動の前の状態から再生して試して選ぶ。 */
   const createChoicesFor = (
     state: GameState,
     action: ReplayableAction,
-    fromTurn: number,
-    ending?: TrialEnding
+    continuation: TrialContinuation
   ): EffectChoices => {
     if (!options.searchesEffectChoices) {
       return firstCandidateChoices;
@@ -713,19 +745,57 @@ export function createSearchPolicy(
     const before = tools.cloneState(state, copyRandom(state.random));
     return new ChoiceSearch({
       action,
+      continuation,
       createStateBeforeAction: () =>
         tools.cloneState(before, copyRandom(before.random)),
-      ...(ending === undefined ? {} : { ending }),
-      fromTurn,
       seeds: drawSeeds(),
       tools,
     });
   };
 
   /**
+   * 相手の番にバトルポケモンがきぜつした後に出すベンチポケモンを、候補ごとに試して選ぶ。相手の番のきぜつは、ベンチ
+   * ポケモンを先に、バトルポケモンを最後にきぜつさせる(docs/solo-play-simulator-design.md「ダメージときぜつ」。
+   * battle-style-solo-play-rules.ts の knockOutOwnPokemonAtOrAboveMaxHp)ので、出した後に相手の番で起きることは無く、自分の番の最初から続ける。
+   * 複製では場のポケモンの参照が変わるため、候補はベンチの何番目かで指す。
+   */
+  const choosePromotionInOpponentTurn = (
+    state: GameState,
+    candidates: readonly PokemonInPlay[]
+  ): PokemonInPlay => {
+    const seeds = drawSeeds();
+    // 入れ替えても同じ場になるポケモンは 1 つにまとめる
+    const distinctCandidates = listChoiceOptions(state, {
+      kind: "pokemon",
+      request: buildPromoteRequest(candidates),
+    }).flatMap((option) => pickByIndices(candidates, option, "pokemon"));
+    return pickBestCandidate(
+      distinctCandidates,
+      (candidate) => {
+        const benchIndex = state.bench.indexOf(candidate);
+        return tools.scoreByTrying(
+          state,
+          ({ state: trial }) => {
+            const promoted = trial.bench[benchIndex];
+            if (promoted === undefined) {
+              throw new Error("複製のベンチに、出すポケモンがいない");
+            }
+            trial.promoteToActive(promoted);
+          },
+          seeds,
+          () => "ownTurnStart"
+        );
+      },
+      options.tieBreak
+    );
+  };
+
+  /**
    * 番の中の行動の外で問われた選択に答えるもの。自分の番のワザの効果の選択は、ワザのために用意した選択に渡す。
-   * 相手の番(相手の攻撃によるきぜつと、その後にベンチを減らす選択)は候補の先頭から選ぶ。相手の番を試す探索は
-   * Issue 70 で作るため。
+   * 相手の番にベンチの上限が下がってベンチを減らす選択(bench-limit.ts の trimBenchToLimit)は、候補の先頭から選ぶ。
+   * ベンチの上限を下げるスタジアム(ゼロの大空洞。記録 card-records/stadiums/048706.json)が、計測する 2 デッキ
+   * (recorded-decks.ts の RS3MMy-FuGPRu-MypM2X と 9gngnQ-zAMw9G-96H9nn)に入っておらず、試して選ぶ仕組みを作っても
+   * 計測で働かないため。
    */
   const choicesOutsideTurnActions = (state: GameState): EffectChoices => {
     if (state.turnOwner === "opponent") {
@@ -746,47 +816,60 @@ export function createSearchPolicy(
       return;
     }
     const seeds = drawSeeds();
-    const [firstSeed = 0] = seeds;
-    let best: PlayerAction | undefined;
-    let bestValue = tools.evaluate(state, state.turn, firstSeed, "actionsDone");
-    for (const action of listDistinctActions(state, actions)) {
-      if (action.kind === "endTurn") {
-        continue;
-      }
-      const value = tools.evaluateByTrying(
-        state,
-        (trialContext) => performAction(trialContext, action),
-        state.turn,
-        seeds
-      );
-      if (value > bestValue + EVALUATION_TOLERANCE) {
-        best = action;
-        bestValue = value;
-      }
-    }
-    return best;
+    const best = pickBestCandidate<PlayerAction>(
+      [
+        { kind: "endTurn" },
+        ...listDistinctActions(state, actions).filter(
+          (action) => action.kind !== "endTurn"
+        ),
+      ],
+      (action) =>
+        action.kind === "endTurn"
+          ? tools.scoreByTrying(state, doNothing, seeds, continueFromAttack)
+          : tools.scoreByTrying(
+              state,
+              (trialContext) => performAction(trialContext, action),
+              seeds,
+              continueTurnActions
+            ),
+      options.tieBreak
+    );
+    return best.kind === "endTurn" ? undefined : best;
   };
 
   const chooseSetup = (state: GameState, basics: readonly Card[]) => {
     const seeds = drawSeeds();
-    const [seed = 0] = seeds;
-    let best: SetupOption | undefined;
-    let bestValue = Number.NEGATIVE_INFINITY;
-    for (const option of listSetupOptions(basics)) {
-      const trial = tools.cloneWithRemixedUnseenCards(state, seed);
-      trial.placeActiveFromHand(option.active);
-      placeBenchAtSetup(trial, option.bench);
-      trial.placePrizesFromDeck();
-      const value = tools.evaluate(trial, 1, seed, "beforeDraw");
-      if (value > bestValue + EVALUATION_TOLERANCE) {
-        best = option;
-        bestValue = value;
-      }
-    }
-    if (best === undefined) {
-      throw new Error("たねポケモンが無い");
-    }
-    return best;
+    const resumePoint = state.wentFirst ? "ownTurnStart" : "opponentTurn";
+    return pickBestCandidate(
+      listSetupOptions(basics),
+      (option) =>
+        tools.scoreByTrying(
+          state,
+          ({ state: trial }) => {
+            trial.placeActiveFromHand(option.active);
+            placeBenchAtSetup(trial, option.bench);
+            trial.placePrizesFromDeck();
+          },
+          seeds,
+          () => resumePoint
+        ),
+      options.tieBreak
+    );
+  };
+
+  const performTurnAction = (context: EffectContext, action: PlayerAction) => {
+    const { state } = context;
+    performAction(
+      {
+        choices: createChoicesFor(
+          state,
+          (actionContext) => performAction(actionContext, action),
+          continueTurnActions
+        ),
+        state,
+      },
+      action
+    );
   };
 
   return {
@@ -796,47 +879,34 @@ export function createSearchPolicy(
       return active;
     },
     chooseAttack: (context): UsableAttack | undefined => {
-      choicesForAttack = undefined;
       const { state } = context;
       const candidates = listUsableAttacksOfActive(context);
-      const fromTurn = state.turn + 1;
-      // 候補は使えるワザの一覧の順に試し、評価が同じなら先に並んだ候補(最後に「使わない」)を選ぶ
+      // 候補は使えるワザの一覧の順に試し、点数が同じなら先に並んだ候補(最後に「使わない」)を選ぶ
       const seeds = drawSeeds();
-      const [firstSeed = 0] = seeds;
-      let best: number | undefined;
-      let bestValue = Number.NEGATIVE_INFINITY;
-      for (const index of [...candidates.keys(), undefined]) {
-        const value =
+      const best = pickBestCandidate(
+        [...candidates.keys(), undefined],
+        (index) =>
           index === undefined
-            ? tools.evaluateByTrying(
+            ? tools.scoreByTrying(
                 state,
-                () => undefined,
-                fromTurn,
-                [firstSeed],
-                endTurnForEvaluation
+                doNothing,
+                seeds,
+                continueWithoutAttack
               )
-            : tools.evaluateByTrying(
+            : tools.scoreByTrying(
                 state,
                 useAttackAt(index),
-                fromTurn,
                 seeds,
-                endTurnForEvaluation
-              );
-        if (value > bestValue + EVALUATION_TOLERANCE) {
-          best = index;
-          bestValue = value;
-        }
-      }
-      if (best === undefined) {
-        return undefined;
-      }
-      choicesForAttack = createChoicesFor(
-        state,
-        useAttackAt(best),
-        fromTurn,
-        endTurnForEvaluation
+                continueFromAttack
+              ),
+        options.tieBreak
       );
-      return candidates[best];
+      // ワザを使わないときも、番の終わりの効果の中の選択が問われうるので、候補の先頭から選ぶ選択を用意する
+      choicesForAttack =
+        best === undefined
+          ? firstCandidateChoices
+          : createChoicesFor(state, useAttackAt(best), continueFromAttack);
+      return best === undefined ? undefined : candidates[best];
     },
     chooseBenchAtSetup: (state) => benchChosenAtSetup.get(state) ?? [],
     chooseCards: (state, request) =>
@@ -844,34 +914,26 @@ export function createSearchPolicy(
     choosePokemon: (state, request) =>
       choicesOutsideTurnActions(state).choosePokemon(state, request),
     choosePokemonToPromoteAfterKnockOut: (state, candidates) =>
-      choicesOutsideTurnActions(state).choosePokemonToPromoteAfterKnockOut(
-        state,
-        candidates
-      ),
+      state.turnOwner === "opponent"
+        ? choosePromotionInOpponentTurn(state, candidates)
+        : choicesOutsideTurnActions(state).choosePokemonToPromoteAfterKnockOut(
+            state,
+            candidates
+          ),
     choosesToApplyOptionalEffect: (state, purpose) =>
       choicesOutsideTurnActions(state).choosesToApplyOptionalEffect(
         state,
         purpose
       ),
+    performTurnAction,
     playTurn: (context) => {
       choicesForAttack = undefined;
-      const { state } = context;
       for (let count = 0; count < MAX_ACTIONS_PER_TURN; count += 1) {
         const action = chooseTurnAction(context);
         if (action === undefined) {
           return;
         }
-        performAction(
-          {
-            choices: createChoicesFor(
-              state,
-              (actionContext) => performAction(actionContext, action),
-              state.turn
-            ),
-            state,
-          },
-          action
-        );
+        performTurnAction(context, action);
       }
       throw new Error("1 つの番の行動が多すぎる(同じ行動を繰り返している)");
     },

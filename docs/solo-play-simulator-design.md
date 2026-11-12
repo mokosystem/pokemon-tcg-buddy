@@ -100,11 +100,12 @@ Issue 69 で用意したプレイングの判断基準は、手を選ばない 2
 ### コードでの置き場所
 
 - **ルールの数値と条件は `src/battle-style-solo-play-rules.ts` の 1 か所に置く。** 相手の攻撃のダメージ、きぜつとサイドの枚数、相手の場のダメージの判定、勝敗の判定。番の進行(`engine.ts`)と効果の実行(`effect-operations.ts`、`card-effects.ts`)はこのファイルの関数を呼び、数値を書き直さない。ルールの誤りが入り込む場所を骨組みの 1 か所に限る方針(AGENTS.md「ポケモンカードの情報の扱い」)に従った。ダメージと最大 HP を比べてきぜつさせる処理(`knockOutOwnPokemonAtOrAboveMaxHp`)もこの 1 つだけで、相手の攻撃の後と、スタジアムを出した後(`card-effects.ts` の `playTrainerFromHand`)に呼ぶ。最大 HP を下げる部品をほかに足したら、その処理の後にこの関数を呼ぶ
-- **番の進行は `engine.ts` の `runBattleStyleSoloPlayGame`。** 1 回の対戦の結果として、勝敗、勝敗が決まった理由、勝敗が決まった番(誰の何回目の番か)、自分と相手が取ったサイドの枚数、履歴を返す。乱数試行を繰り返す枠は `simulate.ts` の `simulateBattleStyleSoloPlay` で、勝率などの集計は Issue 70 以降で作る
+- **番の進行は `engine.ts` の `runBattleStyleSoloPlayGame`。** 1 回の対戦の結果として、勝敗、勝敗が決まった理由、勝敗が決まった番(誰の何回目の番か)、自分と相手が取ったサイドの枚数、履歴を返す。番の進行は「続ける場所」(自分の番の最初、番の中の行動、ワザ、相手の番)ごとの 1 歩に分けてあり(`advanceBattleStyleSoloPlay`、`continueBattleStyleSoloPlayGame`)、準備から進めるときも、探索が複製の上で番の途中から先を試すときも、同じ 1 歩を通る(Issue 70)
+- **乱数試行を繰り返す枠は `simulate.ts`。** 試行 i の対戦は、基準の種と試行の番号 i だけで決まる種(`random.ts` の `deriveTrialSeed`)から始め、プレイングの判断基準は試行ごとに作る。前の試行が乱数をいくつ使ったかで次の試行が変わらないので、カードを入れ替える前と後を同じ種で回して比べられ(種をそろえた対)、試行を複数のプロセスに分けても試行ごとの結果は分け方によらない(Issue 70)。勝率と誤差の幅などの集計は `battle-style-solo-play-statistics.ts`
 - **きぜつした後に出すベンチポケモンの問い合わせ口は `EffectChoices` に置いた。** 効果の中の選択ではないが、自分の番の途中のきぜつ(カースドボム)は効果の実行の中で起き、そこで手に入るのが `EffectContext`(`choices: EffectChoices`)だけのため。`PlayingPolicy` は `EffectChoices` を継承しているので、プレイングの判断基準はこの問い合わせにも答える
 - **ワザのダメージは、効果の翻訳を実行する前に相手の場のダメージに足す。** カードテキストがダメージ、効果の順に書かれ(例: シロナのガブリアスex 047381 の「リューノバスター」は 260 ダメージの後に自身のエネルギーをすべてトラッシュする。詳細ページ https://www.pokemon-card.com/card-search/details.php/card/47381/regu/XY 、2026-11-10 確認)、効果がダメージの数え方を変える記録が無いため。効果が先にダメージを変える記録が出てきたら、その記録を足すときに順を見直す
 - **`trimBenchToLimit` を `src/bench-limit.ts` に移した。** きぜつの処理(ゼロの大空洞が働いているときに「テラスタル」のポケモンがきぜつしてベンチの上限が下がる)でも要り、ルールのファイルから `effect-operations.ts` を読み込むと循環するため(`effect-operations.ts` がルールのファイルを読み込む)
-- **探索(`search-policy.ts`)は、状態を複製して手を試す仕組み、効果の中の選択を記録して再生する仕組み、見えていないカードの混ぜ直しを残し、宣言と場の評価への依存だけを外した。** 相手の番とサイドの判定を含む進め方への作り直しは Issue 70 で行う。相手の番のきぜつで出すベンチポケモンは、相手の番を試す探索が無いため候補の先頭にしている
+- **探索(`search-policy.ts`)は、Issue 70 で相手の番とサイドの判定を含む進め方に作り直した。** 状態を複製して手を試す仕組み、効果の中の選択を記録して再生する仕組み、見えていないカードの混ぜ直しは Issue 69 から残した。1 つの状態を点数にする評価の代わりに、混ぜ直した複製で候補の手を行い、続ける場所から先を決まった方法で進めた「1 回の試しの点数」を、候補ごとに決まった回数だけ出して平均する。先の進め方は試しの点数を出す関数が決め、ルールの判定は続ける側が `battle-style-solo-play-rules.ts` と `engine.ts` の 1 歩で行う。ワザを試した先はサイドの判定と相手の番まで進み、相手の番にバトルポケモンがきぜつした後に出すベンチポケモンも候補ごとに試して選ぶ。相手の番にベンチの上限が下がってベンチを減らす選択は、候補の先頭から選ぶ。ベンチの上限を下げるスタジアム(ゼロの大空洞)が Issue 70 で計測する 2 デッキに無く、試して選ぶ仕組みを作っても計測で働かないため
 
 ## 道具の構成
 
@@ -112,11 +113,19 @@ Issue 69 で用意したプレイングの判断基準は、手を選ばない 2
 
 | 部分 | 中身 | 主なファイル(`src/`) |
 | --- | --- | --- |
-| 計算の骨組み | 自分側の対戦の状態と基本操作、基本ルールの制限、対戦の準備と番の進行、対戦風の一人回しのルール、乱数、乱数試行の枠、計算の前提のうちカードごとの前提 | `state.ts`、`cards.ts`、`engine.ts`、`battle-style-solo-play-rules.ts`、`bench-limit.ts`、`random.ts`、`simulate.ts`、`card-premises.ts` |
+| 計算の骨組み | 自分側の対戦の状態と基本操作、基本ルールの制限、対戦の準備と番の進行、対戦風の一人回しのルール、乱数、乱数試行の枠、計算の前提のうちカードごとの前提、カードの入れ替え、勝率と誤差の幅などの集計、計測の単位を期限まで回す部分 | `state.ts`、`cards.ts`、`engine.ts`、`battle-style-solo-play-rules.ts`、`bench-limit.ts`、`random.ts`、`simulate.ts`、`card-premises.ts`、`card-swap.ts`、`battle-style-solo-play-statistics.ts`、`battle-style-solo-play-measurement.ts` |
 | カードの記録 | 記法のスキーマ、1 記録 1 ファイルの JSON(属性、ワザと特性の一覧、効果の翻訳、裁定のデータ、含めなかった効果)、記録の検査と入口、記法の部品を実行する部分、場にある間ずっと働く効果、ワザのダメージ、記録済みのデッキ | `card-record-schema.ts`、`card-records/`、`card-record-table.ts`(生成)、`card-record-validation.ts`、`effect-operations.ts`、`conditions.ts`、`continuous-effects.ts`、`card-effects.ts`、`attack-damage.ts`、`effect-choices.ts`、`recorded-decks.ts` |
-| プレイングの判断基準 | 今できる行動の一覧とその実行、手を選ばない 2 つの手順、探索 | `player-actions.ts`、`action-list-playing-policies.ts`、`search-policy.ts` |
+| プレイングの判断基準 | 今できる行動の一覧とその実行、手を選ばない 2 つの手順と試し回しの軽い手順、探索、Issue 70 の候補の試作(試し回しの点数、番の中の手の並びの探索、学習した場の評価)と設定の一覧、履歴に使わなかった行動を書く包み | `player-actions.ts`、`action-list-playing-policies.ts`、`search-policy.ts`、`playout-trial-scorers.ts`、`turn-sequence-search-policy.ts`、`learned-win-rate-evaluation.ts`、`playing-policy-candidates.ts`、`unused-action-recording.ts` |
 
-スクリプト(`scripts/`。パッケージのディレクトリで `bun run <名前>`)は `generate:card-record-files`(カードの記録の入口と JSON Schema を生成し直す。順 6)だけ。
+スクリプト(`scripts/`。パッケージのディレクトリで `bun run <名前>`)は次のとおり。
+
+- `generate:card-record-files`: カードの記録の入口と JSON Schema を生成し直す(順 6)
+- `measure:playing-policy-win-rates`: 1 デッキを先攻・後攻で回し、プレイングの判断基準の設定ごとの勝率と誤差の幅、サイドを取り切った番の分布、負けた理由の内訳、1 回の対戦の時間を測る(Issue 70)
+- `measure:card-swap-in-fifteen-minutes`: カードの入れ替えの題材を、入れ替える前と後、先攻と後攻の 4 本で決まった時間(既定 15 分)回し、勝率の差などを誤差の幅とともに測る(Issue 70)
+- `measure:parallel-process-throughput`: 並べて回すプロセスの数ごとの、1 秒あたりの対戦の数を測る(Issue 70)
+- `print:playing-policy-game-histories`: 2 デッキの先攻と後攻それぞれ 3 対戦ぶんの履歴を書く(Issue 70)
+
+計測のスクリプトはプロセスを並べて回す。並べる 1 プロセスの入口は `scripts/playing-policy-measurement-worker.ts` で、パッケージのスクリプトからは呼ばない。
 
 テストは最上位で `bun run test`、型検査は `bun run typecheck`、整形と lint は `bun run lint`、未使用のコードなどの解析は `bun run analyze`、依存の版の検証は `bun run verify:exact-dependency-versions`。
 

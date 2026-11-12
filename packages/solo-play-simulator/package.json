@@ -21,7 +21,11 @@
     "./state": "./src/state.ts"
   },
   "scripts": {
-    "generate:card-record-files": "bun scripts/generate-card-record-files.ts"
+    "generate:card-record-files": "bun scripts/generate-card-record-files.ts",
+    "measure:card-swap-in-fifteen-minutes": "bun scripts/measure-card-swap-in-fifteen-minutes.ts",
+    "measure:parallel-process-throughput": "bun scripts/measure-parallel-process-throughput.ts",
+    "measure:playing-policy-win-rates": "bun scripts/measure-playing-policy-win-rates.ts",
+    "print:playing-policy-game-histories": "bun scripts/print-playing-policy-game-histories.ts"
   },
   "dependencies": {
     "valibot": "1.5.0"

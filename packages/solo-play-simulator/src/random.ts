@@ -8,6 +8,10 @@
 import type { RandomSource } from "./state.ts";
 
 const TWO_TO_THE_32 = 4_294_967_296;
+/** splitmix32 が 1 回ごとに状態へ足す値。nextFloat と deriveTrialSeed が同じ値を使う。 */
+const SPLITMIX32_INCREMENT = 0x9e_37_79_b9;
+/** 対戦の乱数とずらすために種に足す値。値そのものに意味は無く、0 と SPLITMIX32_INCREMENT の倍数でなければよい。 */
+const POLICY_SEED_SALT = 0x5b_d1_e9_95;
 
 /**
  * splitmix32。32 ビットの状態を 1 つ持つ小さな生成器で、山札を切る入れ替え先を選ぶには十分。
@@ -27,7 +31,7 @@ export class SeededRandom implements RandomSource {
 
   nextFloat(): number {
     // biome-ignore-start lint/suspicious/noBitwiseOperators: 生成器は 32 ビット整数のビット演算で定義されており、算術演算に置き換えると出典の生成器と別物になる
-    this.state = (this.state + 0x9e_37_79_b9) | 0;
+    this.state = (this.state + SPLITMIX32_INCREMENT) | 0;
     let mixed = this.state ^ (this.state >>> 16);
     mixed = Math.imul(mixed, 0x21_f0_aa_ad);
     mixed ^= mixed >>> 15;
@@ -52,4 +56,25 @@ export class SeededRandom implements RandomSource {
 
 export function createSeededRandom(seed: number): SeededRandom {
   return new SeededRandom(seed);
+}
+
+/**
+ * 試行の番号から、その試行で使う種を作る。splitmix32 は 1 回ごとに状態へ SPLITMIX32_INCREMENT を足すので、結果は
+ * createSeededRandom(baseSeed) が trialIndex + 1 回目に出す nextSeed と同じになる。前の試行を回さずに途中の試行から
+ * 始められるため、試行を複数のプロセスに分けても、試行ごとの種は分け方によらない。
+ * 掛け算に Math.imul を使うのは、試行の番号が数千万になると trialIndex * SPLITMIX32_INCREMENT が 2^53 を超え、
+ * 普通の掛け算では下の桁が失われるため。
+ */
+export function deriveTrialSeed(baseSeed: number, trialIndex: number): number {
+  return new SeededRandom(
+    baseSeed + Math.imul(trialIndex, SPLITMIX32_INCREMENT)
+  ).nextSeed();
+}
+
+/**
+ * 対戦(または探索の複製)の乱数の種 seed から、プレイングの判断基準に渡す種を作る。同じ種を両方に渡すと 2 つの乱数が
+ * 同じ列を出し、山札を切る乱数と手を選ぶ乱数が連動するため、ずらす。
+ */
+export function derivePolicySeed(seed: number): number {
+  return new SeededRandom(seed + POLICY_SEED_SALT).nextSeed();
 }

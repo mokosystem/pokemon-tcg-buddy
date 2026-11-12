@@ -1,13 +1,17 @@
 import { describe, expect, test } from "bun:test";
+import { createFirstActionPolicy } from "./action-list-playing-policies.ts";
 import {
   attachEnergyFromHandToPokemon,
   evolvePokemonFromHand,
   listUsableAttacksOfActive,
 } from "./card-effects.ts";
+import { cardRecordTable } from "./card-record-table.ts";
 import { firstCandidateChoices } from "./effect-choices.ts";
 import {
+  advanceBattleStyleSoloPlay,
   applyVariant,
   buildDeck,
+  continueBattleStyleSoloPlayGame,
   type Decklist,
   MissingCardRecordsError,
   type PlayingPolicy,
@@ -15,6 +19,7 @@ import {
   setupGame,
 } from "./engine.ts";
 import { createSeededRandom } from "./random.ts";
+import { RECORDED_DECKS } from "./recorded-decks.ts";
 import {
   BASIC,
   ENERGY,
@@ -350,5 +355,76 @@ describe("対戦の進行", () => {
         wentFirst: false,
       })
     ).toThrow(IllegalMove);
+  });
+});
+
+describe("対戦を途中から続ける", () => {
+  const [recordedDeck] = RECORDED_DECKS;
+  if (recordedDeck === undefined) {
+    throw new Error("記録済みのデッキが無い");
+  }
+  const cards = buildDeck(cardRecordTable, recordedDeck.decklist);
+  const SEED = 20_261_112;
+
+  /** 先攻で対戦の準備を済ませた状態。手を選ばず順に使う手順で進める。 */
+  function setUpGoingFirst() {
+    const policy = createFirstActionPolicy();
+    const state = new GameState(createSeededRandom(SEED), cards, true);
+    setupGame(state, policy);
+    return { context: { choices: policy, state }, policy, state };
+  }
+
+  test("自分の番に 1 枚引いた後で止めてから続けた結果は、準備から通して進めた結果と同じ", () => {
+    const whole = runBattleStyleSoloPlayGame({
+      cards,
+      policy: createFirstActionPolicy(),
+      random: createSeededRandom(SEED),
+      wentFirst: true,
+    });
+    const { context, policy } = setUpGoingFirst();
+    expect(
+      advanceBattleStyleSoloPlay(
+        context,
+        policy,
+        "ownTurnStart",
+        "ownTurnActions"
+      )
+    ).toBe("ownTurnActions");
+    expect(
+      continueBattleStyleSoloPlayGame(context, policy, "ownTurnActions")
+    ).toEqual(whole);
+  });
+
+  test("自分の番の最初から、1 枚引いた後で止めると、自分の番の回数が 1 つ進み、手札が 1 枚増えている", () => {
+    const { context, policy, state } = setUpGoingFirst();
+    const handSize = state.hand.length;
+    advanceBattleStyleSoloPlay(
+      context,
+      policy,
+      "ownTurnStart",
+      "ownTurnActions"
+    );
+    expect(state.turn).toBe(1);
+    expect(state.hand).toHaveLength(handSize + 1);
+  });
+
+  test("勝敗が決まった状態から続けると、何も進めずに結果を返す", () => {
+    const { context, policy, state } = setUpGoingFirst();
+    state.decision = {
+      decidedTurn: { ordinal: 1, owner: "self" },
+      reason: "noOwnPokemonInPlay",
+    };
+    const events = [...state.events];
+    expect(
+      advanceBattleStyleSoloPlay(context, policy, "ownTurnStart")
+    ).toBeUndefined();
+    const result = continueBattleStyleSoloPlayGame(
+      context,
+      policy,
+      "ownTurnStart"
+    );
+    expect(result.events).toEqual(events);
+    expect(state.turn).toBe(0);
+    expect(result.reason).toBe("noOwnPokemonInPlay");
   });
 });
