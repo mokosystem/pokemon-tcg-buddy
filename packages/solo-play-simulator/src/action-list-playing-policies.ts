@@ -111,9 +111,8 @@ const ACTION_KINDS_SKIPPED_IN_PLAYOUT: ReadonlySet<PlayerAction["kind"]> =
  * 試し回しの軽い手順。今できる行動の一覧から「番を終える」と「にげる」を除いた行動を乱数で選び、選べる行動が無くなったら
  * 番を終える。ワザは使えるワザの一覧から乱数で選び、使えるワザがあれば必ず使う。きぜつした後に出すベンチポケモンも乱数で選ぶ。
  * 効果の中の選択は候補の先頭から選ぶ。
- * にげるを選ばないのは、にげるも乱数で選ぶ手順より勝率が高かったため(2026-11-11、Bun 1.4.4 で 2 デッキ × 先攻・後攻
- * 2,000 回ずつ。https://github.com/mokosystem/pokemon-tcg-buddy/issues/70 )。ワザを一覧の最後から選ぶ手順は
- * ドラパルトex デッキで勝率が高かったが、記録のワザの並びに頼るため採らなかった(同じ計測)。
+ * この手順にした理由(にげるを選ばない、ワザを一覧の最後から選ばない)と、その根拠の勝率は
+ * docs/solo-play-simulator-design.md「プレイングの判断基準の調査(Issue 70)」の「候補と設定」にある。
  */
 export function createPlayoutActionPolicy(seed: number): PlayingPolicy {
   const pickAtRandom = createPickAtRandom(seed);

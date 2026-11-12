@@ -8,7 +8,10 @@ import os from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "bun";
-import type { TurnOrderBaseSeeds } from "../src/battle-style-solo-play-measurement.ts";
+import type {
+  DeckMeasurementTally,
+  TurnOrderBaseSeeds,
+} from "../src/battle-style-solo-play-measurement.ts";
 import {
   type BattleStyleSoloPlayTally,
   calculateWilsonInterval,
@@ -189,7 +192,7 @@ export function writeMeasurementOutput(options: {
 }
 
 /** 割合を百分率の小数 1 桁で書く。 */
-export function formatPercent(value: number): string {
+function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)} %`;
 }
 
@@ -219,7 +222,7 @@ export function formatDifference(
 }
 
 /** ミリ秒を有効数字 3 桁で書く。 */
-export function formatMilliseconds(value: number): string {
+function formatMilliseconds(value: number): string {
   return Number.isFinite(value) ? Number(value.toPrecision(3)).toString() : "—";
 }
 
@@ -365,4 +368,108 @@ export function readOneSettingName(
     throw new Error("--setting に設定の名前を渡す");
   }
   return name;
+}
+
+/** 1 デッキの計測(先攻と後攻)の結果を、設計文書に貼る表にする。 */
+export function formatDeckMeasurementMarkdown(options: {
+  readonly candidate: string;
+  readonly environment: ReturnType<typeof describeMeasurementEnvironment>;
+  /** 候補 4 の準備の時間(秒)。準備の無い設定は undefined。 */
+  readonly preparationSeconds: number | undefined;
+  readonly settingLabel: string;
+  readonly tally: DeckMeasurementTally;
+  readonly title: string;
+  /** 1 回の対戦あたりの試しの回数の列の見出し(候補 5 では問い合わせの回数)。 */
+  readonly trialsColumnLabel: string;
+}): string {
+  const { environment, tally } = options;
+  const first = summarizeTally(tally.firstPlayer);
+  const second = summarizeTally(tally.secondPlayer);
+  const games = tally.firstPlayer.games + tally.secondPlayer.games;
+  const meanOf = (total: (side: typeof tally.firstPlayer) => number) =>
+    games === 0
+      ? Number.NaN
+      : (total(tally.firstPlayer) + total(tally.secondPlayer)) / games;
+  const turnOrders = [
+    ["先攻", tally.firstPlayer],
+    ["後攻", tally.secondPlayer],
+  ] as const;
+  const turns = [
+    ...new Set(
+      turnOrders.flatMap(([, side]) => Object.keys(side.winningTurnCounts))
+    ),
+  ].sort((left, right) => Number(left) - Number(right));
+  return [
+    `# ${options.title}`,
+    "",
+    formatEnvironmentLines(environment),
+    "",
+    formatTableHeader([
+      "設定",
+      "候補",
+      "先攻 勝率",
+      "後攻 勝率",
+      "回数(先攻 / 後攻)",
+      "1 回の対戦の時間(ms)",
+      options.trialsColumnLabel,
+      "準備の時間(秒)",
+    ]),
+    formatTableRow([
+      options.settingLabel,
+      options.candidate,
+      formatProportion(first.winRate),
+      formatProportion(second.winRate),
+      `${first.games} / ${second.games}`,
+      formatMilliseconds(meanOf((side) => side.totalGameMilliseconds)),
+      formatMilliseconds(meanOf((side) => side.totalTrialScores)),
+      options.preparationSeconds === undefined
+        ? "—"
+        : options.preparationSeconds.toFixed(1),
+    ]),
+    "",
+    "負けた理由の内訳(すべての対戦に対する割合)",
+    "",
+    formatTableHeader([
+      "先攻・後攻",
+      ...Object.values(DECISION_REASON_HEADINGS),
+    ]),
+    ...turnOrders.map(([label, side]) =>
+      formatTableRow([
+        label,
+        ...Object.keys(DECISION_REASON_HEADINGS).map((reason) =>
+          side.games === 0
+            ? "—"
+            : formatPercent(
+                side.decisionReasonCounts[
+                  reason as keyof typeof DECISION_REASON_HEADINGS
+                ] / side.games
+              )
+        ),
+      ])
+    ),
+    "",
+    "サイドを取り切った自分の番の分布(すべての対戦に対する割合)",
+    "",
+    ...(turns.length === 0
+      ? ["勝った対戦が無い。"]
+      : [
+          formatTableHeader([
+            "先攻・後攻",
+            ...turns.map((turn) => `${turn} 番`),
+          ]),
+          ...turnOrders.map(([label, side]) =>
+            formatTableRow([
+              label,
+              ...turns.map((turn) =>
+                side.games === 0
+                  ? "—"
+                  : formatPercent(
+                      (side.winningTurnCounts[turn] ?? 0) / side.games
+                    )
+              ),
+            ])
+          ),
+        ]),
+    "",
+  ].join("\n");
 }
