@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import { calculateOpponentAttackDamage } from "./battle-style-solo-play-rules.ts";
 import { cardRecordTable } from "./card-record-table.ts";
 import {
   activeOf,
@@ -24,6 +25,8 @@ import { RECORDED_DECKS } from "./recorded-decks.ts";
 // シロナのフカマル(049092)はたねポケモンで、ワザ「いわとばし」は闘エネルギー 1 個(基本闘エネルギー 049464)
 const GIBLE = buildRecordedCard("049092");
 const FIGHTING_ENERGY = buildRecordedCard("049464");
+// ロック闘エネルギー(049713)は特殊エネルギーで、闘エネルギー 1 個ぶんになる
+const ROCK_FIGHTING_ENERGY = buildRecordedCard("049713");
 
 /** 毎回、選択肢の optionIndex 番目を選ぶ偽の Jev。受け取った問い合わせを記録する。 */
 function createFakeJev(pickIndex: (request: JevChoiceRequest) => number) {
@@ -77,7 +80,7 @@ describe("Jev に選ばせる判断基準", () => {
     expect(policy.jevUsage).toEqual({ inputTokens: 200, requests: 2 });
   });
 
-  test("状態には、自分の場、手札、トラッシュ、山札の枚数、サイドの残り枚数、相手のサイドの残り枚数、相手の場のダメージ、番の回数と、デッキのカードの説明を入れる", () => {
+  test("状態には、自分の場、手札、トラッシュ、山札の枚数、サイドの残り枚数、相手のサイドの残り枚数、相手の場のダメージ、番の回数、次の相手の番に受けるダメージと、デッキのカードの説明を入れる", () => {
     const state = buildState({ active: GIBLE, hand: [FIGHTING_ENERGY] });
     const jev = createFakeJev(() => 0);
     const policy = createJevPlayingPolicy({
@@ -96,6 +99,7 @@ describe("Jev に選ばせる判断基準", () => {
         "deckCount",
         "discard",
         "hand",
+        "nextOpponentAttackDamage",
         "opponentFieldDamage",
         "opponentRemainingPrizes",
         "ownRemainingPrizes",
@@ -108,6 +112,83 @@ describe("Jev に選ばせる判断基準", () => {
       "基本闘エネルギー",
     ]);
     expect(jev.requests[0]?.model).toBe(JEV_MODEL);
+  });
+
+  test("次の相手の番に受けるダメージは、相手の番の回数から骨組みの関数で求める(先攻と後攻で同じ自分の番でも違う)", () => {
+    const sentDamage = (opponentTurnCount: number) => {
+      const state = buildState({ active: GIBLE });
+      state.opponentTurnCount = opponentTurnCount;
+      const jev = createFakeJev(() => 0);
+      const policy = createJevPlayingPolicy({
+        cards: [GIBLE],
+        requestJevChoice: jev.requestJevChoice,
+      });
+      policy.chooseAttack({ choices: policy, state });
+      const sent = jev.requests[0]?.state as {
+        situation: { nextOpponentAttackDamage: number };
+      };
+      return sent.situation.nextOpponentAttackDamage;
+    };
+    expect(sentDamage(0)).toBe(calculateOpponentAttackDamage(1));
+    expect(sentDamage(1)).toBe(calculateOpponentAttackDamage(2));
+  });
+
+  test("場のポケモンには場所の名前を付け、同じ名前のポケモンへの行動を場所で見分けられる説明にする", () => {
+    const state = buildState({
+      active: GIBLE,
+      bench: [GIBLE],
+      hand: [FIGHTING_ENERGY],
+    });
+    activeOf(state).energies.push(FIGHTING_ENERGY);
+    const jev = createFakeJev(
+      (request) => Object.keys(criteriaOf(request)).length - 1
+    );
+    const policy = createJevPlayingPolicy({
+      cards: [GIBLE, FIGHTING_ENERGY],
+      requestJevChoice: jev.requestJevChoice,
+    });
+    policy.playTurn({ choices: policy, state });
+    const options = Object.values(criteriaOf(jev.requests[0]));
+    expect(options).toContain(
+      "基本闘エネルギー を バトル場 の シロナのフカマル につける"
+    );
+    expect(options).toContain(
+      "基本闘エネルギー を ベンチ 1 の シロナのフカマル につける"
+    );
+    // シロナのフカマルのにげるためのエネルギーは 1 個(049092)
+    expect(options).toContain(
+      "ベンチ 1 の シロナのフカマル ににげる(トラッシュするエネルギー: 基本闘エネルギー)"
+    );
+    const sent = jev.requests[0]?.state as {
+      situation: { active: { place: string }; bench: { place: string }[] };
+    };
+    expect(sent.situation.active.place).toBe("バトル場");
+    expect(sent.situation.bench.map((pokemon) => pokemon.place)).toEqual([
+      "ベンチ 1",
+    ]);
+  });
+
+  test("特殊エネルギーの説明には、効果に加えて、何エネルギー何個ぶんになるかを入れる", () => {
+    const jev = createFakeJev(() => 0);
+    const policy = createJevPlayingPolicy({
+      cards: [GIBLE, ROCK_FIGHTING_ENERGY],
+      requestJevChoice: jev.requestJevChoice,
+    });
+    policy.chooseAttack({
+      choices: policy,
+      state: buildState({ active: GIBLE }),
+    });
+    const sent = jev.requests[0]?.state as {
+      deckCards: ({ name: string } & Record<string, unknown>)[];
+    };
+    expect(
+      sent.deckCards.find((card) => card.name === "ロック闘エネルギー")
+    ).toEqual({
+      category: "特殊エネルギー",
+      effects: [],
+      name: "ロック闘エネルギー",
+      provision: { kind: "type", type: "fighting", units: 1 },
+    });
   });
 
   test("ワザは、使えるワザの一覧と「使わない」を選択肢にし、選ばれたワザを返す", () => {

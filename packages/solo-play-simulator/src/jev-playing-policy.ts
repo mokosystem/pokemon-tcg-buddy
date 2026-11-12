@@ -20,6 +20,7 @@ import { listDeckCardNames } from "./learned-win-rate-evaluation.ts";
 import {
   describeAction,
   listAvailableActions,
+  type PlayerAction,
   performAction,
 } from "./player-actions.ts";
 import type { GameState, PokemonInPlay } from "./state.ts";
@@ -123,6 +124,13 @@ function describeCardRecord(record: CardRecord) {
         name: record.name,
         provision: record.provision,
       };
+    case "特殊エネルギー":
+      return {
+        category: record.category,
+        effects: record.cardEffects,
+        name: record.name,
+        provision: record.provision,
+      };
     default:
       return {
         category: record.category,
@@ -132,14 +140,57 @@ function describeCardRecord(record: CardRecord) {
   }
 }
 
-function describePokemon(state: GameState, pokemon: PokemonInPlay) {
+/**
+ * 場のポケモンの場所の名前(「バトル場」「ベンチ 1」…)。index は listPokemonInPlay の並び(バトルポケモンがいれば先頭)。
+ * 同じ名前のポケモンが場に複数いても、状態と選択肢の説明でどのポケモンかを見分けられるように使う。
+ */
+function describePlaceAt(state: GameState, index: number): string {
+  if (state.active === undefined) {
+    return `ベンチ ${index + 1}`;
+  }
+  return index === 0 ? "バトル場" : `ベンチ ${index}`;
+}
+
+function describePokemon(
+  state: GameState,
+  pokemon: PokemonInPlay,
+  place: string
+) {
   return {
     damage: pokemon.damage,
     energies: pokemon.energies.map((card) => card.name),
     maxHp: calculateMaxHp(state, pokemon),
     name: pokemon.name,
+    place,
     ...(pokemon.tool === undefined ? {} : { tool: pokemon.tool.name }),
   };
+}
+
+/**
+ * Jev に渡す選択肢の説明。場のポケモンを対象にする行動には場所の名前を、にげるにはトラッシュするエネルギーを書く。
+ * ほかの行動は履歴と同じ説明(describeAction)にする。
+ */
+function describeJevAction(state: GameState, action: PlayerAction): string {
+  const pokemonAt = (index: number) =>
+    `${describePlaceAt(state, index)} の ${state.listPokemonInPlay()[index]?.name ?? ""}`;
+  switch (action.kind) {
+    case "evolve":
+      return `${pokemonAt(action.targetIndex)} を ${action.card.name} に進化させる`;
+    case "attachEnergy":
+    case "attachTool":
+      return `${action.card.name} を ${pokemonAt(action.targetIndex)} につける`;
+    case "useAbility":
+      return `${pokemonAt(action.pokemonIndex)} の特性 ${action.abilityName}`;
+    case "retreat": {
+      const discarded =
+        action.energiesToDiscard.length === 0
+          ? "トラッシュするエネルギーなし"
+          : `トラッシュするエネルギー: ${action.energiesToDiscard.map((card) => card.name).join("、")}`;
+      return `ベンチ ${action.benchIndex + 1} の ${state.bench[action.benchIndex]?.name ?? ""} ににげる(${discarded})`;
+    }
+    default:
+      return describeAction(state, action);
+  }
 }
 
 /** Jev に渡す状態。山札の順とサイドの中身は渡さない(Issue 70 の決定事項「測る条件」の 2 つ目)。 */
@@ -151,11 +202,17 @@ function describeState(state: GameState, cardDescriptions: readonly unknown[]) {
       active:
         state.active === undefined
           ? undefined
-          : describePokemon(state, state.active),
-      bench: state.bench.map((pokemon) => describePokemon(state, pokemon)),
+          : describePokemon(state, state.active, "バトル場"),
+      bench: state.bench.map((pokemon, index) =>
+        describePokemon(state, pokemon, `ベンチ ${index + 1}`)
+      ),
       deckCount: state.deck.length,
       discard: state.discard.map((card) => card.name),
       hand: state.hand.map((card) => card.name),
+      // 受けるダメージは相手の番の回数で決まり、先攻と後攻で同じ自分の番の回数でも違う(docs/solo-play-simulator-design.md「相手の番」)
+      nextOpponentAttackDamage: calculateOpponentAttackDamage(
+        state.opponentTurnCount + 1
+      ),
       opponentFieldDamage: state.opponentFieldDamage,
       opponentRemainingPrizes: state.opponentRemainingPrizeCount,
       ownRemainingPrizes: state.prizes.length,
@@ -252,7 +309,7 @@ export function createJevPlayingPolicy(options: {
             chooseIndex(
               state,
               "対戦風の一人回しで勝率が最も高くなるように、この番に次に行う行動を 1 つ選ぶ。「番を終える」を選ぶと、ワザを選ぶところへ進む",
-              actions.map((candidate) => describeAction(state, candidate))
+              actions.map((candidate) => describeJevAction(state, candidate))
             )
           ];
         if (action === undefined || action.kind === "endTurn") {
