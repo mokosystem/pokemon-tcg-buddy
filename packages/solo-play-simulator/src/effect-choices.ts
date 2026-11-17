@@ -3,6 +3,7 @@
  * 記法では決めない。選ばれた結果は候補と枚数の範囲に収まっているかを検査し、外れていれば IllegalMove を投げる。
  */
 
+import type { FieldPosition } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { type GameState, IllegalMove, type PokemonInPlay } from "./state.ts";
 
@@ -29,12 +30,26 @@ export interface PokemonChoiceRequest {
   readonly purpose: string;
 }
 
+export interface OpponentFieldPositionChoiceRequest {
+  /** 足す先の候補。記録の opponentPositions の並び。2 つのときだけ問い合わせる。 */
+  readonly candidates: readonly FieldPosition[];
+  readonly purpose: string;
+}
+
 /** 効果の中の選択。探索(search-policy.ts)と、手を選ばない手順(action-list-playing-policies.ts)が実装する。 */
 export interface EffectChoices {
   chooseCards: (
     state: GameState,
     request: CardChoiceRequest
   ) => readonly Card[];
+  /**
+   * 相手のポケモン 1 匹を選んでダメカンをのせる効果で、相手のバトル場のダメージと相手のベンチのダメージのどちらに全量を
+   * 足すか(docs/solo-play-simulator-design.md「相手の場のダメージとサイド」)。
+   */
+  chooseOpponentFieldPositionForDamage: (
+    state: GameState,
+    request: OpponentFieldPositionChoiceRequest
+  ) => FieldPosition;
   choosePokemon: (
     state: GameState,
     request: PokemonChoiceRequest
@@ -188,6 +203,29 @@ export function chooseOnePokemonToPromote(
   return chosen;
 }
 
+/**
+ * 足す先を決める。候補が 1 つならそれに決め、問い合わせない(ファントムダイブの ["bench"])。返った足す先が候補に無ければ
+ * IllegalMove を投げる。
+ */
+export function resolveOpponentFieldPositionForDamage(
+  context: EffectContext,
+  candidates: readonly FieldPosition[],
+  purpose: string
+): FieldPosition {
+  const [first] = candidates;
+  if (candidates.length === 1 && first !== undefined) {
+    return first;
+  }
+  const chosen = context.choices.chooseOpponentFieldPositionForDamage(
+    context.state,
+    { candidates, purpose }
+  );
+  if (!candidates.includes(chosen)) {
+    throw new IllegalMove(`${purpose}: 候補に無い足す先を選んだ`);
+  }
+  return chosen;
+}
+
 /** タイプの違うエネルギーを選ぶ求め(アカマツ)では、同じタイプの 2 枚目以降を候補から外す。 */
 function listCandidatesToChoose(request: CardChoiceRequest): readonly Card[] {
   if (!request.mustHaveDistinctTypes) {
@@ -211,6 +249,12 @@ function listCandidatesToChoose(request: CardChoiceRequest): readonly Card[] {
 export const firstCandidateChoices: EffectChoices = {
   chooseCards: (_state, request) =>
     listCandidatesToChoose(request).slice(0, request.maxCount),
+  chooseOpponentFieldPositionForDamage: (_state, { candidates: [first] }) => {
+    if (first === undefined) {
+      throw new Error("足す先の候補が無い");
+    }
+    return first;
+  },
   choosePokemon: (_state, request) =>
     request.candidates.slice(0, request.maxCount),
   choosePokemonToPromoteAfterKnockOut: (_state, [first]) => {

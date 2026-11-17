@@ -236,7 +236,7 @@ describe("対戦の進行", () => {
   });
 
   test("自分がサイドを取り切ると勝ち", () => {
-    // HPの高いたね(テスト用の記録 900008)の大きなワザは 300。相手の場のダメージ 300 でサイドを 3 枚取る
+    // HPの高いたね(テスト用の記録 900008)の大きなワザは 300。相手のバトル場のダメージ 300 でサイドを 3 枚取る
     const result = runBattleStyleSoloPlayGame({
       cards: buildDeck(SAMPLE_RECORD_TABLE, [
         { cardId: STURDY_BASIC.cardId, count: 60 },

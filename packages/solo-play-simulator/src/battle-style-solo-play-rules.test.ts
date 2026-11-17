@@ -178,31 +178,97 @@ describe("ダメージときぜつ", () => {
   });
 });
 
+// 相手の場のダメージの決まり(2 つの置き場をそれぞれ判定し、取った置き場だけを 0 に戻し、枚数を足す)は
+// docs/solo-play-simulator-design.md「相手の場のダメージとサイド」
 describe("相手の場のダメージとサイド", () => {
-  test("1 回の対戦の中で、70 を与えた番はサイドを取らずに 70 が残り、次の番に 130 を足すと 2 枚取って 0 に戻り、270 を足すと 2 枚取って余りは残らず、300 を足すと残りの 2 枚をすべて取って勝つ", () => {
+  test("1 回の対戦の中で、相手のバトル場のダメージに 70 を与えた番はサイドを取らずに 70 が残り、次の番に 130 を足すと 2 枚取って 0 に戻り、270 を足すと 2 枚取って余りは残らず、300 を足すと残りの 2 枚をすべて取って勝つ", () => {
     const state = buildState({ active: STURDY_BASIC });
     const playOwnTurnDealing = (amount: number) => {
-      addDamageToOpponentField(state, amount, "ワザ");
+      addDamageToOpponentField(state, "active", amount, "ワザ");
       takePrizesForOpponentFieldDamage(state);
       return {
-        fieldDamage: state.opponentFieldDamage,
+        fieldDamage: { ...state.opponentFieldDamage },
         prizes: state.prizes.length,
       };
     };
-    expect(playOwnTurnDealing(70)).toEqual({ fieldDamage: 70, prizes: 6 });
-    expect(playOwnTurnDealing(130)).toEqual({ fieldDamage: 0, prizes: 4 });
-    expect(playOwnTurnDealing(270)).toEqual({ fieldDamage: 0, prizes: 2 });
+    expect(playOwnTurnDealing(70)).toEqual({
+      fieldDamage: { active: 70, bench: 0 },
+      prizes: 6,
+    });
+    expect(playOwnTurnDealing(130)).toEqual({
+      fieldDamage: { active: 0, bench: 0 },
+      prizes: 4,
+    });
+    expect(playOwnTurnDealing(270)).toEqual({
+      fieldDamage: { active: 0, bench: 0 },
+      prizes: 2,
+    });
     expect(state.decision).toBeUndefined();
-    expect(playOwnTurnDealing(300)).toEqual({ fieldDamage: 0, prizes: 0 });
+    expect(playOwnTurnDealing(300)).toEqual({
+      fieldDamage: { active: 0, bench: 0 },
+      prizes: 0,
+    });
     expect(state.decision?.reason).toBe("ownPrizesTaken");
   });
 
-  test("自分の番の終わりの判定で、相手の場のダメージが 100 未満ならサイドを取らずに持ち越す", () => {
+  test("自分の番の終わりの判定で、相手のバトル場のダメージと相手のベンチのダメージがどちらも 100 未満なら、サイドを取らずにどちらも持ち越す", () => {
     const state = buildState({ active: STURDY_BASIC });
-    addDamageToOpponentField(state, 99, "ワザ");
+    addDamageToOpponentField(state, "active", 99, "ワザ");
+    addDamageToOpponentField(state, "bench", 99, "特性");
     takePrizesForOpponentFieldDamage(state);
     expect(state.prizes).toHaveLength(6);
-    expect(state.opponentFieldDamage).toBe(99);
+    expect(state.opponentFieldDamage).toEqual({ active: 99, bench: 99 });
+  });
+
+  test("相手のベンチのダメージも、相手のバトル場のダメージと同じ線でサイドを取り、取ったら 0 に戻す", () => {
+    for (const [amount, expectedTaken] of [
+      [100, 1],
+      [250, 2],
+      [450, 3],
+    ] as const) {
+      const state = buildState({ active: STURDY_BASIC });
+      addDamageToOpponentField(state, "bench", amount, "特性");
+      takePrizesForOpponentFieldDamage(state);
+      expect(state.prizes).toHaveLength(6 - expectedTaken);
+      expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 0 });
+    }
+  });
+
+  test("自分の番の終わりに、相手のバトル場のダメージが 330、相手のベンチのダメージが 120 のとき、サイドを 4 枚取り、どちらも 0 に戻る", () => {
+    const state = buildState({ active: STURDY_BASIC });
+    addDamageToOpponentField(state, "active", 330, "ワザ");
+    addDamageToOpponentField(state, "bench", 120, "特性");
+    takePrizesForOpponentFieldDamage(state);
+    expect(state.prizes).toHaveLength(2);
+    expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 0 });
+  });
+
+  test("自分の番の終わりに、相手のバトル場のダメージが 200、相手のベンチのダメージが 60 のとき、サイドを 2 枚取り、相手のバトル場のダメージは 0 に戻り、相手のベンチのダメージは 60 のまま次の番に持ち越す", () => {
+    const state = buildState({ active: STURDY_BASIC });
+    addDamageToOpponentField(state, "active", 200, "ワザ");
+    addDamageToOpponentField(state, "bench", 60, "ワザ");
+    takePrizesForOpponentFieldDamage(state);
+    expect(state.prizes).toHaveLength(4);
+    expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 60 });
+  });
+
+  test("自分の番の終わりに、相手のバトル場のダメージが 90、相手のベンチのダメージが 120 のとき、サイドを 1 枚取り、相手のバトル場のダメージは 90 のまま持ち越し、相手のベンチのダメージは 0 に戻る", () => {
+    const state = buildState({ active: STURDY_BASIC });
+    addDamageToOpponentField(state, "active", 90, "ワザ");
+    addDamageToOpponentField(state, "bench", 120, "特性");
+    takePrizesForOpponentFieldDamage(state);
+    expect(state.prizes).toHaveLength(5);
+    expect(state.opponentFieldDamage).toEqual({ active: 90, bench: 0 });
+  });
+
+  test("2 つの置き場で取る枚数の合計が残りのサイドより多いとき、残りをすべて取って勝ちになる", () => {
+    const state = buildState({ active: STURDY_BASIC });
+    state.prizes.splice(3);
+    addDamageToOpponentField(state, "active", 300, "ワザ");
+    addDamageToOpponentField(state, "bench", 100, "特性");
+    takePrizesForOpponentFieldDamage(state);
+    expect(state.prizes).toHaveLength(0);
+    expect(state.decision?.reason).toBe("ownPrizesTaken");
   });
 
   test("取ったサイドのカードはサイドから手札に移り、サイドと手札の合計の枚数は変わらない", () => {
@@ -216,7 +282,7 @@ describe("相手の場のダメージとサイド", () => {
       "049398",
     ].map(buildRecordedCard);
     state.prizes.splice(0, state.prizes.length, ...prizes);
-    addDamageToOpponentField(state, 100, "ワザ");
+    addDamageToOpponentField(state, "active", 100, "ワザ");
     takePrizesForOpponentFieldDamage(state);
     const [taken] = state.hand;
     expect(state.hand).toHaveLength(1);

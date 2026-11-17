@@ -5,6 +5,10 @@
  */
 
 import { trimBenchToLimit } from "./bench-limit.ts";
+import {
+  type FieldPosition,
+  FieldPositionSchema,
+} from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { calculateMaxHp } from "./continuous-effects.ts";
 import {
@@ -20,9 +24,17 @@ import type {
 /** 相手の n 回目の番に、自分のバトルポケモンが受けるダメージ。4 回目以降は 300。 */
 const OPPONENT_ATTACK_DAMAGES = [0, 100, 200] as const;
 const OPPONENT_ATTACK_DAMAGE_FROM_FOURTH_TURN = 300;
-/** 相手の場のダメージ 100 ごとにサイドを 1 枚取り、1 回の判定で取るのは 3 枚まで。 */
+/**
+ * 相手のバトル場のダメージと相手のベンチのダメージを、それぞれ 100 ごとにサイド 1 枚とし、1 つの置き場の 1 回の判定で
+ * 取るのは 3 枚まで(docs/solo-play-simulator-design.md「相手の場のダメージとサイド」)。
+ */
 const OPPONENT_FIELD_DAMAGE_PER_PRIZE = 100;
-const MAX_PRIZES_PER_FIELD_DAMAGE_CHECK = 3;
+const MAX_PRIZES_PER_OPPONENT_FIELD_POSITION = 3;
+
+const OPPONENT_FIELD_DAMAGE_LABELS: Readonly<Record<FieldPosition, string>> = {
+  active: "相手のバトル場のダメージ",
+  bench: "相手のベンチのダメージ",
+};
 
 export function calculateOpponentAttackDamage(
   opponentTurnOrdinal: number
@@ -172,27 +184,38 @@ export function beginOwnTurn(state: GameState): void {
   state.beginTurn();
 }
 
-/** 相手の場のダメージに amount を足す。相手のどのポケモンに与えるかは区別しない。 */
+/** 相手の場のダメージのうち、position の 1 つに amount を足す。相手のベンチポケモンが何匹いるかは区別しない。 */
 export function addDamageToOpponentField(
   state: GameState,
+  position: FieldPosition,
   amount: number,
   label: string
 ): void {
-  state.opponentFieldDamage += amount;
+  state.opponentFieldDamage[position] += amount;
   state.record(
-    `${label}: 相手の場のダメージ +${amount}(合計 ${state.opponentFieldDamage})`
+    `${label}: ${OPPONENT_FIELD_DAMAGE_LABELS[position]} +${amount}(合計 ${state.opponentFieldDamage[position]})`
   );
 }
 
 /**
- * 自分の番の終わりに 1 回だけ、相手の場のダメージでサイドを取るかを判定する。100 未満なら取らずに持ち越し、
- * 取ったら余りを持ち越さず 0 に戻す。取る枚数がサイドの残りより多いときは残りをすべて取る。
+ * 自分の番の終わりに 1 回だけ、相手のバトル場のダメージと相手のベンチのダメージでサイドを取るかを、それぞれ判定する。
+ * 100 未満の置き場は取らずに持ち越し、取った置き場は余りを持ち越さず 0 に戻す。2 つで取る枚数は足し、サイドの残りより
+ * 多いときは残りをすべて取る。
  */
 export function takePrizesForOpponentFieldDamage(state: GameState): void {
-  const count = Math.min(
-    Math.floor(state.opponentFieldDamage / OPPONENT_FIELD_DAMAGE_PER_PRIZE),
-    MAX_PRIZES_PER_FIELD_DAMAGE_CHECK
-  );
+  let count = 0;
+  for (const position of FieldPositionSchema.options) {
+    const countForPosition = Math.min(
+      Math.floor(
+        state.opponentFieldDamage[position] / OPPONENT_FIELD_DAMAGE_PER_PRIZE
+      ),
+      MAX_PRIZES_PER_OPPONENT_FIELD_POSITION
+    );
+    if (countForPosition > 0) {
+      count += countForPosition;
+      state.opponentFieldDamage[position] = 0;
+    }
+  }
   if (count === 0) {
     return;
   }
@@ -200,7 +223,6 @@ export function takePrizesForOpponentFieldDamage(state: GameState): void {
   for (let index = 0; index < taken; index += 1) {
     state.takePrizeIntoHand();
   }
-  state.opponentFieldDamage = 0;
   if (state.prizes.length === 0) {
     decide(state, "ownPrizesTaken");
   }

@@ -12,7 +12,8 @@
             },
             {
               "amount": 130,
-              "operation": "addDamageToOpponentField"
+              "operation": "addDamageToOpponentField",
+              "opponentPositions": ["active", "bench"]
             }
           ],
           "useConditions": []
@@ -33,7 +34,7 @@
     }
   ],
   "basicPokemonOfEvolutionLine": "ヨマワル",
-  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "battleStyleSoloPlayReviewedOn": "2026-11-17",
   "cardIds": ["049026", "045895"],
   "category": "ポケモン",
   "evolvesFrom": "サマヨール",
@@ -53,7 +54,7 @@
     {
       "interpretation": "相手はサイドを取る(相手の攻撃によるきぜつと同じに扱う)。公式 Q&A の回答は、実際の対戦で両者のポケモンが同時にきぜつしておたがいがサイドを取り切ったときの勝ち負けの決め方まで述べているが、対戦風の一人回しでは自分のサイドを番の終わりにだけ取るため、この特性で相手がサイドを取り切ったら、その時点で負けにする(Issue 69 の決定事項「勝敗」)",
       "question": "この特性で自分のポケモンがきぜつしたとき、相手はサイドを取るか。おたがいのサイドが残り 1 枚のときはどうなるか",
-      "reflectedIn": "knockOutSelf はきぜつの処理(battle-style-solo-play-rules.ts の knockOutOwnPokemon)を通し、相手がサイドを取る。相手がサイドを取り切るか、場に自分のポケモンがいなくなったら勝敗が決まり、続く addDamageToOpponentField は実行しない(effect-operations.ts の runEffect)",
+      "reflectedIn": "knockOutSelf はきぜつの処理(battle-style-solo-play-rules.ts の knockOutOwnPokemon)を通し、相手がサイドを取る。相手がサイドを取り切るか、場に自分のポケモンがいなくなったら勝敗が決まり、続く addDamageToOpponentField は実行せず、足す先も問い合わせない(effect-operations.ts の runEffect)",
       "source": {
         "checkedOn": "2026-11-11",
         "kind": "officialQa",
@@ -64,5 +65,5 @@
   ],
   "stage": "2進化",
   "translationStatus": "translated",
-  "verifiedOn": "2026-11-11"
+  "verifiedOn": "2026-11-17"
 }

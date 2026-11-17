@@ -88,6 +88,17 @@ describe("盤面の特徴", () => {
     expect(featureValue("inHand:シロナのフカマル")).toBe(1);
   });
 
+  test("相手のバトル場のダメージと相手のベンチのダメージを、別の特徴にする", () => {
+    // 2 つは自分の番の終わりに別々にサイドを取る(docs/solo-play-simulator-design.md「相手の場のダメージとサイド」)
+    const state = buildState({ active: buildRecordedCard("049092") });
+    state.opponentFieldDamage.active = 90;
+    state.opponentFieldDamage.bench = 60;
+    const { names, values } = extractWinRateFeatures(state, []);
+    const featureValue = (name: string) => values[names.indexOf(name)];
+    expect(featureValue("opponentActiveDamage")).toBe(90);
+    expect(featureValue("opponentBenchDamage")).toBe(60);
+  });
+
   test("バトル場が空の状態の特徴は作らない", () => {
     expect(() => extractWinRateFeatures(buildState({}), [])).toThrow();
   });
@@ -110,7 +121,7 @@ describe("学習用の記録", () => {
     });
     expect(samples.length).toBeGreaterThan(0);
     expect(new Set(samples.map((sample) => sample.label)).size).toBe(1);
-    expect(samples[0]?.features).toHaveLength(15 + 2 * deckCardNames.length);
+    expect(samples[0]?.features).toHaveLength(16 + 2 * deckCardNames.length);
   });
 });
 
@@ -121,14 +132,14 @@ describe("学習した場の評価の試しの点数", () => {
   );
 
   test("途中で勝ちが決まる複製では、勝率 1 を返す", () => {
-    // 相手の場のダメージが 100 以上でサイドが残り 1 枚なら、自分の番の終わりの判定で取り切って勝つ
+    // 相手のバトル場のダメージが 100 以上でサイドが残り 1 枚なら、自分の番の終わりの判定で取り切って勝つ
     // (docs/solo-play-simulator-design.md「相手の場のダメージとサイド」「勝敗」)
     const state = buildState({
       active: buildRecordedCard("049092"),
       random: createSeededRandom(1),
     });
     state.prizes.splice(1);
-    state.opponentFieldDamage = 100;
+    state.opponentFieldDamage.active = 100;
     expect(
       scorer({ resumePoint: "ownTurnAttack", seed: 1, state }).winRate
     ).toBe(1);

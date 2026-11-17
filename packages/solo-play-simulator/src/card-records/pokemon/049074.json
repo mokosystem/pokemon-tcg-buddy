@@ -9,7 +9,8 @@
           "steps": [
             {
               "maxCount": 3,
-              "operation": "moveDamageCountersToOpponentField"
+              "operation": "moveDamageCountersToOpponentField",
+              "opponentPositions": ["active", "bench"]
             }
           ],
           "useConditions": [
@@ -36,7 +37,7 @@
       "name": "サイコトリップ"
     }
   ],
-  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "battleStyleSoloPlayReviewedOn": "2026-11-17",
   "cardIds": ["049074", "046736", "045849"],
   "category": "ポケモン",
   "excludedEffects": [
@@ -54,5 +55,5 @@
   "rulings": [],
   "stage": "たね",
   "translationStatus": "translated",
-  "verifiedOn": "2026-11-11"
+  "verifiedOn": "2026-11-17"
 }

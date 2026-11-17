@@ -20,6 +20,7 @@ import {
   type Effect,
   type EffectStep,
   EvolutionStage,
+  type FieldPosition,
   type PokemonInPlayFilter,
 } from "./card-record-schema.ts";
 import { type Card, isEnergy, isPokemon, matchesCardFilter } from "./cards.ts";
@@ -40,6 +41,7 @@ import {
   chooseOnePokemon,
   choosePokemonUpTo,
   type EffectContext,
+  resolveOpponentFieldPositionForDamage,
 } from "./effect-choices.ts";
 import {
   type CardSource,
@@ -980,10 +982,32 @@ function discardEnergyAttachedToHolder(
   );
 }
 
+/**
+ * 相手の場のダメージのうち opponentPositions の足す先に amount を足す。2 つを指すときは、どちらか 1 つをプレイングの
+ * 判断基準に選ばせ、全量を足す。2 つに分けて足させないのは、実戦で相手のポケモン 1 匹を指してダメカンをのせる形に
+ * 合わせるため(Issue 78 の決定事項「何をどちらに足すか」)。
+ */
+function addDamageToChosenOpponentFieldPosition(
+  context: EffectContext,
+  opponentPositions: readonly FieldPosition[],
+  amount: number,
+  label: string
+): void {
+  const position = resolveOpponentFieldPositionForDamage(
+    context,
+    opponentPositions,
+    `${label}: 足す先(相手のバトル場のダメージか、相手のベンチのダメージか)`
+  );
+  addDamageToOpponentField(context.state, position, amount, label);
+}
+
 /** ダメカンののった自分のポケモンを 1 匹選び、ダメカンを maxCount 個まで取り除いて、その分を相手の場のダメージに足す。 */
 function moveDamageCountersToOpponentField(
   run: OperationRun,
-  maxCount: number
+  step: {
+    readonly maxCount: number;
+    readonly opponentPositions: readonly FieldPosition[];
+  }
 ): void {
   const { context, label } = run;
   const { state } = context;
@@ -996,10 +1020,15 @@ function moveDamageCountersToOpponentField(
     return;
   }
   const moved =
-    Math.min(pokemon.damage / DAMAGE_PER_COUNTER, maxCount) *
+    Math.min(pokemon.damage / DAMAGE_PER_COUNTER, step.maxCount) *
     DAMAGE_PER_COUNTER;
   pokemon.damage -= moved;
-  addDamageToOpponentField(state, moved, `${label}(${pokemon.name} から)`);
+  addDamageToChosenOpponentFieldPosition(
+    context,
+    step.opponentPositions,
+    moved,
+    `${label}(${pokemon.name} から)`
+  );
 }
 
 function evolveWithRareCandy(run: OperationRun): void {
@@ -1050,7 +1079,12 @@ const operationRunners: {
     }
   },
   addDamageToOpponentField: (step, { context, label }) =>
-    addDamageToOpponentField(context.state, step.amount, label),
+    addDamageToChosenOpponentFieldPosition(
+      context,
+      step.opponentPositions,
+      step.amount,
+      label
+    ),
   addFromDiscardToHand: (step, { context, label }) => {
     const chosen = chooseCardsWithin(
       context,
@@ -1145,7 +1179,7 @@ const operationRunners: {
   },
   moveAnyEnergyFromOwnPokemonToSelf: (_, run) => moveEnergyToHolder(run),
   moveDamageCountersToOpponentField: (step, run) =>
-    moveDamageCountersToOpponentField(run, step.maxCount),
+    moveDamageCountersToOpponentField(run, step),
   moveEnergyFromBenchToActive: (step, run) => {
     const { active, bench } = run.context.state;
     if (active !== undefined) {

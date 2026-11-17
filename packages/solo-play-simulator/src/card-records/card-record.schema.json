@@ -1958,9 +1958,50 @@
             },
             "operation": {
               "const": "addDamageToOpponentField"
+            },
+            "opponentPositions": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "enum": ["active", "bench"],
+                      "type": "string"
+                    }
+                  ],
+                  "minItems": 1,
+                  "additionalItems": false
+                },
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "const": "active"
+                    },
+                    {
+                      "const": "bench"
+                    }
+                  ],
+                  "minItems": 2,
+                  "additionalItems": false
+                },
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "const": "bench"
+                    },
+                    {
+                      "const": "active"
+                    }
+                  ],
+                  "minItems": 2,
+                  "additionalItems": false
+                }
+              ]
             }
           },
-          "required": ["amount", "operation"],
+          "required": ["amount", "operation", "opponentPositions"],
           "additionalProperties": false
         },
         {
@@ -1972,9 +2013,50 @@
             },
             "operation": {
               "const": "moveDamageCountersToOpponentField"
+            },
+            "opponentPositions": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "enum": ["active", "bench"],
+                      "type": "string"
+                    }
+                  ],
+                  "minItems": 1,
+                  "additionalItems": false
+                },
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "const": "active"
+                    },
+                    {
+                      "const": "bench"
+                    }
+                  ],
+                  "minItems": 2,
+                  "additionalItems": false
+                },
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "const": "bench"
+                    },
+                    {
+                      "const": "active"
+                    }
+                  ],
+                  "minItems": 2,
+                  "additionalItems": false
+                }
+              ]
             }
           },
-          "required": ["maxCount", "operation"],
+          "required": ["maxCount", "operation", "opponentPositions"],
           "additionalProperties": false
         },
         {
@@ -3764,9 +3846,50 @@
             },
             "operation": {
               "const": "addDamageToOpponentField"
+            },
+            "opponentPositions": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "enum": ["active", "bench"],
+                      "type": "string"
+                    }
+                  ],
+                  "minItems": 1,
+                  "additionalItems": false
+                },
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "const": "active"
+                    },
+                    {
+                      "const": "bench"
+                    }
+                  ],
+                  "minItems": 2,
+                  "additionalItems": false
+                },
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "const": "bench"
+                    },
+                    {
+                      "const": "active"
+                    }
+                  ],
+                  "minItems": 2,
+                  "additionalItems": false
+                }
+              ]
             }
           },
-          "required": ["amount", "operation"],
+          "required": ["amount", "operation", "opponentPositions"],
           "additionalProperties": false
         },
         {
@@ -3778,9 +3901,50 @@
             },
             "operation": {
               "const": "moveDamageCountersToOpponentField"
+            },
+            "opponentPositions": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "enum": ["active", "bench"],
+                      "type": "string"
+                    }
+                  ],
+                  "minItems": 1,
+                  "additionalItems": false
+                },
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "const": "active"
+                    },
+                    {
+                      "const": "bench"
+                    }
+                  ],
+                  "minItems": 2,
+                  "additionalItems": false
+                },
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "const": "bench"
+                    },
+                    {
+                      "const": "active"
+                    }
+                  ],
+                  "minItems": 2,
+                  "additionalItems": false
+                }
+              ]
             }
           },
-          "required": ["maxCount", "operation"],
+          "required": ["maxCount", "operation", "opponentPositions"],
           "additionalProperties": false
         },
         {

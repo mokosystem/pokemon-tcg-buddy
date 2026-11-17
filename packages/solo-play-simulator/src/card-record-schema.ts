@@ -28,7 +28,9 @@ import {
   regex,
   startsWith,
   strictObject,
+  strictTuple,
   string,
+  union,
   variant,
 } from "valibot";
 
@@ -117,10 +119,14 @@ export const CardFilterSchema = strictObject({
 });
 export type CardFilter = InferOutput<typeof CardFilterSchema>;
 
+/** 場の中の場所。バトル場(active)かベンチ(bench)。場のポケモンの条件と、相手の場のダメージの足す先に使う。 */
+export const FieldPositionSchema = picklist(["active", "bench"]);
+export type FieldPosition = InferOutput<typeof FieldPositionSchema>;
+
 /** 場のポケモンに対する条件。カードを選ぶ条件を場のいちばん上のカードに当て、加えて場所で絞る。 */
 export const PokemonInPlayFilterSchema = strictObject({
   ...CardFilterSchema.entries,
-  positions: optional(array(picklist(["active", "bench"]))),
+  positions: optional(array(FieldPositionSchema)),
 });
 export type PokemonInPlayFilter = InferOutput<typeof PokemonInPlayFilterSchema>;
 
@@ -255,6 +261,21 @@ export const DeckSearchPickSchema = strictObject({
   filter: CardFilterSchema,
   maxCount: countFromOne,
 });
+
+/**
+ * 相手の場のダメージの足す先。["bench"] は相手のベンチのダメージ、["active"] は相手のバトル場のダメージに足す。2 つを
+ * 書くと、効果を使った時点でプレイングの判断基準がどちらか 1 つを選び、全量を足す(docs/solo-play-simulator-design.md
+ * 「相手の場のダメージとサイド」)。重複の無い 1 つか 2 つを tuple の union で表すのは、valibot の配列の部品に重複を
+ * 禁じるものが無く、check で書くと JSON Schema に変換できないため。
+ */
+const OpponentPositionsSchema = union(
+  [
+    strictTuple([FieldPositionSchema]),
+    strictTuple([literal("active"), literal("bench")]),
+    strictTuple([literal("bench"), literal("active")]),
+  ],
+  "active と bench の、重複の無い 1 つか 2 つを並べる"
+);
 
 const basicOperationOptions = [
   strictObject({
@@ -538,18 +559,25 @@ const basicOperationOptions = [
     ]),
     operation: literal("discardEnergyAttachedToSelf"),
   }),
-  /** 相手の場のダメージに amount を足す。相手のどのポケモンに与えるかは区別しない(ドラパルトex の「ファントムダイブ」のダメカン 6 個は 60)。 */
+  /**
+   * 相手の場のダメージに amount を足す。足す先は opponentPositions で書く(ドラパルトex の「ファントムダイブ」の相手の
+   * ベンチポケモンへのダメカン 6 個は 60 を ["bench"] に、サマヨールの「カースドボム」の相手のポケモン 1 匹へのダメカン
+   * 5 個は 50 を ["active", "bench"] に)。
+   */
   strictObject({
     amount: countFromOne,
     operation: literal("addDamageToOpponentField"),
+    opponentPositions: OpponentPositionsSchema,
   }),
   /**
    * 自分の場のポケモン 1 匹を選び、のっているダメカンを maxCount 個まで取り除き、取り除いた 1 個につき 10 を相手の場の
-   * ダメージに足す(マシマシラの「アドレナブレイン」)。取り除く個数は選ばせず、のっている数と maxCount の少ないほうにする。
+   * ダメージの opponentPositions の足す先に足す(マシマシラの「アドレナブレイン」)。取り除く個数は選ばせず、のっている
+   * 数と maxCount の少ないほうにする。
    */
   strictObject({
     maxCount: countFromOne,
     operation: literal("moveDamageCountersToOpponentField"),
+    opponentPositions: OpponentPositionsSchema,
   }),
   /** このポケモン(効果の持ち主)をきぜつさせる(サマヨール、ヨノワールの「カースドボム」)。 */
   strictObject({
