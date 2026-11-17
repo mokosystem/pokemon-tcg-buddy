@@ -4525,6 +4525,7 @@ describeTranslation("サマヨール", () => {
     });
     useAbility(context, activeOf(state), "カースドボム");
     expect(choice.requests).toHaveLength(1);
+    expect(choice.requests[0]?.candidates).toEqual(["active", "bench"]);
     expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 50 });
     expect(activeOf(state).name).toBe("シロナのロゼリア");
     expect(state.decision).toBeUndefined();
