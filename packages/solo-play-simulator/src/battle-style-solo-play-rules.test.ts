@@ -263,9 +263,10 @@ describe("相手の場のダメージとサイド", () => {
 
   test("2 つの置き場で取る枚数の合計が残りのサイドより多いとき、残りをすべて取って勝ちになる", () => {
     const state = buildState({ active: STURDY_BASIC });
+    // 2 枚と 2 枚で 4 枚。どちらか片方だけでは残りの 3 枚に届かない
     state.prizes.splice(3);
-    addDamageToOpponentField(state, "active", 300, "ワザ");
-    addDamageToOpponentField(state, "bench", 100, "特性");
+    addDamageToOpponentField(state, "active", 200, "ワザ");
+    addDamageToOpponentField(state, "bench", 200, "特性");
     takePrizesForOpponentFieldDamage(state);
     expect(state.prizes).toHaveLength(0);
     expect(state.decision?.reason).toBe("ownPrizesTaken");
