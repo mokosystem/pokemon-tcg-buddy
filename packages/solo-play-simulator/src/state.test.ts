@@ -424,6 +424,17 @@ describe("複製と混ぜ直し(探索が先を試すため)", () => {
     expect(state.hasAttachedEnergy).toBe(false);
   });
 
+  test("複製は相手のバトル場のダメージと相手のベンチのダメージを写し、複製に足しても元の状態の値は変わらない", () => {
+    const state = stateWithUnseen([], []);
+    state.opponentFieldDamage.active = 70;
+    state.opponentFieldDamage.bench = 60;
+    const copied = state.clone(createSeededRandom(1));
+    expect(copied.opponentFieldDamage).toEqual({ active: 70, bench: 60 });
+    copied.opponentFieldDamage.active += 200;
+    copied.opponentFieldDamage.bench += 60;
+    expect(state.opponentFieldDamage).toEqual({ active: 70, bench: 60 });
+  });
+
   test("複製は場のポケモンを別のものとして写し、この番に 1 回目のワザを使ったポケモンも写しの側を指す", () => {
     const state = stateWithUnseen([], []);
     state.firstAttackerThisTurn = state.active;

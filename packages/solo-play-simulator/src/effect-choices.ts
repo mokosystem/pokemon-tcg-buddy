@@ -243,8 +243,8 @@ function listCandidatesToChoose(request: CardChoiceRequest): readonly Card[] {
 }
 
 /**
- * 候補の先頭から選べるだけ選び、「のぞむなら」の効果は必ず起こす。きぜつした後はベンチの先頭を出す。テストの固定の
- * 手順と、探索が 1 つの選択を試した後の残りの選択に使う。
+ * 候補の先頭から選べるだけ選び、「のぞむなら」の効果は必ず起こす。きぜつした後はベンチの先頭を出し、相手の場のダメージ
+ * の足す先も候補の先頭にする。テストの固定の手順と、探索が 1 つの選択を試した後の残りの選択に使う。
  */
 export const firstCandidateChoices: EffectChoices = {
   chooseCards: (_state, request) =>
