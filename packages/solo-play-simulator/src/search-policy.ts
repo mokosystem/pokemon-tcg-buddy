@@ -18,6 +18,7 @@ import {
   resolveEndOfTurnTriggers,
   useAttack,
 } from "./card-effects.ts";
+import type { FieldPosition } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import type { UsableAttack } from "./continuous-effects.ts";
 import {
@@ -26,6 +27,7 @@ import {
   type EffectContext,
   firstCandidateChoices,
   hasDistinctProvidedTypes,
+  type OpponentFieldPositionChoiceRequest,
   type PokemonChoiceRequest,
 } from "./effect-choices.ts";
 import {
@@ -186,12 +188,20 @@ function doNothing(): void {
 type ChoiceAnswer =
   | { readonly indices: readonly number[]; readonly kind: "cards" }
   | { readonly indices: readonly number[]; readonly kind: "pokemon" }
-  | { readonly applies: boolean; readonly kind: "optional" };
+  | { readonly applies: boolean; readonly kind: "optional" }
+  | {
+      readonly kind: "opponentFieldPosition";
+      readonly position: FieldPosition;
+    };
 
 type ChoiceRequest =
   | { readonly kind: "cards"; readonly request: CardChoiceRequest }
   | { readonly kind: "pokemon"; readonly request: PokemonChoiceRequest }
-  | { readonly kind: "optional" };
+  | { readonly kind: "optional" }
+  | {
+      readonly kind: "opponentFieldPosition";
+      readonly request: OpponentFieldPositionChoiceRequest;
+    };
 
 const cardKeys = new WeakMap<Card, number>();
 let nextCardKey = 0;
@@ -372,6 +382,11 @@ function listChoiceOptions(
         }
       );
     }
+    case "opponentFieldPosition":
+      return choice.request.candidates.map((position) => ({
+        kind: "opponentFieldPosition",
+        position,
+      }));
     default:
       return [
         { applies: true, kind: "optional" },
@@ -402,6 +417,13 @@ function answerOptional(answer: ChoiceAnswer): boolean {
     throw new Error("再生した選択の種類が、実際の選択と食い違う");
   }
   return answer.applies;
+}
+
+function answerOpponentFieldPosition(answer: ChoiceAnswer): FieldPosition {
+  if (answer.kind !== "opponentFieldPosition") {
+    throw new Error("再生した選択の種類が、実際の選択と違う");
+  }
+  return answer.position;
 }
 
 /** きぜつした後にバトル場に出すベンチポケモンの問い合わせを、効果の中の選択と同じ形の求めにする。 */
@@ -461,6 +483,22 @@ class ScriptedChoices implements EffectChoices {
     return answer === undefined
       ? firstCandidateChoices.chooseCards(state, request)
       : pickByIndices(request.candidates, answer, "cards");
+  }
+
+  chooseOpponentFieldPositionForDamage(
+    state: GameState,
+    request: OpponentFieldPositionChoiceRequest
+  ): FieldPosition {
+    const answer = this.takeAnswer(state, {
+      kind: "opponentFieldPosition",
+      request,
+    });
+    return answer === undefined
+      ? firstCandidateChoices.chooseOpponentFieldPositionForDamage(
+          state,
+          request
+        )
+      : answerOpponentFieldPosition(answer);
   }
 
   choosePokemon(state: GameState, request: PokemonChoiceRequest) {
@@ -636,6 +674,15 @@ class ChoiceSearch implements EffectChoices {
       request.candidates,
       this.choose(state, { kind: "cards", request }),
       "cards"
+    );
+  }
+
+  chooseOpponentFieldPositionForDamage(
+    state: GameState,
+    request: OpponentFieldPositionChoiceRequest
+  ): FieldPosition {
+    return answerOpponentFieldPosition(
+      this.choose(state, { kind: "opponentFieldPosition", request })
     );
   }
 
@@ -911,6 +958,11 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
     chooseBenchAtSetup: (state) => benchChosenAtSetup.get(state) ?? [],
     chooseCards: (state, request) =>
       choicesOutsideTurnActions(state).chooseCards(state, request),
+    chooseOpponentFieldPositionForDamage: (state, request) =>
+      choicesOutsideTurnActions(state).chooseOpponentFieldPositionForDamage(
+        state,
+        request
+      ),
     choosePokemon: (state, request) =>
       choicesOutsideTurnActions(state).choosePokemon(state, request),
     choosePokemonToPromoteAfterKnockOut: (state, candidates) =>

@@ -463,7 +463,7 @@ function isSameUsableAttack(left: UsableAttack, right: UsableAttack): boolean {
 }
 
 /**
- * バトルポケモンでワザを使う。記録の規則で求めたダメージを相手の場のダメージに足してから、効果の翻訳を実行する。
+ * バトルポケモンでワザを使う。記録の規則で求めたダメージを相手のバトル場のダメージに足してから、効果の翻訳を実行する。
  * ダメージを効果より先に足すのは、カードテキストがダメージ、効果の順に書かれ、効果がダメージの数え方を変える記録が
  * 無いため(docs/solo-play-simulator-design.md「対戦風の一人回し」)。使うワザは、使えるワザの一覧
  * (listUsableAttacksOfActive)の候補の 1 つで受け取る。
@@ -494,7 +494,7 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   }
   const damage = calculateAttackDamage(state, active, usable.attack);
   if (damage !== undefined) {
-    addDamageToOpponentField(state, damage, attackName);
+    addDamageToOpponentField(state, "active", damage, attackName);
   }
   const { effect } = usable.attack;
   if (effect !== undefined) {

@@ -80,7 +80,7 @@ describe("Jev に選ばせる判断基準", () => {
     expect(policy.jevUsage).toEqual({ inputTokens: 200, requests: 2 });
   });
 
-  test("状態には、自分の場、手札、トラッシュ、山札の枚数、サイドの残り枚数、相手のサイドの残り枚数、相手の場のダメージ、番の回数、次の相手の番に受けるダメージと、デッキのカードの説明を入れる", () => {
+  test("状態には、自分の場、手札、トラッシュ、山札の枚数、サイドの残り枚数、相手のサイドの残り枚数、相手のバトル場のダメージ、相手のベンチのダメージ、番の回数、次の相手の番に受けるダメージと、デッキのカードの説明を入れる", () => {
     const state = buildState({ active: GIBLE, hand: [FIGHTING_ENERGY] });
     const jev = createFakeJev(() => 0);
     const policy = createJevPlayingPolicy({
@@ -100,7 +100,8 @@ describe("Jev に選ばせる判断基準", () => {
         "discard",
         "hand",
         "nextOpponentAttackDamage",
-        "opponentFieldDamage",
+        "opponentActiveDamage",
+        "opponentBenchDamage",
         "opponentRemainingPrizes",
         "ownRemainingPrizes",
         "ownTurn",

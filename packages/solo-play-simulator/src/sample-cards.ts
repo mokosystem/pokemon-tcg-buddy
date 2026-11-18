@@ -117,7 +117,7 @@ const SAMPLE_RECORDS: readonly CardRecord[] = [
   defineTrainerRecord("900006", "グッズ", CardCategory.Goods),
   defineTrainerRecord("900007", "スタジアム", CardCategory.Stadium),
   // 相手の攻撃を何度受けてもきぜつしない(4 回目以降の 300 を 66 回受けても HP に届かない)たね。ワザは必要な
-  // エネルギーが無く 300 ダメージで、使えば 1 回で相手の場のダメージからサイドを 3 枚取れる
+  // エネルギーが無く 300 ダメージで、使えば 1 回で相手のバトル場のダメージからサイドを 3 枚取れる
   definePokemonRecord("900008", "HPの高いたね", {
     attacks: [
       { cost: [], damage: { amount: 300, kind: "fixed" }, name: "大きなワザ" },

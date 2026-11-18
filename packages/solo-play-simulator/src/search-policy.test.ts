@@ -233,7 +233,7 @@ describe("試しの点数での比べ方", () => {
 
 describe("ワザを試すときの先の進め方", () => {
   test("ワザを試した先は、サイドの判定と相手の番まで進めてから点数を出し、使わないときはサイドの判定の後の相手の番から続ける", () => {
-    // ドラパルトex(049264)のファントムダイブは 200 ダメージ(相手の場のダメージ 200 で、番の終わりにサイドを 2 枚取る。
+    // ドラパルトex(049264)のファントムダイブは 200 ダメージ(相手のバトル場のダメージ 200 で、番の終わりにサイドを 2 枚取る。
     // docs/solo-play-simulator-design.md「相手の場のダメージとサイド」)
     const state = buildState({
       active: buildRecordedCard("049264"),
@@ -354,13 +354,44 @@ describe("探索は場のポケモンをダメカンで見分ける", () => {
     }
     fewer.damage = 10;
     more.damage = 50;
+    // 足す先(相手のバトル場のダメージか相手のベンチのダメージか)の 2 つは点数が並ぶので、候補の先頭の相手のバトル場の
+    // ダメージを選ぶ
     const policy = createPolicy(
-      ({ state: tried }) => scoreOf(tried.opponentFieldDamage / 1000),
+      ({ state: tried }) =>
+        scoreOf(
+          (tried.opponentFieldDamage.active + tried.opponentFieldDamage.bench) /
+            1000
+        ),
       { samplesPerCandidate: 1 }
     );
     policy.playTurn({ choices: policy, state });
-    expect(state.opponentFieldDamage).toBe(30);
+    expect(state.opponentFieldDamage).toEqual({ active: 30, bench: 0 });
     expect(more.damage).toBe(20);
     expect(fewer.damage).toBe(10);
+  });
+});
+
+describe("足す先の選択", () => {
+  test("アドレナブレインの足す先は、両方を試して点数の高いほうを選び、候補の先頭でない相手のベンチのダメージも選ぶ", () => {
+    // マシマシラ(049074)のアドレナブレインは、悪エネルギー(047909)がついていれば自分のポケモン 1 匹のダメカンを 3 個まで
+    // 相手のポケモン 1 匹にのせ替え、足す先の候補は記録の並びで ["active", "bench"]。ラルトスは 049714
+    const state = buildState({
+      active: buildRecordedCard("049074"),
+      bench: [buildRecordedCard("049714")],
+      random: createSeededRandom(1),
+    });
+    activeOf(state).energies.push(buildRecordedCard("047909"));
+    const [ralts] = state.bench;
+    if (ralts === undefined) {
+      throw new Error("ベンチのラルトスがいない");
+    }
+    ralts.damage = 30;
+    const policy = createPolicy(
+      ({ state: tried }) => scoreOf(tried.opponentFieldDamage.bench / 1000),
+      { samplesPerCandidate: 1 }
+    );
+    policy.playTurn({ choices: policy, state });
+    expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 30 });
+    expect(ralts.damage).toBe(0);
   });
 });

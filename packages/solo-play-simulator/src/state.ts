@@ -10,6 +10,7 @@
 import {
   CardCategory,
   EvolutionStage,
+  type FieldPosition,
   type PokemonInPlayFilter,
   type PokemonType,
 } from "./card-record-schema.ts";
@@ -331,8 +332,14 @@ export class GameState {
   readonly events: string[] = [];
   /** 相手のサイドの残り枚数。中身は持たない(docs/solo-play-simulator-design.md「対戦風の一人回し」)。 */
   opponentRemainingPrizeCount = PRIZE_COUNT;
-  /** 相手の場のダメージ。自分の番の終わりにサイドを取るかの判定に使う。 */
-  opponentFieldDamage = 0;
+  /**
+   * 相手の場のダメージ。active は相手のバトル場のダメージ、bench は相手のベンチのダメージ。自分の番の終わりにサイドを
+   * 取るかの判定に使う(docs/solo-play-simulator-design.md「相手の場のダメージとサイド」)。
+   */
+  readonly opponentFieldDamage: Record<FieldPosition, number> = {
+    active: 0,
+    bench: 0,
+  };
   /** 相手の番を何回行ったか。 */
   opponentTurnCount = 0;
   /** 自分のポケモンがきぜつした最後の相手の番の回数。自分の番のきぜつ(自分のカードの効果)は数えない。 */
@@ -422,7 +429,7 @@ export class GameState {
         : copies.get(this.firstAttackerThisTurn);
     copied.uncertainOutcomeCount = this.uncertainOutcomeCount;
     copied.opponentRemainingPrizeCount = this.opponentRemainingPrizeCount;
-    copied.opponentFieldDamage = this.opponentFieldDamage;
+    Object.assign(copied.opponentFieldDamage, this.opponentFieldDamage);
     copied.opponentTurnCount = this.opponentTurnCount;
     copied.latestOpponentTurnWithOwnKnockOut =
       this.latestOpponentTurnWithOwnKnockOut;

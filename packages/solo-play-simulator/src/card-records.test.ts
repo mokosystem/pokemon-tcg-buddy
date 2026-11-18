@@ -25,6 +25,7 @@ import {
   useAttack,
   useStadiumEffect,
 } from "./card-effects.ts";
+import type { FieldPosition } from "./card-record-schema.ts";
 import { cardRecordTable } from "./card-record-table.ts";
 import {
   activeOf,
@@ -44,6 +45,11 @@ import {
   countEmptyBenchSlots,
   listEnergyUnits,
 } from "./continuous-effects.ts";
+import {
+  type EffectChoices,
+  firstCandidateChoices,
+  type OpponentFieldPositionChoiceRequest,
+} from "./effect-choices.ts";
 import { setupGame } from "./engine.ts";
 import { listAvailableActions } from "./player-actions.ts";
 import { type GameState, IllegalMove, PokemonInPlay } from "./state.ts";
@@ -275,6 +281,18 @@ function damageOf(
 
 function repeat<T>(card: T, count: number): T[] {
   return Array.from({ length: count }, () => card);
+}
+
+/** 足す先の問い合わせを記録し、決めた足す先を返す選択を作る。 */
+function createRecordingOpponentFieldPositionChoice(position: FieldPosition) {
+  const requests: OpponentFieldPositionChoiceRequest[] = [];
+  const overrides: Partial<EffectChoices> = {
+    chooseOpponentFieldPositionForDamage: (_, request) => {
+      requests.push(request);
+      return position;
+    },
+  };
+  return { overrides, requests };
 }
 
 describeTranslation("メガサーナイトex", () => {
@@ -1311,7 +1329,7 @@ describeTranslation("シロナのガブリアスex", () => {
     expect(state.hand).toEqual([]);
   });
 
-  test("リューノバスターを使うと、相手の場のダメージに 260 を足した後、自身のエネルギーをすべてトラッシュする", () => {
+  test("リューノバスターを使うと、相手のバトル場のダメージにだけ 260 を足し、相手のベンチのダメージは変わらず、その後に自身のエネルギーをすべてトラッシュする", () => {
     // リューノバスターは闘闘で 260、使った後に自身のエネルギーをすべてトラッシュする(記録 047381)
     const state = buildState({ active: CYNTHIAS_GARCHOMP });
     activeOf(state).energies.push(
@@ -1320,7 +1338,7 @@ describeTranslation("シロナのガブリアスex", () => {
       NEO_UPPER_ENERGY
     );
     useAttackNamed(buildContext(state), "リューノバスター");
-    expect(state.opponentFieldDamage).toBe(260);
+    expect(state.opponentFieldDamage).toEqual({ active: 260, bench: 0 });
     expect(activeOf(state).energies).toEqual([]);
     expect(namesOf(state.discard)).toEqual([
       "基本闘エネルギー",
@@ -1328,7 +1346,7 @@ describeTranslation("シロナのガブリアスex", () => {
       "ネオアッパーエネルギー",
     ]);
     const damageIndex = state.events.findIndex((event) =>
-      event.includes("相手の場のダメージ +260")
+      event.includes("相手のバトル場のダメージ +260")
     );
     const discardIndex = state.events.findIndex((event) =>
       event.includes("エネルギー 3 枚をトラッシュ")
@@ -1881,7 +1899,7 @@ describeTranslation("シロナのロズレイド", () => {
     ).toBe(320);
   });
 
-  test("グローリーエールが働くシロナのロズレイドがベンチに 2 匹いるとき、シロナのガブリアスex がリューノバスターを使うと、相手の場のダメージに 320 が足される", () => {
+  test("グローリーエールが働くシロナのロズレイドがベンチに 2 匹いるとき、シロナのガブリアスex がリューノバスターを使うと、相手のバトル場のダメージに 320 が足される", () => {
     // リューノバスターは闘闘で 260(記録 047381)、グローリーエールは 1 匹につき +30(記録 047366 の裁定のデータ)
     const state = buildState({
       active: CYNTHIAS_GARCHOMP,
@@ -1889,7 +1907,7 @@ describeTranslation("シロナのロズレイド", () => {
     });
     activeOf(state).energies.push(FIGHTING_ENERGY, FIGHTING_ENERGY);
     useAttackNamed(buildContext(state), "リューノバスター");
-    expect(state.opponentFieldDamage).toBe(320);
+    expect(state.opponentFieldDamage).toEqual({ active: 320, bench: 0 });
   });
 
   test("パワープロテインと重ねて足す", () => {
@@ -4410,24 +4428,40 @@ describeTranslation("シロナのパワーウエイト", () => {
 });
 
 describeTranslation("ドラパルトex", () => {
-  test("ファントムダイブを使うと、相手の場のダメージに 200 と 60 を足す", () => {
-    // ファントムダイブは炎超で 200、相手のベンチポケモンにダメカン 6 個(記録 049264)。ダメカン 1 個は 10
+  test("ファントムダイブを使うと、相手のバトル場のダメージに 200、相手のベンチのダメージに 60 を足し、足す先は問い合わせない", () => {
+    // ファントムダイブは炎超で 200、相手のベンチポケモンにダメカン 6 個(記録 049264。足す先は ["bench"])。ダメカン 1 個は 10
     const state = buildState({ active: DRAGAPULT });
     activeOf(state).energies.push(FIRE_ENERGY, PSYCHIC_ENERGY);
-    useAttackNamed(buildContext(state), "ファントムダイブ");
-    expect(state.opponentFieldDamage).toBe(260);
+    const choice = createRecordingOpponentFieldPositionChoice("active");
+    useAttackNamed(buildContext(state, choice.overrides), "ファントムダイブ");
+    expect(state.opponentFieldDamage).toEqual({ active: 200, bench: 60 });
+    expect(choice.requests).toHaveLength(0);
   });
 });
 
 describeTranslation("ヨノワール", () => {
-  test("カースドボムを使うと自身がきぜつして相手がサイドを 1 枚取り、相手の場のダメージに 130 を足す", () => {
-    // カースドボムは自身をきぜつさせ、相手のポケモン 1 匹にダメカン 13 個(記録 049026)。ヨノワールはルールを持たない
-    const state = buildState({ active: DUSKNOIR, bench: [RALTS] });
-    useAbility(buildContext(state), activeOf(state), "カースドボム");
-    expect(namesOf(state.discard)).toEqual(["ヨノワール"]);
-    expect(state.opponentRemainingPrizeCount).toBe(5);
-    expect(state.opponentFieldDamage).toBe(130);
-    expect(activeOf(state).name).toBe("ラルトス");
+  test("カースドボムを使うと自身がきぜつして相手がサイドを 1 枚取り、足す先を 1 回問い合わせ、選んだほうにだけ 130 を足す", () => {
+    // カースドボムは自身をきぜつさせ、相手のポケモン 1 匹にダメカン 13 個(記録 049026。足す先は ["active", "bench"])。
+    // ヨノワールはルールを持たない
+    for (const position of ["active", "bench"] as const) {
+      const state = buildState({ active: DUSKNOIR, bench: [RALTS] });
+      const choice = createRecordingOpponentFieldPositionChoice(position);
+      useAbility(
+        buildContext(state, choice.overrides),
+        activeOf(state),
+        "カースドボム"
+      );
+      expect(namesOf(state.discard)).toEqual(["ヨノワール"]);
+      expect(state.opponentRemainingPrizeCount).toBe(5);
+      expect(choice.requests).toHaveLength(1);
+      expect(choice.requests[0]?.candidates).toEqual(["active", "bench"]);
+      expect(state.opponentFieldDamage).toEqual(
+        position === "active"
+          ? { active: 130, bench: 0 }
+          : { active: 0, bench: 130 }
+      );
+      expect(activeOf(state).name).toBe("ラルトス");
+    }
   });
 
   test("ベンチのヨノワールがきぜつしてもバトルポケモンは変わらない", () => {
@@ -4436,21 +4470,23 @@ describeTranslation("ヨノワール", () => {
     useAbility(buildContext(state), benchAt(state, 0), "カースドボム");
     expect(activeOf(state)).toBe(ralts);
     expect(state.bench).toEqual([]);
-    expect(state.opponentFieldDamage).toBe(130);
+    expect(state.opponentFieldDamage).toEqual({ active: 130, bench: 0 });
   });
 });
 
 describeTranslation("サマヨール", () => {
-  test("場がサマヨール 1 匹だけのとき、カースドボムを使うと、場に自分のポケモンがいなくなった時点で負けになり、相手の場のダメージは足されず、番を終えるしか選べない", () => {
+  test("場がサマヨール 1 匹だけのとき、カースドボムを使うと、場に自分のポケモンがいなくなった時点で負けになり、相手の場のダメージは足されず、足す先も問い合わせず、番を終えるしか選べない", () => {
     // 勝敗が決まったら効果の残りの操作は実行せず、今できる行動は番を終えるだけになる
     const state = buildState({ active: DUSCLOPS });
-    const context = buildContext(state);
+    const choice = createRecordingOpponentFieldPositionChoice("bench");
+    const context = buildContext(state, choice.overrides);
     useAbility(context, activeOf(state), "カースドボム");
     expect(state.decision).toEqual({
       decidedTurn: { ordinal: 2, owner: "self" },
       reason: "noOwnPokemonInPlay",
     });
-    expect(state.opponentFieldDamage).toBe(0);
+    expect(choice.requests).toHaveLength(0);
+    expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 0 });
     expect(listAvailableActions(context)).toEqual([{ kind: "endTurn" }]);
   });
 
@@ -4458,19 +4494,27 @@ describeTranslation("サマヨール", () => {
     // 自分のカードの効果できぜつしても相手はサイドを取り、取り切ったらその時点で負け(記録 049025 の裁定のデータ)
     const state = buildState({ active: DUSCLOPS, bench: [RALTS] });
     state.opponentRemainingPrizeCount = 1;
-    useAbility(buildContext(state), activeOf(state), "カースドボム");
+    const choice = createRecordingOpponentFieldPositionChoice("bench");
+    useAbility(
+      buildContext(state, choice.overrides),
+      activeOf(state),
+      "カースドボム"
+    );
     expect(state.opponentRemainingPrizeCount).toBe(0);
     expect(state.decision?.reason).toBe("opponentPrizesTaken");
-    expect(state.opponentFieldDamage).toBe(0);
+    expect(choice.requests).toHaveLength(0);
+    expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 0 });
   });
 
-  test("ベンチにポケモンがいれば、カースドボムで自身がきぜつした後、相手の場のダメージに 50 を足し、プレイングの判断基準が選んだベンチポケモンがバトル場に出る", () => {
-    // カースドボムのダメカンは 5 個(記録 049025)
+  test("ベンチにポケモンがいれば、カースドボムで自身がきぜつした後、足す先を 1 回問い合わせ、選んだ相手のベンチのダメージにだけ 50 を足し、プレイングの判断基準が選んだベンチポケモンがバトル場に出る", () => {
+    // カースドボムのダメカンは 5 個(記録 049025。足す先は ["active", "bench"])
     const state = buildState({
       active: DUSCLOPS,
       bench: [RALTS, CYNTHIAS_ROSELIA],
     });
+    const choice = createRecordingOpponentFieldPositionChoice("bench");
     const context = buildContext(state, {
+      ...choice.overrides,
       choosePokemonToPromoteAfterKnockOut: (_, candidates) => {
         const [, second] = candidates;
         if (second === undefined) {
@@ -4480,7 +4524,9 @@ describeTranslation("サマヨール", () => {
       },
     });
     useAbility(context, activeOf(state), "カースドボム");
-    expect(state.opponentFieldDamage).toBe(50);
+    expect(choice.requests).toHaveLength(1);
+    expect(choice.requests[0]?.candidates).toEqual(["active", "bench"]);
+    expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 50 });
     expect(activeOf(state).name).toBe("シロナのロゼリア");
     expect(state.decision).toBeUndefined();
   });
@@ -4502,7 +4548,7 @@ describeTranslation("マシマシラ", () => {
     activeOf(state).energies.push(DARK_ENERGY);
     useAbility(context, activeOf(state), "アドレナブレイン");
     expect(benchAt(state, 0).damage).toBe(20);
-    expect(state.opponentFieldDamage).toBe(30);
+    expect(state.opponentFieldDamage).toEqual({ active: 30, bench: 0 });
     expect(canUseAbility(context, activeOf(state), "アドレナブレイン")).toBe(
       false
     );
@@ -4514,7 +4560,33 @@ describeTranslation("マシマシラ", () => {
     benchAt(state, 0).damage = 20;
     useAbility(buildContext(state), activeOf(state), "アドレナブレイン");
     expect(benchAt(state, 0).damage).toBe(0);
-    expect(state.opponentFieldDamage).toBe(20);
+    expect(state.opponentFieldDamage).toEqual({ active: 20, bench: 0 });
+  });
+
+  test("アドレナブレインは、ダメカンを取り除くポケモンを選んだ後に足す先を 1 回問い合わせ、選んだ相手のベンチのダメージにだけ取り除いた分を足す", () => {
+    // アドレナブレインは自分のポケモン 1 匹のダメカンを 3 個まで、相手のポケモン 1 匹にのせ替える(記録 049074。足す先は
+    // ["active", "bench"])
+    const state = buildState({ active: MUNKIDORI, bench: [RALTS] });
+    activeOf(state).energies.push(DARK_ENERGY);
+    benchAt(state, 0).damage = 50;
+    const choice = createRecordingOpponentFieldPositionChoice("bench");
+    const requestCountsWhenChoosingPokemon: number[] = [];
+    useAbility(
+      buildContext(state, {
+        ...choice.overrides,
+        choosePokemon: (choosingState, request) => {
+          requestCountsWhenChoosingPokemon.push(choice.requests.length);
+          return firstCandidateChoices.choosePokemon(choosingState, request);
+        },
+      }),
+      activeOf(state),
+      "アドレナブレイン"
+    );
+    expect(requestCountsWhenChoosingPokemon).toEqual([0]);
+    expect(choice.requests).toHaveLength(1);
+    expect(choice.requests[0]?.candidates).toEqual(["active", "bench"]);
+    expect(state.opponentFieldDamage).toEqual({ active: 0, bench: 30 });
+    expect(benchAt(state, 0).damage).toBe(20);
   });
 
   test("ダメカンののった自分のポケモンがいなければ使えない", () => {

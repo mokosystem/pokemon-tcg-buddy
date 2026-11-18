@@ -21,7 +21,8 @@
         "steps": [
           {
             "amount": 60,
-            "operation": "addDamageToOpponentField"
+            "operation": "addDamageToOpponentField",
+            "opponentPositions": ["bench"]
           }
         ],
         "useConditions": []
@@ -30,7 +31,7 @@
     }
   ],
   "basicPokemonOfEvolutionLine": "ドラメシヤ",
-  "battleStyleSoloPlayReviewedOn": "2026-11-11",
+  "battleStyleSoloPlayReviewedOn": "2026-11-17",
   "cardIds": ["049264"],
   "category": "ポケモン",
   "evolvesFrom": "ドロンチ",
@@ -50,5 +51,5 @@
   "rulings": [],
   "stage": "2進化",
   "translationStatus": "translated",
-  "verifiedOn": "2026-11-11"
+  "verifiedOn": "2026-11-17"
 }

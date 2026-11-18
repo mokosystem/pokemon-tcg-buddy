@@ -6,14 +6,14 @@ import { createSeededRandom } from "./random.ts";
 
 describe("試し回しの点数", () => {
   test("続ける場所から勝敗まで進め、勝てば勝率 1 と取ったサイドの差を返す", () => {
-    // 相手の場のダメージが 100 以上でサイドが残り 1 枚なら、自分の番の終わりの判定で取り切って勝つ
+    // 相手のバトル場のダメージが 100 以上でサイドが残り 1 枚なら、自分の番の終わりの判定で取り切って勝つ
     // (docs/solo-play-simulator-design.md「相手の場のダメージとサイド」「勝敗」)
     const state = buildState({
       active: buildRecordedCard("049092"),
       random: createSeededRandom(1),
     });
     state.prizes.splice(1);
-    state.opponentFieldDamage = 100;
+    state.opponentFieldDamage.active = 100;
     state.opponentRemainingPrizeCount = 4;
     const score = createPlayoutTrialScorer(() => createFirstActionPolicy())({
       resumePoint: "ownTurnAttack",

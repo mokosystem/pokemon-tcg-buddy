@@ -72,6 +72,73 @@ describe("スキーマの検査", () => {
         parseCardRecordFile({ content: DRAKLOAK, path: "pokemon/049263.json" })
     ).toBe(true);
   });
+
+  test("相手の場のダメージに足す 2 つの部品は、足す先 opponentPositions が無ければ誤りにする", () => {
+    // ヨノワール 049026 のカースドボムの 2 歩目が addDamageToOpponentField、マシマシラ 049074 のアドレナブレインの
+    // 1 歩目が moveDamageCountersToOpponentField
+    for (const { cardId, stepIndex } of [
+      { cardId: "049026", stepIndex: 1 },
+      { cardId: "049074", stepIndex: 0 },
+    ]) {
+      const broken = structuredClone(findRecord(cardId)) as unknown as {
+        abilities: {
+          translation: {
+            effect: { steps: { opponentPositions?: unknown }[] };
+          };
+        }[];
+      };
+      const steps = broken.abilities[0]?.translation.effect.steps;
+      const step = steps?.[stepIndex];
+      if (steps === undefined || step === undefined) {
+        throw new Error(`${cardId} に ${stepIndex} 番目の歩が無い`);
+      }
+      const { opponentPositions: _, ...withoutOpponentPositions } = step;
+      steps[stepIndex] = withoutOpponentPositions;
+      const result = parseCardRecordFile({
+        content: broken,
+        path: `pokemon/${cardId}.json`,
+      });
+      const problems = "problems" in result ? result.problems : [];
+      expect(
+        problems.some((problem) => problem.includes("opponentPositions"))
+      ).toBe(true);
+    }
+  });
+
+  test("足す先は active と bench の重複の無い 1 つか 2 つにする", () => {
+    // ドラパルトex 049264 のファントムダイブの 1 歩目が addDamageToOpponentField
+    const parseWithOpponentPositions = (opponentPositions: unknown) => {
+      const record = structuredClone(findRecord("049264")) as unknown as {
+        attacks: {
+          effect?: { steps: { opponentPositions?: unknown }[] };
+        }[];
+      };
+      const step = record.attacks[1]?.effect?.steps[0];
+      if (step === undefined) {
+        throw new Error("049264 のファントムダイブに歩が無い");
+      }
+      step.opponentPositions = opponentPositions;
+      return parseCardRecordFile({
+        content: record,
+        path: "pokemon/049264.json",
+      });
+    };
+    for (const invalid of [
+      [],
+      ["bench", "bench"],
+      ["active", "bench", "active"],
+    ]) {
+      expect("problems" in parseWithOpponentPositions(invalid)).toBe(true);
+    }
+    for (const valid of [
+      ["active"],
+      ["bench"],
+      ["active", "bench"],
+      ["bench", "active"],
+    ]) {
+      expect("record" in parseWithOpponentPositions(valid)).toBe(true);
+    }
+  });
 });
 
 describe("記録をまたぐ検査", () => {

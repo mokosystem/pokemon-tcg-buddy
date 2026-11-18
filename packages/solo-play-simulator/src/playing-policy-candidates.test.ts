@@ -16,17 +16,36 @@ import {
 import { RECORDED_DECKS } from "./recorded-decks.ts";
 import { runBattleStyleSoloPlayTrial } from "./simulate.ts";
 
-const GARCHOMP_DECK = RECORDED_DECKS.find(
-  (deck) => deck.deckCode === "RS3MMy-FuGPRu-MypM2X"
-);
-if (GARCHOMP_DECK === undefined) {
-  throw new Error("シロナのガブリアスex のデッキが無い");
-}
-const CARDS = buildDeck(cardRecordTable, GARCHOMP_DECK.decklist);
-const DECK_CARD_NAMES = listDeckCardNames(CARDS);
-const [FIRST_CARD] = CARDS;
-if (FIRST_CARD === undefined) {
-  throw new Error("デッキが空");
+/**
+ * 判断基準ごとに 1 回ずつ回すデッキ。ドラパルトex のデッキは、足す先(相手のバトル場のダメージか相手のベンチのダメージか)
+ * を選ぶカード(サマヨール 049025、ヨノワール 049026、マシマシラ 049074)を含む。
+ */
+const TRIAL_DECKS = [
+  { deckCode: "RS3MMy-FuGPRu-MypM2X", label: "シロナのガブリアスex" },
+  { deckCode: "9gngnQ-zAMw9G-96H9nn", label: "ドラパルトex" },
+] as const;
+
+function prepareTrialDeck({ deckCode, label }: (typeof TRIAL_DECKS)[number]) {
+  const deck = RECORDED_DECKS.find(
+    (candidate) => candidate.deckCode === deckCode
+  );
+  if (deck === undefined) {
+    throw new Error(`${label} のデッキが無い`);
+  }
+  const cards = buildDeck(cardRecordTable, deck.decklist);
+  const deckCardNames = listDeckCardNames(cards);
+  const [firstCard] = cards;
+  if (firstCard === undefined) {
+    throw new Error(`${label} のデッキが空`);
+  }
+  // 候補 4 には、重みがすべて 0 の学習結果を準備として渡す
+  const zeroModel = trainLearnedWinRateModel(
+    extractWinRateFeatures(buildState({ active: firstCard }), deckCardNames)
+      .names,
+    [],
+    LEARNING_OPTIONS
+  );
+  return { cards, deckCardNames, label, zeroModel };
 }
 
 /** 設定の数を 1〜2 に下げる(テストの時間を短くするため)。 */
@@ -58,28 +77,25 @@ describe("計測する設定の一覧", () => {
     });
   });
 
-  // 候補 4 には、重みがすべて 0 の学習結果を準備として渡す
-  const zeroModel = trainLearnedWinRateModel(
-    extractWinRateFeatures(buildState({ active: FIRST_CARD }), DECK_CARD_NAMES)
-      .names,
-    [],
-    LEARNING_OPTIONS
-  );
-  for (const name of PLAYING_POLICY_SETTING_NAMES) {
-    test(`${name}: 数を下げた判断基準で、シロナのガブリアスex デッキの対戦を先攻で 1 回、勝敗まで進められる`, () => {
-      const setting = PLAYING_POLICY_SETTINGS[name];
-      const result = runBattleStyleSoloPlayTrial({
-        cards: CARDS,
-        createPolicy: (policySeed) =>
-          setting.createPolicy(
-            { deckCardNames: DECK_CARD_NAMES, learnedModel: zeroModel },
-            reduceParameters(setting.parameters),
-            policySeed
-          ),
-        trialSeed: 20_261_112,
-        wentFirst: true,
+  for (const { cards, deckCardNames, label, zeroModel } of TRIAL_DECKS.map(
+    prepareTrialDeck
+  )) {
+    for (const name of PLAYING_POLICY_SETTING_NAMES) {
+      test(`${name}: 数を下げた判断基準で、${label} デッキの対戦を先攻で 1 回、勝敗まで進められる`, () => {
+        const setting = PLAYING_POLICY_SETTINGS[name];
+        const result = runBattleStyleSoloPlayTrial({
+          cards,
+          createPolicy: (policySeed) =>
+            setting.createPolicy(
+              { deckCardNames, learnedModel: zeroModel },
+              reduceParameters(setting.parameters),
+              policySeed
+            ),
+          trialSeed: 20_261_112,
+          wentFirst: true,
+        });
+        expect(result.decidedTurn.ordinal).toBeGreaterThanOrEqual(1);
       });
-      expect(result.decidedTurn.ordinal).toBeGreaterThanOrEqual(1);
-    });
+    }
   }
 });

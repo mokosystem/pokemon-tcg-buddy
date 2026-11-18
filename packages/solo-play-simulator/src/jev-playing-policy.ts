@@ -89,7 +89,7 @@ const BATTLE_STYLE_RULES_SUMMARY = [
     (ordinal) =>
       `相手の ${ordinal} 回目${ordinal === 4 ? "以降" : ""}の番 ${calculateOpponentAttackDamage(ordinal)}`
   ).join("、")})`,
-  "自分のワザのダメージは相手の場のダメージに足す。自分の番の終わりに相手の場のダメージが 100 以上なら、100 ごとにサイドを 1 枚(1 回に 3 枚まで)取り、0 に戻す",
+  "自分のワザのダメージは相手のバトル場のダメージに、相手のベンチポケモンへのダメージとダメカンは相手のベンチのダメージに足す。相手のポケモン 1 匹を選んでのせるダメカンは、どちらか 1 つに全量を足す。自分の番の終わりに、相手のバトル場のダメージと相手のベンチのダメージをそれぞれ判定し、100 以上なら 100 ごとにサイドを 1 枚(それぞれ 1 回に 3 枚まで)取って 0 に戻し、100 未満なら持ち越す。両方で取る枚数は足す",
   "自分のポケモンがきぜつすると、相手がサイドを取る(ポケモンex は 2 枚、メガシンカex は 3 枚、ほかは 1 枚)",
   "自分のサイドを取り切ったら勝ち。相手がサイドを取り切る、場に自分のポケモンがいなくなる、番の最初に山札を引けない、のどれかで負け",
 ].join("。");
@@ -213,7 +213,8 @@ function describeState(state: GameState, cardDescriptions: readonly unknown[]) {
       nextOpponentAttackDamage: calculateOpponentAttackDamage(
         state.opponentTurnCount + 1
       ),
-      opponentFieldDamage: state.opponentFieldDamage,
+      opponentActiveDamage: state.opponentFieldDamage.active,
+      opponentBenchDamage: state.opponentFieldDamage.bench,
       opponentRemainingPrizes: state.opponentRemainingPrizeCount,
       ownRemainingPrizes: state.prizes.length,
       ownTurn: state.turn,
