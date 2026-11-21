@@ -2738,6 +2738,20 @@
           },
           "required": ["attackName", "change"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "change": {
+              "const": "reducePrizesTakenOncePerGameWhenKnockedOutByOpponentAttack"
+            }
+          },
+          "required": ["amount", "change"],
+          "additionalProperties": false
         }
       ]
     },

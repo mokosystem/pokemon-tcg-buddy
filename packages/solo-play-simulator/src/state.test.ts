@@ -461,6 +461,19 @@ describe("複製と混ぜ直し(探索が先を試すため)", () => {
     expect(copied.firstAttackerThisTurn).toBe(copied.active);
   });
 
+  test("複製は、対戦中 1 回しか働かない効果がすでに働いたカードの名前を写し、複製に足しても元の状態は変わらない", () => {
+    const state = stateWithUnseen([], []);
+    state.usedOncePerGameEffectCardNames.push("レガシーエネルギー");
+    const copied = state.clone(createSeededRandom(1));
+    expect(copied.usedOncePerGameEffectCardNames).toEqual([
+      "レガシーエネルギー",
+    ]);
+    copied.usedOncePerGameEffectCardNames.push("別のカード");
+    expect(state.usedOncePerGameEffectCardNames).toEqual([
+      "レガシーエネルギー",
+    ]);
+  });
+
   test("複製は、場のポケモンがワザを使えない番を写す", () => {
     const state = stateWithUnseen([], []);
     activeOf(state).turnUnableToAttack = 3;

@@ -729,6 +729,16 @@ export const ContinuousChangeSchema = variant("change", [
     attackName: nonEmptyText,
     change: literal("reduceColorlessAttackCostPerPrizeTakenByOpponent"),
   }),
+  /**
+   * 範囲のポケモンが相手の攻撃できぜつしたとき、相手が取るサイドを amount 枚少なくする。対戦中、同じ名前のカードの
+   * この効果は 1 回しか働かない(レガシーエネルギー。カードの記録 049457)。
+   */
+  strictObject({
+    amount: countFromOne,
+    change: literal(
+      "reducePrizesTakenOncePerGameWhenKnockedOutByOpponentAttack"
+    ),
+  }),
 ]);
 
 export const ContinuousEffectSchema = strictObject({

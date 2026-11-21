@@ -1392,6 +1392,33 @@ describeTranslation("レガシーエネルギー", () => {
       )
     ).toEqual(["むねんのイカリ"]);
   });
+
+  test("つけているポケモンが相手の攻撃できぜつすると、相手が取るサイドが 1 枚少なくなり、同じ対戦の 2 回目は少なくならない", () => {
+    // ガチグマ アカツキex はポケモンex(HP 260)で、きぜつすると相手はサイドを 2 枚取る(記録 049341)。
+    // 相手の 4 回目以降の番のダメージは 300(docs/solo-play-simulator-design.md「相手の番」)
+    const state = buildState({
+      active: BLOODMOON_URSALUNA,
+      bench: [BLOODMOON_URSALUNA, SHUPPET],
+    });
+    activeOf(state).energies.push(LEGACY_ENERGY);
+    benchAt(state, 0).energies.push(LEGACY_ENERGY);
+    const context = buildContext(state);
+    state.opponentTurnCount = 3;
+    playOpponentTurn(context);
+    expect(state.opponentRemainingPrizeCount).toBe(5);
+    expect(activeOf(state).name).toBe("ガチグマ アカツキex");
+    playOpponentTurn(context);
+    expect(state.opponentRemainingPrizeCount).toBe(3);
+  });
+
+  test("自分のカードの効果によるきぜつ(カースドボム)では、取られるサイドは少なくならない", () => {
+    // サマヨールはルールを持たないポケモンで、カースドボムは自身をきぜつさせる(記録 049025)
+    const state = buildState({ active: SHUPPET, bench: [DUSCLOPS] });
+    benchAt(state, 0).energies.push(LEGACY_ENERGY);
+    useAbility(buildContext(state), benchAt(state, 0), "カースドボム");
+    expect(state.opponentRemainingPrizeCount).toBe(5);
+    expect(state.usedOncePerGameEffectCardNames).toEqual([]);
+  });
 });
 
 describeTranslation("基本超エネルギー", () => {

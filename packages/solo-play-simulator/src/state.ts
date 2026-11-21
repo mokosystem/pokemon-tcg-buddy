@@ -351,6 +351,8 @@ export class GameState {
   opponentTurnCount = 0;
   /** 自分のポケモンがきぜつした最後の相手の番の回数。自分の番のきぜつ(自分のカードの効果)は数えない。 */
   latestOpponentTurnWithOwnKnockOut: number | undefined = undefined;
+  /** 対戦中 1 回しか働かない効果が、すでに働いたカードの名前(レガシーエネルギー。カードの記録 049457)。 */
+  readonly usedOncePerGameEffectCardNames: string[] = [];
   /** いま誰の番か。勝敗が決まった番を記録するのに使う。 */
   turnOwner: TurnOwner = "self";
   /** 勝敗。決まったら以後は変えない。 */
@@ -440,6 +442,9 @@ export class GameState {
     copied.opponentTurnCount = this.opponentTurnCount;
     copied.latestOpponentTurnWithOwnKnockOut =
       this.latestOpponentTurnWithOwnKnockOut;
+    copied.usedOncePerGameEffectCardNames.push(
+      ...this.usedOncePerGameEffectCardNames
+    );
     copied.turnOwner = this.turnOwner;
     copied.decision = this.decision;
     return copied;

@@ -38,6 +38,9 @@ const RALTS = buildRecordedCard("049714");
 // 基本闘エネルギー(049464)、ふうせん(にげるエネルギーを減らすポケモンのどうぐ。HP は変えない。050464)
 const FIGHTING_ENERGY = buildRecordedCard("049464");
 const BALLOON = buildRecordedCard("050464");
+// レガシーエネルギー(つけているポケモンが相手のポケモンからワザのダメージを受けてきぜつしたとき、取られるサイドが 1 枚
+// 少なくなる。対戦中 1 回しか働かない。記録 049457)
+const LEGACY_ENERGY = buildRecordedCard("049457");
 // ゼロの大空洞(場に「テラスタル」のポケモンがいればベンチの上限 8。記録 048706)、イーブイex(「テラスタル」、HP 200、
 // ポケモンex。記録 049282)
 const ZERO_CAVERN = buildRecordedCard("048706");
@@ -86,10 +89,62 @@ describe("ダメージときぜつ", () => {
   test("ルールを持たないポケモン(シロナのフカマル 049092)がきぜつすると相手はサイドを 1 枚、ポケモンex(シロナのガブリアスex 047381)は 2 枚、メガシンカex(メガサーナイトex 048464)は 3 枚取る", () => {
     const taken = [GIBLE, GARCHOMP_EX, MEGA_GARDEVOIR].map((card) => {
       const state = buildState({ active: card, bench: [RALTS] });
-      knockOutOwnPokemon(buildContext(state), activeOf(state));
+      knockOutOwnPokemon(
+        buildContext(state),
+        activeOf(state),
+        "opponentAttack"
+      );
       return 6 - state.opponentRemainingPrizeCount;
     });
     expect(taken).toEqual([1, 2, 3]);
+  });
+
+  test("レガシーエネルギーをつけたポケモンが相手の攻撃できぜつすると、相手が取るサイドは 1 枚少なくなる(ポケモンex は 1 枚、ルールを持たないポケモンは 0 枚)", () => {
+    const taken = [GARCHOMP_EX, GIBLE].map((card) => {
+      const state = buildState({ active: card, bench: [RALTS] });
+      activeOf(state).energies.push(LEGACY_ENERGY);
+      knockOutOwnPokemon(
+        buildContext(state),
+        activeOf(state),
+        "opponentAttack"
+      );
+      return 6 - state.opponentRemainingPrizeCount;
+    });
+    expect(taken).toEqual([1, 0]);
+  });
+
+  test("レガシーエネルギーの取られるサイドを減らす効果は、対戦中 1 回しか働かず、取られるサイドが 0 枚になったときも働いたことになる", () => {
+    const state = buildState({ active: GIBLE, bench: [GARCHOMP_EX, RALTS] });
+    activeOf(state).energies.push(LEGACY_ENERGY);
+    benchAt(state, 0).energies.push(LEGACY_ENERGY);
+    const context = buildContext(state);
+    knockOutOwnPokemon(context, activeOf(state), "opponentAttack");
+    expect(state.opponentRemainingPrizeCount).toBe(6);
+    expect(state.usedOncePerGameEffectCardNames).toEqual([
+      "レガシーエネルギー",
+    ]);
+    expect(activeOf(state).name).toBe("シロナのガブリアスex");
+    knockOutOwnPokemon(context, activeOf(state), "opponentAttack");
+    expect(state.opponentRemainingPrizeCount).toBe(4);
+  });
+
+  test("レガシーエネルギーが 2 枚ついていても、取られるサイドは 1 枚しか少なくならない", () => {
+    const state = buildState({ active: GARCHOMP_EX, bench: [RALTS] });
+    activeOf(state).energies.push(LEGACY_ENERGY, LEGACY_ENERGY);
+    knockOutOwnPokemon(buildContext(state), activeOf(state), "opponentAttack");
+    expect(state.opponentRemainingPrizeCount).toBe(5);
+  });
+
+  test("自分のカードの効果によるきぜつでは、レガシーエネルギーをつけていても取られるサイドは少なくならず、効果も使ったことにならない", () => {
+    const state = buildState({ active: GARCHOMP_EX, bench: [GARCHOMP_EX] });
+    activeOf(state).energies.push(LEGACY_ENERGY);
+    benchAt(state, 0).energies.push(LEGACY_ENERGY);
+    const context = buildContext(state);
+    knockOutOwnPokemon(context, activeOf(state), "ownCardEffect");
+    expect(state.opponentRemainingPrizeCount).toBe(4);
+    expect(state.usedOncePerGameEffectCardNames).toEqual([]);
+    knockOutOwnPokemon(context, activeOf(state), "opponentAttack");
+    expect(state.opponentRemainingPrizeCount).toBe(3);
   });
 
   test("HP に届かないダメージはダメカンとして残り、きぜつしない", () => {
@@ -109,7 +164,7 @@ describe("ダメージときぜつ", () => {
     evolvePokemonFromHand(buildContext(state), pokemon, GABITE);
     expect(activeOf(state)).toBe(pokemon);
     expect(pokemon.damage).toBe(50);
-    knockOutOwnPokemonAtOrAboveMaxHp(buildContext(state));
+    knockOutOwnPokemonAtOrAboveMaxHp(buildContext(state), "opponentAttack");
     expect(activeOf(state)).toBe(pokemon);
     playOpponentTurnAt(state, 2);
     expect(state.listPokemonInPlay()).not.toContain(pokemon);
@@ -130,7 +185,8 @@ describe("ダメージときぜつ", () => {
           offered.push(candidates);
           return candidates[0] as PokemonInPlay;
         },
-      })
+      }),
+      "opponentAttack"
     );
     expect(state.opponentRemainingPrizeCount).toBe(4);
     expect(offered.map((candidates) => namesOf(candidates))).toEqual([

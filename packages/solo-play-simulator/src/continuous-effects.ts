@@ -375,6 +375,40 @@ export function calculateMaxHp(
   );
 }
 
+/** 相手の攻撃できぜつしたときに、相手が取るサイドを減らす効果 1 つ。cardName は効果の持ち主のカードの名前。 */
+export interface PrizeReductionForKnockOut {
+  readonly amount: number;
+  readonly cardName: string;
+}
+
+/**
+ * pokemon が相手の攻撃できぜつしたときに働く、相手が取るサイドを減らす効果(レガシーエネルギー)。対戦中 1 回しか
+ * 働かない効果なので、すでに働いた名前のカード(GameState の usedOncePerGameEffectCardNames)の効果は返さず、同じ名前の
+ * カードが 2 枚ついていても 1 つにまとめる。ついているカードの効果は場にある間しか集められないので、きぜつしたポケモンを
+ * トラッシュする前に呼ぶ。
+ */
+export function listUnusedPrizeReductionsForKnockOutByOpponentAttack(
+  state: GameState,
+  pokemon: PokemonInPlay
+): PrizeReductionForKnockOut[] {
+  const reductions = new Map<string, PrizeReductionForKnockOut>();
+  for (const { effect, sourceCard } of listEffectsApplyingTo(state, pokemon)) {
+    const { change } = effect;
+    if (
+      change.change ===
+        "reducePrizesTakenOncePerGameWhenKnockedOutByOpponentAttack" &&
+      !state.usedOncePerGameEffectCardNames.includes(sourceCard.name) &&
+      !reductions.has(sourceCard.name)
+    ) {
+      reductions.set(sourceCard.name, {
+        amount: change.amount,
+        cardName: sourceCard.name,
+      });
+    }
+  }
+  return [...reductions.values()];
+}
+
 export function countEmptyBenchSlots(state: GameState): number {
   return Math.max(0, calculateBenchLimit(state) - state.bench.length);
 }

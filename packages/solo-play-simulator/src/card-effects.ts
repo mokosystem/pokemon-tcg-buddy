@@ -118,8 +118,9 @@ export function playTrainerFromHand(context: EffectContext, card: Card): void {
       trimBenchToLimit(context);
       // ポケモンのどうぐの効果を無くすスタジアム(ジャミングタワー)で最大 HP が下がり、のっているダメージが最大 HP 以上になった
       // ポケモンはこの時点できぜつする。ベンチを減らしてから判定する順は、きぜつの後にベンチを減らしてからバトル場に
-      // 出す順と同じ
-      knockOutOwnPokemonAtOrAboveMaxHp(context);
+      // 出す順と同じ。ダメージを受けた時点のきぜつではないので、原因は自分のカードの効果として渡す(相手のポケモンから
+      // ワザのダメージを受けてきぜつしたときに働く効果を働かせない。カードの記録 049457 の裁定のデータ)
+      knockOutOwnPokemonAtOrAboveMaxHp(context, "ownCardEffect");
       return;
   }
   for (const cardEffect of findCardEffects(card, "whenPlayed")) {

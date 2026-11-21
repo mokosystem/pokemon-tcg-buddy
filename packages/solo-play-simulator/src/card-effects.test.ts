@@ -236,7 +236,7 @@ describe("Issue 69 で足した記法の部品", () => {
     playOpponentTurn(context);
     expect(isMet()).toBe(false);
     state.turnOwner = "self";
-    knockOutOwnPokemon(context, benchAt(state, 0));
+    knockOutOwnPokemon(context, benchAt(state, 0), "ownCardEffect");
     expect(state.bench).toEqual([]);
     expect(isMet()).toBe(false);
   });

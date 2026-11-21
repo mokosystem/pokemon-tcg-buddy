@@ -1159,7 +1159,7 @@ const operationRunners: {
   },
   knockOutSelf: (_, { context, source }) => {
     if (source.pokemon !== undefined) {
-      knockOutOwnPokemon(context, source.pokemon);
+      knockOutOwnPokemon(context, source.pokemon, "ownCardEffect");
     }
   },
   lookAtDeckTopAndAttachEnergyToOwnPokemon: (step, run) =>
