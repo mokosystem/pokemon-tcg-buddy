@@ -952,6 +952,13 @@ export class GameState {
     this.discard.push(energy);
   }
 
+  /** ポケモンについているエネルギーを手札に戻す。 */
+  returnAttachedEnergyToHand(target: PokemonInPlay, energy: Card): void {
+    removeCard(target.energies, energy, `${target.name} のエネルギー`);
+    this.hand.push(energy);
+    this.record(`${target.name} のエネルギー ${energy.name} を手札に戻す`);
+  }
+
   /** ポケモンについているエネルギーを、別のポケモンにつけ替える。手札からつける番に 1 回には数えない。 */
   moveAttachedEnergy(
     from: PokemonInPlay,

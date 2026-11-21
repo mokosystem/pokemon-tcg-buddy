@@ -125,6 +125,7 @@ const POWER_PROTEIN = buildRecordedCard("049368");
 const JUDGE = buildRecordedCard("050448");
 const EEVEE_EX = buildRecordedCard("049282");
 const FLAREON_EX = buildRecordedCard("048810");
+const CHIEN_PAO = buildRecordedCard("046372");
 const MEGA_RAYQUAZA = buildRecordedCard("050396");
 const ETHANS_HO_OH = buildRecordedCard("048543");
 const ENERGY_SWITCH = buildRecordedCard("049354");
@@ -1949,6 +1950,52 @@ describeTranslation("ぼうけんのランタン", () => {
     });
     playTrainerFromHand(buildContext(fireOnly), ADVENTURE_LANTERN);
     expect(namesOf(fireOnly.hand)).toEqual(["基本炎エネルギー"]);
+  });
+});
+
+describeTranslation("パオジアン", () => {
+  test("ゆきにしずめるは、手札からベンチに出したとき、使うことを選べば場に出ているスタジアムをトラッシュする", () => {
+    const state = buildState({ active: EEVEE_EX, hand: [CHIEN_PAO] });
+    state.stadium = JAMMING_TOWER;
+    placeBasicPokemonOnBenchFromHand(buildContext(state), CHIEN_PAO);
+    expect(state.stadium).toBeUndefined();
+    expect(namesOf(state.discard)).toEqual(["ジャミングタワー"]);
+    expect(state.abilityNamesUsedThisTurn).toEqual(["ゆきにしずめる"]);
+  });
+
+  test("ゆきにしずめるは、使わないことを選べばスタジアムを残す", () => {
+    const state = buildState({ active: EEVEE_EX, hand: [CHIEN_PAO] });
+    state.stadium = JAMMING_TOWER;
+    placeBasicPokemonOnBenchFromHand(
+      buildContext(state, { choosesToApplyOptionalEffect: () => false }),
+      CHIEN_PAO
+    );
+    expect(state.stadium).toBe(JAMMING_TOWER);
+  });
+
+  test("スタジアムが出ていなければ、ゆきにしずめるは使えず、何も起きない", () => {
+    const state = buildState({ active: EEVEE_EX, hand: [CHIEN_PAO] });
+    placeBasicPokemonOnBenchFromHand(buildContext(state), CHIEN_PAO);
+    expect(namesOf(state.bench)).toEqual(["パオジアン"]);
+    expect(state.discard).toEqual([]);
+    expect(state.abilityNamesUsedThisTurn).toEqual([]);
+  });
+
+  test("アイシクルループは、相手のバトル場のダメージに 120 を足し、このポケモンのエネルギーを 1 枚手札に戻す", () => {
+    const state = buildState({ active: CHIEN_PAO });
+    activeOf(state).energies.push(WATER_ENERGY, WATER_ENERGY, FIRE_ENERGY);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickCardsByName(["基本炎エネルギー"]),
+      }),
+      "アイシクルループ"
+    );
+    expect(state.opponentFieldDamage.active).toBe(120);
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本水エネルギー",
+      "基本水エネルギー",
+    ]);
+    expect(namesOf(state.hand)).toEqual(["基本炎エネルギー"]);
   });
 });
 

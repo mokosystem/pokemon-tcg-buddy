@@ -164,6 +164,14 @@ function alwaysHasTarget(): boolean {
   return true;
 }
 
+/** 効果の持ち主にエネルギーが 1 枚でもついているか。 */
+function holderHasEnergyAttached(
+  _: unknown,
+  { source }: TargetCheckInput
+): boolean {
+  return source.pokemon !== undefined && source.pokemon.energies.length > 0;
+}
+
 /** トラッシュに条件に合うエネルギーがあり、つける先の自分のポケモンがいるか。 */
 function discardHasEnergyForOwnPokemon(
   step: {
@@ -211,8 +219,7 @@ const firstStepTargetChecks: {
     return first !== undefined && hasTargetForStep(first, input);
   },
   branchOnCondition: alwaysHasTarget,
-  discardEnergyAttachedToSelf: (_, { source }) =>
-    source.pokemon !== undefined && source.pokemon.energies.length > 0,
+  discardEnergyAttachedToSelf: holderHasEnergyAttached,
   discardFromDeckTop: deckHasCards,
   discardFromHand: (step, { hand }) =>
     listMatchingOrAll(hand, step.filter).length >= Math.max(step.minCount, 1),
@@ -253,6 +260,7 @@ const firstStepTargetChecks: {
   preventSelfFromAttackingDuringOwnNextTurn: alwaysHasTarget,
   replaceSelfWithPokemonFromDeck: (_, { source, state }) =>
     state.deck.length > 0 && source.pokemon !== undefined,
+  returnEnergyAttachedToSelfToHand: holderHasEnergyAttached,
   returnFromDiscardToDeck: (step, { state }) =>
     listMatching(state.discard, step.filter).length >=
     Math.max(step.minCount, 1),
@@ -1264,6 +1272,22 @@ const operationRunners: {
       state.replacePokemonWithDeckCard(holder, card);
     }
     state.shuffleDeck();
+  },
+  returnEnergyAttachedToSelfToHand: (step, { context, label, source }) => {
+    const holder = source.pokemon;
+    if (holder === undefined) {
+      return;
+    }
+    const chosen = chooseCardsWithin(
+      context,
+      holder.energies,
+      { maxCount: step.count, minCount: step.count },
+      `${label}: ${holder.name} から手札に戻すエネルギー`
+    );
+    // 選んだ並びが holder.energies そのものでも、戻すたびに減る配列を読まないよう写してから回す
+    for (const energy of [...chosen]) {
+      context.state.returnAttachedEnergyToHand(holder, energy);
+    }
   },
   returnFromDiscardToDeck: (step, { context, label }) => {
     const chosen = chooseCardsWithin(

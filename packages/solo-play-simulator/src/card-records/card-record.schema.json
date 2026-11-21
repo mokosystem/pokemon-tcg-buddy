@@ -2078,6 +2078,20 @@
           },
           "required": ["operation"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "returnEnergyAttachedToSelfToHand"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
         }
       ]
     },
@@ -4003,6 +4017,20 @@
             }
           },
           "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "returnEnergyAttachedToSelfToHand"
+            }
+          },
+          "required": ["count", "operation"],
           "additionalProperties": false
         },
         {

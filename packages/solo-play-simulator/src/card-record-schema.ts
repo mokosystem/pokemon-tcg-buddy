@@ -590,6 +590,14 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("preventSelfFromAttackingDuringOwnNextTurn"),
   }),
+  /**
+   * このポケモン(効果の持ち主)についているエネルギーのカードを count 枚選び、手札に戻す(パオジアンの「アイシクルループ」
+   * は「1個選び」で、1 個のときはどのエネルギーでも 1 枚になる。カードの記録 046372)。
+   */
+  strictObject({
+    count: countFromOne,
+    operation: literal("returnEnergyAttachedToSelfToHand"),
+  }),
 ] as const;
 
 export const BasicOperationSchema = variant("operation", basicOperationOptions);
