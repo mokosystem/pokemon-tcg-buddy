@@ -351,6 +351,38 @@ describeTranslation("ラティアスex", () => {
     state.bench.splice(0, 1);
     expect(calculateRetreatCost(state, activeOf(state))).toBe(2);
   });
+
+  test("むげんのやいばを使うと、次の自分の番はワザを使えず、その次の自分の番には使える", () => {
+    const state = buildState({ active: LATIAS, bench: [RALTS] });
+    activeOf(state).energies.push(
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY
+    );
+    const context = buildContext(state);
+    useAttackNamed(context, "むげんのやいば");
+    expect(state.opponentFieldDamage.active).toBe(200);
+    state.advanceToNextTurn();
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+    state.advanceToNextTurn();
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["むげんのやいば"]);
+  });
+
+  test("むげんのやいばを使った後、ベンチに下げてからバトル場に戻すと、次の自分の番でも使える", () => {
+    const state = buildState({ active: LATIAS, bench: [RALTS] });
+    const latias = activeOf(state);
+    latias.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    const context = buildContext(state);
+    useAttackNamed(context, "むげんのやいば");
+    state.advanceToNextTurn();
+    state.switchActive(benchAt(state, 0));
+    state.switchActive(latias);
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["むげんのやいば"]);
+  });
 });
 
 describeTranslation("ニャースex", () => {
@@ -482,6 +514,30 @@ describeTranslation("ミュウex", () => {
     state.attacks.clear();
     useAttackNamed(buildContext(state), "テレポートブレイク");
     expect(activeOf(state).name).toBe("ラルトス");
+  });
+
+  test("きおくのらせんでラティアスex のむげんのやいばを使うと、次の自分の番にワザを使えないのはミュウex で、ワザを持つラティアスex は使える", () => {
+    const state = buildState({ active: MEW, bench: [LATIAS] });
+    activeOf(state).energies.push(
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY
+    );
+    benchAt(state, 0).energies.push(
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY
+    );
+    const context = buildContext(state);
+    useAttackNamed(context, "むげんのやいば");
+    state.advanceToNextTurn();
+    expect(activeOf(state).name).toBe("ミュウex");
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+    state.switchActive(benchAt(state, 0));
+    expect(activeOf(state).name).toBe("ラティアスex");
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["むげんのやいば"]);
   });
 });
 
@@ -1568,6 +1624,34 @@ describeTranslation("ブースターex", () => {
     );
     expect(activeOf(state).energies).toHaveLength(2);
     expect(state.deck).toHaveLength(1);
+  });
+
+  test("カーネリアンを使うと、次の自分の番はワザを使えず、その次の自分の番には使える", () => {
+    const state = buildState({ active: FLAREON_EX });
+    activeOf(state).energies.push(FIRE_ENERGY, WATER_ENERGY, LIGHTNING_ENERGY);
+    const context = buildContext(state);
+    useAttackNamed(context, "カーネリアン");
+    expect(state.opponentFieldDamage.active).toBe(280);
+    state.advanceToNextTurn();
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+    state.advanceToNextTurn();
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["バーニングチャージ", "カーネリアン"]);
+  });
+
+  test("カーネリアンを使った後、ベンチに下げてからバトル場に戻すと、次の自分の番でも使える", () => {
+    const state = buildState({ active: FLAREON_EX, bench: [MEGA_RAYQUAZA] });
+    const flareon = activeOf(state);
+    flareon.energies.push(FIRE_ENERGY, WATER_ENERGY, LIGHTNING_ENERGY);
+    const context = buildContext(state);
+    useAttackNamed(context, "カーネリアン");
+    state.advanceToNextTurn();
+    state.switchActive(benchAt(state, 0));
+    state.switchActive(flareon);
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["バーニングチャージ", "カーネリアン"]);
   });
 });
 

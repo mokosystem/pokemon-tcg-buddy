@@ -583,6 +583,13 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("knockOutSelf"),
   }),
+  /**
+   * 次の自分の番、このポケモン(効果の持ち主)はワザを使えない(ラティアスex の「むげんのやいば」。カードの記録 046248)。
+   * ベンチに下がるか進化すると、この効果は無くなる(同じ記録の裁定のデータ。進化は docs/pokemon-tcg/basic-rules.md 82 行)。
+   */
+  strictObject({
+    operation: literal("preventSelfFromAttackingDuringOwnNextTurn"),
+  }),
 ] as const;
 
 export const BasicOperationSchema = variant("operation", basicOperationOptions);

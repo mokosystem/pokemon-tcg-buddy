@@ -250,6 +250,7 @@ const firstStepTargetChecks: {
     listMatching(state.discard, step.filter).some(isPokemon),
   placeHandCardsOnDeckTop: (step, { hand }) => hand.length >= step.count,
   placeSelfOnBenchFromHand: (_, { state }) => countEmptyBenchSlots(state) > 0,
+  preventSelfFromAttackingDuringOwnNextTurn: alwaysHasTarget,
   replaceSelfWithPokemonFromDeck: (_, { source, state }) =>
     state.deck.length > 0 && source.pokemon !== undefined,
   returnFromDiscardToDeck: (step, { state }) =>
@@ -1231,6 +1232,20 @@ const operationRunners: {
       byEffect: true,
       from: "hand",
     });
+  },
+  preventSelfFromAttackingDuringOwnNextTurn: (
+    _,
+    { context, label, source }
+  ) => {
+    const holder = source.pokemon;
+    if (holder === undefined) {
+      return;
+    }
+    // state.turn は自分の番だけを数える番号なので、次の自分の番は +1
+    holder.turnUnableToAttack = context.state.turn + 1;
+    context.state.record(
+      `${label}: 次の自分の番、${holder.name} はワザを使えない`
+    );
   },
   replaceSelfWithPokemonFromDeck: (step, { context, label, source }) => {
     const { state } = context;

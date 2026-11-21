@@ -416,6 +416,8 @@ export function retreatActive(
 
 /**
  * バトルポケモンが今使えるワザ(エネルギーが足り、先攻の最初の番ではなく、効果の使える条件を満たすもの)。
+ * バトルポケモンが、前の自分の番に使ったワザの効果でこの番にワザを使えないときは空を返す(見るのはワザを使うバトル
+ * ポケモンの turnUnableToAttack だけで、ワザを持っているベンチのポケモンのものは見ない)。
  * この番にワザを 1 回使ったあとは、1 回目を使ったポケモンがバトル場に残っていて、2 回目を使える効果(「おまつりおんど」)が
  * あるときだけ、2 回目に使えるワザを返す。勝敗が決まった後は空を返す。
  */
@@ -427,7 +429,8 @@ export function listUsableAttacksOfActive(
   if (
     active === undefined ||
     !state.canAttack() ||
-    state.decision !== undefined
+    state.decision !== undefined ||
+    active.turnUnableToAttack === state.turn
   ) {
     return [];
   }

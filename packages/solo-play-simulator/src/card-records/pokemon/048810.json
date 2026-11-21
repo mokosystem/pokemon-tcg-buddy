@@ -8,7 +8,6 @@
         "amount": 130,
         "kind": "fixed"
       },
-      "name": "バーニングチャージ",
       "effect": {
         "isOptional": false,
         "steps": [
@@ -22,7 +21,8 @@
           }
         ],
         "useConditions": []
-      }
+      },
+      "name": "バーニングチャージ"
     },
     {
       "cost": ["fire", "water", "electric"],
@@ -30,19 +30,27 @@
         "amount": 280,
         "kind": "fixed"
       },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "preventSelfFromAttackingDuringOwnNextTurn"
+          }
+        ],
+        "useConditions": []
+      },
       "name": "カーネリアン"
     }
   ],
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["048810", "046683"],
   "category": "ポケモン",
+  "evolvesFrom": "イーブイ",
+  "exRule": "pokemonEx",
   "excludedEffects": [
     {
-      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)",
+      "description": "テラスタルのポケモンのルール(ベンチにいる間、ワザのダメージを受けない)。相手の攻撃はバトルポケモンだけが受けるため、働く場面が無い",
       "reason": "requiresOpponent"
-    },
-    {
-      "description": "ワザ「カーネリアン」を使った次の自分の番に、このポケモンがワザを使えなくなる制限",
-      "reason": "ownNextTurnRestriction"
     }
   ],
   "hasRuleBox": true,
@@ -57,16 +65,36 @@
       "question": "ワザ「バーニングチャージ」で、山札から基本エネルギーを 1 枚も選ばないことができるか",
       "reflectedIn": "山札から選ぶ枚数を 0〜2 枚にした(effect-operations.ts の searchDeckAndAttachEnergyToOnePokemon)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "バーニングチャージで山札から基本エネルギーを 1 枚も選ばないことができるか、という質問に、できると回答(関連カードの印刷 046683 は詳細ページを見比べて同じカードテキスト)",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%90%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "残らない。ベンチに下がると、そのポケモンが受けているワザの効果は無くなる",
+      "question": "ワザ「カーネリアン」を使ったポケモンがベンチに下がると、次の自分の番にワザを使えない効果は残るか",
+      "reflectedIn": "バトルポケモンがベンチに下がるとき(state.ts の switchActive)に、ワザを使えない番の記録を消す",
+      "source": {
+        "checkedOn": "2026-11-21",
+        "kind": "officialQa",
+        "questionSummary": "次の自分の番に同じワザを使えなくなるワザ(ルンパッパの「ぜんりょくダンス」)を使ったポケモンをいったんベンチに戻すと効果が無くなるか、という質問に、ベンチに戻るとそのポケモンが受けているワザの効果は無くなると回答。次の自分の番にワザを使えなくなるワザ(エンペルトLV.X の「ハイドロインパクト」)の効果も、ポケモンにかかっている効果なのでベンチに戻れば消えると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E6%AC%A1%E3%81%AE%E8%87%AA%E5%88%86%E3%81%AE%E7%95%AA%20%E3%83%AF%E3%82%B6%E3%81%8C%E4%BD%BF%E3%81%88%E3%81%AA%E3%81%84%20%E3%83%99%E3%83%B3%E3%83%81&regulation_faq_main_item1=all"
+      }
+    },
+    {
+      "interpretation": "残らない。進化すると、受けていた効果は消える",
+      "question": "ワザ「カーネリアン」を使ったポケモンが進化すると、次の自分の番にワザを使えない効果は残るか",
+      "reflectedIn": "進化のとき(state.ts の replacePokemon)に、ワザを使えない番の記録を消す",
+      "source": {
+        "basis": "基本ルール(docs/pokemon-tcg/basic-rules.md 82 行: 進化すると、特殊状態と受けていた効果は消える)。検索結果に、進化で消えるかを直接尋ねた質問は無かった",
+        "checkedOn": "2026-11-21",
+        "kind": "noMatchingQa",
+        "searchTerms": ["次の自分の番 ワザが使えない 進化"]
       }
     }
   ],
   "stage": "1進化",
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23",
-  "exRule": "pokemonEx",
-  "evolvesFrom": "イーブイ"
+  "verifiedOn": "2026-11-21"
 }
