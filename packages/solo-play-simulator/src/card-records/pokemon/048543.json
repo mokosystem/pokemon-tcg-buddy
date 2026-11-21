@@ -37,8 +37,10 @@
       "name": "シャイニングフェザー"
     }
   ],
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["048543", "047315"],
   "category": "ポケモン",
+  "exRule": "pokemonEx",
   "excludedEffects": [
     {
       "description": "ワザ「シャイニングフェザー」の、自分のポケモン全員の HP を回復する効果",
@@ -57,7 +59,7 @@
       "question": "特性「こんじきのほのお」で、手札の基本炎エネルギーを 1 枚だけ選んでつけられるか",
       "reflectedIn": "手札から選ぶ枚数を 1〜maxCount 枚にした(effect-operations.ts の attachEnergyFromHand)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "こんじきのほのおで手札の基本炎エネルギーを 1 枚だけ選んで、ベンチの「ヒビキのポケモン」につけられるか、という質問に、できると回答(関連カードの印刷 047315 は詳細ページを見比べて同じカードテキスト)",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%93%E3%82%93%E3%81%98%E3%81%8D%E3%81%AE%E3%81%BB%E3%81%AE%E3%81%8A&regulation_faq_main_item1=all"
@@ -77,6 +79,5 @@
   ],
   "stage": "たね",
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23",
-  "exRule": "pokemonEx"
+  "verifiedOn": "2026-11-21"
 }

@@ -34,6 +34,7 @@ const BATTLE_STYLE_REVIEWED_DECK_CODES = [
   "xG8Kax-DHob4e-84xcca",
   "DxKGxx-6pqCKy-xxJ8Yc",
   "9nnnLP-Wejgk5-gn6gn9",
+  "xcGKc8-NGuFdn-D8c88x",
 ];
 
 describe("記録済みのデッキ", () => {

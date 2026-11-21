@@ -29,7 +29,6 @@
       "cost": ["fire", "electric", "colorless"],
       "damage": {
         "amount": 0,
-        "kind": "fixed",
         "bonus": {
           "kind": "perCount",
           "target": {
@@ -37,13 +36,16 @@
             "energyTypes": ["fire", "electric"]
           },
           "unit": 50
-        }
+        },
+        "kind": "fixed"
       },
       "name": "ストームエメラルダ"
     }
   ],
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["050396"],
   "category": "ポケモン",
+  "exRule": "megaEvolutionEx",
   "excludedEffects": [],
   "hasRuleBox": true,
   "hp": 280,
@@ -57,7 +59,7 @@
       "question": "山札が 4 枚に満たないとき、特性「はしゃのほうこう」を使えるか",
       "reflectedIn": "最初の操作の対象は山札が 1 枚以上あることにした(effect-operations.ts の lookAtDeckTopAndAttachEnergyToSelf)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "山札が 1〜3 枚のときにはしゃのほうこうを使えるか、という質問に、使えて、ある分だけ見て基本エネルギーを 1 枚選んでつけると回答",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%AF%E3%81%97%E3%82%83%E3%81%AE%E3%81%BB%E3%81%86%E3%81%93%E3%81%86&regulation_faq_main_item1=all"
@@ -79,7 +81,7 @@
       "question": "ワザ「ストームエメラルダ」で、すべてのタイプのエネルギーとして働く 1 枚(プリズムエネルギー)を、炎と雷で 2 つと数えるか",
       "reflectedIn": "上乗せの数える対象 energyAttachedToOwnPokemon は、すべてのタイプとして働く 1 個をタイプの数によらず 1 つと数える(continuous-effects.ts の countEnergyUnitsOfTypes)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "プリズムエネルギーを 3 枚つけたメガレックウザex だけが場にいるときのストームエメラルダのダメージを問う質問に、150 と回答(1 枚を 1 つと数える)",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B9%E3%83%88%E3%83%BC%E3%83%A0%E3%82%A8%E3%83%A1%E3%83%A9%E3%83%AB%E3%83%80&regulation_faq_main_item1=all"
@@ -88,6 +90,5 @@
   ],
   "stage": "たね",
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23",
-  "exRule": "megaEvolutionEx"
+  "verifiedOn": "2026-11-21"
 }

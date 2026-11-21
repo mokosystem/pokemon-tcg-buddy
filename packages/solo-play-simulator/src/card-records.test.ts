@@ -116,6 +116,7 @@ const CYNTHIAS_ROSELIA = buildRecordedCard("048748");
 const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
 const CYNTHIAS_SPIRITOMB = buildRecordedCard("049968");
 const CYNTHIAS_POWER_WEIGHT = buildRecordedCard("049398");
+const HERO_CAPE = buildRecordedCard("045281");
 const DUSCLOPS = buildRecordedCard("049025");
 const DUSKNOIR = buildRecordedCard("049026");
 const MUNKIDORI = buildRecordedCard("049074");
@@ -4818,6 +4819,35 @@ describe("シロナのミカルゲ", () => {
     expect(
       damageOf(state, activeOf(state), CYNTHIAS_SPIRITOMB, "レイジングカース")
     ).toBe(0);
+  });
+});
+
+describeTranslation("ヒーローマント", () => {
+  test("つけているポケモンの最大 HP が 100 増え、増えた後の HP で相手の攻撃によるきぜつを判定する", () => {
+    // イーブイex は HP 200(記録 049282)、ヒーローマントは +100(記録 045281)。相手の 3 回目の番は 200、4 回目は 300
+    const state = buildState({
+      active: EEVEE_EX,
+      bench: [RALTS],
+      hand: [HERO_CAPE],
+    });
+    const context = buildContext(state);
+    const eevee = activeOf(state);
+    attachToolFromHand(context, HERO_CAPE, eevee);
+    expect(calculateMaxHp(state, eevee)).toBe(300);
+    state.opponentTurnCount = 2;
+    playOpponentTurn(context);
+    expect(activeOf(state)).toBe(eevee);
+    expect(eevee.damage).toBe(200);
+    playOpponentTurn(context);
+    expect(state.listPokemonInPlay()).not.toContain(eevee);
+  });
+
+  test("ポケモンのどうぐの効果を無くすスタジアム(ジャミングタワー)が出ていると、最大 HP は増えない", () => {
+    // ジャミングタワーは、おたがいのポケモンについているポケモンのどうぐの効果を無くす(記録 047214)
+    const state = buildState({ active: EEVEE_EX });
+    activeOf(state).tool = HERO_CAPE;
+    state.stadium = JAMMING_TOWER;
+    expect(calculateMaxHp(state, activeOf(state))).toBe(200);
   });
 });
 
