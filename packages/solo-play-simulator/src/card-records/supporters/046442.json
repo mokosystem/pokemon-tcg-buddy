@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardEffects": [
     {
       "effect": {
@@ -33,7 +34,7 @@
       "question": "メガシンカex を「ポケモンex」として選べるか",
       "reflectedIn": "探す条件の exRules に pokemonEx と megaEvolutionEx の両方を書いた",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "「シアノ」でメガシンカex を選んで手札に加えられるか、という質問に、メガシンカex はポケモンex としても扱うため選べると回答",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B7%E3%82%A2%E3%83%8E&regulation_faq_main_item1=all"
@@ -41,5 +42,5 @@
     }
   ],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-21"
 }

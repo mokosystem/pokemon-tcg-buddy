@@ -1,16 +1,29 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardEffects": [],
   "cardIds": ["048419"],
   "category": "スタジアム",
   "excludedEffects": [
     {
-      "description": "おたがいのベンチポケモンに、相手のワザや特性の効果でダメカンがのらなくなる",
+      "description": "おたがいのベンチポケモンに、相手のワザや特性の効果でダメカンがのらなくなる。自分のベンチポケモンの分は、相手の番に起きるのが相手の攻撃のダメージだけのため、働く場面が無い。相手のベンチポケモンの分(自分のワザや特性の効果でのせるダメカンが、相手のベンチのダメージに足されなくなる)は、相手のベンチに働く効果として含めない",
       "reason": "requiresOpponent"
     }
   ],
   "name": "バトルコロシアム",
-  "rulings": [],
+  "rulings": [
+    {
+      "interpretation": "相手のバトルポケモンにはのせられる。相手のベンチポケモンにはのせられない(ワザのダメージは与えられる)。この記録は相手のベンチに働く効果を含めないため、このスタジアムが出ていても、相手のベンチのダメージに足す効果はそのまま足される",
+      "question": "このスタジアムが出ているとき、自分のワザや特性の効果で、相手のポケモンにダメカンをのせられるか",
+      "reflectedIn": "効果を翻訳せず、含めなかった効果に書いた。計算の前提に出る",
+      "source": {
+        "checkedOn": "2026-11-21",
+        "kind": "officialQa",
+        "questionSummary": "このスタジアムが出ているとき、ワザや特性の効果で相手のベンチポケモンにダメカンをのせること(ドラパルトex の「ファントムダイブ」、ヨノワールの「カースドボム」、マシマシラの「アドレナブレイン」)はできず、相手のバトルポケモンにのせることと、相手のベンチポケモンにワザのダメージを与えることはできると回答",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%90%E3%83%88%E3%83%AB%E3%82%B3%E3%83%AD%E3%82%B7%E3%82%A2%E3%83%A0&regulation_faq_main_item1=all"
+      }
+    }
+  ],
   "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-21"
 }
