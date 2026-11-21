@@ -721,6 +721,14 @@ export const ContinuousChangeSchema = variant("change", [
     amount: countFromOne,
     change: literal("increaseMaxHp"),
   }),
+  /**
+   * 範囲のポケモンが使う、名前が attackName のワザに必要な無色エネルギーを、相手がすでに取ったサイドの枚数ぶん少なくする
+   * (ガチグマ アカツキex の「ろうれんのわざ」。カードの記録 049341)。ワザを使うポケモンに当てる。
+   */
+  strictObject({
+    attackName: nonEmptyText,
+    change: literal("reduceColorlessAttackCostPerPrizeTakenByOpponent"),
+  }),
 ]);
 
 export const ContinuousEffectSchema = strictObject({

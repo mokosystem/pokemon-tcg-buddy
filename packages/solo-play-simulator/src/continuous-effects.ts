@@ -18,9 +18,11 @@ import { type Card, isPokemon, matchesCardFilter } from "./cards.ts";
 import { areConditionsMet, matchesPokemonFilter } from "./conditions.ts";
 import {
   BENCH_LIMIT,
+  COLORLESS,
   type EnergyUnit,
   type GameState,
   type PokemonInPlay,
+  PRIZE_COUNT,
 } from "./state.ts";
 
 interface CollectedContinuousEffect {
@@ -416,23 +418,42 @@ export function isFreshEvolutionAllowedByEffect(
 
 /**
  * ワザを使うポケモンに働く効果(applying)から求めた、ワザに必要なエネルギー。ワザのエネルギーを増やす効果(夜の鉱山)の
- * 分の無色を足す。
+ * 分の無色を足し、相手が取ったサイドの枚数ぶん無色を減らす効果(ガチグマ アカツキex の「ろうれんのわざ」)の分の無色を
+ * 除く。減らす効果は名前が合うワザにだけ働き、タイプ指定のエネルギーは減らさない。
  */
 function calculateAttackCost(
+  state: GameState,
   applying: readonly CollectedContinuousEffect[],
   attack: Attack
 ): PokemonType[] {
-  const added = applying.reduce(
-    (total, collected) =>
-      collected.effect.change.change === "addColorlessToAttackCost"
-        ? total + collected.effect.change.count
-        : total,
-    0
-  );
-  return [
+  let addedCount = 0;
+  let reducesPerPrizeTakenByOpponent = false;
+  for (const { effect } of applying) {
+    const { change } = effect;
+    if (change.change === "addColorlessToAttackCost") {
+      addedCount += change.count;
+    } else if (
+      change.change === "reduceColorlessAttackCostPerPrizeTakenByOpponent" &&
+      change.attackName === attack.name
+    ) {
+      reducesPerPrizeTakenByOpponent = true;
+    }
+  }
+  const cost: PokemonType[] = [
     ...attack.cost,
-    ...Array.from({ length: added }, (): PokemonType => "colorless"),
+    ...Array.from({ length: addedCount }, (): PokemonType => COLORLESS),
   ];
+  if (!reducesPerPrizeTakenByOpponent) {
+    return cost;
+  }
+  let remainingReduction = PRIZE_COUNT - state.opponentRemainingPrizeCount;
+  return cost.filter((required) => {
+    if (required !== COLORLESS || remainingReduction === 0) {
+      return true;
+    }
+    remainingReduction -= 1;
+    return false;
+  });
 }
 
 export interface UsableAttack {
@@ -637,7 +658,7 @@ export function listAttackCandidatesWithCosts(
     : listUsableAttacks(state, applying, pokemon);
   return {
     candidates: usables.map((usable) => ({
-      cost: calculateAttackCost(applying, usable.attack),
+      cost: calculateAttackCost(state, applying, usable.attack),
       usable,
     })),
     units: listEnergyUnitsFrom(all, applying, pokemon),

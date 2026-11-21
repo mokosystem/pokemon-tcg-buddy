@@ -71,6 +71,7 @@ const SHUPPET = buildRecordedCard("050250");
 const BANETTE = buildRecordedCard("050251");
 const DUDUNSPARCE = buildRecordedCard("045203");
 const DUNSPARCE = buildRecordedCard("047086");
+const BLOODMOON_URSALUNA = buildRecordedCard("049341");
 const DREEPY = buildRecordedCard("049262");
 const DRAKLOAK = buildRecordedCard("049263");
 const DRAGAPULT = buildRecordedCard("049264");
@@ -1311,6 +1312,72 @@ describeTranslation("イグニッションエネルギー", () => {
     activeOf(state).energies.push(IGNITION_ENERGY);
     retreatActive(buildContext(state), benchAt(state, 0), [IGNITION_ENERGY]);
     expect(activeOf(state).name).toBe("カゲボウズ");
+  });
+});
+
+describeTranslation("ガチグマ アカツキex", () => {
+  /** バトル場のガチグマ アカツキex に、基本超エネルギーを count 枚つけた場。相手は prizesTakenByOpponent 枚のサイドを取っている。 */
+  function stateWithUrsaluna(
+    energyCount: number,
+    prizesTakenByOpponent: number
+  ) {
+    const state = buildState({ active: BLOODMOON_URSALUNA, bench: [SHUPPET] });
+    activeOf(state).energies.push(...repeat(PSYCHIC_ENERGY, energyCount));
+    state.opponentRemainingPrizeCount = 6 - prizesTakenByOpponent;
+    return state;
+  }
+
+  function usableAttackNames(state: GameState): string[] {
+    return listUsableAttacksOfActive(buildContext(state)).map(
+      ({ attack }) => attack.name
+    );
+  }
+
+  test("ろうれんのわざは、相手がすでに取ったサイドの枚数ぶん、ブラッドムーンに必要な無色エネルギーを少なくする", () => {
+    // ブラッドムーンに必要なエネルギーは無色 5 個(カードの記録 049341)
+    expect(usableAttackNames(stateWithUrsaluna(4, 0))).toEqual([]);
+    expect(usableAttackNames(stateWithUrsaluna(5, 0))).toEqual([
+      "ブラッドムーン",
+    ]);
+    expect(usableAttackNames(stateWithUrsaluna(4, 1))).toEqual([
+      "ブラッドムーン",
+    ]);
+    expect(usableAttackNames(stateWithUrsaluna(3, 1))).toEqual([]);
+    expect(usableAttackNames(stateWithUrsaluna(0, 5))).toEqual([
+      "ブラッドムーン",
+    ]);
+  });
+
+  test("ろうれんのわざは、ミュウex がきおくのらせんでベンチのガチグマ アカツキex のブラッドムーンを使うときには働かない", () => {
+    // 記録 049341 の裁定のデータ(公式 Q&A「ブラッドムーン」)
+    const state = buildState({ active: MEW, bench: [BLOODMOON_URSALUNA] });
+    state.opponentRemainingPrizeCount = 1;
+    expect(usableAttackNames(state)).toEqual([]);
+    activeOf(state).energies.push(...repeat(PSYCHIC_ENERGY, 5));
+    expect(usableAttackNames(state)).toEqual([
+      "テレポートブレイク",
+      "ブラッドムーン",
+    ]);
+  });
+
+  test("ブラッドムーンを使うと、次の自分の番はワザを使えず、その次の自分の番には使える", () => {
+    const state = stateWithUrsaluna(5, 0);
+    useAttackNamed(buildContext(state), "ブラッドムーン");
+    expect(state.opponentFieldDamage.active).toBe(240);
+    state.advanceToNextTurn();
+    expect(usableAttackNames(state)).toEqual([]);
+    state.advanceToNextTurn();
+    expect(usableAttackNames(state)).toEqual(["ブラッドムーン"]);
+  });
+
+  test("ブラッドムーンを使った後、ベンチに下げてからバトル場に戻すと、次の自分の番でも使える", () => {
+    const state = stateWithUrsaluna(5, 0);
+    const ursaluna = activeOf(state);
+    useAttackNamed(buildContext(state), "ブラッドムーン");
+    state.advanceToNextTurn();
+    state.switchActive(benchAt(state, 0));
+    state.switchActive(ursaluna);
+    expect(usableAttackNames(state)).toEqual(["ブラッドムーン"]);
   });
 });
 
