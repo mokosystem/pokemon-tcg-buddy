@@ -24,7 +24,7 @@ const DECISION_REASONS = [
 
 /**
  * 対戦風の一人回しのルールに照らして記録を見直したデッキ。Issue 69 で見直した 2 デッキ(シロナのガブリアスex の
- * 2026-11-10 のデッキと、ドラパルトex)と、Issue 77 で見直したデッキ。
+ * 2026-11-10 のデッキと、ドラパルトex)と、Issue 77 で見直した 6 デッキ。記録済みのデッキすべてにあたる。
  */
 const BATTLE_STYLE_REVIEWED_DECK_CODES = [
   "RS3MMy-FuGPRu-MypM2X",
@@ -35,6 +35,16 @@ const BATTLE_STYLE_REVIEWED_DECK_CODES = [
   "DxKGxx-6pqCKy-xxJ8Yc",
   "9nnnLP-Wejgk5-gn6gn9",
   "xcGKc8-NGuFdn-D8c88x",
+];
+
+/**
+ * 相手を置かない前の計算の理由。対戦風の一人回しでは勝率に関わるので、見直した記録では含めなかった理由にせず、
+ * 効果を翻訳に入れる(Issue 77 の決定事項「記録の見直しで翻訳に入れる効果」)。
+ */
+const EXCLUSION_REASONS_NOT_USED_IN_REVIEWED_RECORDS = [
+  "ownNextTurnRestriction",
+  "damageOrDamageCounters",
+  "noReasonToUseInSoloPlay",
 ];
 
 describe("記録済みのデッキ", () => {
@@ -71,14 +81,22 @@ describe("記録済みのデッキ", () => {
   }
 });
 
-describe("記録を見直したデッキ", () => {
+describe("記録を見直した 8 デッキ(Issue 69 と Issue 77 で見直した、記録済みのデッキすべて)", () => {
   test("カード ID 047388 と 047392 からシロナのガブリアスex の記録を、048468 からふしぎなアメの記録を引ける", () => {
     expect(cardRecordTable.get("047388")?.name).toBe("シロナのガブリアスex");
     expect(cardRecordTable.get("047392")?.name).toBe("シロナのガブリアスex");
     expect(cardRecordTable.get("048468")?.name).toBe("ふしぎなアメ");
   });
 
-  test("見直したデッキのカード ID から引ける記録には、すべて対戦風の一人回しのルールで見直した日が入っている", () => {
+  // 次の「見直した日が入っている」のテストは、記録済みのデッキを一覧で絞ってから日付を見る。一覧からデッキコードが抜けても、
+  // 一覧のデッキコードを誤っても、そのデッキが検査から外れるだけで通ってしまうので、一覧そのものを先に確かめる
+  test("見直し済みのデッキの一覧は、記録済みのデッキすべてのデッキコードと、重なりなく一致する", () => {
+    expect([...BATTLE_STYLE_REVIEWED_DECK_CODES].sort()).toEqual(
+      RECORDED_DECKS.map((deck) => deck.deckCode).sort()
+    );
+  });
+
+  test("8 デッキのカード ID から引ける記録には、すべて対戦風の一人回しのルールで見直した日が入っている", () => {
     const reviewedRecords = new Set(
       RECORDED_DECKS.filter((deck) =>
         BATTLE_STYLE_REVIEWED_DECK_CODES.includes(deck.deckCode)
@@ -94,7 +112,23 @@ describe("記録を見直したデッキ", () => {
     ).toEqual([]);
   });
 
-  // 見直したデッキの外の記録が見直した日を持たないことは確かめない。新しく書く記録も対戦風の一人回しのルールで書くので
+  test("見直した日を持つ記録は、含めなかった効果の理由に、相手を置かない前の計算の理由を使っていない", () => {
+    expect(
+      [...new Set(cardRecordTable.values())]
+        .filter(
+          (record) =>
+            record.battleStyleSoloPlayReviewedOn !== undefined &&
+            record.excludedEffects.some((excluded) =>
+              EXCLUSION_REASONS_NOT_USED_IN_REVIEWED_RECORDS.includes(
+                excluded.reason
+              )
+            )
+        )
+        .map((record) => record.name)
+    ).toEqual([]);
+  });
+
+  // 8 デッキの外の記録が見直した日を持たないことは確かめない。新しく書く記録も対戦風の一人回しのルールで書くので
   // 見直した日を入れ(pokemon-tcg-translate-card-effects スキルの手順 5)、60 枚をリポジトリに置かないデッキの記録もあるため
   test("見直した日を持つ記録は、確認日(詳細ページを読み直した日)も同じ日", () => {
     expect(
