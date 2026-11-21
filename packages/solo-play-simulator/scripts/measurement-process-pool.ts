@@ -1,11 +1,11 @@
 /**
- * Issue 70 の計測スクリプトが共有する部分。プロセスを並べて起こして結果を集める、計測の定数、候補 4 の準備(学習)、
- * 出力のファイルと表の書き方。
+ * 計測のスクリプトが共有する部分(Issue 70、Issue 77)。プロセスを並べて起こして結果を集める、計測の定数(種)、引数の読み取り、
+ * 候補 4 の準備(学習)、出力のファイルと表の書き方。
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "bun";
 import type {
@@ -29,6 +29,7 @@ import {
   PLAYING_POLICY_SETTINGS,
   type PlayingPolicySettingName,
 } from "../src/playing-policy-candidates.ts";
+import { RECORDED_DECKS, type RecordedDeck } from "../src/recorded-decks.ts";
 import type { BattleStyleSoloPlayDecisionReason } from "../src/state.ts";
 import {
   buildMeasuredDeckCards,
@@ -39,23 +40,81 @@ import {
   type TrialIndexAssignment,
 } from "./measurement-jobs.ts";
 
-/** 計測の基準の種(Issue 70 の実装計画「7.2 種」)。 */
+/**
+ * 改善用の種(GLOSSARY.md)の基準の種。Issue 70 の計測と同じ値。プレイングの判断基準を直すために履歴を読んでよいのは、
+ * この種で回した対戦だけである(Issue 77 の決定事項「改善の 1 回」)。
+ */
 export const MEASUREMENT_BASE_SEEDS: TurnOrderBaseSeeds = {
   firstPlayer: 20_261_201,
   secondPlayer: 20_261_202,
 };
 
-/** 候補 4 の学習用の記録の基準の種。計測で回す対戦と同じ対戦を学習に使わないため、計測と別にする。 */
+/**
+ * 判定用の種(GLOSSARY.md)の基準の種(Issue 77 の決定事項「到達の判定の計測」)。この種で回した対戦は集計の数字だけを見て、
+ * 個々の対戦の履歴は読まない。履歴を書くスクリプト(print-playing-policy-game-histories.ts)からは選べないようにしてある。
+ */
+const JUDGMENT_BASE_SEEDS: TurnOrderBaseSeeds = {
+  firstPlayer: 20_261_221,
+  secondPlayer: 20_261_222,
+};
+
+/**
+ * 候補 4 の学習用の記録の基準の種。計測で回す対戦と同じ対戦を学習に使わないため、計測と別にする。準備が乱数を使うときは
+ * 判定用の種とも改善用の種とも違う基準の種を使う、という Issue 77 の決定事項「到達の判定の計測」も、この値で満たしている。
+ */
 const LEARNING_BASE_SEEDS: TurnOrderBaseSeeds = {
   firstPlayer: 20_261_211,
   secondPlayer: 20_261_212,
 };
 
-/** Issue 69 で記録を見直し、Issue 70 で計測する 2 デッキ。 */
-export const MEASURED_DECK_CODES = [
-  "RS3MMy-FuGPRu-MypM2X",
-  "9gngnQ-zAMw9G-96H9nn",
-] as const;
+const SEED_PURPOSES = {
+  improvement: { baseSeeds: MEASUREMENT_BASE_SEEDS, label: "改善用の種" },
+  judgment: { baseSeeds: JUDGMENT_BASE_SEEDS, label: "判定用の種" },
+} as const;
+
+/** 計測に使う種の用途と、その基準の種。 */
+export interface MeasurementSeeds {
+  readonly baseSeeds: TurnOrderBaseSeeds;
+  readonly label: string;
+  readonly purpose: keyof typeof SEED_PURPOSES;
+}
+
+/** --seeds に渡された値(improvement か judgment。省くと improvement)を、種の用途と基準の種として読む。 */
+export function readSeedPurpose(value: string | undefined): MeasurementSeeds {
+  const purpose = value ?? "improvement";
+  if (purpose !== "improvement" && purpose !== "judgment") {
+    throw new Error(
+      `--seeds には improvement か judgment を渡す(${purpose} は無い)`
+    );
+  }
+  return { ...SEED_PURPOSES[purpose], purpose };
+}
+
+/** 種の用途と基準の種を、計測の条件の箇条書きの 1 行にする。 */
+export function formatSeedsLine(seeds: MeasurementSeeds): string {
+  return `- 種: ${seeds.label}(基準の種は先攻 ${seeds.baseSeeds.firstPlayer}、後攻 ${seeds.baseSeeds.secondPlayer})`;
+}
+
+/**
+ * --deck に渡されたデッキコード(何回でも渡せる)を、渡した順の記録済みのデッキとして読む。省くと、記録済みのデッキすべてを
+ * recorded-decks.ts の並びの順に返す。記録済みのデッキに無いデッキコードは、プロセスを起こす前に分かるよう、ここで例外を投げる。
+ */
+export function readRecordedDecks(
+  values: readonly string[] | undefined
+): readonly RecordedDeck[] {
+  if (values === undefined || values.length === 0) {
+    return RECORDED_DECKS;
+  }
+  return values.map((deckCode) => {
+    const deck = RECORDED_DECKS.find(
+      (candidate) => candidate.deckCode === deckCode
+    );
+    if (deck === undefined) {
+      throw new Error(`記録済みのデッキに ${deckCode} が無い`);
+    }
+    return deck;
+  });
+}
 
 const WORKER_SCRIPT_PATH = fileURLToPath(
   new URL("./playing-policy-measurement-worker.ts", import.meta.url)
@@ -170,6 +229,34 @@ function formatTimestamp(date: Date): string {
   return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
 }
 
+/** 出力のパスのうち拡張子を除いた部分(<出力のディレクトリ>/<YYYYMMDD-HHMM>-<計測の名前>-<設定の名前>)を、今の時刻で決める。 */
+export function resolveMeasurementOutputBase(options: {
+  readonly outputDirectory: string;
+  readonly measurementName: string;
+  readonly settingName: string;
+}): string {
+  return join(
+    options.outputDirectory,
+    `${formatTimestamp(new Date())}-${options.measurementName}-${options.settingName}`
+  );
+}
+
+/**
+ * 決まったパス(resolveMeasurementOutputBase の結果)に .json と .md を書く。同じパスに何度も書けば上書きになる。途中まで
+ * 終わった分で書き直していく出力(複数のデッキのまとめ)は、パスを 1 度だけ決めてからこの関数で書く。
+ */
+export function writeMeasurementOutputAt(
+  base: string,
+  output: { readonly json: unknown; readonly markdown: string }
+): void {
+  mkdirSync(dirname(base), { recursive: true });
+  writeFileSync(
+    `${base}.json`,
+    `${JSON.stringify(output.json, undefined, 2)}\n`
+  );
+  writeFileSync(`${base}.md`, output.markdown);
+}
+
 /** 計測ごとに <YYYYMMDD-HHMM>-<計測の名前>-<設定の名前>.json と同じ名前の .md を書き、書いたパスを返す。 */
 export function writeMeasurementOutput(options: {
   readonly outputDirectory: string;
@@ -178,16 +265,8 @@ export function writeMeasurementOutput(options: {
   readonly json: unknown;
   readonly markdown: string;
 }): string {
-  mkdirSync(options.outputDirectory, { recursive: true });
-  const base = join(
-    options.outputDirectory,
-    `${formatTimestamp(new Date())}-${options.measurementName}-${options.settingName}`
-  );
-  writeFileSync(
-    `${base}.json`,
-    `${JSON.stringify(options.json, undefined, 2)}\n`
-  );
-  writeFileSync(`${base}.md`, options.markdown);
+  const base = resolveMeasurementOutputBase(options);
+  writeMeasurementOutputAt(base, options);
   return base;
 }
 
@@ -373,6 +452,8 @@ export function readOneSettingName(
 /** 1 デッキの計測(先攻と後攻)の結果を、設計文書に貼る表にする。 */
 export function formatDeckMeasurementMarkdown(options: {
   readonly candidate: string;
+  /** 計測の条件の箇条書きに足す行(種の用途、区切りなど)。 */
+  readonly conditionLines?: readonly string[];
   readonly environment: ReturnType<typeof describeMeasurementEnvironment>;
   /** 候補 4 の準備の時間(秒)。準備の無い設定は undefined。 */
   readonly preparationSeconds: number | undefined;
@@ -403,6 +484,7 @@ export function formatDeckMeasurementMarkdown(options: {
     `# ${options.title}`,
     "",
     formatEnvironmentLines(environment),
+    ...(options.conditionLines ?? []),
     "",
     formatTableHeader([
       "設定",
@@ -470,6 +552,95 @@ export function formatDeckMeasurementMarkdown(options: {
             ])
           ),
         ]),
+    "",
+  ].join("\n");
+}
+
+/** 複数のデッキのまとめの 1 行ぶん。1 デッキの計測(先攻と後攻)の結果。 */
+export interface DeckMeasurementSummaryEntry {
+  readonly deckCode: string;
+  readonly deckName: string;
+  /** 準備を始めてから計測を始めるまでの秒。準備の無い設定は undefined。 */
+  readonly preparationSeconds: number | undefined;
+  readonly tally: DeckMeasurementTally;
+}
+
+/**
+ * 複数のデッキの計測の結果を、設計文書に貼る 2 つの表(勝率と、負けた理由の内訳)にまとめる。勝率の表はデッキごとに 1 行、
+ * 負けた理由の表はデッキごとに先攻と後攻の 2 行。「回せた単位」は区切りまでに終わった単位の数(先攻の対戦の数と同じ)。
+ */
+export function formatDeckMeasurementSummaryMarkdown(options: {
+  readonly conditionLines: readonly string[];
+  readonly entries: readonly DeckMeasurementSummaryEntry[];
+  readonly environment: ReturnType<typeof describeMeasurementEnvironment>;
+  readonly title: string;
+}): string {
+  const lossReasons = (
+    Object.keys(DECISION_REASON_HEADINGS) as BattleStyleSoloPlayDecisionReason[]
+  ).filter((reason) => reason !== "ownPrizesTaken");
+  return [
+    `# ${options.title}`,
+    "",
+    formatEnvironmentLines(options.environment),
+    ...options.conditionLines,
+    "",
+    formatTableHeader([
+      "デッキ",
+      "デッキコード",
+      "先攻 勝率",
+      "後攻 勝率",
+      "回せた単位",
+      "準備の時間(秒)",
+      "1 回の対戦の時間(ms)",
+    ]),
+    ...options.entries.map(
+      ({ deckCode, deckName, preparationSeconds, tally }) => {
+        const games = tally.firstPlayer.games + tally.secondPlayer.games;
+        return formatTableRow([
+          deckName,
+          `\`${deckCode}\``,
+          formatProportion(summarizeTally(tally.firstPlayer).winRate),
+          formatProportion(summarizeTally(tally.secondPlayer).winRate),
+          String(tally.firstPlayer.games),
+          preparationSeconds === undefined
+            ? "—"
+            : preparationSeconds.toFixed(1),
+          formatMilliseconds(
+            games === 0
+              ? Number.NaN
+              : (tally.firstPlayer.totalGameMilliseconds +
+                  tally.secondPlayer.totalGameMilliseconds) /
+                  games
+          ),
+        ]);
+      }
+    ),
+    "",
+    "負けた理由の内訳(すべての対戦に対する割合)",
+    "",
+    formatTableHeader([
+      "デッキ",
+      "先攻・後攻",
+      ...lossReasons.map((reason) => DECISION_REASON_HEADINGS[reason]),
+    ]),
+    ...options.entries.flatMap(({ deckName, tally }) =>
+      (
+        [
+          ["先攻", tally.firstPlayer],
+          ["後攻", tally.secondPlayer],
+        ] as const
+      ).map(([label, side]) =>
+        formatTableRow([
+          deckName,
+          label,
+          ...lossReasons.map((reason) =>
+            side.games === 0
+              ? "—"
+              : formatPercent(side.decisionReasonCounts[reason] / side.games)
+          ),
+        ])
+      )
+    ),
     "",
   ].join("\n");
 }
