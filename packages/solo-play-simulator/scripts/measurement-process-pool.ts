@@ -575,9 +575,11 @@ export function formatDeckMeasurementSummaryMarkdown(options: {
   readonly environment: ReturnType<typeof describeMeasurementEnvironment>;
   readonly title: string;
 }): string {
-  const lossReasons = (
-    Object.keys(DECISION_REASON_HEADINGS) as BattleStyleSoloPlayDecisionReason[]
-  ).filter((reason) => reason !== "ownPrizesTaken");
+  const lossReasons: readonly BattleStyleSoloPlayDecisionReason[] = [
+    "opponentPrizesTaken",
+    "noOwnPokemonInPlay",
+    "cannotDrawAtTurnStart",
+  ];
   return [
     `# ${options.title}`,
     "",
