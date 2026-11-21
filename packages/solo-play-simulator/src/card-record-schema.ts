@@ -551,7 +551,12 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("discardStadiumInPlay"),
   }),
-  /** このポケモン(効果の持ち主)についているエネルギーを、すべてか、決まった数だけトラッシュする(シロナのガブリアスex の「リューノバスター」)。 */
+  /**
+   * このポケモン(効果の持ち主)についているエネルギーを、すべて(all。シロナのガブリアスex の「リューノバスター」)か、
+   * 決まった数(fixed)だけトラッシュする。fixed の value は、カードの枚数ではなく、エネルギーとして働いている個数
+   * (1 枚で 3 個ぶんとして働くエネルギーは 3 個と数える。メガリザードンYex の「プロージョンY」。カードの記録 049482 の
+   * 裁定のデータ)。
+   */
   strictObject({
     count: variant("kind", [
       strictObject({ kind: literal("all") }),

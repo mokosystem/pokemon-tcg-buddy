@@ -8,28 +8,82 @@
         "amount": 280,
         "kind": "fixed"
       },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": {
+              "kind": "fixed",
+              "value": 3
+            },
+            "operation": "discardEnergyAttachedToSelf"
+          }
+        ],
+        "useConditions": []
+      },
       "name": "プロージョンY"
     }
   ],
   "basicPokemonOfEvolutionLine": "ヒトカゲ",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["049482", "048801", "050034"],
   "category": "ポケモン",
   "evolvesFrom": "リザード",
-  "excludedEffects": [
-    {
-      "description": "ワザ「プロージョンY」は、自身のエネルギーを 3 個トラッシュして相手のポケモン 1 匹に 280 ダメージを与える。280 はワザのダメージに持ち、エネルギーのトラッシュは含めない(このワザを使った後もエネルギーが残る扱いになる)",
-      "reason": "damageOrDamageCounters"
-    }
-  ],
   "exRule": "megaEvolutionEx",
+  "excludedEffects": [],
   "hasRuleBox": true,
   "hp": 360,
   "isTerastal": false,
   "name": "メガリザードンYex",
   "pokemonType": "fire",
   "retreatCost": 1,
-  "rulings": [],
+  "rulings": [
+    {
+      "interpretation": "働いている個数で数える。3 個ぶんとして働いているカード(進化ポケモンについたイグニッションエネルギー)は、1 枚で 3 個と数え、その 1 枚だけをトラッシュできる",
+      "question": "ワザ「プロージョンY」でトラッシュする「エネルギーを 3 個」は、カードの枚数で数えるか、エネルギーとして働いている個数で数えるか",
+      "reflectedIn": "操作 discardEnergyAttachedToSelf の決まった数(fixed)を、働いている個数で数える(effect-operations.ts の listEnergySetsDiscardableAsUnits)",
+      "source": {
+        "basis": "「プロージョンY」を尋ねた質問は無かった(0 件)。公式の上級プレイヤー用ルールガイド Ver. 3.4(https://www.pokemon-card.com/assets/document/advanced_manual.pdf )の C-01(23〜24 ページ)のイグニッションエネルギーの FAQ。進化ポケモンについているエネルギーを 3 個トラッシュするときは、3 個ぶんとして働いているイグニッションエネルギー 1 枚のトラッシュで 3 個ぶんと数えられるとしている",
+        "checkedOn": "2026-11-21",
+        "kind": "noMatchingQa",
+        "searchTerms": ["プロージョンY", "メガリザードンYex"]
+      }
+    },
+    {
+      "interpretation": "選べる。カードの枚数が 3 以下で、働いている個数の合計が 3 以上の組を選べる。にげるときのように、どの 1 枚を除いても足りなくなる組に限らない",
+      "question": "1 枚で 3 個ぶんとして働くカードがついているとき、それを含めて 3 枚までトラッシュに選べるか",
+      "reflectedIn": "操作 discardEnergyAttachedToSelf の決まった数(fixed)を、働いている個数で数える(effect-operations.ts の listEnergySetsDiscardableAsUnits)",
+      "source": {
+        "basis": "「プロージョンY」を尋ねた質問は無かった(0 件)。ほかのカードの公式 Q&A(検索語「はかいのせんこう」)。1 枚で 2 個ぶんとして働くエネルギーが 2 枚ついているポケモンが、エネルギーを 2 個トラッシュするワザで、その 2 枚を選べるかという質問に、選べると回答している",
+        "checkedOn": "2026-11-21",
+        "kind": "noMatchingQa",
+        "searchTerms": ["プロージョンY", "メガリザードンYex"]
+      }
+    },
+    {
+      "interpretation": "選べる扱いにする。カードの枚数が 3 以下で、働いている個数の合計が 3 以上という定めに収まるため",
+      "question": "公式の例に無い組(基本炎エネルギー 1 枚と、3 個ぶんとして働くイグニッションエネルギー 1 枚)も選べるか",
+      "reflectedIn": "操作 discardEnergyAttachedToSelf の決まった数(fixed)を、働いている個数で数える(effect-operations.ts の listEnergySetsDiscardableAsUnits)",
+      "source": {
+        "basis": "「プロージョンY」を尋ねた質問は無かった(0 件)。プロジェクトの解釈。上の 2 つの拠り所(C-01 の FAQ と、公式 Q&A「はかいのせんこう」)を両方満たす定めから導いた",
+        "checkedOn": "2026-11-21",
+        "kind": "noMatchingQa",
+        "searchTerms": ["プロージョンY", "メガリザードンYex"]
+      }
+    },
+    {
+      "interpretation": "ついているエネルギーをすべてトラッシュする",
+      "question": "ついているエネルギーが 3 個に満たないとき、ワザ「プロージョンY」の効果でどれだけトラッシュするか",
+      "reflectedIn": "働いている個数の合計が決まった数に満たなければ、問い合わせずにすべてトラッシュする(effect-operations.ts の chooseEnergiesToDiscardAsUnits)",
+      "source": {
+        "basis": "「プロージョンY」を尋ねた質問は無かった(0 件)。公式の上級プレイヤー用ルールガイド Ver. 3.4(https://www.pokemon-card.com/assets/document/advanced_manual.pdf )の D-04(40 ページ)。指定されたものが指定された数ぶん無い場合は、その指定に一番近い数を選ぶとしている",
+        "checkedOn": "2026-11-21",
+        "kind": "noMatchingQa",
+        "searchTerms": ["プロージョンY", "メガリザードンYex"]
+      }
+    }
+  ],
   "stage": "2進化",
-  "translationStatus": "irrelevantToCalculation",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-21"
 }

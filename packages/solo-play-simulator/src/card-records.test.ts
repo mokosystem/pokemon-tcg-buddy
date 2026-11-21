@@ -63,6 +63,7 @@ const MEW = buildRecordedCard("050669");
 const CHARMANDER = buildRecordedCard("048351");
 const CHARMELEON = buildRecordedCard("049481");
 const CHARIZARD_X = buildRecordedCard("048353");
+const CHARIZARD_Y = buildRecordedCard("049482");
 const ORICORIO = buildRecordedCard("048358");
 const KANGASKHAN = buildRecordedCard("047847");
 const TALONFLAME = buildRecordedCard("050400");
@@ -626,6 +627,143 @@ describeTranslation("メガリザードンXex", () => {
     activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY, LEGACY_ENERGY);
     useAttackNamed(buildContext(state), "インフェルノX");
     expect(state.opponentFieldDamage.active).toBe(270);
+    expect(activeOf(state).energies).toEqual([]);
+  });
+});
+
+describeTranslation("メガリザードンYex", () => {
+  // プロージョンY は、このポケモンのエネルギーを 3 個トラッシュし、ダメージは 280。必要なエネルギーは炎・炎・無色(記録 049482)。
+  // イグニッションエネルギーは、2進化のメガリザードンYex についていれば無色エネルギー 3 個ぶんとして働く(記録 049452)
+
+  /** バトル場のメガリザードンYex に、基本炎エネルギー fireCount 枚と、イグニッションエネルギー ignitionCount 枚がついた場。 */
+  function stateWithCharizardY(fireCount: number, ignitionCount: number) {
+    const state = buildState({ active: CHARIZARD_Y });
+    activeOf(state).energies.push(
+      ...repeat(FIRE_ENERGY, fireCount),
+      ...repeat(IGNITION_ENERGY, ignitionCount)
+    );
+    return state;
+  }
+
+  /**
+   * 問い合わせのたびに、names の順に 1 枚ずつ選ぶ選択。names が尽きたら何も選ばない(止める)。問い合わせの最小の枚数を
+   * minCounts に残す。
+   */
+  function pickOneByOne(names: readonly string[], minCounts: number[] = []) {
+    const remaining = [...names];
+    return (
+      _: GameState,
+      request: { candidates: readonly Card[]; minCount: number }
+    ) => {
+      minCounts.push(request.minCount);
+      const name = remaining.shift();
+      return request.candidates
+        .filter((card) => card.name === name)
+        .slice(0, 1);
+    };
+  }
+
+  test("プロージョンY は、3 個ぶんとして働くイグニッションエネルギー 1 枚だけをトラッシュして止められ、基本炎エネルギーが残る", () => {
+    const state = stateWithCharizardY(2, 1);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickOneByOne(["イグニッションエネルギー"]),
+      }),
+      "プロージョンY"
+    );
+    expect(state.opponentFieldDamage.active).toBe(280);
+    expect(namesOf(state.discard)).toEqual(["イグニッションエネルギー"]);
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+    ]);
+  });
+
+  test("プロージョンY は、1 枚で足りるイグニッションエネルギーを含めて、3 枚すべてをトラッシュすることもできる", () => {
+    const state = stateWithCharizardY(2, 1);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickOneByOne([
+          "イグニッションエネルギー",
+          "基本炎エネルギー",
+          "基本炎エネルギー",
+        ]),
+      }),
+      "プロージョンY"
+    );
+    expect(state.discard).toHaveLength(3);
+    expect(activeOf(state).energies).toEqual([]);
+  });
+
+  test("プロージョンY は、基本炎エネルギー 1 枚とイグニッションエネルギー 1 枚の 2 枚をトラッシュして止められる", () => {
+    const state = stateWithCharizardY(2, 1);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickOneByOne([
+          "基本炎エネルギー",
+          "イグニッションエネルギー",
+        ]),
+      }),
+      "プロージョンY"
+    );
+    expect(namesOf(state.discard).sort()).toEqual([
+      "イグニッションエネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(namesOf(activeOf(state).energies)).toEqual(["基本炎エネルギー"]);
+  });
+
+  test("プロージョンY で最初に基本炎エネルギーを選んだ後は、個数が足りるまで止められない", () => {
+    const state = stateWithCharizardY(2, 1);
+    const minCounts: number[] = [];
+    expect(() =>
+      useAttackNamed(
+        buildContext(state, {
+          chooseCards: pickOneByOne(["基本炎エネルギー"], minCounts),
+        }),
+        "プロージョンY"
+      )
+    ).toThrow(IllegalMove);
+    // 1 回目は何も選んでいないので止められず、2 回目も基本炎エネルギー 1 枚(1 個ぶん)では止められない
+    expect(minCounts).toEqual([1, 1]);
+  });
+
+  test("プロージョンY は、イグニッションエネルギーを残して、基本炎エネルギー 3 枚をトラッシュできる", () => {
+    const state = stateWithCharizardY(3, 1);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickOneByOne([
+          "基本炎エネルギー",
+          "基本炎エネルギー",
+          "基本炎エネルギー",
+        ]),
+      }),
+      "プロージョンY"
+    );
+    expect(namesOf(state.discard)).toEqual([
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "イグニッションエネルギー",
+    ]);
+  });
+
+  test("プロージョンY は、基本炎エネルギー 3 枚だけがついていれば、選べる組が 1 つなので問い合わせずに 3 枚をトラッシュする", () => {
+    const state = stateWithCharizardY(3, 0);
+    let askedCount = 0;
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: (_, request) => {
+          askedCount += 1;
+          return request.candidates.slice(0, request.maxCount);
+        },
+      }),
+      "プロージョンY"
+    );
+    expect(askedCount).toBe(0);
+    expect(state.discard).toHaveLength(3);
     expect(activeOf(state).energies).toEqual([]);
   });
 });

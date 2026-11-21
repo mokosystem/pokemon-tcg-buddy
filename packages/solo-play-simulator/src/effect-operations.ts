@@ -34,6 +34,8 @@ import {
   calculateBenchLimit,
   countEmptyBenchSlots,
   isAbilityNegated,
+  resolveEnergyProvision,
+  toEnergyUnits,
 } from "./continuous-effects.ts";
 import {
   chooseCards,
@@ -963,7 +965,130 @@ function searchDeckIntoHandFromOneOfPicks(
   state.shuffleDeck();
 }
 
-/** 効果の持ち主についているエネルギーを、すべてか、決まった数を選んでトラッシュする。 */
+/** ついているエネルギーのカード 1 種(同じ参照)と、ついている枚数、1 枚がエネルギーとして働いている個数。 */
+interface AttachedEnergyKind {
+  readonly attachedCount: number;
+  readonly energy: Card;
+  readonly unitsPerCard: number;
+}
+
+function listAttachedEnergyKinds(
+  state: GameState,
+  pokemon: PokemonInPlay
+): AttachedEnergyKind[] {
+  return [...new Set(pokemon.energies)].map((energy) => ({
+    attachedCount: pokemon.energies.filter((attached) => attached === energy)
+      .length,
+    energy,
+    unitsPerCard: toEnergyUnits(resolveEnergyProvision(state, pokemon, energy))
+      .length,
+  }));
+}
+
+/**
+ * pokemon についているエネルギーのうち、「エネルギーを units 個トラッシュする」効果で選べる組。カードの枚数が units 以下で、
+ * 働いている個数の合計が units 以上の組にする。1 枚で units 個ぶん以上として働くカード 1 枚だけを選べ(公式の上級
+ * プレイヤー用ルールガイド Ver. 3.4 の C-01、2026-11-21 確認)、1 枚で足りる場でも units 枚まで選べる(公式 Q&A
+ * 「はかいのせんこう」、2026-11-21 確認)。にげるときの「足りて、どの 1 枚を除いても足りなくなる組」に限る形は、後者の
+ * 回答に合わないので採らない(カードの記録 049482 の裁定のデータ)。同じカードは同じ参照を枚数分並べて表しているので、
+ * 同じ参照のエネルギーは区別せず、同じ組を 2 度は並べない。
+ */
+function listEnergySetsDiscardableAsUnits(
+  state: GameState,
+  pokemon: PokemonInPlay,
+  units: number
+): Card[][] {
+  let partialSets: { cards: Card[]; unitTotal: number }[] = [
+    { cards: [], unitTotal: 0 },
+  ];
+  for (const kind of listAttachedEnergyKinds(state, pokemon)) {
+    partialSets = partialSets.flatMap(({ cards, unitTotal }) =>
+      Array.from(
+        { length: Math.min(kind.attachedCount, units - cards.length) + 1 },
+        (_, count) => ({
+          cards: [
+            ...cards,
+            ...Array.from({ length: count }, () => kind.energy),
+          ],
+          unitTotal: unitTotal + count * kind.unitsPerCard,
+        })
+      )
+    );
+  }
+  return partialSets
+    .filter(({ unitTotal }) => unitTotal >= units)
+    .map(({ cards }) => cards);
+}
+
+/** chosen が、同じ参照を枚数まで数えて set に収まるか。 */
+function isContainedIn(chosen: readonly Card[], set: readonly Card[]): boolean {
+  const remaining = [...set];
+  return chosen.every((card) => {
+    const index = remaining.indexOf(card);
+    if (index < 0) {
+      return false;
+    }
+    remaining.splice(index, 1);
+    return true;
+  });
+}
+
+/**
+ * 選べる組(sets)のどれかになるまで、エネルギーを 1 枚ずつ選ばせる。候補は、これまでに選んだカードにその 1 枚を足したものを
+ * 含む組があるカード。これまでに選んだカードがそのまま選べる組になっていれば、そこで止められる(最小 0 枚)。枚数の範囲だけを
+ * 1 回で渡さないのは、範囲に収まるが選べない組(個数が足りない組)を、選ぶ側のどの実装も返せないようにするため。
+ */
+function chooseOneOfEnergySets(
+  context: EffectContext,
+  sets: readonly (readonly Card[])[],
+  purpose: string
+): Card[] {
+  const chosen: Card[] = [];
+  for (;;) {
+    const candidates = [...new Set(sets.flat())].filter((energy) =>
+      sets.some((set) => isContainedIn([...chosen, energy], set))
+    );
+    const canStopHere = sets.some(
+      (set) => set.length === chosen.length && isContainedIn(chosen, set)
+    );
+    const [next] = chooseCards(context, {
+      candidates,
+      maxCount: Math.min(1, candidates.length),
+      minCount: canStopHere ? 0 : 1,
+      purpose,
+    });
+    if (next === undefined) {
+      return chosen;
+    }
+    chosen.push(next);
+  }
+}
+
+/**
+ * 効果の持ち主についているエネルギーを units 個トラッシュするときの、トラッシュするカード。個数の合計が units に満たなければ
+ * すべて(指定の数ぶん無いときは、指定に一番近い数を選ぶ。同ガイドの D-04)。選べる組が 1 つなら問い合わせない。
+ */
+function chooseEnergiesToDiscardAsUnits(
+  context: EffectContext,
+  holder: PokemonInPlay,
+  units: number,
+  purpose: string
+): Card[] {
+  const unitTotal = listAttachedEnergyKinds(context.state, holder).reduce(
+    (total, kind) => total + kind.attachedCount * kind.unitsPerCard,
+    0
+  );
+  if (unitTotal < units) {
+    return [...holder.energies];
+  }
+  const sets = listEnergySetsDiscardableAsUnits(context.state, holder, units);
+  const [onlySet] = sets;
+  return sets.length === 1 && onlySet !== undefined
+    ? onlySet
+    : chooseOneOfEnergySets(context, sets, purpose);
+}
+
+/** 効果の持ち主についているエネルギーを、すべてか、決まった数(働いている個数)を選んでトラッシュする。 */
 function discardEnergyAttachedToHolder(
   run: OperationRun,
   step: Extract<BasicOperation, { operation: "discardEnergyAttachedToSelf" }>
@@ -976,14 +1101,13 @@ function discardEnergyAttachedToHolder(
   const chosen =
     step.count.kind === "all"
       ? [...holder.energies]
-      : chooseCardsWithin(
+      : chooseEnergiesToDiscardAsUnits(
           context,
-          holder.energies,
-          { maxCount: step.count.value, minCount: step.count.value },
+          holder,
+          step.count.value,
           `${label}: ${holder.name} からトラッシュするエネルギー`
         );
-  // 選んだ並びが holder.energies そのものでも、トラッシュするたびに減る配列を読まないよう写してから回す
-  for (const energy of [...chosen]) {
+  for (const energy of chosen) {
     context.state.discardAttachedEnergy(holder, energy);
   }
   context.state.record(
