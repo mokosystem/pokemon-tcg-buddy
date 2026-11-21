@@ -7,7 +7,6 @@
       "damage": {
         "kind": "none"
       },
-      "name": "ぴょんぴょんチャージ",
       "effect": {
         "isOptional": false,
         "steps": [
@@ -23,9 +22,11 @@
           }
         ],
         "useConditions": []
-      }
+      },
+      "name": "ぴょんぴょんチャージ"
     }
   ],
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["050392"],
   "category": "ポケモン",
   "excludedEffects": [],
@@ -41,7 +42,7 @@
       "question": "山札から特殊エネルギーを選べるか",
       "reflectedIn": "エネルギーの条件を categories の基本エネルギーと特殊エネルギーにした",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "ワザ「ぴょんぴょんチャージ」で山札から特殊エネルギーを選べるか、という質問に、選べると回答",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%B4%E3%82%87%E3%82%93%E3%81%B4%E3%82%87%E3%82%93%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8&regulation_faq_main_item1=all"
@@ -50,5 +51,5 @@
   ],
   "stage": "たね",
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-21"
 }

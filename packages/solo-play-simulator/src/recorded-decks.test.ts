@@ -24,12 +24,13 @@ const DECISION_REASONS = [
 
 /**
  * 対戦風の一人回しのルールに照らして記録を見直したデッキ。Issue 69 で見直した 2 デッキ(シロナのガブリアスex の
- * 2026-11-10 のデッキと、ドラパルトex)と、カード ID がドラパルトex と同じ、開発責任者が紙で回したドラパルトex のデッキ。
+ * 2026-11-10 のデッキと、ドラパルトex)と、Issue 77 で見直したデッキ。
  */
 const BATTLE_STYLE_REVIEWED_DECK_CODES = [
   "RS3MMy-FuGPRu-MypM2X",
   "9gngnQ-zAMw9G-96H9nn",
   "nLNnLL-5exJV9-g9QLnQ",
+  "6nNQgQ-y6q3om-9HnnLL",
 ];
 
 describe("記録済みのデッキ", () => {
