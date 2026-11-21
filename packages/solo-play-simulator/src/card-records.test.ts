@@ -73,6 +73,7 @@ const BANETTE = buildRecordedCard("050251");
 const DUDUNSPARCE = buildRecordedCard("045203");
 const DUNSPARCE = buildRecordedCard("047086");
 const BLOODMOON_URSALUNA = buildRecordedCard("049341");
+const POLTCHAGEIST = buildRecordedCard("050224");
 const DREEPY = buildRecordedCard("049262");
 const DRAKLOAK = buildRecordedCard("049263");
 const DRAGAPULT = buildRecordedCard("049264");
@@ -1529,6 +1530,37 @@ describeTranslation("イグニッションエネルギー", () => {
     activeOf(state).energies.push(IGNITION_ENERGY);
     retreatActive(buildContext(state), benchAt(state, 0), [IGNITION_ENERGY]);
     expect(activeOf(state).name).toBe("カゲボウズ");
+  });
+});
+
+describeTranslation("チャデス", () => {
+  test("ひっそりのせるは、相手のバトル場のダメージに 10(ダメカン 1 個)を足し、足す先を問い合わせない", () => {
+    const state = buildState({ active: POLTCHAGEIST });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    let askedCount = 0;
+    useAttackNamed(
+      buildContext(state, {
+        chooseOpponentFieldPositionForDamage: () => {
+          askedCount += 1;
+          return "bench";
+        },
+      }),
+      "ひっそりのせる"
+    );
+    expect(state.opponentFieldDamage).toEqual({ active: 10, bench: 0 });
+    expect(askedCount).toBe(0);
+  });
+
+  test("ひっそりのせるのダメカンはワザのダメージではないので、ワザのダメージを増やす効果は足されない", () => {
+    // 記録 050224 の裁定のデータ。この番、草タイプのポケモンが使うワザのダメージを 30 増やす効果を置く(チャデスは草タイプ)
+    const state = buildState({ active: POLTCHAGEIST });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    state.increaseAttackDamageThisTurn({
+      amount: 30,
+      attackerFilter: { pokemonTypes: ["grass"] },
+    });
+    useAttackNamed(buildContext(state), "ひっそりのせる");
+    expect(state.opponentFieldDamage.active).toBe(10);
   });
 });
 
