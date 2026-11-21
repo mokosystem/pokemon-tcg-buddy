@@ -13,6 +13,7 @@ import type { Card } from "./cards.ts";
 import {
   calculateMaxHp,
   listUnusedPrizeReductionsForKnockOutByOpponentAttack,
+  type PrizeReductionForKnockOut,
 } from "./continuous-effects.ts";
 import {
   chooseOnePokemonToPromote,
@@ -100,29 +101,22 @@ export function decideLossIfNoOwnPokemonInPlay(state: GameState): void {
 export type OwnKnockOutCause = "opponentAttack" | "ownCardEffect";
 
 /**
- * pokemon がきぜつしたときに相手が取るサイドの枚数。相手の攻撃によるきぜつなら、取られるサイドを減らす効果(レガシー
- * エネルギー。カードの記録 049457)の分を引き、働いた効果を対戦中に使ったものとして記録する。0 枚を下回らない(ほかの
- * 効果と合わせて 0 枚になったときも、効果は働いたことになる。同じ記録の裁定のデータ)。自分のカードの効果によるきぜつでは
- * 引かず、効果も使ったことにしない。ついているカードの効果を集めるので、pokemon をトラッシュする前に呼ぶ。
+ * 取られるサイドを減らす効果(レガシーエネルギー。カードの記録 049457)を、きぜつしたときに相手が取るサイドの枚数
+ * prizeCount に当てる。当てた効果を対戦中に使ったものとして記録し、履歴に書いて、減らした後の枚数を返す。0 枚を
+ * 下回らない(ほかの効果と合わせて 0 枚になったときも、効果は働いたことになる。同じ記録の裁定のデータ)。
  */
-function resolvePrizesTakenForKnockOut(
+function applyPrizeReductionsForKnockOut(
   state: GameState,
-  pokemon: PokemonInPlay,
-  cause: OwnKnockOutCause
-): { readonly count: number; readonly events: readonly string[] } {
-  let count = countPrizesForKnockOut(pokemon.card);
-  const events: string[] = [];
-  if (cause === "opponentAttack") {
-    for (const {
-      amount,
-      cardName,
-    } of listUnusedPrizeReductionsForKnockOutByOpponentAttack(state, pokemon)) {
-      count = Math.max(0, count - amount);
-      state.usedOncePerGameEffectCardNames.push(cardName);
-      events.push(`${cardName}: 相手が取るサイド -${amount}`);
-    }
+  prizeCount: number,
+  reductions: readonly PrizeReductionForKnockOut[]
+): number {
+  let reducedCount = prizeCount;
+  for (const { amount, cardName } of reductions) {
+    reducedCount = Math.max(0, reducedCount - amount);
+    state.usedOncePerGameEffectCardNames.push(cardName);
+    state.record(`${cardName}: 相手が取るサイド -${amount}`);
   }
-  return { count, events };
+  return reducedCount;
 }
 
 /**
@@ -138,13 +132,20 @@ export function knockOutOwnPokemon(
   cause: OwnKnockOutCause
 ): void {
   const { state } = context;
-  const prizes = resolvePrizesTakenForKnockOut(state, pokemon, cause);
+  // 取られるサイドを減らす効果は、相手の攻撃によるきぜつにだけ働く。ついているカードの効果は場にある間しか集められない
+  // ので、きぜつしたポケモンをトラッシュする前に集める
+  const prizeReductions =
+    cause === "opponentAttack"
+      ? listUnusedPrizeReductionsForKnockOutByOpponentAttack(state, pokemon)
+      : [];
   state.discardKnockedOutPokemon(pokemon);
-  for (const event of prizes.events) {
-    state.record(event);
-  }
+  const prizeCount = applyPrizeReductionsForKnockOut(
+    state,
+    countPrizesForKnockOut(pokemon.card),
+    prizeReductions
+  );
   state.opponentRemainingPrizeCount -= Math.min(
-    prizes.count,
+    prizeCount,
     state.opponentRemainingPrizeCount
   );
   if (state.turnOwner === "opponent") {

@@ -43,14 +43,14 @@
       "source": {
         "checkedOn": "2026-11-21",
         "kind": "officialQa",
-        "questionSummary": "ワザの効果でダメカンをのせて、このカードのついたベンチポケモンをきぜつさせた場合(ドラパルトex の「ファントムダイブ」)に、取るサイドは少なくならないと回答。ワザの効果できぜつさせた場合(トドロクツキex の「くるいえぐる」)も少なくならないと回答(関連カードの印刷 045792 は詳細ページを見比べて同じカードテキスト)",
+        "questionSummary": "ワザの効果でダメカンをのせて、このカードのついたベンチポケモンをきぜつさせた場合(ドラパルトex の「ファントムダイブ」)に、取るサイドは少なくならないと回答。トドロクツキex のワザ「くるいえぐる」を受けてきぜつした場合も、少なくならないと回答(関連カードの印刷 045792 は詳細ページを見比べて同じカードテキスト)",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%AC%E3%82%AC%E3%82%B7%E3%83%BC%E3%82%A8%E3%83%8D%E3%83%AB%E3%82%AE%E3%83%BC&regulation_faq_main_item1=all"
       }
     },
     {
       "interpretation": "0 枚になることがあり、働いたことになる。取られるサイドは 0 枚を下回らない",
       "question": "取られるサイドが、ほかの効果と合わせて 0 枚になることはあるか。そのとき、このカードの効果は働いたことになるか",
-      "reflectedIn": "取られるサイドから減らす枚数を引き、0 を下回らないようにする。引いた結果が 0 枚でも、効果を使ったものとして記録する(battle-style-solo-play-rules.ts の resolvePrizesTakenForKnockOut)",
+      "reflectedIn": "取られるサイドから減らす枚数を引き、0 を下回らないようにする。引いた結果が 0 枚でも、効果を使ったものとして記録する(battle-style-solo-play-rules.ts の applyPrizeReductionsForKnockOut)",
       "source": {
         "checkedOn": "2026-11-21",
         "kind": "officialQa",
