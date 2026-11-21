@@ -87,7 +87,9 @@ function countTranslatedEffects(record: CardRecord): number {
           (attack) =>
             attack.effect !== undefined ||
             attack.usesAttackOfBenchedPokemon !== undefined ||
-            attack.usesAttackOfDiscardedDeckTop !== undefined
+            attack.usesAttackOfDiscardedDeckTop !== undefined ||
+            // エネルギーをトラッシュした枚数で決まるダメージは、場のエネルギーをトラッシュに動かすので翻訳に数える
+            attack.damage.kind === "perEnergyDiscardedFromOwnPokemon"
         ).length
       );
     case CardCategory.BasicEnergy:

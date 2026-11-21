@@ -5,31 +5,20 @@
     {
       "cost": ["fire", "fire"],
       "damage": {
-        "amount": 0,
-        "kind": "fixed",
-        "bonus": {
-          "kind": "perCount",
-          "target": {
-            "count": "energyAttachedToOwnPokemon",
-            "energyTypes": ["fire"]
-          },
-          "unit": 90
-        }
+        "energyTypes": ["fire"],
+        "kind": "perEnergyDiscardedFromOwnPokemon",
+        "unit": 90
       },
       "name": "インフェルノX"
     }
   ],
   "basicPokemonOfEvolutionLine": "ヒトカゲ",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["048353"],
   "category": "ポケモン",
   "evolvesFrom": "リザード",
-  "excludedEffects": [
-    {
-      "description": "ワザ「インフェルノX」は、自分の場の炎エネルギーを好きなだけトラッシュし、その枚数×90 ダメージを与える。ダメージは場の炎エネルギー(すべてのタイプとして働くエネルギーを含む)を全部トラッシュしたときの値で求め、トラッシュは含めない",
-      "reason": "damageOrDamageCounters"
-    }
-  ],
   "exRule": "megaEvolutionEx",
+  "excludedEffects": [],
   "hasRuleBox": true,
   "hp": 360,
   "isTerastal": false,
@@ -40,9 +29,9 @@
     {
       "interpretation": "ダメージは、エネルギーをトラッシュする前に求める",
       "question": "ワザ「インフェルノX」のダメージは、エネルギーをトラッシュする前と後のどちらで求めるか",
-      "reflectedIn": "ダメージの上乗せを、今の場の炎エネルギーの数で求める(attack-damage.ts の calculateAttackDamage)",
+      "reflectedIn": "トラッシュするエネルギーを選ばせてから、選んだ枚数でダメージを求めて相手のバトル場のダメージに足し、その後で選んだエネルギーをトラッシュする(card-effects.ts の useAttack)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "相手の場のトリデプスの特性がはたらいているときにインフェルノXでダメージを与えられるかという質問に、エネルギーをトラッシュする前にダメージを計算するため与えられる、と回答",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A4%E3%83%B3%E3%83%95%E3%82%A7%E3%83%AB%E3%83%8EX&regulation_faq_main_item1=all"
@@ -51,16 +40,27 @@
     {
       "interpretation": "すべてのタイプのエネルギーとして働くエネルギー(レガシーエネルギー、たねポケモンについているプリズムエネルギーなど)も、炎エネルギーとしてトラッシュでき、枚数に数える",
       "question": "すべてのタイプのエネルギーとして働くエネルギーも、炎エネルギーとしてトラッシュして枚数に数えられるか",
-      "reflectedIn": "数える対象を、すべてのタイプとして働くものを含む炎エネルギーにする(continuous-effects.ts の countEnergyUnitsOfType)",
+      "reflectedIn": "トラッシュに選べるエネルギーを、ついているポケモンの上で炎タイプかすべてのタイプとして働くカードにする(continuous-effects.ts の listOwnEnergiesWorkingAsTypes)",
       "source": {
-        "basis": "ファイヤーのワザ「だいもんじ」の公式 Q&A。レインボーエネルギーと、たねポケモンについているプリズムエネルギーは、すべてのタイプのエネルギーとして働くため、炎エネルギーとしてトラッシュに選べる、と回答している(検索語「プリズムエネルギー 炎」、2026-09-23 に確認)",
-        "checkedOn": "2026-09-23",
+        "basis": "ファイヤーのワザ「だいもんじ」の公式 Q&A。レインボーエネルギーと、たねポケモンについているプリズムエネルギーは、すべてのタイプのエネルギーとして働くため、炎エネルギーとしてトラッシュに選べる、と回答している(検索語「プリズムエネルギー 炎」、2026-11-21 に確認)",
+        "checkedOn": "2026-11-21",
         "kind": "noMatchingQa",
         "searchTerms": ["インフェルノX", "メガリザードンXex"]
+      }
+    },
+    {
+      "interpretation": "できる。ポケモンが使うワザで「好きなだけ」選ぶときは、1 枚も選ばなくてよい。そのときのダメージは 0 になる",
+      "question": "ワザ「インフェルノX」で、炎エネルギーを 1 枚もトラッシュしないことはできるか",
+      "reflectedIn": "トラッシュするポケモンとエネルギーを選ぶ最小の数を 0 にした(card-effects.ts の chooseEnergiesToDiscardForDamage)",
+      "source": {
+        "basis": "公式の上級プレイヤー用ルールガイド Ver. 3.4 の D-02(39〜40 ページ、https://www.pokemon-card.com/assets/document/advanced_manual.pdf )。ポケモンが使うワザで、指定されているものの数を好きなだけ選ぶ場合は、1 枚も選ばないことができるとしている。文例に、自分の場のポケモンについているエネルギーを好きなだけトラッシュし、その枚数でダメージが決まるワザが挙がっている。「インフェルノX」の検索結果に、1 枚も選ばない場合を尋ねた質問は無かった",
+        "checkedOn": "2026-11-21",
+        "kind": "noMatchingQa",
+        "searchTerms": ["インフェルノX", "好きなだけ トラッシュ えらばない"]
       }
     }
   ],
   "stage": "2進化",
-  "translationStatus": "irrelevantToCalculation",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-21"
 }

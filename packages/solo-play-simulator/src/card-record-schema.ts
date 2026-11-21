@@ -838,6 +838,15 @@ export const AttackDamageSchema = variant("kind", [
     bonus: optional(DamageBonusSchema),
     kind: literal("fixed"),
   }),
+  /**
+   * 自分の場のポケモンについている energyTypes のエネルギーを好きなだけ選んでトラッシュし、その枚数 × unit をダメージに
+   * する(メガリザードンXex の「インフェルノX」。カードの記録 048353)。何枚トラッシュするかはプレイングの判断基準が選ぶ。
+   */
+  strictObject({
+    energyTypes: pipe(array(PokemonTypeSchema), minLength(1)),
+    kind: literal("perEnergyDiscardedFromOwnPokemon"),
+    unit: countFromOne,
+  }),
 ]);
 export type AttackDamage = InferOutput<typeof AttackDamageSchema>;
 

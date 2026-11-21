@@ -182,6 +182,29 @@ describe("記録をまたぐ検査", () => {
     ]);
   });
 
+  test("エネルギーをトラッシュした枚数で決まるダメージのワザは翻訳した効果として数え、翻訳の状態が translated でなければ誤りにする", () => {
+    // メガリザードンXex の「インフェルノX」は、場の炎エネルギーをトラッシュに動かす(記録 048353)
+    const charizardX = findRecord("048353");
+    expect(
+      findCardRecordProblems([
+        { path: "pokemon/048353.json", record: charizardX },
+      ])
+    ).toEqual([]);
+    expect(
+      findCardRecordProblems([
+        {
+          path: "pokemon/048353.json",
+          record: {
+            ...charizardX,
+            translationStatus: "irrelevantToCalculation",
+          },
+        },
+      ])
+    ).toEqual([
+      "pokemon/048353.json: 翻訳の状態が irrelevantToCalculation なのに、翻訳した効果がある",
+    ]);
+  });
+
   test("ワザの名前の重なりを検査する", () => {
     const [attack] = DRAKLOAK.category === "ポケモン" ? DRAKLOAK.attacks : [];
     const broken =

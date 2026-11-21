@@ -552,6 +552,84 @@ describeTranslation("ヒトカゲ", () => {
   });
 });
 
+describeTranslation("メガリザードンXex", () => {
+  /** バトル場のメガリザードンXex に基本炎エネルギー 3 枚、ベンチのヒトカゲに基本炎エネルギー 1 枚と基本超エネルギー 1 枚がついた場。 */
+  function stateWithFourFireEnergies() {
+    const state = buildState({ active: CHARIZARD_X, bench: [CHARMANDER] });
+    activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY, FIRE_ENERGY);
+    benchAt(state, 0).energies.push(FIRE_ENERGY, PSYCHIC_ENERGY);
+    return state;
+  }
+
+  test("インフェルノX は、選んだ炎エネルギーの枚数 × 90 を相手のバトル場のダメージに足してから、選んだエネルギーをトラッシュする", () => {
+    const state = stateWithFourFireEnergies();
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: (_, request) =>
+          request.candidates.slice(0, request.maxCount),
+        choosePokemon: (_, request) =>
+          request.candidates.filter(
+            (pokemon) => pokemon.name === "メガリザードンXex"
+          ),
+      }),
+      "インフェルノX"
+    );
+    expect(state.opponentFieldDamage.active).toBe(270);
+    expect(namesOf(state.discard)).toEqual([
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(activeOf(state).energies).toEqual([]);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本炎エネルギー",
+      "基本超エネルギー",
+    ]);
+  });
+
+  test("インフェルノX は、ベンチポケモンについている炎エネルギーも選べ、炎エネルギーではないエネルギーは選べない", () => {
+    const state = stateWithFourFireEnergies();
+    const offered: string[][] = [];
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: (_, request) => {
+          offered.push(namesOf(request.candidates));
+          return request.candidates.slice(0, 1);
+        },
+      }),
+      "インフェルノX"
+    );
+    expect(offered).toEqual([
+      ["基本炎エネルギー", "基本炎エネルギー", "基本炎エネルギー"],
+      ["基本炎エネルギー"],
+    ]);
+    expect(state.opponentFieldDamage.active).toBe(180);
+    expect(activeOf(state).energies).toHaveLength(2);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本超エネルギー"]);
+  });
+
+  test("インフェルノX は、1 枚も選ばなければダメージは 0 で、エネルギーは減らない", () => {
+    // 記録 048353 の裁定のデータ(上級プレイヤー用ルールガイド D-02)
+    const state = stateWithFourFireEnergies();
+    useAttackNamed(
+      buildContext(state, { choosePokemon: () => [] }),
+      "インフェルノX"
+    );
+    expect(state.opponentFieldDamage.active).toBe(0);
+    expect(state.discard).toEqual([]);
+    expect(activeOf(state).energies).toHaveLength(3);
+  });
+
+  test("インフェルノX は、すべてのタイプとして働くエネルギーも炎エネルギーとして選べ、枚数に数える", () => {
+    // 記録 048353 の裁定のデータ(公式 Q&A「だいもんじ」)。レガシーエネルギーはすべてのタイプのエネルギー 1 個ぶん(記録 049457)
+    const state = buildState({ active: CHARIZARD_X });
+    activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY, LEGACY_ENERGY);
+    useAttackNamed(buildContext(state), "インフェルノX");
+    expect(state.opponentFieldDamage.active).toBe(270);
+    expect(activeOf(state).energies).toEqual([]);
+  });
+});
+
 describeTranslation("オドリドリex", () => {
   test("エキサイトターボは、炎タイプのメガシンカex が場にいれば何回でも、手札の基本炎エネルギーをベンチの炎ポケモンにつける", () => {
     const state = buildState({

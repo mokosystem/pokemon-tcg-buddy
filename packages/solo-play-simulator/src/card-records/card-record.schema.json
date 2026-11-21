@@ -940,6 +940,27 @@
           },
           "required": ["amount", "kind"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyTypes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/PokemonType"
+              },
+              "minItems": 1
+            },
+            "kind": {
+              "const": "perEnergyDiscardedFromOwnPokemon"
+            },
+            "unit": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["energyTypes", "kind", "unit"],
+          "additionalProperties": false
         }
       ]
     },

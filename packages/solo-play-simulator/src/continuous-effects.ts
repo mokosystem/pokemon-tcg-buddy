@@ -311,6 +311,40 @@ function listEnergyUnitsFrom(
   );
 }
 
+/** pokemon についているエネルギーのうち、指定のタイプのいずれかとして働くカード。 */
+export interface AttachedEnergiesOfTypes {
+  readonly energies: readonly Card[];
+  readonly pokemon: PokemonInPlay;
+}
+
+/**
+ * 自分の場のポケモンごとの、ついているエネルギーのうち指定のタイプのいずれかとして働くカード(すべてのタイプとして働く
+ * エネルギーを含む。カードの記録 048353 の裁定のデータ)。個数ではなくカードの枚数で扱うときに使う。該当するカードが
+ * 無いポケモンは返さない。
+ */
+export function listOwnEnergiesWorkingAsTypes(
+  state: GameState,
+  types: readonly PokemonType[]
+): AttachedEnergiesOfTypes[] {
+  const all = collectContinuousEffects(state);
+  return state.listPokemonInPlay().flatMap((pokemon) => {
+    if (pokemon.energies.length === 0) {
+      return [];
+    }
+    const applying = listCollectedApplyingTo(state, all, pokemon);
+    const energies = pokemon.energies.filter((energy) => {
+      const provision = resolveEnergyProvisionFrom(
+        all,
+        applying,
+        pokemon,
+        energy
+      );
+      return provision.kind === "anyType" || types.includes(provision.type);
+    });
+    return energies.length === 0 ? [] : [{ energies, pokemon }];
+  });
+}
+
 /**
  * ついているエネルギーのうち、指定のタイプのいずれかとして数えられる個数。すべてのタイプとして働く 1 個は、
  * タイプをいくつ指定しても 1 つと数える(公式 Q&A「ストームエメラルダ」)。

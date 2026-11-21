@@ -16,6 +16,7 @@ import { matchesPokemonFilter } from "./conditions.ts";
 import {
   countEnergyUnitsOfTypes,
   listEnergyUnits,
+  listOwnEnergiesWorkingAsTypes,
   sumAttackDamageIncrease,
 } from "./continuous-effects.ts";
 import {
@@ -139,6 +140,33 @@ function sumAttackDamageIncreaseThisTurn(
 }
 
 /**
+ * ワザ自身のダメージ(ほかのカードがダメージを増やす効果を足す前)。トラッシュしたエネルギーの枚数で決まる形では、
+ * discardedEnergyCount 枚をトラッシュしたときの値。省くと、トラッシュできるエネルギーを全部トラッシュしたときの値。
+ */
+function calculateBaseDamage(
+  state: GameState,
+  attacker: PokemonInPlay,
+  damage: Exclude<Attack["damage"], { kind: "none" }>,
+  discardedEnergyCount: number | undefined
+): number {
+  if (damage.kind === "perEnergyDiscardedFromOwnPokemon") {
+    const count =
+      discardedEnergyCount ??
+      listOwnEnergiesWorkingAsTypes(state, damage.energyTypes).reduce(
+        (total, { energies }) => total + energies.length,
+        0
+      );
+    return count * damage.unit;
+  }
+  return (
+    damage.amount +
+    (damage.bonus === undefined
+      ? 0
+      : calculateBonus(state, attacker, damage.bonus))
+  );
+}
+
+/**
  * attacker が attack を使ったときのダメージ。ダメージの無いワザは undefined。attacker はワザを使うポケモン
  * (バトルポケモン)で、ベンチのポケモンのワザを使う効果(ミュウex の「きおくのらせん」)でもワザの持ち主ではない。
  * ダメージを増やす効果の条件(タイプ、名前)はワザを使うポケモンに当てる(公式 Q&A「パワープロテイン」:
@@ -146,21 +174,26 @@ function sumAttackDamageIncreaseThisTurn(
  * 基本のダメージ(ワザ自身の数値と上乗せ)が 0 なら、ダメージを増やす効果を足さずに 0 で終える
  * (公式 Q&A「サイドン」「ビリリダマ」、検索語「ダメージが0」、2026-09-23 確認: 基本のダメージが 0 になった時点で
  * ダメージの計算を終え、ワザを使うポケモンにかかるダメージを変える効果は計算しない)。
+ * discardedEnergyCount は、トラッシュしたエネルギーの枚数でダメージが決まるワザ(メガリザードンXex の「インフェルノX」。
+ * カードの記録 048353)で、トラッシュすると決めた枚数。省くと、トラッシュできるエネルギーを全部トラッシュしたときの値
+ * (使えるワザの最大のダメージの見積もり)を返す。
  */
 export function calculateAttackDamage(
   state: GameState,
   attacker: PokemonInPlay,
-  attack: Attack
+  attack: Attack,
+  discardedEnergyCount?: number
 ): number | undefined {
   const { damage } = attack;
   if (damage.kind === "none") {
     return undefined;
   }
-  const base =
-    damage.amount +
-    (damage.bonus === undefined
-      ? 0
-      : calculateBonus(state, attacker, damage.bonus));
+  const base = calculateBaseDamage(
+    state,
+    attacker,
+    damage,
+    discardedEnergyCount
+  );
   if (base === 0) {
     return 0;
   }

@@ -12,7 +12,7 @@ import {
   knockOutOwnPokemonAtOrAboveMaxHp,
 } from "./battle-style-solo-play-rules.ts";
 import { trimBenchToLimit } from "./bench-limit.ts";
-import { CardCategory } from "./card-record-schema.ts";
+import { type Attack, CardCategory } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { areConditionsMet, type EffectSource } from "./conditions.ts";
 import {
@@ -22,11 +22,16 @@ import {
   isAbilityNegated,
   isFreshEvolutionAllowedByEffect,
   listAttackCandidatesWithCosts,
+  listOwnEnergiesWorkingAsTypes,
   resolveEnergyProvision,
   toEnergyUnits,
   type UsableAttack,
 } from "./continuous-effects.ts";
-import type { EffectContext } from "./effect-choices.ts";
+import {
+  chooseCardsWithin,
+  choosePokemonUpTo,
+  type EffectContext,
+} from "./effect-choices.ts";
 import {
   canStartEffect,
   findCardEffects,
@@ -466,10 +471,54 @@ function isSameUsableAttack(left: UsableAttack, right: UsableAttack): boolean {
   );
 }
 
+interface EnergyToDiscard {
+  readonly energy: Card;
+  readonly pokemon: PokemonInPlay;
+}
+
+/**
+ * トラッシュしたエネルギーの枚数でダメージが決まるワザ(メガリザードンXex の「インフェルノX」。カードの記録 048353)で、
+ * トラッシュするエネルギーを選ばせる。ほかの形のワザでは undefined。先にポケモンを 0 匹以上選び、選んだポケモンごとに
+ * エネルギーを 0 枚以上選ぶ。エネルギーだけを選ばせないのは、同じカードは同じ参照を枚数分並べて表しており、どのポケモンの
+ * 1 枚か決まらないため(effect-operations.ts の moveChosenEnergies と同じ)。1 枚も選ばなくてよい(同じ記録の裁定のデータ)。
+ */
+function chooseEnergiesToDiscardForDamage(
+  context: EffectContext,
+  attack: Attack,
+  label: string
+): EnergyToDiscard[] | undefined {
+  const { damage } = attack;
+  if (damage.kind !== "perEnergyDiscardedFromOwnPokemon") {
+    return undefined;
+  }
+  const holders = listOwnEnergiesWorkingAsTypes(
+    context.state,
+    damage.energyTypes
+  );
+  const chosenPokemon = choosePokemonUpTo(
+    context,
+    holders.map(({ pokemon }) => pokemon),
+    holders.length,
+    `${label}: エネルギーをトラッシュするポケモン`
+  );
+  return holders
+    .filter(({ pokemon }) => chosenPokemon.includes(pokemon))
+    .flatMap(({ energies, pokemon }) =>
+      chooseCardsWithin(
+        context,
+        energies,
+        { maxCount: energies.length, minCount: 0 },
+        `${label}: ${pokemon.name} からトラッシュするエネルギー`
+      ).map((energy) => ({ energy, pokemon }))
+    );
+}
+
 /**
  * バトルポケモンでワザを使う。記録の規則で求めたダメージを相手のバトル場のダメージに足してから、効果の翻訳を実行する。
  * ダメージを効果より先に足すのは、カードテキストがダメージ、効果の順に書かれ、効果がダメージの数え方を変える記録が
- * 無いため(docs/solo-play-simulator-design.md「対戦風の一人回し」)。使うワザは、使えるワザの一覧
+ * 無いため(docs/solo-play-simulator-design.md「対戦風の一人回し」)。トラッシュしたエネルギーの枚数でダメージが決まる
+ * ワザは、トラッシュするエネルギーを選ばせてから、選んだ枚数のダメージを足し、その後でトラッシュする(ダメージは
+ * トラッシュする前に求める。カードの記録 048353 の裁定のデータ)。使うワザは、使えるワザの一覧
  * (listUsableAttacksOfActive)の候補の 1 つで受け取る。
  */
 export function useAttack(context: EffectContext, chosen: UsableAttack): void {
@@ -496,9 +545,27 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   if (usable.discardsDeckTopFirst) {
     state.discardFromDeckTop(1);
   }
-  const damage = calculateAttackDamage(state, active, usable.attack);
+  const energiesToDiscard = chooseEnergiesToDiscardForDamage(
+    context,
+    usable.attack,
+    attackName
+  );
+  const damage = calculateAttackDamage(
+    state,
+    active,
+    usable.attack,
+    energiesToDiscard?.length
+  );
   if (damage !== undefined) {
     addDamageToOpponentField(state, "active", damage, attackName);
+  }
+  if (energiesToDiscard !== undefined) {
+    for (const { energy, pokemon } of energiesToDiscard) {
+      state.discardAttachedEnergy(pokemon, energy);
+    }
+    state.record(
+      `${attackName}: エネルギー ${energiesToDiscard.length} 枚をトラッシュ`
+    );
   }
   const { effect } = usable.attack;
   if (effect !== undefined) {
