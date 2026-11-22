@@ -311,9 +311,27 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
   "playout-win-rate-32": createPlayoutSetting("2", 32, "none"),
   "prize-progress-search": {
     candidate: "77",
-    createPolicy: (_, parameters, policySeed) => {
+    createPolicy: (preparation, parameters, policySeed) => {
+      const { learnedModel } = preparation;
+      if (learnedModel === undefined) {
+        throw new Error("学習した場の評価がない");
+      }
+      const predict = createLearnedEvaluationTrialScorer(
+        learnedModel,
+        preparation.deckCardNames,
+        createPrizeProgressPlayout
+      );
+      const scoreWithModel: TrialScorer = (input) => {
+        const copy = input.state.clone(createSeededRandom(input.seed));
+        const modelScore = predict({ ...input, state: copy });
+        const outcome = scorePrizeProgress(input);
+        return {
+          ...outcome,
+          winRate: (7 * outcome.winRate + modelScore.winRate) / 8,
+        };
+      };
       const base = createOneStepSearch(
-        scorePrizeProgress,
+        scoreWithModel,
         requireParameter(parameters, "samplesPerCandidate"),
         "none",
         policySeed
@@ -337,7 +355,7 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
         },
       };
     },
-    parameters: { samplesPerCandidate: 16 },
+    parameters: { samplesPerCandidate: 16, trainingGamesPerDeck: 500 },
   },
   "random-action": {
     candidate: "1",
