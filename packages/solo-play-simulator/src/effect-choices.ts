@@ -10,11 +10,10 @@ import { type GameState, IllegalMove, type PokemonInPlay } from "./state.ts";
 export interface CardChoiceRequest {
   readonly candidates: readonly Card[];
   /**
-   * 候補が山札のカード(山札から探す、山札の上から見る)。候補がどれだけあるかは山札とサイドの分かれ方で決まるため、
-   * 見えていないカードで結果が決まったこととして数える。探索は、この選択を試すときにサイドを混ぜ直さない
+   * 山札を探した選択は true、上から見たカードの中での選択は "top"。探索で残りの山札とサイドを混ぜ直せるかを区別する
    * (選ぶ候補が山札から消えないようにする)。
    */
-  readonly fromDeck?: true;
+  readonly fromDeck?: true | "top";
   readonly maxCount: number;
   readonly minCount: number;
   /** 選んだエネルギーのタイプがすべて違う必要がある(アカマツ)。 */
@@ -132,18 +131,20 @@ export function chooseCards(
 
 /**
  * 候補から min〜max 枚を選ぶ。候補が足りないときは、ある分までに範囲を縮める。candidatesFrom は候補の置き場所で、
- * 山札のカードなら "deck" を渡す(CardChoiceRequest の fromDeck)。
+ * 山札全体を探したときは "deck"、上から見たときは "deckTop" を渡す。
  */
 export function chooseCardsWithin(
   context: EffectContext,
   candidates: readonly Card[],
   counts: { readonly maxCount: number; readonly minCount: number },
   purpose: string,
-  candidatesFrom?: "deck"
+  candidatesFrom?: "deck" | "deckTop"
 ): readonly Card[] {
   return chooseCards(context, {
     candidates,
-    ...(candidatesFrom === "deck" ? { fromDeck: true } : {}),
+    ...(candidatesFrom === undefined
+      ? {}
+      : { fromDeck: candidatesFrom === "deck" ? true : "top" }),
     maxCount: Math.min(counts.maxCount, candidates.length),
     minCount: Math.min(counts.minCount, candidates.length),
     purpose,

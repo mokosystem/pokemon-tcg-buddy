@@ -552,7 +552,7 @@ function lookAtDeckTopAndAttachToSelf(
     listMatching(looked, step.filter).filter(isEnergy),
     { maxCount: step.maxAttachCount, minCount: step.minAttachCount },
     `${label}: 山札の上から見て ${holder.name} につけるエネルギー`,
-    "deck"
+    "deckTop"
   );
   state.attachFromDeckTop(step.lookCount, chosen, holder, step.restPlacement);
 }
@@ -576,7 +576,7 @@ function lookAtDeckTopAndAttachToOwnPokemon(
     ),
     { maxCount: step.maxAttachCount, minCount: step.minAttachCount },
     `${label}: 山札の上から見てつけるエネルギー`,
-    "deck"
+    "deckTop"
   );
   const assignments = chosen.flatMap((energy) => {
     const target = chooseOnePokemon(
@@ -1306,7 +1306,7 @@ const operationRunners: {
       listMatching(looked, step.filter),
       { maxCount: step.maxTakeCount, minCount: step.minTakeCount },
       `${label}: 山札の上から見て手札に加えるカード`,
-      "deck"
+      "deckTop"
     );
     context.state.takeFromDeckTop(step.lookCount, chosen, step.restPlacement);
   },

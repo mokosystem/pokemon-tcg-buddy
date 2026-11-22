@@ -441,7 +441,7 @@ function buildPromoteRequest(
 /**
  * 決めた答えを順に返す選択。prefix を返し終えたら次の 1 つに forced を返し、その直前に onForced を呼ぶ。
  * それより後の選択は候補の先頭から選ぶ。効果の中の選択の候補を 1 つ試すときに使う。
- * onForced には、ここまでに山札のカードを候補にした選択があったか(山札の中身を見たか)を渡す。
+ * onForced には、ここまでに山札全体を探す選択があったかを渡す。
  */
 class ScriptedChoices implements EffectChoices {
   private answered = 0;
@@ -464,7 +464,7 @@ class ScriptedChoices implements EffectChoices {
     state: GameState,
     choice: ChoiceRequest
   ): ChoiceAnswer | undefined {
-    if (choice.kind === "cards" && choice.request.fromDeck) {
+    if (choice.kind === "cards" && choice.request.fromDeck === true) {
       this.hasSeenDeck = true;
     }
     const position = this.answered;
@@ -614,9 +614,8 @@ interface ChoiceSearchParameters {
 /**
  * 行動の中の効果の選択を、候補ごとに再生して試して選ぶ。候補を試すときは、行動の前の状態を複製してそこまでの選択を
  * 同じように再生し、試す選択の直前で見えていないカードを混ぜ直して乱数を差し替える(そこまでの経過はプレイヤーが
- * 実際に見たものなので実際の通りに再生し、そこから先は知らないものとして試す)。この行動の中で山札を探したり
- * 上から見たりした後(試す選択そのものを含む)は、山札の順だけを混ぜ直し、サイドは変えない。プレイヤーは山札の中身を
- * 見て山札とサイドの分かれ方を知っており、選んだカード(偉大な大樹で選んだキルリア)はまだ山札にあるため。
+ * 実際に見たものなので実際の通りに再生する)。山札全体を探すと、山札とサイドの分かれ方を知るため、山札の順だけを
+ * 混ぜ直す。山札の上だけを見たときは、見たカードを残し、それ以外の山札とサイドを混ぜ直す。
  */
 class ChoiceSearch implements EffectChoices {
   private readonly answers: ChoiceAnswer[] = [];
