@@ -406,7 +406,7 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
         },
       };
     },
-    parameters: { samplesPerCandidate: 32, trainingGamesPerDeck: 500 },
+    parameters: { samplesPerCandidate: 64, trainingGamesPerDeck: 500 },
   },
   "random-action": {
     candidate: "1",
