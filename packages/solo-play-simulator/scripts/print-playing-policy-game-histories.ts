@@ -106,7 +106,7 @@ async function prepareLearnedModelOfDeck(deckCode: string) {
   return preparation.model;
 }
 
-/** 渡された引数を含む、同じ履歴を出し直すコマンド。 */
+/** 同じ履歴を出し直すコマンド。 */
 const reproductionCommand = [
   "bun run print:playing-policy-game-histories --",
   `--setting ${settingName}`,
@@ -116,10 +116,11 @@ const reproductionCommand = [
     : [`--first-trial ${firstTrialIndex}`]),
   ...(values.trials === undefined ? [] : [`--trials ${trialsPerTurnOrder}`]),
   ...(writesLossesOnly ? ["--losses-only"] : []),
-  ...(values["training-games"] === undefined || trainingGames === undefined
+  // 学習する設定では、学習の結果を決める 2 つの値を、省かれていても書く。--processes の既定は CPU の数なので、省いたままだと、
+  // CPU の数が違う機械で出し直したときに学習の結果が変わる。学習しない設定では、どちらの値も対戦を変えないので書かない
+  ...(trainingGames === undefined
     ? []
-    : [`--training-games ${trainingGames}`]),
-  ...(values.processes === undefined ? [] : [`--processes ${processCount}`]),
+    : [`--training-games ${trainingGames}`, `--processes ${processCount}`]),
   "--output <ディレクトリ>",
 ].join(" ");
 
