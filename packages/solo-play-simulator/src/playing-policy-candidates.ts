@@ -9,11 +9,7 @@ import {
   createRandomActionPolicy,
 } from "./action-list-playing-policies.ts";
 import { calculateAttackDamage } from "./attack-damage.ts";
-import {
-  listAttackCandidatesWithCosts,
-  resolveEnergyProvision,
-  toEnergyUnits,
-} from "./continuous-effects.ts";
+import { listAttackCandidatesWithCosts } from "./continuous-effects.ts";
 import type { EffectContext } from "./effect-choices.ts";
 import type { PlayingPolicy } from "./engine.ts";
 import {
@@ -22,13 +18,18 @@ import {
 } from "./learned-win-rate-evaluation.ts";
 import { listAvailableActions, performAction } from "./player-actions.ts";
 import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
-import { derivePolicySeed } from "./random.ts";
+import { createSeededRandom, derivePolicySeed } from "./random.ts";
 import {
   createSearchPolicy,
   type TrialScorer,
   type TrialScoreTieBreak,
 } from "./search-policy.ts";
-import { listUnpaidCost, PRIZE_COUNT } from "./state.ts";
+import {
+  type GameState,
+  listUnpaidCost,
+  type PokemonInPlay,
+  PRIZE_COUNT,
+} from "./state.ts";
 import { createTurnSequenceSearchPolicy } from "./turn-sequence-search-policy.ts";
 
 /** 計測する設定の名前。設計文書の表と計測スクリプトの引数に使う。 */
@@ -89,39 +90,48 @@ const TURN_SEQUENCE_BASE_SAMPLES_PER_CANDIDATE = 8;
 
 const playoutTrialScorer = createPlayoutTrialScorer(createPlayoutActionPolicy);
 
-function attachEnergyForAttack(context: EffectContext): void {
+function attachEnergyForAttack(context: EffectContext, seed: number): void {
   const { state } = context;
-  const { active } = state;
-  if (active === undefined) {
+  if (state.active === undefined) {
     return;
   }
-  const { candidates, units } = listAttackCandidatesWithCosts(state, active);
+  let bestGain = 0;
   const actions = listAvailableActions(context);
   let best: (typeof actions)[number] | undefined;
-  let bestGain = 0;
+  const before = estimateAttackPotential(state, state.active);
   for (const action of actions) {
     if (action.kind !== "attachEnergy" || action.targetIndex !== 0) {
       continue;
     }
-    const withEnergy = [
-      ...units,
-      ...toEnergyUnits(resolveEnergyProvision(state, active, action.card)),
-    ];
-    for (const { cost, usable } of candidates) {
-      const before = listUnpaidCost(cost, units).length;
-      const after = listUnpaidCost(cost, withEnergy).length;
-      const gain =
-        (calculateAttackDamage(state, active, usable.attack) ?? 0) *
-        (1 / (1 + after) - 1 / (1 + before));
-      if (gain > bestGain) {
-        bestGain = gain;
-        best = action;
-      }
+    const trial = state.clone(createSeededRandom(seed));
+    trial.remixUnseenCards();
+    performAction({ choices: context.choices, state: trial }, action);
+    if (trial.active === undefined) {
+      continue;
+    }
+    const gain = estimateAttackPotential(trial, trial.active) - before;
+    if (gain > bestGain) {
+      bestGain = gain;
+      best = action;
     }
   }
   if (best !== undefined) {
     performAction(context, best);
   }
+}
+function estimateAttackPotential(
+  state: GameState,
+  pokemon: PokemonInPlay
+): number {
+  const { candidates, units } = listAttackCandidatesWithCosts(state, pokemon);
+  return Math.max(
+    0,
+    ...candidates.map(
+      ({ cost, usable }) =>
+        (calculateAttackDamage(state, pokemon, usable.attack) ?? 0) /
+        (1 + listUnpaidCost(cost, units).length) ** 2
+    )
+  );
 }
 
 function createPrizeProgressPlayout(seed: number): PlayingPolicy {
@@ -138,7 +148,7 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
       );
     },
     playTurn: (context) => {
-      attachEnergyForAttack(context);
+      attachEnergyForAttack(context, seed);
       playout.playTurn(context);
     },
   };
