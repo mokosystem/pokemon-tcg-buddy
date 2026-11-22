@@ -14,7 +14,7 @@ import { CardCategory } from "./card-record-schema.ts";
 import { isEnergy } from "./cards.ts";
 import { listAttackCandidatesWithCosts } from "./continuous-effects.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
-import type { PlayingPolicy } from "./engine.ts";
+import { advanceBattleStyleSoloPlay, type PlayingPolicy } from "./engine.ts";
 import {
   createLearnedEvaluationTrialScorer,
   type LearnedWinRateModel,
@@ -22,6 +22,7 @@ import {
 import {
   listAvailableActions,
   listAvailableHandActions,
+  type PlayerAction,
   performAction,
 } from "./player-actions.ts";
 import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
@@ -148,6 +149,54 @@ function estimateAttackPotential(
   );
 }
 
+function chooseRetreatBeforeKnockOut(context: EffectContext, seed: number) {
+  const retreats = listAvailableActions(context).filter(
+    (action) => action.kind === "retreat"
+  );
+  if (retreats.length === 0) {
+    return;
+  }
+  const compare = (retreat?: Extract<PlayerAction, { kind: "retreat" }>) => {
+    const state = context.state.clone(createSeededRandom(seed));
+    state.remixUnseenCards();
+    const future = createPlayoutActionPolicy(seed);
+    if (retreat) {
+      performAction({ choices: future, state }, retreat);
+    }
+    advanceBattleStyleSoloPlay(
+      { choices: future, state },
+      future,
+      "ownTurnAttack",
+      "ownTurnStart"
+    );
+    return {
+      lost:
+        state.decision !== undefined &&
+        state.decision.reason !== "ownPrizesTaken",
+      opponentRemaining: state.opponentRemainingPrizeCount,
+      ownRemaining: state.prizes.length,
+    };
+  };
+  const stay = compare();
+  if (stay.opponentRemaining === context.state.opponentRemainingPrizeCount) {
+    return;
+  }
+  let best = stay;
+  let chosen: (typeof retreats)[number] | undefined;
+  for (const retreat of retreats) {
+    const result = compare(retreat);
+    if (
+      !result.lost &&
+      result.ownRemaining <= stay.ownRemaining &&
+      result.opponentRemaining > best.opponentRemaining
+    ) {
+      best = result;
+      chosen = retreat;
+    }
+  }
+  return chosen;
+}
+
 function createPrizeProgressPlayout(seed: number): PlayingPolicy {
   const playout = createPlayoutActionPolicy(seed);
   return {
@@ -203,6 +252,10 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
         performAction(context, trigger);
       }
       playout.playTurn(context);
+      const retreat = chooseRetreatBeforeKnockOut(context, seed);
+      if (retreat !== undefined) {
+        performAction(context, retreat);
+      }
     },
   };
 }
