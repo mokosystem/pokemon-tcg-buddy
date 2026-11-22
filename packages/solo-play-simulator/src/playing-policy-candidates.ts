@@ -81,9 +81,27 @@ const TURN_SEQUENCE_BASE_SAMPLES_PER_CANDIDATE = 8;
 
 const playoutTrialScorer = createPlayoutTrialScorer(createPlayoutActionPolicy);
 
+function createPrizeProgressPlayout(seed: number): PlayingPolicy {
+  const playout = createPlayoutActionPolicy(seed);
+  return {
+    ...playout,
+    choosePokemonToPromoteAfterKnockOut: (state, candidates) => {
+      const most = Math.max(
+        ...candidates.map((pokemon) => pokemon.energies.length)
+      );
+      return playout.choosePokemonToPromoteAfterKnockOut(
+        state,
+        candidates.filter((pokemon) => pokemon.energies.length === most)
+      );
+    },
+  };
+}
+
+const playToDecision = createPlayoutTrialScorer(createPrizeProgressPlayout);
+
 /** 勝てる試し回しが少ない局面でも、場が空になって早く負ける手より、自分がサイドを取り進める手を選ぶ。 */
 const scorePrizeProgress: TrialScorer = (input) => {
-  const score = playoutTrialScorer(input);
+  const score = playToDecision(input);
   const progress = (PRIZE_COUNT - input.state.prizes.length) / PRIZE_COUNT;
   return { ...score, winRate: (score.winRate + progress) / 2 };
 };
