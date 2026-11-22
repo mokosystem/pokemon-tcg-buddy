@@ -543,6 +543,21 @@ describe("複製と混ぜ直し(探索が先を試すため)", () => {
     expect(draw([STAGE2, SUPPORTER])).toEqual(draw([SUPPORTER, STAGE2]));
   });
 
+  test("山札を探してからサイドを1枚取った局面を複製し、もう一度山札を探しても残りのサイドが増えない", () => {
+    const state = stateWithUnseen(
+      [ENERGY, ENERGY],
+      [GOODS, GOODS, STAGE2, STAGE2]
+    );
+    state.shuffleUnknownDeckOrder();
+    state.takePrizeIntoHand();
+    const remaining = [...state.prizes];
+    expect(remaining).toHaveLength(3);
+
+    const trial = state.clone(createSeededRandom(5));
+    trial.shuffleUnknownDeckOrder();
+    expect(trial.prizes).toEqual(remaining);
+  });
+
   test("山札の上から見たカードは何か分かっているものとして数え、山札の枚数を超えない", () => {
     const state = stateWithUnseen([STAGE1, STAGE2], []);
     state.markDeckTopKnown(5);

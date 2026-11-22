@@ -475,7 +475,7 @@ export class GameState {
     const unknown = sortByCardId(this.deck.slice(this.knownDeckTopCount));
     this.shuffleCards(unknown);
     this.deck = [...this.deck.slice(0, this.knownDeckTopCount), ...unknown];
-    this.prizes.splice(0, this.prizes.length, ...sortByCardId(this.prizes));
+    this.prizes.sort(compareCardIds);
   }
 
   // ---- 問い合わせ ----
