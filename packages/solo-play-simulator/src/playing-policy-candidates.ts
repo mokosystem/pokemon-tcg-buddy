@@ -23,6 +23,7 @@ import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
 import { createSeededRandom, derivePolicySeed } from "./random.ts";
 import {
   createSearchPolicy,
+  type TrialScore,
   type TrialScorer,
   type TrialScoreTieBreak,
 } from "./search-policy.ts";
@@ -189,12 +190,18 @@ const scoreOneContinuation: TrialScorer = (input) => {
 };
 
 const scorePrizeProgress: TrialScorer = (input) => {
-  const seed = derivePolicySeed(input.seed);
-  const alternate = input.state.clone(createSeededRandom(seed));
-
-  const other = scoreOneContinuation({ ...input, seed, state: alternate });
+  let { seed } = input;
+  const trials: TrialScore[] = [];
+  for (let i = 0; i < 3; i += 1) {
+    seed = derivePolicySeed(seed);
+    const trial = input.state.clone(createSeededRandom(seed));
+    trials.push(scoreOneContinuation({ ...input, seed, state: trial }));
+  }
   const first = scoreOneContinuation(input);
-  return first.winRate >= other.winRate ? first : other;
+  return trials.reduce(
+    (best, trial) => (trial.winRate > best.winRate ? trial : best),
+    first
+  );
 };
 function requireParameter(
   parameters: PlayingPolicyParameters,
