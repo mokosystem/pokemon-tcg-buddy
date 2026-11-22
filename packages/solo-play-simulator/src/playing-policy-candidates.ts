@@ -157,7 +157,7 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
 const playToDecision = createPlayoutTrialScorer(createPrizeProgressPlayout);
 
 /** 勝てる試し回しが少ない局面でも、場が空になって早く負ける手より、自分がサイドを取り進める手を選ぶ。 */
-const scorePrizeProgress: TrialScorer = (input) => {
+const scoreOneContinuation: TrialScorer = (input) => {
   const score = playToDecision(input);
   const damage = input.state.opponentFieldDamage;
   const partial =
@@ -167,6 +167,14 @@ const scorePrizeProgress: TrialScorer = (input) => {
   return { ...score, winRate: (score.winRate + progress) / 2 };
 };
 
+const scorePrizeProgress: TrialScorer = (input) => {
+  const seed = derivePolicySeed(input.seed);
+  const alternate = input.state.clone(createSeededRandom(seed));
+
+  const other = scoreOneContinuation({ ...input, seed, state: alternate });
+  const first = scoreOneContinuation(input);
+  return first.winRate >= other.winRate ? first : other;
+};
 function requireParameter(
   parameters: PlayingPolicyParameters,
   name: keyof PlayingPolicyParameters
