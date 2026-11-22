@@ -8,10 +8,12 @@
  * 「到達の判定の計測」)。
  *
  * bun run print:playing-policy-game-histories -- --setting <設定> [--deck <デッキコード>]…
- *   [--first-trial <番号>] [--trials <数>] [--losses-only] --output <ディレクトリ>
+ *   [--first-trial <番号>] [--trials <数>] [--losses-only] [--training-games <学習の対戦の回数>] --output <ディレクトリ>
  *
  * --deck を省くと、記録済みのデッキすべて。デッキ × 先攻・後攻ごとに、試行 --first-trial(既定 0)から --trials(既定 3)回を回す。
  * --losses-only を付けると、回した対戦のうち負けた対戦だけを書く(回す対戦は変わらない)。
+ * --training-games は、measure:playing-policy-win-rates に同じ引数を渡して測ったときに、同じ値を渡す。学習の対戦の回数が
+ * 違うと学習の結果が違い、同じ試行でも計測と別の対戦になるため。
  */
 
 import { parseArgs } from "node:util";
@@ -28,6 +30,7 @@ import {
   MEASUREMENT_BASE_SEEDS,
   prepareLearnedModel,
   readCommonOptions,
+  readIntegerOption,
   readOneSettingName,
   readRecordedDecks,
   writeMeasurementOutput,
@@ -44,6 +47,7 @@ const { values } = parseArgs({
     "losses-only": { type: "boolean" },
     output: { type: "string" },
     setting: { type: "string" },
+    "training-games": { type: "string" },
     trials: { type: "string" },
   },
   strict: true,
@@ -53,24 +57,16 @@ const { outputDirectory, processCount } = readCommonOptions(values);
 const settingName = readOneSettingName(values.setting);
 const setting = PLAYING_POLICY_SETTINGS[settingName];
 const firstTrialIndex =
-  values["first-trial"] === undefined ? 0 : Number(values["first-trial"]);
+  readIntegerOption("--first-trial", values["first-trial"], 0) ?? 0;
 const trialsPerTurnOrder =
-  values.trials === undefined
-    ? DEFAULT_TRIALS_PER_TURN_ORDER
-    : Number(values.trials);
+  readIntegerOption("--trials", values.trials, 1) ??
+  DEFAULT_TRIALS_PER_TURN_ORDER;
 const writesLossesOnly = values["losses-only"] === true;
-if (
-  !(
-    Number.isInteger(firstTrialIndex) &&
-    firstTrialIndex >= 0 &&
-    Number.isInteger(trialsPerTurnOrder) &&
-    trialsPerTurnOrder >= 1
-  )
-) {
-  throw new Error(
-    "--first-trial には 0 以上の整数、--trials には 1 以上の整数を渡す"
-  );
-}
+/** 候補 4 の設定なら、学習の対戦の回数(--training-games があればその値)。学習の要らない設定は undefined。 */
+const trainingGames = findTrainingGames(
+  settingName,
+  readIntegerOption("--training-games", values["training-games"], 1)
+);
 
 function formatGame(
   heading: string,
@@ -93,7 +89,6 @@ function formatGame(
 
 /** 候補 4 の設定なら、デッキの学習の結果を作る。学習の要らない設定は undefined。 */
 async function prepareLearnedModelOfDeck(deckCode: string) {
-  const trainingGames = findTrainingGames(settingName, undefined);
   if (trainingGames === undefined) {
     return;
   }
@@ -117,6 +112,9 @@ const reproductionCommand = [
     : [`--first-trial ${firstTrialIndex}`]),
   ...(values.trials === undefined ? [] : [`--trials ${trialsPerTurnOrder}`]),
   ...(writesLossesOnly ? ["--losses-only"] : []),
+  ...(values["training-games"] === undefined || trainingGames === undefined
+    ? []
+    : [`--training-games ${trainingGames}`]),
   "--output <ディレクトリ>",
 ].join(" ");
 
@@ -178,6 +176,7 @@ const path = writeMeasurementOutput({
     measurement: "playing-policy-game-histories",
     playedGameCount,
     settingName,
+    trainingGames,
     trialsPerTurnOrder,
     writesLossesOnly,
   },

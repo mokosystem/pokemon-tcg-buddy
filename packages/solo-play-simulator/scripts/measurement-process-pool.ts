@@ -5,7 +5,7 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "bun";
 import type {
@@ -223,33 +223,57 @@ export function describeMeasurementEnvironment(processCount: number) {
   };
 }
 
-/** 出力のファイル名の先頭(<YYYYMMDD-HHMM>)。 */
+/** 出力のファイル名の先頭(<YYYYMMDD-HHMMSS>)。 */
 function formatTimestamp(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
-}
-
-/** 出力のパスのうち拡張子を除いた部分(<出力のディレクトリ>/<YYYYMMDD-HHMM>-<計測の名前>-<設定の名前>)を、今の時刻で決める。 */
-export function resolveMeasurementOutputBase(options: {
-  readonly outputDirectory: string;
-  readonly measurementName: string;
-  readonly settingName: string;
-}): string {
-  return join(
-    options.outputDirectory,
-    `${formatTimestamp(new Date())}-${options.measurementName}-${options.settingName}`
-  );
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
 /**
- * 決まったパス(resolveMeasurementOutputBase の結果)に .json と .md を書く。同じパスに何度も書けば上書きになる。途中まで
+ * 出力のパスのうち拡張子を除いた部分(<出力のディレクトリ>/<YYYYMMDD-HHMMSS>-<計測の名前>-<設定の名前>)を now の時刻で決め、
+ * その名前の空の .json を作って、後から名前を決める実行が同じパスを選ばないようにする。同じ名前の .json が既にあれば、
+ * 末尾に -2、-3、… を付けた、まだ無い名前にする。
+ *
+ * 既にある名前のときに例外を投げて止めないのは、名前を決めるのが計測を終えた後で、止めると終えた計測の結果を捨てることになるため。
+ */
+export function reserveMeasurementOutputBase(
+  options: {
+    readonly outputDirectory: string;
+    readonly measurementName: string;
+    readonly settingName: string;
+  },
+  now: Date = new Date()
+): string {
+  mkdirSync(options.outputDirectory, { recursive: true });
+  const name = `${formatTimestamp(now)}-${options.measurementName}-${options.settingName}`;
+  for (let ordinal = 1; ; ordinal += 1) {
+    const base = join(
+      options.outputDirectory,
+      ordinal === 1 ? name : `${name}-${ordinal}`
+    );
+    try {
+      // 「無ければ作る」を 1 回の操作にする(flag の wx)。あるかを調べてから作ると、調べてから作るまでのあいだに、ほかの実行が
+      // 同じ名前を作りうる
+      writeFileSync(`${base}.json`, "", { flag: "wx" });
+      return base;
+    } catch (error) {
+      if (
+        !(error instanceof Error && "code" in error && error.code === "EEXIST")
+      ) {
+        throw error;
+      }
+    }
+  }
+}
+
+/**
+ * 決まったパス(reserveMeasurementOutputBase の結果)に .json と .md を書く。同じパスに何度も書けば上書きになる。途中まで
  * 終わった分で書き直していく出力(複数のデッキのまとめ)は、パスを 1 度だけ決めてからこの関数で書く。
  */
 export function writeMeasurementOutputAt(
   base: string,
   output: { readonly json: unknown; readonly markdown: string }
 ): void {
-  mkdirSync(dirname(base), { recursive: true });
   writeFileSync(
     `${base}.json`,
     `${JSON.stringify(output.json, undefined, 2)}\n`
@@ -257,7 +281,10 @@ export function writeMeasurementOutputAt(
   writeFileSync(`${base}.md`, output.markdown);
 }
 
-/** 計測ごとに <YYYYMMDD-HHMM>-<計測の名前>-<設定の名前>.json と同じ名前の .md を書き、書いたパスを返す。 */
+/**
+ * 計測ごとに <YYYYMMDD-HHMMSS>-<計測の名前>-<設定の名前>.json と同じ名前の .md を書き、書いたパス(拡張子を除く)を返す。
+ * 既にあるファイルは上書きせず、別の名前で書く(reserveMeasurementOutputBase)。
+ */
 export function writeMeasurementOutput(options: {
   readonly outputDirectory: string;
   readonly measurementName: string;
@@ -265,7 +292,7 @@ export function writeMeasurementOutput(options: {
   readonly json: unknown;
   readonly markdown: string;
 }): string {
-  const base = resolveMeasurementOutputBase(options);
+  const base = reserveMeasurementOutputBase(options);
   writeMeasurementOutputAt(base, options);
   return base;
 }
@@ -354,6 +381,52 @@ export function summarizeTally(tally: BattleStyleSoloPlayTally) {
   };
 }
 
+/**
+ * 引数に渡された文字列を数として読む。数として読めない文字列(「15m」など)は例外にする。Number は読めない文字列を NaN に、
+ * 空の文字列を 0 にして返すだけで、そのまま計測に渡すと、区切りの時刻が NaN になって対戦を 1 回も回さない計測が、
+ * 正常に終わった結果として書かれるため。
+ */
+function parseOptionAsNumber(name: string, value: string): number {
+  const parsed = value.trim() === "" ? Number.NaN : Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${name} には数を渡す(「${value}」は数として読めない)`);
+  }
+  return parsed;
+}
+
+/** 引数に渡された文字列を、0 より大きい数として読む(小数も読む)。省かれた引数は undefined。 */
+export function readPositiveNumberOption(
+  name: string,
+  value: string | undefined
+): number | undefined {
+  if (value === undefined) {
+    return;
+  }
+  const parsed = parseOptionAsNumber(name, value);
+  if (parsed <= 0) {
+    throw new Error(`${name} には 0 より大きい数を渡す(${value} は渡せない)`);
+  }
+  return parsed;
+}
+
+/** 引数に渡された文字列を、minimum 以上の整数として読む。省かれた引数は undefined。 */
+export function readIntegerOption(
+  name: string,
+  value: string | undefined,
+  minimum: number
+): number | undefined {
+  if (value === undefined) {
+    return;
+  }
+  const parsed = parseOptionAsNumber(name, value);
+  if (!(Number.isInteger(parsed) && parsed >= minimum)) {
+    throw new Error(
+      `${name} には ${minimum} 以上の整数を渡す(${value} は渡せない)`
+    );
+  }
+  return parsed;
+}
+
 /** 共通の引数のうち、プロセスの数(既定は CPU の数)と出力のディレクトリ(必ず渡す)を読む。 */
 export function readCommonOptions(values: {
   readonly output?: string | undefined;
@@ -365,9 +438,8 @@ export function readCommonOptions(values: {
   return {
     outputDirectory: values.output,
     processCount:
-      values.processes === undefined
-        ? navigator.hardwareConcurrency
-        : Number(values.processes),
+      readIntegerOption("--processes", values.processes, 1) ??
+      navigator.hardwareConcurrency,
   };
 }
 
