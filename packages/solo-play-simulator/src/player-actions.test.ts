@@ -4,8 +4,10 @@ import { firstCandidateChoices } from "./effect-choices.ts";
 import {
   canRetreatActive,
   describeAction,
+  listAvailableAbilityActions,
   listAvailableActions,
   listAvailableHandActions,
+  listAvailableRetreatActions,
   type PlayerAction,
   performAction,
 } from "./player-actions.ts";
@@ -70,11 +72,52 @@ describe("今できる行動の一覧", () => {
       (action): action is Extract<PlayerAction, { kind: "retreat" }> =>
         action.kind === "retreat"
     );
+    expect(listAvailableRetreatActions(state)).toEqual(retreats);
     expect(
       retreats.map((action) =>
         action.energiesToDiscard.map((energy) => energy.name)
       )
     ).toEqual([["テレパス超エネルギー"], ["基本超エネルギー"]]);
+  });
+
+  test("にげるエネルギーが0なら、エネルギーをトラッシュせずに各ベンチポケモンを選べる", () => {
+    const state = buildState({
+      active: MEOWTH,
+      bench: [buildRecordedCard("046248"), RALTS],
+    });
+    state.active?.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    expect(listAvailableRetreatActions(state)).toEqual([
+      { benchIndex: 0, energiesToDiscard: [], kind: "retreat" },
+      { benchIndex: 1, energiesToDiscard: [], kind: "retreat" },
+    ]);
+    state.decision = {
+      decidedTurn: { ordinal: 3, owner: "opponent" },
+      reason: "opponentPrizesTaken",
+    };
+    expect(listAvailableRetreatActions(state)).toEqual([]);
+  });
+
+  test("場の特性を選ぶときも全行動と同じ順で並び、勝敗が決まれば空になる", () => {
+    const state = buildState({
+      active: buildRecordedCard("048358"),
+      bench: [buildRecordedCard("048353")],
+      hand: [buildRecordedCard("050746")],
+    });
+    const context = { choices: firstCandidateChoices, state };
+    const abilities = listAvailableAbilityActions(context);
+    expect(abilities).toEqual([
+      { abilityName: "エキサイトターボ", kind: "useAbility", pokemonIndex: 0 },
+    ]);
+    expect(abilities).toEqual(
+      listAvailableActions(context).filter(
+        (action) => action.kind === "useAbility"
+      )
+    );
+    state.decision = {
+      decidedTurn: { ordinal: 3, owner: "opponent" },
+      reason: "opponentPrizesTaken",
+    };
+    expect(listAvailableAbilityActions(context)).toEqual([]);
   });
 
   test("特定の手札だけを調べても同じ手が同じ順で並び、勝敗が決まれば空になる", () => {

@@ -70,7 +70,7 @@ export type PlayerAction =
     }
   | { readonly kind: "endTurn" };
 
-type ActionOf<Kind extends PlayerAction["kind"]> = Extract<
+export type ActionOf<Kind extends PlayerAction["kind"]> = Extract<
   PlayerAction,
   { kind: Kind }
 >;
@@ -141,6 +141,9 @@ function listRetreatPayments(
   active: PokemonInPlay
 ): Card[][] {
   const cost = calculateRetreatCost(state, active);
+  if (cost === 0) {
+    return [[]];
+  }
   const kinds = listDistinctCards(active.energies);
   const payments: Card[][] = [];
   const extend = (kindIndex: number, chosen: Card[]): void => {
@@ -189,17 +192,40 @@ export function canRetreatActive(state: GameState): boolean {
   return listRetreatPaymentsIfAllowed(state).length > 0;
 }
 
-function listRetreatActions(state: GameState): PlayerAction[] {
+export function listAvailableRetreatActions(
+  state: GameState
+): ActionOf<"retreat">[] {
+  if (state.decision !== undefined) {
+    return [];
+  }
   const payments = listRetreatPaymentsIfAllowed(state);
   return state.bench.flatMap((_, benchIndex) =>
     payments.map(
-      (energiesToDiscard): PlayerAction => ({
+      (energiesToDiscard): ActionOf<"retreat"> => ({
         benchIndex,
         energiesToDiscard,
         kind: "retreat",
       })
     )
   );
+}
+
+export function listAvailableAbilityActions(
+  context: EffectContext
+): ActionOf<"useAbility">[] {
+  const { state } = context;
+  if (state.decision !== undefined) {
+    return [];
+  }
+  const actions: ActionOf<"useAbility">[] = [];
+  state.listPokemonInPlay().forEach((pokemon, pokemonIndex) => {
+    for (const abilityName of listAbilityNames(pokemon.card)) {
+      if (canUseAbility(context, pokemon, abilityName)) {
+        actions.push({ abilityName, kind: "useAbility", pokemonIndex });
+      }
+    }
+  });
+  return actions;
 }
 
 /** 条件に合う手札のカードから行える手を、手札と場の順で列挙する。 */
@@ -232,18 +258,12 @@ export function listAvailableActions(
     return [{ kind: "endTurn" }];
   }
   const actions = listAvailableHandActions(context);
-  state.listPokemonInPlay().forEach((pokemon, pokemonIndex) => {
-    for (const abilityName of listAbilityNames(pokemon.card)) {
-      if (canUseAbility(context, pokemon, abilityName)) {
-        actions.push({ abilityName, kind: "useAbility", pokemonIndex });
-      }
-    }
-  });
+  actions.push(...listAvailableAbilityActions(context));
   if (canUseStadiumEffect(context)) {
     actions.push({ kind: "useStadiumEffect" });
   }
   if (retreat === "includeRetreat") {
-    actions.push(...listRetreatActions(state));
+    actions.push(...listAvailableRetreatActions(state));
   }
   actions.push({ kind: "endTurn" });
   return actions;

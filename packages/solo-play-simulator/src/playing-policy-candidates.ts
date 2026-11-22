@@ -20,9 +20,10 @@ import {
   type LearnedWinRateModel,
 } from "./learned-win-rate-evaluation.ts";
 import {
-  listAvailableActions,
+  type ActionOf,
+  listAvailableAbilityActions,
   listAvailableHandActions,
-  type PlayerAction,
+  listAvailableRetreatActions,
   performAction,
 } from "./player-actions.ts";
 import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
@@ -150,13 +151,11 @@ function estimateAttackPotential(
 }
 
 function chooseRetreatBeforeKnockOut(context: EffectContext, seed: number) {
-  const retreats = listAvailableActions(context).filter(
-    (action) => action.kind === "retreat"
-  );
+  const retreats = listAvailableRetreatActions(context.state);
   if (retreats.length === 0) {
     return;
   }
-  const compare = (retreat?: Extract<PlayerAction, { kind: "retreat" }>) => {
+  const compare = (retreat?: ActionOf<"retreat">) => {
     const state = context.state.clone(createSeededRandom(seed));
     state.remixUnseenCards();
     const future = createPlayoutActionPolicy(seed);
@@ -190,6 +189,11 @@ function chooseRetreatBeforeKnockOut(context: EffectContext, seed: number) {
       result.ownRemaining <= stay.ownRemaining &&
       result.opponentRemaining > best.opponentRemaining
     ) {
+      if (
+        result.opponentRemaining === context.state.opponentRemainingPrizeCount
+      ) {
+        return retreat;
+      }
       best = result;
       chosen = retreat;
     }
@@ -211,11 +215,8 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
       );
     },
     playTurn: (context) => {
-      const energyAbility = listAvailableActions(context, "skipRetreat").find(
+      const energyAbility = listAvailableAbilityActions(context).find(
         (action) => {
-          if (action.kind !== "useAbility") {
-            return false;
-          }
           const card =
             context.state.listPokemonInPlay()[action.pokemonIndex]?.card;
           if (card?.record.category !== CardCategory.Pokemon) {
