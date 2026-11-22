@@ -519,7 +519,7 @@ describe("複製と混ぜ直し(探索が先を試すため)", () => {
     expect(state.knownDeckTopCount).toBe(2);
   });
 
-  test("山札の順だけの混ぜ直しは、サイドを変えない", () => {
+  test("山札を探した後の混ぜ直しは、山札とサイドの分かれ方を保つ", () => {
     const state = stateWithUnseen(
       [STAGE1, STAGE2, ENERGY, ENERGY],
       [SUPPORTER]
@@ -530,6 +530,17 @@ describe("複製と混ぜ直し(探索が先を試すため)", () => {
     expect(countNames(state.deck)).toEqual(
       countNames([STAGE1, STAGE2, ENERGY, ENERGY])
     );
+  });
+
+  test("山札全体を探しても、サイドの裏向きの位置だけで試し回しで取るカードは変わらない", () => {
+    const draw = (prizes: readonly Card[]) => {
+      const state = stateWithUnseen([STAGE1, ENERGY], prizes);
+      state.random = createSeededRandom(5);
+      state.shuffleUnknownDeckOrder();
+      state.takePrizeIntoHand();
+      return state.hand.at(-1)?.name;
+    };
+    expect(draw([STAGE2, SUPPORTER])).toEqual(draw([SUPPORTER, STAGE2]));
   });
 
   test("山札の上から見たカードは何か分かっているものとして数え、山札の枚数を超えない", () => {

@@ -468,13 +468,14 @@ export class GameState {
   }
 
   /**
-   * 山札のうち何か分かっていない部分の順だけを混ぜ直す。サイドは変えない。山札を探して中身を見た後(山札とサイドの
-   * 分かれ方をプレイヤーが知っている)に使う。並びをそろえてから混ぜる理由は remixUnseenCards と同じ。
+   * 山札全体を探した後は、山札とサイドの分かれ方を保ち、山札の未知の部分を混ぜ直す。
+   * サイドからは takePrizeIntoHand が乱数で選ぶ。裏向きの位置だけで同じ乱数で取るカードが変わらないよう、先に並びをそろえる。
    */
   shuffleUnknownDeckOrder(): void {
     const unknown = sortByCardId(this.deck.slice(this.knownDeckTopCount));
     this.shuffleCards(unknown);
     this.deck = [...this.deck.slice(0, this.knownDeckTopCount), ...unknown];
+    this.prizes.splice(0, this.prizes.length, ...sortByCardId(this.prizes));
   }
 
   // ---- 問い合わせ ----
