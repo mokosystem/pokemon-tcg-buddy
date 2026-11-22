@@ -10,6 +10,7 @@ import {
 } from "./action-list-playing-policies.ts";
 import { calculateAttackDamage } from "./attack-damage.ts";
 import { listUsableAttacksOfActive } from "./card-effects.ts";
+import { CardCategory } from "./card-record-schema.ts";
 import { listAttackCandidatesWithCosts } from "./continuous-effects.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
 import type { PlayingPolicy } from "./engine.ts";
@@ -156,6 +157,18 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
       const energy = chooseEnergyForAttack(context, seed);
       if (energy !== undefined) {
         performAction(context, energy);
+      }
+      const trigger = listAvailableActions(context).find(
+        (action) =>
+          action.kind === "placeOnBench" &&
+          action.card.record.category === CardCategory.Pokemon &&
+          action.card.record.abilities.some(
+            (ability) =>
+              ability.translation?.kind === "triggeredWhenPlacedOnBenchFromHand"
+          )
+      );
+      if (trigger !== undefined) {
+        performAction(context, trigger);
       }
       playout.playTurn(context);
     },
