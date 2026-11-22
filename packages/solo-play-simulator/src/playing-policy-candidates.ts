@@ -229,10 +229,16 @@ const scorePrizeProgress: TrialScorer = (input) => {
     trials.push(scoreOneContinuation({ ...input, seed, state: trial }));
   }
   const first = scoreOneContinuation(input);
-  return trials.reduce(
-    (best, trial) => (trial.winRate > best.winRate ? trial : best),
-    first
-  );
+  const best = [first, ...trials]
+    .sort((left, right) => right.winRate - left.winRate)
+    .slice(0, 2);
+  return {
+    prizeDifference:
+      best.reduce((total, trial) => total + trial.prizeDifference, 0) /
+      best.length,
+    winRate:
+      best.reduce((total, trial) => total + trial.winRate, 0) / best.length,
+  };
 };
 function requireParameter(
   parameters: PlayingPolicyParameters,
