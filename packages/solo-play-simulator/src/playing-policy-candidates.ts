@@ -99,18 +99,24 @@ function chooseEnergyForAttack(context: EffectContext, seed: number) {
   let bestGain = 0;
   const actions = listAvailableActions(context);
   let best: (typeof actions)[number] | undefined;
-  const before = estimateAttackPotential(state, state.active);
+  const potentials = state
+    .listPokemonInPlay()
+    .map((pokemon) => estimateAttackPotential(state, pokemon));
   for (const action of actions) {
-    if (action.kind !== "attachEnergy" || action.targetIndex !== 0) {
+    if (action.kind !== "attachEnergy") {
       continue;
     }
     const trial = state.clone(createSeededRandom(seed));
     trial.remixUnseenCards();
     performAction({ choices: context.choices, state: trial }, action);
-    if (trial.active === undefined) {
+    const target = trial.listPokemonInPlay()[action.targetIndex];
+    const before = potentials[action.targetIndex];
+    if (target === undefined || before === undefined) {
       continue;
     }
-    const gain = estimateAttackPotential(trial, trial.active) - before;
+    const gain =
+      (estimateAttackPotential(trial, target) - before) /
+      (action.targetIndex === 0 ? 1 : 2);
     if (gain > bestGain) {
       bestGain = gain;
       best = action;
