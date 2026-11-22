@@ -833,7 +833,7 @@ caffeinate -i bun run measure:playing-policy-win-rates -- --setting <設定> --s
 
 改善の繰り返し(Issue 77 の決定事項「改善の 1 回」)では、改善用の種を使う。
 
-- 負けの原因を調べる履歴は `print:playing-policy-game-histories` で出す(`--losses-only` で負けた対戦だけ、`--first-trial` と `--trials` で試行を指定)。このスクリプトは改善用の種に固定で、判定用の種の履歴は出せない。計測に `--training-games` か `--processes` を渡したときは、履歴にも同じ値を渡す(学習の対戦の回数か、学習の対戦を集めるプロセスの数が違うと学習の結果が違い、同じ試行でも計測と別の対戦になりうる。計測で使った値は、まとめのファイルに「学習の対戦の回数」「並べたプロセスの数」として残る)。`--training-games` には 2 以上の偶数を渡す(学習の対戦は先攻と後攻を半分ずつ回す)
+- 負けの原因を調べる履歴は `print:playing-policy-game-histories` で出す(`--losses-only` で負けた対戦だけ、`--first-trial` と `--trials` で試行を指定)。このスクリプトは改善用の種に固定で、判定用の種の履歴は出せない。計測に `--training-games` を渡したときは、履歴でも学習の対戦の回数をそろえる。学習の記録は試行番号順に結合するため、プロセス数を変えても同じ重みを得る。`--training-games` には 2 以上の偶数を渡す(学習の対戦は先攻と後攻を半分ずつ回す)
 - 変える前と後は、`measure:playing-policy-win-rates` に `--max-units <数>`(`--seeds` は既定の改善用の種)を渡して測る。試行 0 から決まった数までを 1 回ずつ回すので、変える前のコードと後のコードで同じ種の同じ対戦になる。前と後を試行ごとに対にして差の区間を出す道具は、準備の段では作っていない
 
 ### 出発点の勝率
@@ -898,7 +898,7 @@ caffeinate -i bun run measure:playing-policy-win-rates -- --setting <設定> --s
 - `measure:playing-policy-win-rates`: 記録済みのデッキを 1 つずつ順に先攻・後攻で回し、プレイングの判断基準の設定ごとの勝率と誤差の幅、サイドを取り切った番の分布、負けた理由の内訳、1 回の対戦の時間を測る(Issue 70)。`--deck` は何回でも渡せ、省くと記録済みのデッキすべてを測る。`--seeds` で改善用の種(既定)か判定用の種を選び、`--cutoff-includes-preparation` で区切りにデッキごとの準備の時間を含める。デッキごとの結果に加えて、設定ごとに、測り終えたデッキをまとめた表を書く(Issue 77。使い方は「プレイングの判断基準の改善(Issue 77)」)。対戦の履歴は書かない
 - `measure:card-swap-in-fifteen-minutes`: カードの入れ替えの題材を、入れ替える前と後、先攻と後攻の 4 本で決まった時間(既定 15 分)回し、勝率の差などを誤差の幅とともに測る(Issue 70)
 - `measure:parallel-process-throughput`: 並べて回すプロセスの数ごとの、1 秒あたりの対戦の数を測る(Issue 70)
-- `print:playing-policy-game-histories`: 記録済みのデッキの先攻と後攻それぞれの対戦の履歴を書く(Issue 70)。`--deck`(何回でも。省くと記録済みのデッキすべて)、`--first-trial` と `--trials`(回す試行。既定は試行 0 から 3 回)、`--losses-only`(負けた対戦だけを書く)、`--training-games` と `--processes`(学習の対戦の回数と、並べるプロセスの数。計測に渡したときに同じ値を渡す)を渡せる。種は改善用の種に固定で、判定用の種は選べない(Issue 77)
+- `print:playing-policy-game-histories`: 記録済みのデッキの先攻と後攻それぞれの対戦の履歴を書く(Issue 70)。`--deck`(何回でも。省くと記録済みのデッキすべて)、`--first-trial` と `--trials`(回す試行。既定は試行 0 から 3 回)、`--losses-only`(負けた対戦だけを書く)、`--training-games` と `--processes`(学習の対戦の回数と、並べるプロセスの数)を渡せる。種は改善用の種に固定で、判定用の種は選べない(Issue 77)
 
 計測のスクリプトが共有する部分(種、引数の読み取り、候補 4 の準備、出力のファイルと表)は `scripts/measurement-process-pool.ts` にある。出力のファイルと、候補 4 の学習の結果のファイルの名前は、秒までの時刻で始まり、同じ名前のファイルが既にあれば末尾に `-2`、`-3`、… を付けるので、同じ出力のディレクトリへ続けて実行しても、前の出力を上書きしない。`measure:playing-policy-win-rates` と `print:playing-policy-game-histories` の数を受け取る引数と、計測のスクリプトに共通の `--processes` は、数として読めない値や範囲の外の値を渡すと、計測を始める前に止まる(ほかの計測のスクリプトに固有の引数は検査していない)。計測のスクリプトはプロセスを並べて回す。並べる 1 プロセスの入口は `scripts/playing-policy-measurement-worker.ts` で、パッケージのスクリプトからは呼ばない。
 
