@@ -1,16 +1,26 @@
 {
   "$schema": "../card-record.schema.json",
-  "cardEffects": [],
-  "cardIds": ["045281", "049403", "048300"],
-  "category": "ポケモンのどうぐ",
-  "excludedEffects": [
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
+  "cardEffects": [
     {
-      "description": "つけているポケモンの最大 HP を増やす。相手がいないためワザのダメージを受けず、最大 HP は成立率に影響しない",
-      "reason": "requiresOpponent"
+      "continuousEffect": {
+        "change": {
+          "amount": 100,
+          "change": "increaseMaxHp"
+        },
+        "conditions": [],
+        "scope": {
+          "scope": "attachedPokemon"
+        }
+      },
+      "kind": "continuous"
     }
   ],
+  "cardIds": ["045281", "049403", "048300"],
+  "category": "ポケモンのどうぐ",
+  "excludedEffects": [],
   "name": "ヒーローマント",
   "rulings": [],
-  "translationStatus": "irrelevantToCalculation",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-21"
 }

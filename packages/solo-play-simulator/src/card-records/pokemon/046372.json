@@ -2,7 +2,19 @@
   "$schema": "../card-record.schema.json",
   "abilities": [
     {
-      "name": "ゆきにしずめる"
+      "name": "ゆきにしずめる",
+      "translation": {
+        "effect": {
+          "isOptional": false,
+          "steps": [
+            {
+              "operation": "discardStadiumInPlay"
+            }
+          ],
+          "useConditions": []
+        },
+        "kind": "triggeredWhenPlacedOnBenchFromHand"
+      }
     }
   ],
   "attacks": [
@@ -12,29 +24,43 @@
         "amount": 120,
         "kind": "fixed"
       },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "count": 1,
+            "operation": "returnEnergyAttachedToSelfToHand"
+          }
+        ],
+        "useConditions": []
+      },
       "name": "アイシクルループ"
     }
   ],
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["046372"],
   "category": "ポケモン",
-  "excludedEffects": [
-    {
-      "description": "特性「ゆきにしずめる」(手札からベンチに出したとき、場のスタジアムをトラッシュする)。相手のスタジアムを消すための効果で、一人回しでは使っても成立率が上がらない",
-      "reason": "noReasonToUseInSoloPlay"
-    },
-    {
-      "description": "ワザ「アイシクルループ」の、自身のエネルギーを 1 個手札に戻す効果。相手にダメージを与えるためのワザで、一人回しでは使う理由が無い",
-      "reason": "noReasonToUseInSoloPlay"
-    }
-  ],
+  "excludedEffects": [],
   "hasRuleBox": false,
   "hp": 120,
   "isTerastal": false,
   "name": "パオジアン",
   "pokemonType": "water",
   "retreatCost": 1,
-  "rulings": [],
+  "rulings": [
+    {
+      "interpretation": "カードを 1 枚選んで戻す。1 個のときは、どのエネルギーを選んでも 1 枚になり、枚数で数えても個数で数えても同じになる",
+      "question": "ワザ「アイシクルループ」で手札に戻す「エネルギーを 1 個」は、カードの枚数で数えるか、エネルギーとして働いている個数で数えるか",
+      "reflectedIn": "操作 returnEnergyAttachedToSelfToHand の count(カードの枚数)を 1 にした",
+      "source": {
+        "basis": "「アイシクルループ」を尋ねた質問は無かった(0 件)。エネルギーを 1 個トラッシュするときに、1 枚で複数個ぶんとして働くエネルギー 1 枚をトラッシュしてよいこと(公式の上級プレイヤー用ルールガイド Ver. 3.4 の C-01、23〜24 ページ、https://www.pokemon-card.com/assets/document/advanced_manual.pdf )から、1 個を選ぶときは 1 枚を選ぶ形になると解釈した。2 個以上を手札に戻す効果の数え方は、この記録では決めていない",
+        "checkedOn": "2026-11-21",
+        "kind": "noMatchingQa",
+        "searchTerms": ["アイシクルループ", "パオジアン"]
+      }
+    }
+  ],
   "stage": "たね",
-  "translationStatus": "irrelevantToCalculation",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-21"
 }

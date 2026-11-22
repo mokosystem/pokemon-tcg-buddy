@@ -10,7 +10,11 @@ import {
   FieldPositionSchema,
 } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
-import { calculateMaxHp } from "./continuous-effects.ts";
+import {
+  calculateMaxHp,
+  listUnusedPrizeReductionsForKnockOutByOpponentAttack,
+  type PrizeReductionForKnockOut,
+} from "./continuous-effects.ts";
 import {
   chooseOnePokemonToPromote,
   type EffectContext,
@@ -91,19 +95,57 @@ export function decideLossIfNoOwnPokemonInPlay(state: GameState): void {
 }
 
 /**
- * 自分のポケモンをきぜつさせる。ついているカードごとトラッシュし、相手がサイドを取る。相手がサイドを取り切ったら、
+ * 自分のポケモンがきぜつした原因。相手の攻撃(相手のバトルポケモンが使うワザのダメージとして扱う。
+ * docs/solo-play-simulator-design.md「相手の番」)か、自分のカードの効果か。
+ */
+export type OwnKnockOutCause = "opponentAttack" | "ownCardEffect";
+
+/**
+ * 取られるサイドを減らす効果(レガシーエネルギー。カードの記録 049457)を、きぜつしたときに相手が取るサイドの枚数
+ * prizeCount に当てる。当てた効果を対戦中に使ったものとして記録し、履歴に書いて、減らした後の枚数を返す。0 枚を
+ * 下回らない(ほかの効果と合わせて 0 枚になったときも、効果は働いたことになる。同じ記録の裁定のデータ)。
+ */
+function applyPrizeReductionsForKnockOut(
+  state: GameState,
+  prizeCount: number,
+  reductions: readonly PrizeReductionForKnockOut[]
+): number {
+  let reducedCount = prizeCount;
+  for (const { amount, cardName } of reductions) {
+    reducedCount = Math.max(0, reducedCount - amount);
+    state.usedOncePerGameEffectCardNames.push(cardName);
+    state.record(`${cardName}: 相手が取るサイド -${amount}`);
+  }
+  return reducedCount;
+}
+
+/**
+ * 自分のポケモンをきぜつさせる。ついているカードごとトラッシュし、相手がサイドを取る。cause はきぜつの原因で、
+ * 取られるサイドを減らす効果が働くかを決める。相手がサイドを取り切ったら、
  * 場のポケモンがいなくなる負けより先に判定する(同時に成り立つときの理由は「相手がサイドを取り切った」。
  * docs/pokemon-tcg/basic-rules.md「きぜつと勝敗」の並びの順)。ベンチの上限が下がっていれば、バトル場に出す前に
  * ベンチを減らす(公式 Q&A「ゼロの大空洞」の順。効果で場を離れたとき(effect-operations.ts の returnToZone)と同じ)。
  */
 export function knockOutOwnPokemon(
   context: EffectContext,
-  pokemon: PokemonInPlay
+  pokemon: PokemonInPlay,
+  cause: OwnKnockOutCause
 ): void {
   const { state } = context;
+  // 取られるサイドを減らす効果は、相手の攻撃によるきぜつにだけ働く。ついているカードの効果は場にある間しか集められない
+  // ので、きぜつしたポケモンをトラッシュする前に集める
+  const prizeReductions =
+    cause === "opponentAttack"
+      ? listUnusedPrizeReductionsForKnockOutByOpponentAttack(state, pokemon)
+      : [];
   state.discardKnockedOutPokemon(pokemon);
-  state.opponentRemainingPrizeCount -= Math.min(
+  const prizeCount = applyPrizeReductionsForKnockOut(
+    state,
     countPrizesForKnockOut(pokemon.card),
+    prizeReductions
+  );
+  state.opponentRemainingPrizeCount -= Math.min(
+    prizeCount,
     state.opponentRemainingPrizeCount
   );
   if (state.turnOwner === "opponent") {
@@ -129,9 +171,13 @@ export function knockOutOwnPokemon(
  * 90 行)。最大 HP は HP を増やす効果を足した値(continuous-effects.ts の calculateMaxHp)。ダメージと HP を比べて
  * きぜつさせる処理はここだけに置き、相手の攻撃の後と、スタジアムを出した後(ポケモンのどうぐの効果が無くなって最大 HP が下がる)に
  * 呼ぶ。最大 HP を下げる部品をほかに足したら、その処理の後にもこの関数を呼ぶ。バトルポケモンを最後にするのは、バトル場に
- * 出すベンチポケモンの候補に、同時にきぜつするポケモンを入れないため。
+ * 出すベンチポケモンの候補に、同時にきぜつするポケモンを入れないため。cause は、呼び出す側が場面に合わせて渡す
+ * (相手の攻撃の後は opponentAttack、スタジアムを出した後は ownCardEffect)。
  */
-export function knockOutOwnPokemonAtOrAboveMaxHp(context: EffectContext): void {
+export function knockOutOwnPokemonAtOrAboveMaxHp(
+  context: EffectContext,
+  cause: OwnKnockOutCause
+): void {
   const { state } = context;
   // きぜつさせながら探すと、バトル場に出したポケモンを同じ回で調べ直すことになるため、先に対象をすべて集める
   const isAtOrAboveMaxHp = (pokemon: PokemonInPlay) =>
@@ -146,7 +192,7 @@ export function knockOutOwnPokemonAtOrAboveMaxHp(context: EffectContext): void {
     if (state.decision !== undefined) {
       return;
     }
-    knockOutOwnPokemon(context, target);
+    knockOutOwnPokemon(context, target, cause);
   }
 }
 
@@ -169,7 +215,7 @@ export function playOpponentTurn(context: EffectContext): void {
     state.record(
       `相手の攻撃: ${active.name} に ${damage} ダメージ(合計 ${active.damage})`
     );
-    knockOutOwnPokemonAtOrAboveMaxHp(context);
+    knockOutOwnPokemonAtOrAboveMaxHp(context, "opponentAttack");
   }
 }
 

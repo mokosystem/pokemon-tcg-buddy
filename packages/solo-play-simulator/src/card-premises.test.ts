@@ -2,9 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { buildCardPremises, formatCardPremises } from "./card-premises.ts";
 import { buildRecordedCard } from "./card-test-support.ts";
 
+// ハイパーボール(050461。2 枚)、スボミー(048533。翻訳していない)、ジュペッタ(050251)とチャデス(050224。効果の一部を
+// 含めていない)、ダダリン(050308、050256。計算に関係ない)、ノココッチ(045203)
 const deck = [
   buildRecordedCard("050461"),
   buildRecordedCard("050461"),
+  buildRecordedCard("048533"),
   buildRecordedCard("050251"),
   buildRecordedCard("050224"),
   buildRecordedCard("050308"),
@@ -17,16 +20,16 @@ describe("カードごとの前提", () => {
     const premises = buildCardPremises(deck);
     expect(premises.untranslatedCards).toEqual([
       {
-        cardIds: ["050224"],
-        name: "チャデス",
+        cardIds: ["048533"],
+        name: "スボミー",
         reasons: [
-          "特性「ばけがくれ」(相手のワザや特性の効果を受けない)",
-          "ワザ「ひっそりのせる」(相手のバトルポケモンにダメカンをのせる)",
+          "ワザ「むずむずかふん」の、次の相手の番に相手が手札からグッズを使えなくする効果",
         ],
       },
     ]);
     expect(premises.partiallyTranslatedCards.map((card) => card.name)).toEqual([
       "ジュペッタ",
+      "チャデス",
     ]);
     expect(premises.irrelevantCards).toEqual([
       { cardIds: ["050308", "050256"], name: "ダダリン" },
@@ -36,6 +39,7 @@ describe("カードごとの前提", () => {
   test("出典が「該当なし」の裁定は、プロジェクトの解釈として出す", () => {
     const premises = buildCardPremises(deck);
     expect(premises.projectInterpretations.map((entry) => entry.name)).toEqual([
+      "チャデス",
       "ノココッチ",
     ]);
   });
@@ -43,12 +47,18 @@ describe("カードごとの前提", () => {
   test("前提の文は、翻訳していないカード、一部を含めなかったカード、プロジェクトの解釈、計算に関係ないカードの順に出す", () => {
     const lines = formatCardPremises(buildCardPremises(deck));
     expect(lines[0]).toStartWith(
-      "効果を計算に含めていない: チャデス(050224)。"
+      "効果を計算に含めていない: スボミー(048533)。"
     );
     expect(lines[1]).toStartWith(
       "効果の一部を計算に含めていない: ジュペッタ(050251)。"
     );
     expect(lines[2]).toStartWith(
+      "効果の一部を計算に含めていない: チャデス(050224)。"
+    );
+    expect(lines[3]).toStartWith(
+      "公式 Q&A に該当が無く、プロジェクトの解釈で計算した: チャデス(050224)。"
+    );
+    expect(lines[4]).toStartWith(
       "公式 Q&A に該当が無く、プロジェクトの解釈で計算した: ノココッチ(045203)。"
     );
     expect(lines.at(-1)).toBe(

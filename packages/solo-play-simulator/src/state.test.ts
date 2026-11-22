@@ -165,6 +165,23 @@ describe("進化のルール", () => {
     expect(activeOf(state).energies).toEqual([ENERGY]);
   });
 
+  test("進化すると、ワザを使えない番は無くなる(受けていた効果は消える。docs/pokemon-tcg/basic-rules.md 82 行)", () => {
+    const state = stateWith([STAGE1], []);
+    activeOf(state).turnUnableToAttack = 3;
+    state.evolve(activeOf(state), STAGE1, { from: "hand" });
+    expect(activeOf(state).turnUnableToAttack).toBeUndefined();
+  });
+
+  test("ベンチに下がると、ワザを使えない番は無くなる", () => {
+    const state = stateWith([], []);
+    const benched = new PokemonInPlay(BASIC, 0);
+    state.bench.push(benched);
+    const switchedOut = activeOf(state);
+    switchedOut.turnUnableToAttack = 3;
+    state.switchActive(benched);
+    expect(switchedOut.turnUnableToAttack).toBeUndefined();
+  });
+
   test("1 進化を飛ばす進化は、この番より前に出したたねポケモンに限る", () => {
     const state = stateWith([BASIC, STAGE2], []);
     const fresh = state.placeOnBench(BASIC, {
@@ -442,6 +459,26 @@ describe("複製と混ぜ直し(探索が先を試すため)", () => {
     expect(copied.active).not.toBe(state.active);
     expect(copied.active?.energies).toEqual([ENERGY]);
     expect(copied.firstAttackerThisTurn).toBe(copied.active);
+  });
+
+  test("複製は、対戦中 1 回しか働かない効果がすでに働いたカードの名前を写し、複製に足しても元の状態は変わらない", () => {
+    const state = stateWithUnseen([], []);
+    state.usedOncePerGameEffectCardNames.push("レガシーエネルギー");
+    const copied = state.clone(createSeededRandom(1));
+    expect(copied.usedOncePerGameEffectCardNames).toEqual([
+      "レガシーエネルギー",
+    ]);
+    copied.usedOncePerGameEffectCardNames.push("別のカード");
+    expect(state.usedOncePerGameEffectCardNames).toEqual([
+      "レガシーエネルギー",
+    ]);
+  });
+
+  test("複製は、場のポケモンがワザを使えない番を写す", () => {
+    const state = stateWithUnseen([], []);
+    activeOf(state).turnUnableToAttack = 3;
+    const copied = state.clone(createSeededRandom(1));
+    expect(copied.active?.turnUnableToAttack).toBe(3);
   });
 
   test("見えていないカードの混ぜ直しは、山札とサイドを合わせた中身と枚数を変えない", () => {

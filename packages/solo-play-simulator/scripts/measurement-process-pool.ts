@@ -1,6 +1,6 @@
 /**
- * Issue 70 の計測スクリプトが共有する部分。プロセスを並べて起こして結果を集める、計測の定数、候補 4 の準備(学習)、
- * 出力のファイルと表の書き方。
+ * 計測のスクリプトが共有する部分(Issue 70、Issue 77)。プロセスを並べて起こして結果を集める、計測の定数(種)、引数の読み取り、
+ * 候補 4 の準備(学習)、出力のファイルと表の書き方。
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -29,6 +29,7 @@ import {
   PLAYING_POLICY_SETTINGS,
   type PlayingPolicySettingName,
 } from "../src/playing-policy-candidates.ts";
+import { RECORDED_DECKS, type RecordedDeck } from "../src/recorded-decks.ts";
 import type { BattleStyleSoloPlayDecisionReason } from "../src/state.ts";
 import {
   buildMeasuredDeckCards,
@@ -39,23 +40,81 @@ import {
   type TrialIndexAssignment,
 } from "./measurement-jobs.ts";
 
-/** 計測の基準の種(Issue 70 の実装計画「7.2 種」)。 */
+/**
+ * 改善用の種(GLOSSARY.md)の基準の種。Issue 70 の計測と同じ値。プレイングの判断基準を直すために履歴を読んでよいのは、
+ * この種で回した対戦だけである(Issue 77 の決定事項「改善の 1 回」)。
+ */
 export const MEASUREMENT_BASE_SEEDS: TurnOrderBaseSeeds = {
   firstPlayer: 20_261_201,
   secondPlayer: 20_261_202,
 };
 
-/** 候補 4 の学習用の記録の基準の種。計測で回す対戦と同じ対戦を学習に使わないため、計測と別にする。 */
+/**
+ * 判定用の種(GLOSSARY.md)の基準の種(Issue 77 の決定事項「到達の判定の計測」)。この種で回した対戦は集計の数字だけを見て、
+ * 個々の対戦の履歴は読まない。履歴を書くスクリプト(print-playing-policy-game-histories.ts)からは選べないようにしてある。
+ */
+const JUDGMENT_BASE_SEEDS: TurnOrderBaseSeeds = {
+  firstPlayer: 20_261_221,
+  secondPlayer: 20_261_222,
+};
+
+/**
+ * 候補 4 の学習用の記録の基準の種。計測で回す対戦と同じ対戦を学習に使わないため、計測と別にする。準備が乱数を使うときは
+ * 判定用の種とも改善用の種とも違う基準の種を使う、という Issue 77 の決定事項「到達の判定の計測」も、この値で満たしている。
+ */
 const LEARNING_BASE_SEEDS: TurnOrderBaseSeeds = {
   firstPlayer: 20_261_211,
   secondPlayer: 20_261_212,
 };
 
-/** Issue 69 で記録を見直し、Issue 70 で計測する 2 デッキ。 */
-export const MEASURED_DECK_CODES = [
-  "RS3MMy-FuGPRu-MypM2X",
-  "9gngnQ-zAMw9G-96H9nn",
-] as const;
+const SEED_PURPOSES = {
+  improvement: { baseSeeds: MEASUREMENT_BASE_SEEDS, label: "改善用の種" },
+  judgment: { baseSeeds: JUDGMENT_BASE_SEEDS, label: "判定用の種" },
+} as const;
+
+/** 計測に使う種の用途と、その基準の種。 */
+export interface MeasurementSeeds {
+  readonly baseSeeds: TurnOrderBaseSeeds;
+  readonly label: string;
+  readonly purpose: keyof typeof SEED_PURPOSES;
+}
+
+/** --seeds に渡された値(improvement か judgment。省くと improvement)を、種の用途と基準の種として読む。 */
+export function readSeedPurpose(value: string | undefined): MeasurementSeeds {
+  const purpose = value ?? "improvement";
+  if (purpose !== "improvement" && purpose !== "judgment") {
+    throw new Error(
+      `--seeds には improvement か judgment を渡す(${purpose} は無い)`
+    );
+  }
+  return { ...SEED_PURPOSES[purpose], purpose };
+}
+
+/** 種の用途と基準の種を、計測の条件の箇条書きの 1 行にする。 */
+export function formatSeedsLine(seeds: MeasurementSeeds): string {
+  return `- 種: ${seeds.label}(基準の種は先攻 ${seeds.baseSeeds.firstPlayer}、後攻 ${seeds.baseSeeds.secondPlayer})`;
+}
+
+/**
+ * --deck に渡されたデッキコード(何回でも渡せる)を、渡した順の記録済みのデッキとして読む。省くと、記録済みのデッキすべてを
+ * recorded-decks.ts の並びの順に返す。記録済みのデッキに無いデッキコードは、プロセスを起こす前に分かるよう、ここで例外を投げる。
+ */
+export function readRecordedDecks(
+  values: readonly string[] | undefined
+): readonly RecordedDeck[] {
+  if (values === undefined || values.length === 0) {
+    return RECORDED_DECKS;
+  }
+  return values.map((deckCode) => {
+    const deck = RECORDED_DECKS.find(
+      (candidate) => candidate.deckCode === deckCode
+    );
+    if (deck === undefined) {
+      throw new Error(`記録済みのデッキに ${deckCode} が無い`);
+    }
+    return deck;
+  });
+}
 
 const WORKER_SCRIPT_PATH = fileURLToPath(
   new URL("./playing-policy-measurement-worker.ts", import.meta.url)
@@ -106,11 +165,15 @@ export interface LearningPreparation {
 /**
  * 候補 4 の準備。学習用の記録を processCount 個のプロセスで集め、親のプロセスで学習して、学習の結果を outputDirectory に
  * JSON で書く(子のプロセスにはパスを渡す。ファイルを読むのは scripts/ だけ)。
+ *
+ * 学習の結果のファイルは <YYYYMMDD-HHMMSS>-<modelName>.json で、既にあるファイルは上書きしない。計測の結果は使った学習の
+ * 結果のパスを持つので、同じ出力のディレクトリで後から学習し直しても、前の計測が指すファイルの中身が変わらないようにする。
  */
 export async function prepareLearnedModel(options: {
   readonly deck: LearningDeck;
   readonly outputDirectory: string;
-  readonly fileName: string;
+  /** 学習の結果のファイルの名前のうち、時刻と拡張子を除いた部分。 */
+  readonly modelName: string;
   readonly processCount: number;
   readonly trainingGames: number;
 }): Promise<LearningPreparation> {
@@ -136,8 +199,7 @@ export async function prepareLearnedModel(options: {
     LEARNING_OPTIONS
   );
   const trainFinishedAt = measureNowEpochMilliseconds();
-  mkdirSync(options.outputDirectory, { recursive: true });
-  const modelPath = join(options.outputDirectory, options.fileName);
+  const modelPath = `${reserveTimestampedJsonBase(options.outputDirectory, options.modelName, new Date())}.json`;
   writeFileSync(modelPath, `${JSON.stringify(model)}\n`);
   return {
     collectMilliseconds: trainStartedAt - collectStartedAt,
@@ -164,13 +226,84 @@ export function describeMeasurementEnvironment(processCount: number) {
   };
 }
 
-/** 出力のファイル名の先頭(<YYYYMMDD-HHMM>)。 */
+/** 出力のファイル名の先頭(<YYYYMMDD-HHMMSS>)。 */
 function formatTimestamp(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
-/** 計測ごとに <YYYYMMDD-HHMM>-<計測の名前>-<設定の名前>.json と同じ名前の .md を書き、書いたパスを返す。 */
+/**
+ * <ディレクトリ>/<YYYYMMDD-HHMMSS>-<名前> というパス(拡張子を除いた部分)を now の時刻で決め、その名前の空の .json を作って、
+ * 後から名前を決める実行が同じパスを選ばないようにする。同じ名前の .json が既にあれば、末尾に -2、-3、… を付けた、
+ * まだ無い名前にする。
+ *
+ * 既にある名前のときに例外を投げて止めないのは、名前を決めるのが計測や学習を終えた後で、止めると終えた結果を捨てることになるため。
+ */
+function reserveTimestampedJsonBase(
+  directory: string,
+  name: string,
+  now: Date
+): string {
+  mkdirSync(directory, { recursive: true });
+  const timestampedName = `${formatTimestamp(now)}-${name}`;
+  for (let ordinal = 1; ; ordinal += 1) {
+    const base = join(
+      directory,
+      ordinal === 1 ? timestampedName : `${timestampedName}-${ordinal}`
+    );
+    try {
+      // 「無ければ作る」を 1 回の操作にする(flag の wx)。あるかを調べてから作ると、調べてから作るまでのあいだに、ほかの実行が
+      // 同じ名前を作りうる
+      writeFileSync(`${base}.json`, "", { flag: "wx" });
+      return base;
+    } catch (error) {
+      if (
+        !(error instanceof Error && "code" in error && error.code === "EEXIST")
+      ) {
+        throw error;
+      }
+    }
+  }
+}
+
+/**
+ * 計測の出力のパスのうち拡張子を除いた部分(<出力のディレクトリ>/<YYYYMMDD-HHMMSS>-<計測の名前>-<設定の名前>)を now の時刻で
+ * 決めて、ほかの実行が同じパスを選ばないようにする(reserveTimestampedJsonBase)。
+ */
+export function reserveMeasurementOutputBase(
+  options: {
+    readonly outputDirectory: string;
+    readonly measurementName: string;
+    readonly settingName: string;
+  },
+  now: Date = new Date()
+): string {
+  return reserveTimestampedJsonBase(
+    options.outputDirectory,
+    `${options.measurementName}-${options.settingName}`,
+    now
+  );
+}
+
+/**
+ * 決まったパス(reserveMeasurementOutputBase の結果)に .json と .md を書く。同じパスに何度も書けば上書きになる。途中まで
+ * 終わった分で書き直していく出力(複数のデッキのまとめ)は、パスを 1 度だけ決めてからこの関数で書く。
+ */
+export function writeMeasurementOutputAt(
+  base: string,
+  output: { readonly json: unknown; readonly markdown: string }
+): void {
+  writeFileSync(
+    `${base}.json`,
+    `${JSON.stringify(output.json, undefined, 2)}\n`
+  );
+  writeFileSync(`${base}.md`, output.markdown);
+}
+
+/**
+ * 計測ごとに <YYYYMMDD-HHMMSS>-<計測の名前>-<設定の名前>.json と同じ名前の .md を書き、書いたパス(拡張子を除く)を返す。
+ * 既にあるファイルは上書きせず、別の名前で書く(reserveMeasurementOutputBase)。
+ */
 export function writeMeasurementOutput(options: {
   readonly outputDirectory: string;
   readonly measurementName: string;
@@ -178,16 +311,8 @@ export function writeMeasurementOutput(options: {
   readonly json: unknown;
   readonly markdown: string;
 }): string {
-  mkdirSync(options.outputDirectory, { recursive: true });
-  const base = join(
-    options.outputDirectory,
-    `${formatTimestamp(new Date())}-${options.measurementName}-${options.settingName}`
-  );
-  writeFileSync(
-    `${base}.json`,
-    `${JSON.stringify(options.json, undefined, 2)}\n`
-  );
-  writeFileSync(`${base}.md`, options.markdown);
+  const base = reserveMeasurementOutputBase(options);
+  writeMeasurementOutputAt(base, options);
   return base;
 }
 
@@ -275,6 +400,68 @@ export function summarizeTally(tally: BattleStyleSoloPlayTally) {
   };
 }
 
+/**
+ * 引数に渡された文字列を数として読む。数として読めない文字列(「15m」など)は例外にする。Number は読めない文字列を NaN に、
+ * 空の文字列を 0 にして返すだけで、そのまま計測に渡すと、区切りの時刻が NaN になって対戦を 1 回も回さない計測が、
+ * 正常に終わった結果として書かれるため。
+ */
+function parseOptionAsNumber(name: string, value: string): number {
+  const parsed = value.trim() === "" ? Number.NaN : Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${name} には数を渡す(「${value}」は数として読めない)`);
+  }
+  return parsed;
+}
+
+/** 引数に渡された文字列を、0 より大きい数として読む(小数も読む)。省かれた引数は undefined。 */
+export function readPositiveNumberOption(
+  name: string,
+  value: string | undefined
+): number | undefined {
+  if (value === undefined) {
+    return;
+  }
+  const parsed = parseOptionAsNumber(name, value);
+  if (parsed <= 0) {
+    throw new Error(`${name} には 0 より大きい数を渡す(${value} は渡せない)`);
+  }
+  return parsed;
+}
+
+/** 引数に渡された文字列を、minimum 以上の整数として読む。省かれた引数は undefined。 */
+export function readIntegerOption(
+  name: string,
+  value: string | undefined,
+  minimum: number
+): number | undefined {
+  if (value === undefined) {
+    return;
+  }
+  const parsed = parseOptionAsNumber(name, value);
+  if (!(Number.isInteger(parsed) && parsed >= minimum)) {
+    throw new Error(
+      `${name} には ${minimum} 以上の整数を渡す(${value} は渡せない)`
+    );
+  }
+  return parsed;
+}
+
+/**
+ * --training-games に渡された値を、学習の対戦の回数として読む。2 以上の偶数だけを受け付ける。学習の対戦は先攻と後攻を
+ * 渡した回数の半分ずつ回すので、奇数を受け付けると、回した対戦が渡した回数より 1 回少ないのに、出力には渡した回数が残る。
+ */
+export function readTrainingGamesOption(
+  value: string | undefined
+): number | undefined {
+  const trainingGames = readIntegerOption("--training-games", value, 2);
+  if (trainingGames !== undefined && trainingGames % 2 !== 0) {
+    throw new Error(
+      `--training-games には 2 以上の偶数を渡す(${value} は渡せない)`
+    );
+  }
+  return trainingGames;
+}
+
 /** 共通の引数のうち、プロセスの数(既定は CPU の数)と出力のディレクトリ(必ず渡す)を読む。 */
 export function readCommonOptions(values: {
   readonly output?: string | undefined;
@@ -286,9 +473,8 @@ export function readCommonOptions(values: {
   return {
     outputDirectory: values.output,
     processCount:
-      values.processes === undefined
-        ? navigator.hardwareConcurrency
-        : Number(values.processes),
+      readIntegerOption("--processes", values.processes, 1) ??
+      navigator.hardwareConcurrency,
   };
 }
 
@@ -373,6 +559,8 @@ export function readOneSettingName(
 /** 1 デッキの計測(先攻と後攻)の結果を、設計文書に貼る表にする。 */
 export function formatDeckMeasurementMarkdown(options: {
   readonly candidate: string;
+  /** 計測の条件の箇条書きに足す行(種の用途、区切りなど)。 */
+  readonly conditionLines?: readonly string[];
   readonly environment: ReturnType<typeof describeMeasurementEnvironment>;
   /** 候補 4 の準備の時間(秒)。準備の無い設定は undefined。 */
   readonly preparationSeconds: number | undefined;
@@ -403,6 +591,7 @@ export function formatDeckMeasurementMarkdown(options: {
     `# ${options.title}`,
     "",
     formatEnvironmentLines(environment),
+    ...(options.conditionLines ?? []),
     "",
     formatTableHeader([
       "設定",
@@ -470,6 +659,97 @@ export function formatDeckMeasurementMarkdown(options: {
             ])
           ),
         ]),
+    "",
+  ].join("\n");
+}
+
+/** 複数のデッキのまとめの 1 行ぶん。1 デッキの計測(先攻と後攻)の結果。 */
+export interface DeckMeasurementSummaryEntry {
+  readonly deckCode: string;
+  readonly deckName: string;
+  /** 準備を始めてから計測を始めるまでの秒。準備の無い設定は undefined。 */
+  readonly preparationSeconds: number | undefined;
+  readonly tally: DeckMeasurementTally;
+}
+
+/**
+ * 複数のデッキの計測の結果を、設計文書に貼る 2 つの表(勝率と、負けた理由の内訳)にまとめる。勝率の表はデッキごとに 1 行、
+ * 負けた理由の表はデッキごとに先攻と後攻の 2 行。「回せた単位」は区切りまでに終わった単位の数(先攻の対戦の数と同じ)。
+ */
+export function formatDeckMeasurementSummaryMarkdown(options: {
+  readonly conditionLines: readonly string[];
+  readonly entries: readonly DeckMeasurementSummaryEntry[];
+  readonly environment: ReturnType<typeof describeMeasurementEnvironment>;
+  readonly title: string;
+}): string {
+  const lossReasons: readonly BattleStyleSoloPlayDecisionReason[] = [
+    "opponentPrizesTaken",
+    "noOwnPokemonInPlay",
+    "cannotDrawAtTurnStart",
+  ];
+  return [
+    `# ${options.title}`,
+    "",
+    formatEnvironmentLines(options.environment),
+    ...options.conditionLines,
+    "",
+    formatTableHeader([
+      "デッキ",
+      "デッキコード",
+      "先攻 勝率",
+      "後攻 勝率",
+      "回せた単位",
+      "準備の時間(秒)",
+      "1 回の対戦の時間(ms)",
+    ]),
+    ...options.entries.map(
+      ({ deckCode, deckName, preparationSeconds, tally }) => {
+        const games = tally.firstPlayer.games + tally.secondPlayer.games;
+        return formatTableRow([
+          deckName,
+          `\`${deckCode}\``,
+          formatProportion(summarizeTally(tally.firstPlayer).winRate),
+          formatProportion(summarizeTally(tally.secondPlayer).winRate),
+          String(tally.firstPlayer.games),
+          preparationSeconds === undefined
+            ? "—"
+            : preparationSeconds.toFixed(1),
+          formatMilliseconds(
+            games === 0
+              ? Number.NaN
+              : (tally.firstPlayer.totalGameMilliseconds +
+                  tally.secondPlayer.totalGameMilliseconds) /
+                  games
+          ),
+        ]);
+      }
+    ),
+    "",
+    "負けた理由の内訳(すべての対戦に対する割合)",
+    "",
+    formatTableHeader([
+      "デッキ",
+      "先攻・後攻",
+      ...lossReasons.map((reason) => DECISION_REASON_HEADINGS[reason]),
+    ]),
+    ...options.entries.flatMap(({ deckName, tally }) =>
+      (
+        [
+          ["先攻", tally.firstPlayer],
+          ["後攻", tally.secondPlayer],
+        ] as const
+      ).map(([label, side]) =>
+        formatTableRow([
+          deckName,
+          label,
+          ...lossReasons.map((reason) =>
+            side.games === 0
+              ? "—"
+              : formatPercent(side.decisionReasonCounts[reason] / side.games)
+          ),
+        ])
+      )
+    ),
     "",
   ].join("\n");
 }

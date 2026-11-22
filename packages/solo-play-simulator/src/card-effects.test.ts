@@ -161,6 +161,36 @@ describe("トレーナーズを使えるか", () => {
 });
 
 describe("Issue 69 で足した記法の部品", () => {
+  test("discardEnergyAttachedToSelf の fixed は、ついているエネルギーの個数が決まった数に満たなければ、問い合わせずにすべてトラッシュする", () => {
+    // 指定の数ぶん無いときは、指定に一番近い数を選ぶ(上級プレイヤー用ルールガイド Ver. 3.4 の D-04。記録 049482 の裁定のデータ)
+    const state = buildState({
+      active: buildBasicWithAttackEffect({
+        isOptional: false,
+        steps: [
+          {
+            count: { kind: "fixed", value: 3 },
+            operation: "discardEnergyAttachedToSelf",
+          },
+        ],
+        useConditions: [],
+      }),
+    });
+    activeOf(state).energies.push(ENERGY, ENERGY);
+    let askedCount = 0;
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: (_, request) => {
+          askedCount += 1;
+          return request.candidates.slice(0, request.maxCount);
+        },
+      }),
+      "部品のワザ"
+    );
+    expect(askedCount).toBe(0);
+    expect(activeOf(state).energies).toEqual([]);
+    expect(state.discard).toHaveLength(2);
+  });
+
   test("discardEnergyAttachedToSelf の fixed は、決まった数のエネルギーを選んでトラッシュし、all はすべてトラッシュする", () => {
     for (const [count, remaining] of [
       [{ kind: "fixed", value: 2 }, 1],
@@ -236,7 +266,7 @@ describe("Issue 69 で足した記法の部品", () => {
     playOpponentTurn(context);
     expect(isMet()).toBe(false);
     state.turnOwner = "self";
-    knockOutOwnPokemon(context, benchAt(state, 0));
+    knockOutOwnPokemon(context, benchAt(state, 0), "ownCardEffect");
     expect(state.bench).toEqual([]);
     expect(isMet()).toBe(false);
   });

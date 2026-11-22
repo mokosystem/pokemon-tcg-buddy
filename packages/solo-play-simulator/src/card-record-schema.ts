@@ -551,7 +551,12 @@ const basicOperationOptions = [
   strictObject({
     operation: literal("discardStadiumInPlay"),
   }),
-  /** このポケモン(効果の持ち主)についているエネルギーを、すべてか、決まった数だけトラッシュする(シロナのガブリアスex の「リューノバスター」)。 */
+  /**
+   * このポケモン(効果の持ち主)についているエネルギーを、すべて(all。シロナのガブリアスex の「リューノバスター」)か、
+   * 決まった数(fixed)だけトラッシュする。fixed の value は、カードの枚数ではなく、エネルギーとして働いている個数
+   * (1 枚で 3 個ぶんとして働くエネルギーは 3 個と数える。メガリザードンYex の「プロージョンY」。カードの記録 049482 の
+   * 裁定のデータ)。
+   */
   strictObject({
     count: variant("kind", [
       strictObject({ kind: literal("all") }),
@@ -582,6 +587,21 @@ const basicOperationOptions = [
   /** このポケモン(効果の持ち主)をきぜつさせる(サマヨール、ヨノワールの「カースドボム」)。 */
   strictObject({
     operation: literal("knockOutSelf"),
+  }),
+  /**
+   * 次の自分の番、このポケモン(効果の持ち主)はワザを使えない(ラティアスex の「むげんのやいば」。カードの記録 046248)。
+   * ベンチに下がるか進化すると、この効果は無くなる(同じ記録の裁定のデータ。進化は docs/pokemon-tcg/basic-rules.md 82 行)。
+   */
+  strictObject({
+    operation: literal("preventSelfFromAttackingDuringOwnNextTurn"),
+  }),
+  /**
+   * このポケモン(効果の持ち主)についているエネルギーのカードを count 枚選び、手札に戻す(パオジアンの「アイシクルループ」
+   * は「1個選び」で、1 個のときはどのエネルギーでも 1 枚になる。カードの記録 046372)。
+   */
+  strictObject({
+    count: countFromOne,
+    operation: literal("returnEnergyAttachedToSelfToHand"),
   }),
 ] as const;
 
@@ -714,6 +734,24 @@ export const ContinuousChangeSchema = variant("change", [
     amount: countFromOne,
     change: literal("increaseMaxHp"),
   }),
+  /**
+   * 範囲のポケモンが使う、名前が attackName のワザに必要な無色エネルギーを、相手がすでに取ったサイドの枚数ぶん少なくする
+   * (ガチグマ アカツキex の「ろうれんのわざ」。カードの記録 049341)。ワザを使うポケモンに当てる。
+   */
+  strictObject({
+    attackName: nonEmptyText,
+    change: literal("reduceColorlessAttackCostPerPrizeTakenByOpponent"),
+  }),
+  /**
+   * 範囲のポケモンが相手の攻撃できぜつしたとき、相手が取るサイドを amount 枚少なくする。対戦中、同じ名前のカードの
+   * この効果は 1 回しか働かない(レガシーエネルギー。カードの記録 049457)。
+   */
+  strictObject({
+    amount: countFromOne,
+    change: literal(
+      "reducePrizesTakenOncePerGameWhenKnockedOutByOpponentAttack"
+    ),
+  }),
 ]);
 
 export const ContinuousEffectSchema = strictObject({
@@ -804,6 +842,15 @@ export const AttackDamageSchema = variant("kind", [
     amount: countFromZero,
     bonus: optional(DamageBonusSchema),
     kind: literal("fixed"),
+  }),
+  /**
+   * 自分の場のポケモンについている energyTypes のエネルギーを好きなだけ選んでトラッシュし、その枚数 × unit をダメージに
+   * する(メガリザードンXex の「インフェルノX」。カードの記録 048353)。何枚トラッシュするかはプレイングの判断基準が選ぶ。
+   */
+  strictObject({
+    energyTypes: pipe(array(PokemonTypeSchema), minLength(1)),
+    kind: literal("perEnergyDiscardedFromOwnPokemon"),
+    unit: countFromOne,
   }),
 ]);
 export type AttackDamage = InferOutput<typeof AttackDamageSchema>;

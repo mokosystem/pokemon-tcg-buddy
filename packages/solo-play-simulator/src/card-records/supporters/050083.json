@@ -1,16 +1,17 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardEffects": [],
   "cardIds": ["050083"],
   "category": "サポート",
   "excludedEffects": [
     {
-      "description": "自分の超ポケモン 1 匹の HP を 150 回復する",
+      "description": "自分の超ポケモン 1 匹の HP を 150 回復する。回復は計算に含めないため、このカードは使っても何も起きない",
       "reason": "healing"
     }
   ],
   "name": "ユカリ",
   "rulings": [],
-  "translationStatus": "irrelevantToCalculation",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "notTranslatable",
+  "verifiedOn": "2026-11-21"
 }

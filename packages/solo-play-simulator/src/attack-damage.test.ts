@@ -248,19 +248,49 @@ describe("ワザのダメージ", () => {
     expect(calculateAttackDamage(four, activeOf(four), attack)).toBe(170);
   });
 
-  test("インフェルノX は、自分の場の炎エネルギー(すべてのタイプとして働くものも数える)を全部トラッシュしたときの値(枚数×90)で求める", () => {
-    const state = buildState({ active: CHARIZARD_X, bench: [RALTS, RALTS] });
-    const [first, second] = state.bench;
-    state.active?.energies.push(FIRE_ENERGY, FIRE_ENERGY, IGNITION_ENERGY);
-    first?.energies.push(FIRE_ENERGY);
-    second?.energies.push(LEGACY_ENERGY, PSYCHIC_ENERGY);
-    expect(
-      calculateAttackDamage(
-        state,
-        activeOf(state),
-        findAttack(CHARIZARD_X, "インフェルノX")
-      )
-    ).toBe(4 * 90);
+  describe("インフェルノX(トラッシュした炎エネルギーの枚数 × 90。記録 048353)", () => {
+    /**
+     * 炎エネルギーとして数えるのは、基本炎エネルギー 3 枚とレガシーエネルギー(すべてのタイプとして働く。記録 049457)1 枚。
+     * 進化ポケモンについたイグニッションエネルギー(無色 3 個ぶん。記録 049452)と基本超エネルギーは数えない。
+     */
+    function stateWithFourEnergiesCountedAsFire() {
+      const state = buildState({ active: CHARIZARD_X, bench: [RALTS, RALTS] });
+      const [first, second] = state.bench;
+      state.active?.energies.push(FIRE_ENERGY, FIRE_ENERGY, IGNITION_ENERGY);
+      first?.energies.push(FIRE_ENERGY);
+      second?.energies.push(LEGACY_ENERGY, PSYCHIC_ENERGY);
+      return state;
+    }
+    const attack = findAttack(CHARIZARD_X, "インフェルノX");
+
+    test("トラッシュする枚数を渡すと、その枚数 × 90 になる", () => {
+      const state = stateWithFourEnergiesCountedAsFire();
+      expect(calculateAttackDamage(state, activeOf(state), attack, 3)).toBe(
+        270
+      );
+      expect(calculateAttackDamage(state, activeOf(state), attack, 1)).toBe(90);
+    });
+
+    test("枚数を省くと、自分の場の炎エネルギー(すべてのタイプとして働くものも数える)を全部トラッシュしたときの値になる", () => {
+      const state = stateWithFourEnergiesCountedAsFire();
+      expect(calculateAttackDamage(state, activeOf(state), attack)).toBe(
+        4 * 90
+      );
+    });
+
+    test("0 枚なら 0 で、ダメージを増やす効果を足さない", () => {
+      // この番、炎タイプのポケモンが使うワザのダメージを 30 増やす効果を置く(メガリザードンXex は炎タイプ。記録 048353)
+      const state = buildState({ active: CHARIZARD_X });
+      activeOf(state).energies.push(FIRE_ENERGY);
+      state.increaseAttackDamageThisTurn({
+        amount: 30,
+        attackerFilter: { pokemonTypes: ["fire"] },
+      });
+      expect(calculateAttackDamage(state, activeOf(state), attack, 0)).toBe(0);
+      expect(calculateAttackDamage(state, activeOf(state), attack, 1)).toBe(
+        120
+      );
+    });
   });
 
   test("固定のダメージはそのまま、コインで決まる上乗せは含めず、ダメージの無いワザは undefined", () => {

@@ -940,6 +940,27 @@
           },
           "required": ["amount", "kind"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "energyTypes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/PokemonType"
+              },
+              "minItems": 1
+            },
+            "kind": {
+              "const": "perEnergyDiscardedFromOwnPokemon"
+            },
+            "unit": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["energyTypes", "kind", "unit"],
+          "additionalProperties": false
         }
       ]
     },
@@ -2068,6 +2089,30 @@
           },
           "required": ["operation"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "preventSelfFromAttackingDuringOwnNextTurn"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "returnEnergyAttachedToSelfToHand"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
         }
       ]
     },
@@ -2710,6 +2755,34 @@
             },
             "change": {
               "const": "increaseMaxHp"
+            }
+          },
+          "required": ["amount", "change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attackName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "change": {
+              "const": "reduceColorlessAttackCostPerPrizeTakenByOpponent"
+            }
+          },
+          "required": ["attackName", "change"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "change": {
+              "const": "reducePrizesTakenOncePerGameWhenKnockedOutByOpponentAttack"
             }
           },
           "required": ["amount", "change"],
@@ -3955,6 +4028,30 @@
             }
           },
           "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation": {
+              "const": "preventSelfFromAttackingDuringOwnNextTurn"
+            }
+          },
+          "required": ["operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "returnEnergyAttachedToSelfToHand"
+            }
+          },
+          "required": ["count", "operation"],
           "additionalProperties": false
         },
         {

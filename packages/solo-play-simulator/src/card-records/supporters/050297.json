@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardEffects": [
     {
       "effect": {
@@ -37,7 +38,7 @@
       "question": "手札がこのカードだけのときに使えるか",
       "reflectedIn": "手札からトラッシュする操作に対象(ルールを持たないポケモン)が無いときは使えない(card-effects.ts の hasTargetForFirstStep)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "手札が「ムク」1 枚だけのときに使えるか、という質問に、使えないと回答",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%A0%E3%82%AF&regulation_faq_main_item1=all"
@@ -56,5 +57,5 @@
     }
   ],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-21"
 }

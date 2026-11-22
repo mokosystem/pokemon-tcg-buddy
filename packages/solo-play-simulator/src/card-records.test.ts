@@ -63,6 +63,7 @@ const MEW = buildRecordedCard("050669");
 const CHARMANDER = buildRecordedCard("048351");
 const CHARMELEON = buildRecordedCard("049481");
 const CHARIZARD_X = buildRecordedCard("048353");
+const CHARIZARD_Y = buildRecordedCard("049482");
 const ORICORIO = buildRecordedCard("048358");
 const KANGASKHAN = buildRecordedCard("047847");
 const TALONFLAME = buildRecordedCard("050400");
@@ -71,6 +72,8 @@ const SHUPPET = buildRecordedCard("050250");
 const BANETTE = buildRecordedCard("050251");
 const DUDUNSPARCE = buildRecordedCard("045203");
 const DUNSPARCE = buildRecordedCard("047086");
+const BLOODMOON_URSALUNA = buildRecordedCard("049341");
+const POLTCHAGEIST = buildRecordedCard("050224");
 const DREEPY = buildRecordedCard("049262");
 const DRAKLOAK = buildRecordedCard("049263");
 const DRAGAPULT = buildRecordedCard("049264");
@@ -113,6 +116,7 @@ const CYNTHIAS_ROSELIA = buildRecordedCard("048748");
 const CYNTHIAS_ROSERADE = buildRecordedCard("047366");
 const CYNTHIAS_SPIRITOMB = buildRecordedCard("049968");
 const CYNTHIAS_POWER_WEIGHT = buildRecordedCard("049398");
+const HERO_CAPE = buildRecordedCard("045281");
 const DUSCLOPS = buildRecordedCard("049025");
 const DUSKNOIR = buildRecordedCard("049026");
 const MUNKIDORI = buildRecordedCard("049074");
@@ -124,6 +128,7 @@ const POWER_PROTEIN = buildRecordedCard("049368");
 const JUDGE = buildRecordedCard("050448");
 const EEVEE_EX = buildRecordedCard("049282");
 const FLAREON_EX = buildRecordedCard("048810");
+const CHIEN_PAO = buildRecordedCard("046372");
 const MEGA_RAYQUAZA = buildRecordedCard("050396");
 const ETHANS_HO_OH = buildRecordedCard("048543");
 const ENERGY_SWITCH = buildRecordedCard("049354");
@@ -351,6 +356,38 @@ describeTranslation("ラティアスex", () => {
     state.bench.splice(0, 1);
     expect(calculateRetreatCost(state, activeOf(state))).toBe(2);
   });
+
+  test("むげんのやいばを使うと、次の自分の番はワザを使えず、その次の自分の番には使える", () => {
+    const state = buildState({ active: LATIAS, bench: [RALTS] });
+    activeOf(state).energies.push(
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY
+    );
+    const context = buildContext(state);
+    useAttackNamed(context, "むげんのやいば");
+    expect(state.opponentFieldDamage.active).toBe(200);
+    state.advanceToNextTurn();
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+    state.advanceToNextTurn();
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["むげんのやいば"]);
+  });
+
+  test("むげんのやいばを使った後、ベンチに下げてからバトル場に戻すと、次の自分の番でも使える", () => {
+    const state = buildState({ active: LATIAS, bench: [RALTS] });
+    const latias = activeOf(state);
+    latias.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY, PSYCHIC_ENERGY);
+    const context = buildContext(state);
+    useAttackNamed(context, "むげんのやいば");
+    state.advanceToNextTurn();
+    state.switchActive(benchAt(state, 0));
+    state.switchActive(latias);
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["むげんのやいば"]);
+  });
 });
 
 describeTranslation("ニャースex", () => {
@@ -483,6 +520,30 @@ describeTranslation("ミュウex", () => {
     useAttackNamed(buildContext(state), "テレポートブレイク");
     expect(activeOf(state).name).toBe("ラルトス");
   });
+
+  test("きおくのらせんでラティアスex のむげんのやいばを使うと、次の自分の番にワザを使えないのはミュウex で、ワザを持つラティアスex は使える", () => {
+    const state = buildState({ active: MEW, bench: [LATIAS] });
+    activeOf(state).energies.push(
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY
+    );
+    benchAt(state, 0).energies.push(
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY,
+      PSYCHIC_ENERGY
+    );
+    const context = buildContext(state);
+    useAttackNamed(context, "むげんのやいば");
+    state.advanceToNextTurn();
+    expect(activeOf(state).name).toBe("ミュウex");
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+    state.switchActive(benchAt(state, 0));
+    expect(activeOf(state).name).toBe("ラティアスex");
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["むげんのやいば"]);
+  });
 });
 
 describeTranslation("ヒトカゲ", () => {
@@ -491,6 +552,221 @@ describeTranslation("ヒトカゲ", () => {
     expect(calculateRetreatCost(state, activeOf(state))).toBe(0);
     activeOf(state).energies.push(FIRE_ENERGY);
     expect(calculateRetreatCost(state, activeOf(state))).toBe(2);
+  });
+});
+
+describeTranslation("メガリザードンXex", () => {
+  /** バトル場のメガリザードンXex に基本炎エネルギー 3 枚、ベンチのヒトカゲに基本炎エネルギー 1 枚と基本超エネルギー 1 枚がついた場。 */
+  function stateWithFourFireEnergies() {
+    const state = buildState({ active: CHARIZARD_X, bench: [CHARMANDER] });
+    activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY, FIRE_ENERGY);
+    benchAt(state, 0).energies.push(FIRE_ENERGY, PSYCHIC_ENERGY);
+    return state;
+  }
+
+  test("インフェルノX は、選んだ炎エネルギーの枚数 × 90 を相手のバトル場のダメージに足してから、選んだエネルギーをトラッシュする", () => {
+    const state = stateWithFourFireEnergies();
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: (_, request) =>
+          request.candidates.slice(0, request.maxCount),
+        choosePokemon: (_, request) =>
+          request.candidates.filter(
+            (pokemon) => pokemon.name === "メガリザードンXex"
+          ),
+      }),
+      "インフェルノX"
+    );
+    expect(state.opponentFieldDamage.active).toBe(270);
+    expect(namesOf(state.discard)).toEqual([
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(activeOf(state).energies).toEqual([]);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual([
+      "基本炎エネルギー",
+      "基本超エネルギー",
+    ]);
+  });
+
+  test("インフェルノX は、ベンチポケモンについている炎エネルギーも選べ、炎エネルギーではないエネルギーは選べない", () => {
+    const state = stateWithFourFireEnergies();
+    const offered: string[][] = [];
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: (_, request) => {
+          offered.push(namesOf(request.candidates));
+          return request.candidates.slice(0, 1);
+        },
+      }),
+      "インフェルノX"
+    );
+    expect(offered).toEqual([
+      ["基本炎エネルギー", "基本炎エネルギー", "基本炎エネルギー"],
+      ["基本炎エネルギー"],
+    ]);
+    expect(state.opponentFieldDamage.active).toBe(180);
+    expect(activeOf(state).energies).toHaveLength(2);
+    expect(namesOf(benchAt(state, 0).energies)).toEqual(["基本超エネルギー"]);
+  });
+
+  test("インフェルノX は、1 枚も選ばなければダメージは 0 で、エネルギーは減らない", () => {
+    // 記録 048353 の裁定のデータ(上級プレイヤー用ルールガイド D-02)
+    const state = stateWithFourFireEnergies();
+    useAttackNamed(
+      buildContext(state, { choosePokemon: () => [] }),
+      "インフェルノX"
+    );
+    expect(state.opponentFieldDamage.active).toBe(0);
+    expect(state.discard).toEqual([]);
+    expect(activeOf(state).energies).toHaveLength(3);
+  });
+
+  test("インフェルノX は、すべてのタイプとして働くエネルギーも炎エネルギーとして選べ、枚数に数える", () => {
+    // 記録 048353 の裁定のデータ(公式 Q&A「だいもんじ」)。レガシーエネルギーはすべてのタイプのエネルギー 1 個ぶん(記録 049457)
+    const state = buildState({ active: CHARIZARD_X });
+    activeOf(state).energies.push(FIRE_ENERGY, FIRE_ENERGY, LEGACY_ENERGY);
+    useAttackNamed(buildContext(state), "インフェルノX");
+    expect(state.opponentFieldDamage.active).toBe(270);
+    expect(activeOf(state).energies).toEqual([]);
+  });
+});
+
+describeTranslation("メガリザードンYex", () => {
+  // プロージョンY は、このポケモンのエネルギーを 3 個トラッシュし、ダメージは 280。必要なエネルギーは炎・炎・無色(記録 049482)。
+  // イグニッションエネルギーは、2進化のメガリザードンYex についていれば無色エネルギー 3 個ぶんとして働く(記録 049452)
+
+  /** バトル場のメガリザードンYex に、基本炎エネルギー fireCount 枚と、イグニッションエネルギー ignitionCount 枚がついた場。 */
+  function stateWithCharizardY(fireCount: number, ignitionCount: number) {
+    const state = buildState({ active: CHARIZARD_Y });
+    activeOf(state).energies.push(
+      ...repeat(FIRE_ENERGY, fireCount),
+      ...repeat(IGNITION_ENERGY, ignitionCount)
+    );
+    return state;
+  }
+
+  /**
+   * 問い合わせのたびに、names の順に 1 枚ずつ選ぶ選択。names が尽きたら何も選ばない(止める)。問い合わせの最小の枚数を
+   * minCounts に残す。
+   */
+  function pickOneByOne(names: readonly string[], minCounts: number[] = []) {
+    const remaining = [...names];
+    return (
+      _: GameState,
+      request: { candidates: readonly Card[]; minCount: number }
+    ) => {
+      minCounts.push(request.minCount);
+      const name = remaining.shift();
+      return request.candidates
+        .filter((card) => card.name === name)
+        .slice(0, 1);
+    };
+  }
+
+  test("プロージョンY は、3 個ぶんとして働くイグニッションエネルギー 1 枚だけをトラッシュして止められ、基本炎エネルギーが残る", () => {
+    const state = stateWithCharizardY(2, 1);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickOneByOne(["イグニッションエネルギー"]),
+      }),
+      "プロージョンY"
+    );
+    expect(state.opponentFieldDamage.active).toBe(280);
+    expect(namesOf(state.discard)).toEqual(["イグニッションエネルギー"]);
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+    ]);
+  });
+
+  test("プロージョンY は、1 枚で足りるイグニッションエネルギーを含めて、3 枚すべてをトラッシュすることもできる", () => {
+    const state = stateWithCharizardY(2, 1);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickOneByOne([
+          "イグニッションエネルギー",
+          "基本炎エネルギー",
+          "基本炎エネルギー",
+        ]),
+      }),
+      "プロージョンY"
+    );
+    expect(state.discard).toHaveLength(3);
+    expect(activeOf(state).energies).toEqual([]);
+  });
+
+  test("プロージョンY は、基本炎エネルギー 1 枚とイグニッションエネルギー 1 枚の 2 枚をトラッシュして止められる", () => {
+    const state = stateWithCharizardY(2, 1);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickOneByOne([
+          "基本炎エネルギー",
+          "イグニッションエネルギー",
+        ]),
+      }),
+      "プロージョンY"
+    );
+    expect(namesOf(state.discard).sort()).toEqual([
+      "イグニッションエネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(namesOf(activeOf(state).energies)).toEqual(["基本炎エネルギー"]);
+  });
+
+  test("プロージョンY で最初に基本炎エネルギーを選んだ後は、個数が足りるまで止められない", () => {
+    const state = stateWithCharizardY(2, 1);
+    const minCounts: number[] = [];
+    expect(() =>
+      useAttackNamed(
+        buildContext(state, {
+          chooseCards: pickOneByOne(["基本炎エネルギー"], minCounts),
+        }),
+        "プロージョンY"
+      )
+    ).toThrow(IllegalMove);
+    // 1 回目は何も選んでいないので止められず、2 回目も基本炎エネルギー 1 枚(1 個ぶん)では止められない
+    expect(minCounts).toEqual([1, 1]);
+  });
+
+  test("プロージョンY は、イグニッションエネルギーを残して、基本炎エネルギー 3 枚をトラッシュできる", () => {
+    const state = stateWithCharizardY(3, 1);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickOneByOne([
+          "基本炎エネルギー",
+          "基本炎エネルギー",
+          "基本炎エネルギー",
+        ]),
+      }),
+      "プロージョンY"
+    );
+    expect(namesOf(state.discard)).toEqual([
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+      "基本炎エネルギー",
+    ]);
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "イグニッションエネルギー",
+    ]);
+  });
+
+  test("プロージョンY は、基本炎エネルギー 3 枚だけがついていれば、選べる組が 1 つなので問い合わせずに 3 枚をトラッシュする", () => {
+    const state = stateWithCharizardY(3, 0);
+    let askedCount = 0;
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: (_, request) => {
+          askedCount += 1;
+          return request.candidates.slice(0, request.maxCount);
+        },
+      }),
+      "プロージョンY"
+    );
+    expect(askedCount).toBe(0);
+    expect(state.discard).toHaveLength(3);
+    expect(activeOf(state).energies).toEqual([]);
   });
 });
 
@@ -1258,6 +1534,103 @@ describeTranslation("イグニッションエネルギー", () => {
   });
 });
 
+describeTranslation("チャデス", () => {
+  test("ひっそりのせるは、相手のバトル場のダメージに 10(ダメカン 1 個)を足し、足す先を問い合わせない", () => {
+    const state = buildState({ active: POLTCHAGEIST });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    let askedCount = 0;
+    useAttackNamed(
+      buildContext(state, {
+        chooseOpponentFieldPositionForDamage: () => {
+          askedCount += 1;
+          return "bench";
+        },
+      }),
+      "ひっそりのせる"
+    );
+    expect(state.opponentFieldDamage).toEqual({ active: 10, bench: 0 });
+    expect(askedCount).toBe(0);
+  });
+
+  test("ひっそりのせるのダメカンはワザのダメージではないので、ワザのダメージを増やす効果は足されない", () => {
+    // 記録 050224 の裁定のデータ。この番、草タイプのポケモンが使うワザのダメージを 30 増やす効果を置く(チャデスは草タイプ)
+    const state = buildState({ active: POLTCHAGEIST });
+    activeOf(state).energies.push(PSYCHIC_ENERGY);
+    state.increaseAttackDamageThisTurn({
+      amount: 30,
+      attackerFilter: { pokemonTypes: ["grass"] },
+    });
+    useAttackNamed(buildContext(state), "ひっそりのせる");
+    expect(state.opponentFieldDamage.active).toBe(10);
+  });
+});
+
+describeTranslation("ガチグマ アカツキex", () => {
+  /** バトル場のガチグマ アカツキex に、基本超エネルギーを count 枚つけた場。相手は prizesTakenByOpponent 枚のサイドを取っている。 */
+  function stateWithUrsaluna(
+    energyCount: number,
+    prizesTakenByOpponent: number
+  ) {
+    const state = buildState({ active: BLOODMOON_URSALUNA, bench: [SHUPPET] });
+    activeOf(state).energies.push(...repeat(PSYCHIC_ENERGY, energyCount));
+    state.opponentRemainingPrizeCount = 6 - prizesTakenByOpponent;
+    return state;
+  }
+
+  function usableAttackNames(state: GameState): string[] {
+    return listUsableAttacksOfActive(buildContext(state)).map(
+      ({ attack }) => attack.name
+    );
+  }
+
+  test("ろうれんのわざは、相手がすでに取ったサイドの枚数ぶん、ブラッドムーンに必要な無色エネルギーを少なくする", () => {
+    // ブラッドムーンに必要なエネルギーは無色 5 個(カードの記録 049341)
+    expect(usableAttackNames(stateWithUrsaluna(4, 0))).toEqual([]);
+    expect(usableAttackNames(stateWithUrsaluna(5, 0))).toEqual([
+      "ブラッドムーン",
+    ]);
+    expect(usableAttackNames(stateWithUrsaluna(4, 1))).toEqual([
+      "ブラッドムーン",
+    ]);
+    expect(usableAttackNames(stateWithUrsaluna(3, 1))).toEqual([]);
+    expect(usableAttackNames(stateWithUrsaluna(0, 5))).toEqual([
+      "ブラッドムーン",
+    ]);
+  });
+
+  test("ろうれんのわざは、ミュウex がきおくのらせんでベンチのガチグマ アカツキex のブラッドムーンを使うときには働かない", () => {
+    // 記録 049341 の裁定のデータ(公式 Q&A「ブラッドムーン」)
+    const state = buildState({ active: MEW, bench: [BLOODMOON_URSALUNA] });
+    state.opponentRemainingPrizeCount = 1;
+    expect(usableAttackNames(state)).toEqual([]);
+    activeOf(state).energies.push(...repeat(PSYCHIC_ENERGY, 5));
+    expect(usableAttackNames(state)).toEqual([
+      "テレポートブレイク",
+      "ブラッドムーン",
+    ]);
+  });
+
+  test("ブラッドムーンを使うと、次の自分の番はワザを使えず、その次の自分の番には使える", () => {
+    const state = stateWithUrsaluna(5, 0);
+    useAttackNamed(buildContext(state), "ブラッドムーン");
+    expect(state.opponentFieldDamage.active).toBe(240);
+    state.advanceToNextTurn();
+    expect(usableAttackNames(state)).toEqual([]);
+    state.advanceToNextTurn();
+    expect(usableAttackNames(state)).toEqual(["ブラッドムーン"]);
+  });
+
+  test("ブラッドムーンを使った後、ベンチに下げてからバトル場に戻すと、次の自分の番でも使える", () => {
+    const state = stateWithUrsaluna(5, 0);
+    const ursaluna = activeOf(state);
+    useAttackNamed(buildContext(state), "ブラッドムーン");
+    state.advanceToNextTurn();
+    state.switchActive(benchAt(state, 0));
+    state.switchActive(ursaluna);
+    expect(usableAttackNames(state)).toEqual(["ブラッドムーン"]);
+  });
+});
+
 describeTranslation("レガシーエネルギー", () => {
   test("すべてのタイプのエネルギー 1 個ぶんとして働く", () => {
     const state = buildState({ active: DHELMISE });
@@ -1268,6 +1641,33 @@ describeTranslation("レガシーエネルギー", () => {
         (usable) => usable.attack.name
       )
     ).toEqual(["むねんのイカリ"]);
+  });
+
+  test("つけているポケモンが相手の攻撃できぜつすると、相手が取るサイドが 1 枚少なくなり、同じ対戦の 2 回目は少なくならない", () => {
+    // ガチグマ アカツキex はポケモンex(HP 260)で、きぜつすると相手はサイドを 2 枚取る(記録 049341)。
+    // 相手の 4 回目以降の番のダメージは 300(docs/solo-play-simulator-design.md「相手の番」)
+    const state = buildState({
+      active: BLOODMOON_URSALUNA,
+      bench: [BLOODMOON_URSALUNA, SHUPPET],
+    });
+    activeOf(state).energies.push(LEGACY_ENERGY);
+    benchAt(state, 0).energies.push(LEGACY_ENERGY);
+    const context = buildContext(state);
+    state.opponentTurnCount = 3;
+    playOpponentTurn(context);
+    expect(state.opponentRemainingPrizeCount).toBe(5);
+    expect(activeOf(state).name).toBe("ガチグマ アカツキex");
+    playOpponentTurn(context);
+    expect(state.opponentRemainingPrizeCount).toBe(3);
+  });
+
+  test("自分のカードの効果によるきぜつ(カースドボム)では、取られるサイドは少なくならない", () => {
+    // サマヨールはルールを持たないポケモンで、カースドボムは自身をきぜつさせる(記録 049025)
+    const state = buildState({ active: SHUPPET, bench: [DUSCLOPS] });
+    benchAt(state, 0).energies.push(LEGACY_ENERGY);
+    useAbility(buildContext(state), benchAt(state, 0), "カースドボム");
+    expect(state.opponentRemainingPrizeCount).toBe(5);
+    expect(state.usedOncePerGameEffectCardNames).toEqual([]);
   });
 });
 
@@ -1569,6 +1969,34 @@ describeTranslation("ブースターex", () => {
     expect(activeOf(state).energies).toHaveLength(2);
     expect(state.deck).toHaveLength(1);
   });
+
+  test("カーネリアンを使うと、次の自分の番はワザを使えず、その次の自分の番には使える", () => {
+    const state = buildState({ active: FLAREON_EX });
+    activeOf(state).energies.push(FIRE_ENERGY, WATER_ENERGY, LIGHTNING_ENERGY);
+    const context = buildContext(state);
+    useAttackNamed(context, "カーネリアン");
+    expect(state.opponentFieldDamage.active).toBe(280);
+    state.advanceToNextTurn();
+    expect(listUsableAttacksOfActive(context)).toEqual([]);
+    state.advanceToNextTurn();
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["バーニングチャージ", "カーネリアン"]);
+  });
+
+  test("カーネリアンを使った後、ベンチに下げてからバトル場に戻すと、次の自分の番でも使える", () => {
+    const state = buildState({ active: FLAREON_EX, bench: [MEGA_RAYQUAZA] });
+    const flareon = activeOf(state);
+    flareon.energies.push(FIRE_ENERGY, WATER_ENERGY, LIGHTNING_ENERGY);
+    const context = buildContext(state);
+    useAttackNamed(context, "カーネリアン");
+    state.advanceToNextTurn();
+    state.switchActive(benchAt(state, 0));
+    state.switchActive(flareon);
+    expect(
+      listUsableAttacksOfActive(context).map(({ attack }) => attack.name)
+    ).toEqual(["バーニングチャージ", "カーネリアン"]);
+  });
 });
 
 describeTranslation("メガレックウザex", () => {
@@ -1771,6 +2199,52 @@ describeTranslation("ぼうけんのランタン", () => {
     });
     playTrainerFromHand(buildContext(fireOnly), ADVENTURE_LANTERN);
     expect(namesOf(fireOnly.hand)).toEqual(["基本炎エネルギー"]);
+  });
+});
+
+describeTranslation("パオジアン", () => {
+  test("ゆきにしずめるは、手札からベンチに出したとき、使うことを選べば場に出ているスタジアムをトラッシュする", () => {
+    const state = buildState({ active: EEVEE_EX, hand: [CHIEN_PAO] });
+    state.stadium = JAMMING_TOWER;
+    placeBasicPokemonOnBenchFromHand(buildContext(state), CHIEN_PAO);
+    expect(state.stadium).toBeUndefined();
+    expect(namesOf(state.discard)).toEqual(["ジャミングタワー"]);
+    expect(state.abilityNamesUsedThisTurn).toEqual(["ゆきにしずめる"]);
+  });
+
+  test("ゆきにしずめるは、使わないことを選べばスタジアムを残す", () => {
+    const state = buildState({ active: EEVEE_EX, hand: [CHIEN_PAO] });
+    state.stadium = JAMMING_TOWER;
+    placeBasicPokemonOnBenchFromHand(
+      buildContext(state, { choosesToApplyOptionalEffect: () => false }),
+      CHIEN_PAO
+    );
+    expect(state.stadium).toBe(JAMMING_TOWER);
+  });
+
+  test("スタジアムが出ていなければ、ゆきにしずめるは使えず、何も起きない", () => {
+    const state = buildState({ active: EEVEE_EX, hand: [CHIEN_PAO] });
+    placeBasicPokemonOnBenchFromHand(buildContext(state), CHIEN_PAO);
+    expect(namesOf(state.bench)).toEqual(["パオジアン"]);
+    expect(state.discard).toEqual([]);
+    expect(state.abilityNamesUsedThisTurn).toEqual([]);
+  });
+
+  test("アイシクルループは、相手のバトル場のダメージに 120 を足し、このポケモンのエネルギーを 1 枚手札に戻す", () => {
+    const state = buildState({ active: CHIEN_PAO });
+    activeOf(state).energies.push(WATER_ENERGY, WATER_ENERGY, FIRE_ENERGY);
+    useAttackNamed(
+      buildContext(state, {
+        chooseCards: pickCardsByName(["基本炎エネルギー"]),
+      }),
+      "アイシクルループ"
+    );
+    expect(state.opponentFieldDamage.active).toBe(120);
+    expect(namesOf(activeOf(state).energies)).toEqual([
+      "基本水エネルギー",
+      "基本水エネルギー",
+    ]);
+    expect(namesOf(state.hand)).toEqual(["基本炎エネルギー"]);
   });
 });
 
@@ -4345,6 +4819,35 @@ describe("シロナのミカルゲ", () => {
     expect(
       damageOf(state, activeOf(state), CYNTHIAS_SPIRITOMB, "レイジングカース")
     ).toBe(0);
+  });
+});
+
+describeTranslation("ヒーローマント", () => {
+  test("つけているポケモンの最大 HP が 100 増え、増えた後の HP で相手の攻撃によるきぜつを判定する", () => {
+    // イーブイex は HP 200(記録 049282)、ヒーローマントは +100(記録 045281)。相手の 3 回目の番は 200、4 回目は 300
+    const state = buildState({
+      active: EEVEE_EX,
+      bench: [RALTS],
+      hand: [HERO_CAPE],
+    });
+    const context = buildContext(state);
+    const eevee = activeOf(state);
+    attachToolFromHand(context, HERO_CAPE, eevee);
+    expect(calculateMaxHp(state, eevee)).toBe(300);
+    state.opponentTurnCount = 2;
+    playOpponentTurn(context);
+    expect(activeOf(state)).toBe(eevee);
+    expect(eevee.damage).toBe(200);
+    playOpponentTurn(context);
+    expect(state.listPokemonInPlay()).not.toContain(eevee);
+  });
+
+  test("ポケモンのどうぐの効果を無くすスタジアム(ジャミングタワー)が出ていると、最大 HP は増えない", () => {
+    // ジャミングタワーは、おたがいのポケモンについているポケモンのどうぐの効果を無くす(記録 047214)
+    const state = buildState({ active: EEVEE_EX });
+    activeOf(state).tool = HERO_CAPE;
+    state.stadium = JAMMING_TOWER;
+    expect(calculateMaxHp(state, activeOf(state))).toBe(200);
   });
 });
 

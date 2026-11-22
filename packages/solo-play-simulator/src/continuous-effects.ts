@@ -18,9 +18,11 @@ import { type Card, isPokemon, matchesCardFilter } from "./cards.ts";
 import { areConditionsMet, matchesPokemonFilter } from "./conditions.ts";
 import {
   BENCH_LIMIT,
+  COLORLESS,
   type EnergyUnit,
   type GameState,
   type PokemonInPlay,
+  PRIZE_COUNT,
 } from "./state.ts";
 
 interface CollectedContinuousEffect {
@@ -309,6 +311,40 @@ function listEnergyUnitsFrom(
   );
 }
 
+/** pokemon についているエネルギーのうち、指定のタイプのいずれかとして働くカード。 */
+export interface AttachedEnergiesOfTypes {
+  readonly energies: readonly Card[];
+  readonly pokemon: PokemonInPlay;
+}
+
+/**
+ * 自分の場のポケモンごとの、ついているエネルギーのうち指定のタイプのいずれかとして働くカード(すべてのタイプとして働く
+ * エネルギーを含む。カードの記録 048353 の裁定のデータ)。個数ではなくカードの枚数で扱うときに使う。該当するカードが
+ * 無いポケモンは返さない。
+ */
+export function listOwnEnergiesWorkingAsTypes(
+  state: GameState,
+  types: readonly PokemonType[]
+): AttachedEnergiesOfTypes[] {
+  const all = collectContinuousEffects(state);
+  return state.listPokemonInPlay().flatMap((pokemon) => {
+    if (pokemon.energies.length === 0) {
+      return [];
+    }
+    const applying = listCollectedApplyingTo(state, all, pokemon);
+    const energies = pokemon.energies.filter((energy) => {
+      const provision = resolveEnergyProvisionFrom(
+        all,
+        applying,
+        pokemon,
+        energy
+      );
+      return provision.kind === "anyType" || types.includes(provision.type);
+    });
+    return energies.length === 0 ? [] : [{ energies, pokemon }];
+  });
+}
+
 /**
  * ついているエネルギーのうち、指定のタイプのいずれかとして数えられる個数。すべてのタイプとして働く 1 個は、
  * タイプをいくつ指定しても 1 つと数える(公式 Q&A「ストームエメラルダ」)。
@@ -373,6 +409,40 @@ export function calculateMaxHp(
   );
 }
 
+/** 相手の攻撃できぜつしたときに、相手が取るサイドを減らす効果 1 つ。cardName は効果の持ち主のカードの名前。 */
+export interface PrizeReductionForKnockOut {
+  readonly amount: number;
+  readonly cardName: string;
+}
+
+/**
+ * pokemon が相手の攻撃できぜつしたときに働く、相手が取るサイドを減らす効果(レガシーエネルギー)。対戦中 1 回しか
+ * 働かない効果なので、すでに働いた名前のカード(GameState の usedOncePerGameEffectCardNames)の効果は返さず、同じ名前の
+ * カードが 2 枚ついていても 1 つにまとめる。ついているカードの効果は場にある間しか集められないので、きぜつしたポケモンを
+ * トラッシュする前に呼ぶ。
+ */
+export function listUnusedPrizeReductionsForKnockOutByOpponentAttack(
+  state: GameState,
+  pokemon: PokemonInPlay
+): PrizeReductionForKnockOut[] {
+  const reductions = new Map<string, PrizeReductionForKnockOut>();
+  for (const { effect, sourceCard } of listEffectsApplyingTo(state, pokemon)) {
+    const { change } = effect;
+    if (
+      change.change ===
+        "reducePrizesTakenOncePerGameWhenKnockedOutByOpponentAttack" &&
+      !state.usedOncePerGameEffectCardNames.includes(sourceCard.name) &&
+      !reductions.has(sourceCard.name)
+    ) {
+      reductions.set(sourceCard.name, {
+        amount: change.amount,
+        cardName: sourceCard.name,
+      });
+    }
+  }
+  return [...reductions.values()];
+}
+
 export function countEmptyBenchSlots(state: GameState): number {
   return Math.max(0, calculateBenchLimit(state) - state.bench.length);
 }
@@ -416,23 +486,42 @@ export function isFreshEvolutionAllowedByEffect(
 
 /**
  * ワザを使うポケモンに働く効果(applying)から求めた、ワザに必要なエネルギー。ワザのエネルギーを増やす効果(夜の鉱山)の
- * 分の無色を足す。
+ * 分の無色を足し、相手が取ったサイドの枚数ぶん無色を減らす効果(ガチグマ アカツキex の「ろうれんのわざ」)の分の無色を
+ * 除く。減らす効果は名前が合うワザにだけ働き、タイプ指定のエネルギーは減らさない。
  */
 function calculateAttackCost(
+  state: GameState,
   applying: readonly CollectedContinuousEffect[],
   attack: Attack
 ): PokemonType[] {
-  const added = applying.reduce(
-    (total, collected) =>
-      collected.effect.change.change === "addColorlessToAttackCost"
-        ? total + collected.effect.change.count
-        : total,
-    0
-  );
-  return [
+  let addedCount = 0;
+  let reducesPerPrizeTakenByOpponent = false;
+  for (const { effect } of applying) {
+    const { change } = effect;
+    if (change.change === "addColorlessToAttackCost") {
+      addedCount += change.count;
+    } else if (
+      change.change === "reduceColorlessAttackCostPerPrizeTakenByOpponent" &&
+      change.attackName === attack.name
+    ) {
+      reducesPerPrizeTakenByOpponent = true;
+    }
+  }
+  const cost: PokemonType[] = [
     ...attack.cost,
-    ...Array.from({ length: added }, (): PokemonType => "colorless"),
+    ...Array.from({ length: addedCount }, (): PokemonType => COLORLESS),
   ];
+  if (!reducesPerPrizeTakenByOpponent) {
+    return cost;
+  }
+  let remainingReduction = PRIZE_COUNT - state.opponentRemainingPrizeCount;
+  return cost.filter((required) => {
+    if (required !== COLORLESS || remainingReduction === 0) {
+      return true;
+    }
+    remainingReduction -= 1;
+    return false;
+  });
 }
 
 export interface UsableAttack {
@@ -637,7 +726,7 @@ export function listAttackCandidatesWithCosts(
     : listUsableAttacks(state, applying, pokemon);
   return {
     candidates: usables.map((usable) => ({
-      cost: calculateAttackCost(applying, usable.attack),
+      cost: calculateAttackCost(state, applying, usable.attack),
       usable,
     })),
     units: listEnergyUnitsFrom(all, applying, pokemon),

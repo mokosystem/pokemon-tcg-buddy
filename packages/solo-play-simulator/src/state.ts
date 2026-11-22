@@ -248,6 +248,12 @@ export class PokemonInPlay {
   damage = 0;
   /** この番にこのポケモンが使った特性の名前。「番に 1 回」はポケモンごとに数える。 */
   readonly abilitiesUsedThisTurn = new Set<string>();
+  /**
+   * このポケモンがワザを使えない自分の番の番号。ワザの効果で、次の自分の番にワザを使えなくなったときに入る。
+   * ベンチに下がるか進化すると無くなる(公式 Q&A、検索語「次の自分の番 ワザが使えない ベンチ」、2026-11-21 確認。
+   * 進化は docs/pokemon-tcg/basic-rules.md 82 行)。
+   */
+  turnUnableToAttack: number | undefined = undefined;
 
   constructor(card: Card, turnEntered: number) {
     this.card = card;
@@ -265,6 +271,7 @@ export class PokemonInPlay {
     for (const abilityName of this.abilitiesUsedThisTurn) {
       copied.abilitiesUsedThisTurn.add(abilityName);
     }
+    copied.turnUnableToAttack = this.turnUnableToAttack;
     return copied;
   }
 
@@ -344,6 +351,8 @@ export class GameState {
   opponentTurnCount = 0;
   /** 自分のポケモンがきぜつした最後の相手の番の回数。自分の番のきぜつ(自分のカードの効果)は数えない。 */
   latestOpponentTurnWithOwnKnockOut: number | undefined = undefined;
+  /** 対戦中 1 回しか働かない効果が、すでに働いたカードの名前(レガシーエネルギー。カードの記録 049457)。 */
+  readonly usedOncePerGameEffectCardNames: string[] = [];
   /** いま誰の番か。勝敗が決まった番を記録するのに使う。 */
   turnOwner: TurnOwner = "self";
   /** 勝敗。決まったら以後は変えない。 */
@@ -433,6 +442,9 @@ export class GameState {
     copied.opponentTurnCount = this.opponentTurnCount;
     copied.latestOpponentTurnWithOwnKnockOut =
       this.latestOpponentTurnWithOwnKnockOut;
+    copied.usedOncePerGameEffectCardNames.push(
+      ...this.usedOncePerGameEffectCardNames
+    );
     copied.turnOwner = this.turnOwner;
     copied.decision = this.decision;
     return copied;
@@ -940,6 +952,13 @@ export class GameState {
     this.discard.push(energy);
   }
 
+  /** ポケモンについているエネルギーを手札に戻す。 */
+  returnAttachedEnergyToHand(target: PokemonInPlay, energy: Card): void {
+    removeCard(target.energies, energy, `${target.name} のエネルギー`);
+    this.hand.push(energy);
+    this.record(`${target.name} のエネルギー ${energy.name} を手札に戻す`);
+  }
+
   /** ポケモンについているエネルギーを、別のポケモンにつけ替える。手札からつける番に 1 回には数えない。 */
   moveAttachedEnergy(
     from: PokemonInPlay,
@@ -1050,6 +1069,7 @@ export class GameState {
     this.record(`進化 ${target.name} → ${card.name}${sourceLabel(from)}`);
     target.card = card;
     target.turnEvolved = this.turn;
+    target.turnUnableToAttack = undefined;
   }
 
   private removeFrom(source: CardSource, card: Card): void {
@@ -1068,6 +1088,7 @@ export class GameState {
       throw new IllegalMove("入れ替える相手がいない");
     }
     removeFirst(this.bench, benchPokemon, "ベンチ");
+    this.active.turnUnableToAttack = undefined;
     this.bench.push(this.active);
     this.active = benchPokemon;
     this.record(`バトル場 ← ${benchPokemon.name}`);

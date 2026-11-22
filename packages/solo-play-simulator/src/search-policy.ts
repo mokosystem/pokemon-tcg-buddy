@@ -840,9 +840,10 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
   /**
    * 番の中の行動の外で問われた選択に答えるもの。自分の番のワザの効果の選択は、ワザのために用意した選択に渡す。
    * 相手の番にベンチの上限が下がってベンチを減らす選択(bench-limit.ts の trimBenchToLimit)は、候補の先頭から選ぶ。
-   * ベンチの上限を下げるスタジアム(ゼロの大空洞。記録 card-records/stadiums/048706.json)が、計測する 2 デッキ
+   * ベンチの上限を下げるスタジアム(ゼロの大空洞。記録 card-records/stadiums/048706.json)が、Issue 70 で計測した 2 デッキ
    * (recorded-decks.ts の RS3MMy-FuGPRu-MypM2X と 9gngnQ-zAMw9G-96H9nn)に入っておらず、試して選ぶ仕組みを作っても
-   * 計測で働かないため。
+   * 計測で働かなかったため。Issue 77 が対象にする 8 デッキには、このスタジアムが入ったデッキ(xcGKc8-NGuFdn-D8c88x)が
+   * ある。この選択を試して選ぶかは、手の選び方の改善として Issue 77 の改善の繰り返しで扱う。
    */
   const choicesOutsideTurnActions = (state: GameState): EffectChoices => {
     if (state.turnOwner === "opponent") {

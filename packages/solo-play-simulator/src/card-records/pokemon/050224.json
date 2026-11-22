@@ -11,18 +11,26 @@
       "damage": {
         "kind": "none"
       },
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "amount": 10,
+            "operation": "addDamageToOpponentField",
+            "opponentPositions": ["active"]
+          }
+        ],
+        "useConditions": []
+      },
       "name": "ひっそりのせる"
     }
   ],
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["050224"],
   "category": "ポケモン",
   "excludedEffects": [
     {
-      "description": "特性「ばけがくれ」(相手のワザや特性の効果を受けない)",
-      "reason": "requiresOpponent"
-    },
-    {
-      "description": "ワザ「ひっそりのせる」(相手のバトルポケモンにダメカンをのせる)",
+      "description": "特性「ばけがくれ」(相手のワザや特性の効果を受けない)。相手の番に起きるのは相手の攻撃のダメージだけで、相手のワザや特性の効果が無いため、働く場面が無い",
       "reason": "requiresOpponent"
     }
   ],
@@ -32,8 +40,20 @@
   "name": "チャデス",
   "pokemonType": "grass",
   "retreatCost": 0,
-  "rulings": [],
+  "rulings": [
+    {
+      "interpretation": "ワザの効果。ワザのダメージではないので、ワザのダメージを増やす効果は足されない",
+      "question": "ワザ「ひっそりのせる」で相手のバトルポケモンにのせるダメカンは、ワザのダメージか、ワザの効果か",
+      "reflectedIn": "ワザのダメージは持たず(none)、効果の翻訳で相手のバトル場のダメージに 10 を足す(addDamageToOpponentField の [\"active\"])",
+      "source": {
+        "basis": "チャデスの「ひっそりのせる」を尋ねた質問は無かった。同じ名前のワザを持つ別のカード(ゴース)の公式 Q&A(検索語「ひっそりのせる」)が、このワザはワザのダメージではなく、ワザの効果でダメカンをのせると回答している",
+        "checkedOn": "2026-11-21",
+        "kind": "noMatchingQa",
+        "searchTerms": ["ひっそりのせる", "チャデス"]
+      }
+    }
+  ],
   "stage": "たね",
-  "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-09-23"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-21"
 }

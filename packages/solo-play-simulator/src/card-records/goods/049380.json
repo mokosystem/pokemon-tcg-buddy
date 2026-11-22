@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardEffects": [
     {
       "effect": {
@@ -25,7 +26,7 @@
       "question": "進化ポケモンを手札に戻すとき、進化前のポケモンも戻すか",
       "reflectedIn": "場のポケモンを手札に戻す操作(state.ts の returnPokemonToHand)は、進化前のカード、エネルギー、どうぐも手札に戻す",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "進化ポケモンを手札に戻すとき進化前のポケモンも戻すか、という質問に、戻すと回答(関連カードの印刷 045784 は詳細ページを見比べて同じカードテキスト)",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%E5%9B%9E%E5%8F%8E%E3%82%B5%E3%82%A4%E3%82%AF%E3%83%AD%E3%83%B3&regulation_faq_main_item1=all"
@@ -44,5 +45,5 @@
     }
   ],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-21"
 }

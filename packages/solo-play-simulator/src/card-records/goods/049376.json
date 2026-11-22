@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardEffects": [
     {
       "effect": {
@@ -31,7 +32,7 @@
       "question": "山札の上から 7 枚見た中にサポートがあっても、手札に加えずに終えられるか",
       "reflectedIn": "山札の上から見て取る枚数を 0 枚以上 1 枚以下にする(minTakeCount 0)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "見た中にサポートがあっても手札に加えないことはできるか、という質問に、できると回答(関連カードの印刷 042719 は詳細ページを見比べて同じカードテキスト)",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%9D%E3%82%B1%E3%82%AE%E3%82%A23.0&regulation_faq_main_item1=all"
@@ -39,5 +40,5 @@
     }
   ],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-21"
 }

@@ -1,5 +1,6 @@
 {
   "$schema": "../card-record.schema.json",
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardEffects": [
     {
       "effect": {
@@ -38,7 +39,7 @@
       "question": "スタジアムとエネルギーの片方だけを選んで手札に加えられるか",
       "reflectedIn": "探す条件を 2 つに分け(picks)、それぞれ条件の付いた探し方なので 1 枚も選ばなくてよい(card-effects.ts の minCountForDeckSearch)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "山札からエネルギーだけを選んで手札に加えられるか、という質問に、できると回答",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%A2%E3%82%AF%E3%83%AD%E3%83%9E%E3%81%AE%E5%9F%B7%E5%BF%B5&regulation_faq_main_item1=all"
@@ -46,5 +47,5 @@
     }
   ],
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-21"
 }

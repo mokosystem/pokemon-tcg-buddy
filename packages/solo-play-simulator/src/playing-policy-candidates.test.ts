@@ -13,30 +13,19 @@ import {
   PLAYING_POLICY_SETTINGS,
   type PlayingPolicyParameters,
 } from "./playing-policy-candidates.ts";
-import { RECORDED_DECKS } from "./recorded-decks.ts";
+import { RECORDED_DECKS, type RecordedDeck } from "./recorded-decks.ts";
 import { runBattleStyleSoloPlayTrial } from "./simulate.ts";
 
 /**
- * 判断基準ごとに 1 回ずつ回すデッキ。ドラパルトex のデッキは、足す先(相手のバトル場のダメージか相手のベンチのダメージか)
- * を選ぶカード(サマヨール 049025、ヨノワール 049026、マシマシラ 049074)を含む。
+ * 判断基準ごとに 1 回ずつ回すデッキ。記録済みのデッキすべてにしているのは、デッキごとに違う部品(足す先を選ぶ効果、
+ * トラッシュするエネルギーを選ぶワザなど)を、どの判断基準も勝敗まで進められることを確かめるため。
  */
-const TRIAL_DECKS = [
-  { deckCode: "RS3MMy-FuGPRu-MypM2X", label: "シロナのガブリアスex" },
-  { deckCode: "9gngnQ-zAMw9G-96H9nn", label: "ドラパルトex" },
-] as const;
-
-function prepareTrialDeck({ deckCode, label }: (typeof TRIAL_DECKS)[number]) {
-  const deck = RECORDED_DECKS.find(
-    (candidate) => candidate.deckCode === deckCode
-  );
-  if (deck === undefined) {
-    throw new Error(`${label} のデッキが無い`);
-  }
-  const cards = buildDeck(cardRecordTable, deck.decklist);
+function prepareTrialDeck({ decklist, name }: RecordedDeck) {
+  const cards = buildDeck(cardRecordTable, decklist);
   const deckCardNames = listDeckCardNames(cards);
   const [firstCard] = cards;
   if (firstCard === undefined) {
-    throw new Error(`${label} のデッキが空`);
+    throw new Error(`${name} のデッキが空`);
   }
   // 候補 4 には、重みがすべて 0 の学習結果を準備として渡す
   const zeroModel = trainLearnedWinRateModel(
@@ -45,7 +34,7 @@ function prepareTrialDeck({ deckCode, label }: (typeof TRIAL_DECKS)[number]) {
     [],
     LEARNING_OPTIONS
   );
-  return { cards, deckCardNames, label, zeroModel };
+  return { cards, deckCardNames, label: name, zeroModel };
 }
 
 /** 設定の数を 1〜2 に下げる(テストの時間を短くするため)。 */
@@ -77,11 +66,11 @@ describe("計測する設定の一覧", () => {
     });
   });
 
-  for (const { cards, deckCardNames, label, zeroModel } of TRIAL_DECKS.map(
+  for (const { cards, deckCardNames, label, zeroModel } of RECORDED_DECKS.map(
     prepareTrialDeck
   )) {
     for (const name of PLAYING_POLICY_SETTING_NAMES) {
-      test(`${name}: 数を下げた判断基準で、${label} デッキの対戦を先攻で 1 回、勝敗まで進められる`, () => {
+      test(`${name}: 数を下げた判断基準で、${label} の対戦を先攻で 1 回、勝敗まで進められる`, () => {
         const setting = PLAYING_POLICY_SETTINGS[name];
         const result = runBattleStyleSoloPlayTrial({
           cards,

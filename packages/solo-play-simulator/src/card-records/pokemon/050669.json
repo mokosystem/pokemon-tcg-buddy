@@ -36,10 +36,11 @@
       "name": "テレポートブレイク"
     }
   ],
+  "battleStyleSoloPlayReviewedOn": "2026-11-21",
   "cardIds": ["050669"],
   "category": "ポケモン",
-  "excludedEffects": [],
   "exRule": "pokemonEx",
+  "excludedEffects": [],
   "hasRuleBox": true,
   "hp": 160,
   "isTerastal": false,
@@ -52,7 +53,7 @@
       "question": "ベンチのポケモンが効果で使えるようになったワザ(ポケモンのどうぐのワザ、進化前のワザ)も使えるか",
       "reflectedIn": "使えるワザの一覧(continuous-effects.ts の listUsableAttacks)に、ベンチのポケモンの記録のワザだけを足す",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "特性「きおくにもぐる」で進化前のワザを使えるメガリザードンXexや、ポケモンのどうぐに書かれたワザを、「きおくのらせん」で使えるか、という質問に、効果で使えるようになったワザはそのポケモンが持っているワザとして扱わないため使えないと回答",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8D%E3%81%8A%E3%81%8F%E3%81%AE%E3%82%89%E3%81%9B%E3%82%93&regulation_faq_main_item1=all"
@@ -63,7 +64,7 @@
       "question": "ベンチのポケモンのワザを使うとき、ワザの条件や効果の「このポケモン」はどちらを指すか",
       "reflectedIn": "ワザの効果は、ワザを持つベンチのポケモンではなく、バトル場のミュウex を持ち主として実行する(card-effects.ts の useAttack)",
       "source": {
-        "checkedOn": "2026-09-23",
+        "checkedOn": "2026-11-21",
         "kind": "officialQa",
         "questionSummary": "ラランテスexやシザリガーのワザを「きおくのらせん」で使うとき、HP の回復やダメカンの条件はワザを使うミュウex で判定すると回答",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%8D%E3%81%8A%E3%81%8F%E3%81%AE%E3%82%89%E3%81%9B%E3%82%93&regulation_faq_main_item1=all"
@@ -72,5 +73,5 @@
   ],
   "stage": "たね",
   "translationStatus": "translated",
-  "verifiedOn": "2026-09-23"
+  "verifiedOn": "2026-11-21"
 }

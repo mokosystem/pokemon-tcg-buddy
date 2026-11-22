@@ -36,7 +36,11 @@ const FIGHTING_ENERGY = buildRecordedCard("049464");
 function promotedBenchIndex(policy: PlayingPolicy): number {
   const state = buildState({ active: GIBLE, bench: [RALTS, BUDEW, GIBLE] });
   const bench = [...state.bench];
-  knockOutOwnPokemon({ choices: policy, state }, activeOf(state));
+  knockOutOwnPokemon(
+    { choices: policy, state },
+    activeOf(state),
+    "opponentAttack"
+  );
   return bench.indexOf(activeOf(state));
 }
 

@@ -12,7 +12,7 @@ import {
   knockOutOwnPokemonAtOrAboveMaxHp,
 } from "./battle-style-solo-play-rules.ts";
 import { trimBenchToLimit } from "./bench-limit.ts";
-import { CardCategory } from "./card-record-schema.ts";
+import { type Attack, CardCategory } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { areConditionsMet, type EffectSource } from "./conditions.ts";
 import {
@@ -22,11 +22,16 @@ import {
   isAbilityNegated,
   isFreshEvolutionAllowedByEffect,
   listAttackCandidatesWithCosts,
+  listOwnEnergiesWorkingAsTypes,
   resolveEnergyProvision,
   toEnergyUnits,
   type UsableAttack,
 } from "./continuous-effects.ts";
-import type { EffectContext } from "./effect-choices.ts";
+import {
+  chooseCardsWithin,
+  choosePokemonUpTo,
+  type EffectContext,
+} from "./effect-choices.ts";
 import {
   canStartEffect,
   findCardEffects,
@@ -118,8 +123,9 @@ export function playTrainerFromHand(context: EffectContext, card: Card): void {
       trimBenchToLimit(context);
       // ポケモンのどうぐの効果を無くすスタジアム(ジャミングタワー)で最大 HP が下がり、のっているダメージが最大 HP 以上になった
       // ポケモンはこの時点できぜつする。ベンチを減らしてから判定する順は、きぜつの後にベンチを減らしてからバトル場に
-      // 出す順と同じ
-      knockOutOwnPokemonAtOrAboveMaxHp(context);
+      // 出す順と同じ。ダメージを受けた時点のきぜつではないので、原因は自分のカードの効果として渡す(相手のポケモンから
+      // ワザのダメージを受けてきぜつしたときに働く効果を働かせない。カードの記録 049457 の裁定のデータ)
+      knockOutOwnPokemonAtOrAboveMaxHp(context, "ownCardEffect");
       return;
   }
   for (const cardEffect of findCardEffects(card, "whenPlayed")) {
@@ -416,6 +422,8 @@ export function retreatActive(
 
 /**
  * バトルポケモンが今使えるワザ(エネルギーが足り、先攻の最初の番ではなく、効果の使える条件を満たすもの)。
+ * バトルポケモンが、前の自分の番に使ったワザの効果でこの番にワザを使えないときは空を返す(見るのはワザを使うバトル
+ * ポケモンの turnUnableToAttack だけで、ワザを持っているベンチのポケモンのものは見ない)。
  * この番にワザを 1 回使ったあとは、1 回目を使ったポケモンがバトル場に残っていて、2 回目を使える効果(「おまつりおんど」)が
  * あるときだけ、2 回目に使えるワザを返す。勝敗が決まった後は空を返す。
  */
@@ -427,7 +435,8 @@ export function listUsableAttacksOfActive(
   if (
     active === undefined ||
     !state.canAttack() ||
-    state.decision !== undefined
+    state.decision !== undefined ||
+    active.turnUnableToAttack === state.turn
   ) {
     return [];
   }
@@ -462,10 +471,54 @@ function isSameUsableAttack(left: UsableAttack, right: UsableAttack): boolean {
   );
 }
 
+interface EnergyToDiscard {
+  readonly energy: Card;
+  readonly pokemon: PokemonInPlay;
+}
+
+/**
+ * トラッシュしたエネルギーの枚数でダメージが決まるワザ(メガリザードンXex の「インフェルノX」。カードの記録 048353)で、
+ * トラッシュするエネルギーを選ばせる。ほかの形のワザでは undefined。先にポケモンを 0 匹以上選び、選んだポケモンごとに
+ * エネルギーを 0 枚以上選ぶ。エネルギーだけを選ばせないのは、同じカードは同じ参照を枚数分並べて表しており、どのポケモンの
+ * 1 枚か決まらないため(effect-operations.ts の moveChosenEnergies と同じ)。1 枚も選ばなくてよい(同じ記録の裁定のデータ)。
+ */
+function chooseEnergiesToDiscardForDamage(
+  context: EffectContext,
+  attack: Attack,
+  label: string
+): EnergyToDiscard[] | undefined {
+  const { damage } = attack;
+  if (damage.kind !== "perEnergyDiscardedFromOwnPokemon") {
+    return undefined;
+  }
+  const holders = listOwnEnergiesWorkingAsTypes(
+    context.state,
+    damage.energyTypes
+  );
+  const chosenPokemon = choosePokemonUpTo(
+    context,
+    holders.map(({ pokemon }) => pokemon),
+    holders.length,
+    `${label}: エネルギーをトラッシュするポケモン`
+  );
+  return holders
+    .filter(({ pokemon }) => chosenPokemon.includes(pokemon))
+    .flatMap(({ energies, pokemon }) =>
+      chooseCardsWithin(
+        context,
+        energies,
+        { maxCount: energies.length, minCount: 0 },
+        `${label}: ${pokemon.name} からトラッシュするエネルギー`
+      ).map((energy) => ({ energy, pokemon }))
+    );
+}
+
 /**
  * バトルポケモンでワザを使う。記録の規則で求めたダメージを相手のバトル場のダメージに足してから、効果の翻訳を実行する。
  * ダメージを効果より先に足すのは、カードテキストがダメージ、効果の順に書かれ、効果がダメージの数え方を変える記録が
- * 無いため(docs/solo-play-simulator-design.md「対戦風の一人回し」)。使うワザは、使えるワザの一覧
+ * 無いため(docs/solo-play-simulator-design.md「対戦風の一人回し」)。トラッシュしたエネルギーの枚数でダメージが決まる
+ * ワザは、トラッシュするエネルギーを選ばせてから、選んだ枚数のダメージを足し、その後でトラッシュする(ダメージは
+ * トラッシュする前に求める。カードの記録 048353 の裁定のデータ)。使うワザは、使えるワザの一覧
  * (listUsableAttacksOfActive)の候補の 1 つで受け取る。
  */
 export function useAttack(context: EffectContext, chosen: UsableAttack): void {
@@ -492,9 +545,27 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   if (usable.discardsDeckTopFirst) {
     state.discardFromDeckTop(1);
   }
-  const damage = calculateAttackDamage(state, active, usable.attack);
+  const energiesToDiscard = chooseEnergiesToDiscardForDamage(
+    context,
+    usable.attack,
+    attackName
+  );
+  const damage = calculateAttackDamage(
+    state,
+    active,
+    usable.attack,
+    energiesToDiscard?.length
+  );
   if (damage !== undefined) {
     addDamageToOpponentField(state, "active", damage, attackName);
+  }
+  if (energiesToDiscard !== undefined) {
+    for (const { energy, pokemon } of energiesToDiscard) {
+      state.discardAttachedEnergy(pokemon, energy);
+    }
+    state.record(
+      `${attackName}: エネルギー ${energiesToDiscard.length} 枚をトラッシュ`
+    );
   }
   const { effect } = usable.attack;
   if (effect !== undefined) {
