@@ -298,7 +298,7 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
         "none",
         policySeed
       ),
-    parameters: { samplesPerCandidate: 8 },
+    parameters: { samplesPerCandidate: 16 },
   },
   "random-action": {
     candidate: "1",
