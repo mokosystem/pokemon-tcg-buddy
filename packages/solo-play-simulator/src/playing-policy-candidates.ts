@@ -9,8 +9,9 @@ import {
   createRandomActionPolicy,
 } from "./action-list-playing-policies.ts";
 import { calculateAttackDamage } from "./attack-damage.ts";
+import { listUsableAttacksOfActive } from "./card-effects.ts";
 import { listAttackCandidatesWithCosts } from "./continuous-effects.ts";
-import type { EffectContext } from "./effect-choices.ts";
+import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
 import type { PlayingPolicy } from "./engine.ts";
 import {
   createLearnedEvaluationTrialScorer,
@@ -90,7 +91,7 @@ const TURN_SEQUENCE_BASE_SAMPLES_PER_CANDIDATE = 8;
 
 const playoutTrialScorer = createPlayoutTrialScorer(createPlayoutActionPolicy);
 
-function attachEnergyForAttack(context: EffectContext, seed: number): void {
+function chooseEnergyForAttack(context: EffectContext, seed: number) {
   const { state } = context;
   if (state.active === undefined) {
     return;
@@ -115,9 +116,7 @@ function attachEnergyForAttack(context: EffectContext, seed: number): void {
       best = action;
     }
   }
-  if (best !== undefined) {
-    performAction(context, best);
-  }
+  return best;
 }
 function estimateAttackPotential(
   state: GameState,
@@ -148,7 +147,10 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
       );
     },
     playTurn: (context) => {
-      attachEnergyForAttack(context, seed);
+      const energy = chooseEnergyForAttack(context, seed);
+      if (energy !== undefined) {
+        performAction(context, energy);
+      }
       playout.playTurn(context);
     },
   };
@@ -303,13 +305,32 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
   "playout-win-rate-32": createPlayoutSetting("2", 32, "none"),
   "prize-progress-search": {
     candidate: "77",
-    createPolicy: (_, parameters, policySeed) =>
-      createOneStepSearch(
+    createPolicy: (_, parameters, policySeed) => {
+      const base = createOneStepSearch(
         scorePrizeProgress,
         requireParameter(parameters, "samplesPerCandidate"),
         "none",
         policySeed
-      ),
+      );
+      const trialRandom = createSeededRandom(derivePolicySeed(policySeed));
+      return {
+        ...base,
+        playTurn(context) {
+          base.playTurn(context);
+          if (listUsableAttacksOfActive(context).length > 0) {
+            return;
+          }
+          const energy = chooseEnergyForAttack(
+            { choices: firstCandidateChoices, state: context.state },
+            trialRandom.nextSeed()
+          );
+          if (energy !== undefined) {
+            base.performTurnAction(context, energy);
+            base.playTurn(context);
+          }
+        },
+      };
+    },
     parameters: { samplesPerCandidate: 16 },
   },
   "random-action": {
