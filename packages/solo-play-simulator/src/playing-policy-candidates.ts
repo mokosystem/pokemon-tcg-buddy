@@ -8,11 +8,19 @@ import {
   createPlayoutActionPolicy,
   createRandomActionPolicy,
 } from "./action-list-playing-policies.ts";
+import { calculateAttackDamage } from "./attack-damage.ts";
+import {
+  listAttackCandidatesWithCosts,
+  resolveEnergyProvision,
+  toEnergyUnits,
+} from "./continuous-effects.ts";
+import type { EffectContext } from "./effect-choices.ts";
 import type { PlayingPolicy } from "./engine.ts";
 import {
   createLearnedEvaluationTrialScorer,
   type LearnedWinRateModel,
 } from "./learned-win-rate-evaluation.ts";
+import { listAvailableActions, performAction } from "./player-actions.ts";
 import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
 import { derivePolicySeed } from "./random.ts";
 import {
@@ -20,7 +28,7 @@ import {
   type TrialScorer,
   type TrialScoreTieBreak,
 } from "./search-policy.ts";
-import { PRIZE_COUNT } from "./state.ts";
+import { listUnpaidCost, PRIZE_COUNT } from "./state.ts";
 import { createTurnSequenceSearchPolicy } from "./turn-sequence-search-policy.ts";
 
 /** 計測する設定の名前。設計文書の表と計測スクリプトの引数に使う。 */
@@ -81,6 +89,41 @@ const TURN_SEQUENCE_BASE_SAMPLES_PER_CANDIDATE = 8;
 
 const playoutTrialScorer = createPlayoutTrialScorer(createPlayoutActionPolicy);
 
+function attachEnergyForAttack(context: EffectContext): void {
+  const { state } = context;
+  const { active } = state;
+  if (active === undefined) {
+    return;
+  }
+  const { candidates, units } = listAttackCandidatesWithCosts(state, active);
+  const actions = listAvailableActions(context);
+  let best: (typeof actions)[number] | undefined;
+  let bestGain = 0;
+  for (const action of actions) {
+    if (action.kind !== "attachEnergy" || action.targetIndex !== 0) {
+      continue;
+    }
+    const withEnergy = [
+      ...units,
+      ...toEnergyUnits(resolveEnergyProvision(state, active, action.card)),
+    ];
+    for (const { cost, usable } of candidates) {
+      const before = listUnpaidCost(cost, units).length;
+      const after = listUnpaidCost(cost, withEnergy).length;
+      const gain =
+        (calculateAttackDamage(state, active, usable.attack) ?? 0) *
+        (1 / (1 + after) - 1 / (1 + before));
+      if (gain > bestGain) {
+        bestGain = gain;
+        best = action;
+      }
+    }
+  }
+  if (best !== undefined) {
+    performAction(context, best);
+  }
+}
+
 function createPrizeProgressPlayout(seed: number): PlayingPolicy {
   const playout = createPlayoutActionPolicy(seed);
   return {
@@ -93,6 +136,10 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
         state,
         candidates.filter((pokemon) => pokemon.energies.length === most)
       );
+    },
+    playTurn: (context) => {
+      attachEnergyForAttack(context);
+      playout.playTurn(context);
     },
   };
 }
