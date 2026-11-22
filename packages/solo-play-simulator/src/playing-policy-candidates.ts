@@ -11,6 +11,7 @@ import {
 import { calculateAttackDamage } from "./attack-damage.ts";
 import { listUsableAttacksOfActive } from "./card-effects.ts";
 import { CardCategory } from "./card-record-schema.ts";
+import { isEnergy } from "./cards.ts";
 import { listAttackCandidatesWithCosts } from "./continuous-effects.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
 import type { PlayingPolicy } from "./engine.ts";
@@ -18,7 +19,7 @@ import {
   createLearnedEvaluationTrialScorer,
   type LearnedWinRateModel,
 } from "./learned-win-rate-evaluation.ts";
-import { listAvailableActions, performAction } from "./player-actions.ts";
+import { listAvailableHandActions, performAction } from "./player-actions.ts";
 import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
 import { createSeededRandom, derivePolicySeed } from "./random.ts";
 import {
@@ -99,15 +100,17 @@ function chooseEnergyForAttack(context: EffectContext, seed: number) {
     return;
   }
   let bestGain = 0;
-  const actions = listAvailableActions(context);
+  const actions = listAvailableHandActions(context, isEnergy).filter(
+    (action) => action.kind === "attachEnergy"
+  );
+  if (actions.length === 0) {
+    return;
+  }
   let best: (typeof actions)[number] | undefined;
   const potentials = state
     .listPokemonInPlay()
     .map((pokemon) => estimateAttackPotential(state, pokemon));
   for (const action of actions) {
-    if (action.kind !== "attachEnergy") {
-      continue;
-    }
     const trial = state.clone(createSeededRandom(seed));
     trial.remixUnseenCards();
     performAction({ choices: context.choices, state: trial }, action);
@@ -159,15 +162,15 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
       if (energy !== undefined) {
         performAction(context, energy);
       }
-      const trigger = listAvailableActions(context).find(
-        (action) =>
-          action.kind === "placeOnBench" &&
-          action.card.record.category === CardCategory.Pokemon &&
-          action.card.record.abilities.some(
+      const trigger = listAvailableHandActions(
+        context,
+        (card) =>
+          card.record.category === CardCategory.Pokemon &&
+          card.record.abilities.some(
             (ability) =>
               ability.translation?.kind === "triggeredWhenPlacedOnBenchFromHand"
           )
-      );
+      ).find((action) => action.kind === "placeOnBench");
       if (trigger !== undefined) {
         performAction(context, trigger);
       }

@@ -36,7 +36,10 @@ interface ActionListPicks {
  * pickPokemonToPromote が選んだベンチポケモンを出す判断基準。対戦の準備では手札の最初のたねポケモンをバトル場に出し、
  * 残りをベンチに並べる。
  */
-function createActionListPolicy(picks: ActionListPicks): PlayingPolicy {
+function createActionListPolicy(
+  picks: ActionListPicks,
+  retreat: "includeRetreat" | "skipRetreat" = "includeRetreat"
+): PlayingPolicy {
   return {
     ...firstCandidateChoices,
     chooseActiveAtSetup: (_, [first]) => {
@@ -59,7 +62,7 @@ function createActionListPolicy(picks: ActionListPicks): PlayingPolicy {
     },
     playTurn: (context: EffectContext) => {
       for (let count = 0; count < MAX_ACTIONS_PER_TURN; count += 1) {
-        const action = picks.pickAction(listAvailableActions(context));
+        const action = picks.pickAction(listAvailableActions(context, retreat));
         if (action === undefined) {
           throw new Error("今できる行動の一覧が空");
         }
@@ -103,10 +106,6 @@ export function createRandomActionPolicy(seed: number): PlayingPolicy {
   });
 }
 
-/** 試し回しの軽い手順が選ばない行動。番を終えるのは選べる行動が無くなったときだけにし、にげるは選ばない。 */
-const ACTION_KINDS_SKIPPED_IN_PLAYOUT: ReadonlySet<PlayerAction["kind"]> =
-  new Set(["endTurn", "retreat"]);
-
 /**
  * 試し回しの軽い手順。今できる行動の一覧から「番を終える」と「にげる」を除いた行動を乱数で選び、選べる行動が無くなったら
  * 番を終える。ワザは使えるワザの一覧から乱数で選び、使えるワザがあれば必ず使う。きぜつした後に出すベンチポケモンも乱数で選ぶ。
@@ -116,14 +115,14 @@ const ACTION_KINDS_SKIPPED_IN_PLAYOUT: ReadonlySet<PlayerAction["kind"]> =
  */
 export function createPlayoutActionPolicy(seed: number): PlayingPolicy {
   const pickAtRandom = createPickAtRandom(seed);
-  return createActionListPolicy({
-    pickAction: (actions) =>
-      pickAtRandom(
-        actions.filter(
-          (action) => !ACTION_KINDS_SKIPPED_IN_PLAYOUT.has(action.kind)
-        )
-      ) ?? actions.find((action) => action.kind === "endTurn"),
-    pickAttack: pickAtRandom,
-    pickPokemonToPromote: pickAtRandom,
-  });
+  return createActionListPolicy(
+    {
+      pickAction: (actions) =>
+        pickAtRandom(actions.filter((action) => action.kind !== "endTurn")) ??
+        actions.find((action) => action.kind === "endTurn"),
+      pickAttack: pickAtRandom,
+      pickPokemonToPromote: pickAtRandom,
+    },
+    "skipRetreat"
+  );
 }

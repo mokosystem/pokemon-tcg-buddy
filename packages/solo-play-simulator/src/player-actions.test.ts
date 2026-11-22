@@ -5,6 +5,7 @@ import {
   canRetreatActive,
   describeAction,
   listAvailableActions,
+  listAvailableHandActions,
   type PlayerAction,
   performAction,
 } from "./player-actions.ts";
@@ -60,10 +61,12 @@ describe("今できる行動の一覧", () => {
       throw new Error("バトル場が空");
     }
     active.energies.push(PSYCHIC_ENERGY, PSYCHIC_ENERGY, TELEPATH_ENERGY);
-    const retreats = listAvailableActions({
-      choices: firstCandidateChoices,
-      state,
-    }).filter(
+    const context = { choices: firstCandidateChoices, state };
+    const all = listAvailableActions(context);
+    expect(listAvailableActions(context, "skipRetreat")).toEqual(
+      all.filter((action) => action.kind !== "retreat")
+    );
+    const retreats = all.filter(
       (action): action is Extract<PlayerAction, { kind: "retreat" }> =>
         action.kind === "retreat"
     );
@@ -72,6 +75,27 @@ describe("今できる行動の一覧", () => {
         action.energiesToDiscard.map((energy) => energy.name)
       )
     ).toEqual([["テレパス超エネルギー"], ["基本超エネルギー"]]);
+  });
+
+  test("特定の手札だけを調べても同じ手が同じ順で並び、勝敗が決まれば空になる", () => {
+    const state = buildState({
+      active: RALTS,
+      bench: [RALTS],
+      hand: [KIRLIA, PSYCHIC_ENERGY, PSYCHIC_ENERGY, RALTS],
+    });
+    const context = { choices: firstCandidateChoices, state };
+    const energy = () =>
+      listAvailableHandActions(context, (card) => card === PSYCHIC_ENERGY);
+    expect(energy()).toEqual(
+      listAvailableActions(context).filter(
+        (action) => action.kind === "attachEnergy"
+      )
+    );
+    state.decision = {
+      decidedTurn: { ordinal: 3, owner: "opponent" },
+      reason: "opponentPrizesTaken",
+    };
+    expect(energy()).toEqual([]);
   });
 
   test("一覧の行動を行うと、指した場のポケモンに行う", () => {
