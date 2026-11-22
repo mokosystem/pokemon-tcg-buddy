@@ -24,9 +24,9 @@ import {
   listDeckCardNames,
 } from "../src/learned-win-rate-evaluation.ts";
 import {
-  LEARNING_SAMPLE_GENERATOR_SETTING,
   PLAYING_POLICY_SETTINGS,
   type PlayingPolicySettingName,
+  selectLearningSampleGenerator,
 } from "../src/playing-policy-candidates.ts";
 import { deriveTrialSeed } from "../src/random.ts";
 import { createJevChoiceRequester } from "./jev-choice-request.ts";
@@ -138,7 +138,8 @@ function collectLearningSamples(
 ): MeasurementWorkerReport {
   const cards = buildMeasuredDeckCards(job.deck);
   const deckCardNames = listDeckCardNames(cards);
-  const generator = PLAYING_POLICY_SETTINGS[LEARNING_SAMPLE_GENERATOR_SETTING];
+  const generator =
+    PLAYING_POLICY_SETTINGS[selectLearningSampleGenerator(job.settingName)];
   const samples: LabeledFeatureSample[] = [];
   const gamesPerTurnOrder = Math.floor(job.trainingGames / 2);
   // 親はプロセスの順で記録をつなぐ。連続した試行を配ると、勾配を足す順番がプロセス数によらない。

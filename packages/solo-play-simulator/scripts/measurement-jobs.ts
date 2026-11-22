@@ -65,6 +65,7 @@ export type MeasurementWorkerJob =
     }
   | {
       readonly kind: "collectLearningSamples";
+      readonly settingName: PlayingPolicySettingName;
       readonly deck: LearningDeck;
       /** 学習の対戦の回数。半分を先攻、半分を後攻で回す。 */
       readonly trainingGames: number;

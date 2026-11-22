@@ -131,6 +131,7 @@ async function prepare(
         modelName: `learned-model-${settingName}-${deckCode}-${trainingGames}`,
         outputDirectory,
         processCount,
+        settingName,
         trainingGames,
       });
 }

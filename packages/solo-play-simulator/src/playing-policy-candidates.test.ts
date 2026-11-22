@@ -12,6 +12,7 @@ import {
   PLAYING_POLICY_SETTING_NAMES,
   PLAYING_POLICY_SETTINGS,
   type PlayingPolicyParameters,
+  selectLearningSampleGenerator,
 } from "./playing-policy-candidates.ts";
 import { RECORDED_DECKS, type RecordedDeck } from "./recorded-decks.ts";
 import { runBattleStyleSoloPlayTrial } from "./simulate.ts";
@@ -50,6 +51,18 @@ function reduceParameters(
 }
 
 describe("計測する設定の一覧", () => {
+  test("盤面を学習するための対戦では、改善用の設定と比較元の設定がそれぞれ指定した手順を使う", () => {
+    expect(selectLearningSampleGenerator("prize-progress-search")).toBe(
+      "playout-prize-tie-break-32"
+    );
+    expect(selectLearningSampleGenerator("learned-evaluation-500")).toBe(
+      "playout-prize-tie-break-8"
+    );
+    expect(selectLearningSampleGenerator("learned-evaluation-2000")).toBe(
+      "playout-prize-tie-break-8"
+    );
+  });
+
   test("Issue 70 の候補と Issue 77 の改善用の設定を列挙する", () => {
     const counts = new Map<string, number>();
     for (const name of PLAYING_POLICY_SETTING_NAMES) {

@@ -89,6 +89,7 @@ test("学習の対戦を分けるプロセス数を変えても同じ重みに�
       deck: { deckCode: "RS3MMy-FuGPRu-MypM2X" },
       modelName: "process-order",
       outputDirectory,
+      settingName: "learned-evaluation-500" as const,
       trainingGames: 8,
     };
     const single = await prepareLearnedModel({ ...options, processCount: 1 });

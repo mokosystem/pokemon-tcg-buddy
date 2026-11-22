@@ -170,6 +170,7 @@ export interface LearningPreparation {
  * 結果のパスを持つので、同じ出力のディレクトリで後から学習し直しても、前の計測が指すファイルの中身が変わらないようにする。
  */
 export async function prepareLearnedModel(options: {
+  readonly settingName: PlayingPolicySettingName;
   readonly deck: LearningDeck;
   readonly outputDirectory: string;
   /** 学習の結果のファイルの名前のうち、時刻と拡張子を除いた部分。 */
@@ -183,6 +184,7 @@ export async function prepareLearnedModel(options: {
       baseSeeds: LEARNING_BASE_SEEDS,
       deck: options.deck,
       kind: "collectLearningSamples",
+      settingName: options.settingName,
       trainingGames: options.trainingGames,
     },
     options.processCount

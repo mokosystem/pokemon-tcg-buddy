@@ -99,6 +99,7 @@ async function prepareLearnedModelOfDeck(deckCode: string) {
     modelName: `learned-model-${settingName}-${deckCode}-histories`,
     outputDirectory,
     processCount,
+    settingName,
     trainingGames,
   });
   return preparation.model;
