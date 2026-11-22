@@ -346,7 +346,7 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
       const base = createOneStepSearch(
         scoreWithModel,
         requireParameter(parameters, "samplesPerCandidate"),
-        "none",
+        "prizeDifference",
         policySeed
       );
       const trialRandom = createSeededRandom(derivePolicySeed(policySeed));
