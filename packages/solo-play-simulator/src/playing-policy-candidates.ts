@@ -159,7 +159,11 @@ const playToDecision = createPlayoutTrialScorer(createPrizeProgressPlayout);
 /** 勝てる試し回しが少ない局面でも、場が空になって早く負ける手より、自分がサイドを取り進める手を選ぶ。 */
 const scorePrizeProgress: TrialScorer = (input) => {
   const score = playToDecision(input);
-  const progress = (PRIZE_COUNT - input.state.prizes.length) / PRIZE_COUNT;
+  const damage = input.state.opponentFieldDamage;
+  const partial =
+    score.winRate === 0 && (damage.active > 0 || damage.bench > 0) ? 0.5 : 0;
+  const progress =
+    (PRIZE_COUNT - input.state.prizes.length + partial) / PRIZE_COUNT;
   return { ...score, winRate: (score.winRate + progress) / 2 };
 };
 
