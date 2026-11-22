@@ -120,7 +120,7 @@ const WORKER_SCRIPT_PATH = fileURLToPath(
   new URL("./playing-policy-measurement-worker.ts", import.meta.url)
 );
 
-/** プロセスを processCount 個起こし、i 番目のプロセスに試行の番号 i、i + processCount、… を担当させ、全員の結果を集める。 */
+/** 計測は試行を飛び番で、学習は試行番号順に記録を集めるため連番で分担し、プロセスの順に結果を返す。 */
 export async function runMeasurementWorkers(
   job: MeasurementWorkerJob,
   processCount: number

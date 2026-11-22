@@ -141,11 +141,14 @@ function collectLearningSamples(
   const generator = PLAYING_POLICY_SETTINGS[LEARNING_SAMPLE_GENERATOR_SETTING];
   const samples: LabeledFeatureSample[] = [];
   const gamesPerTurnOrder = Math.floor(job.trainingGames / 2);
-  for (
-    let trialIndex = job.firstTrialIndex;
-    trialIndex < gamesPerTurnOrder;
-    trialIndex += job.trialIndexStride
-  ) {
+  // 親はプロセスの順で記録をつなぐ。連続した試行を配ると、勾配を足す順番がプロセス数によらない。
+  const firstIndex = Math.floor(
+    (gamesPerTurnOrder * job.firstTrialIndex) / job.trialIndexStride
+  );
+  const endIndex = Math.floor(
+    (gamesPerTurnOrder * (job.firstTrialIndex + 1)) / job.trialIndexStride
+  );
+  for (let trialIndex = firstIndex; trialIndex < endIndex; trialIndex += 1) {
     for (const [baseSeed, wentFirst] of [
       [job.baseSeeds.firstPlayer, true],
       [job.baseSeeds.secondPlayer, false],
