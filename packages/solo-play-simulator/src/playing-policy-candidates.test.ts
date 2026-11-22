@@ -50,8 +50,7 @@ function reduceParameters(
 }
 
 describe("計測する設定の一覧", () => {
-  test("候補 1 が 2 通り、候補 2〜4 が 2 通りずつ、計 10 の設定がある", () => {
-    expect(PLAYING_POLICY_SETTING_NAMES).toHaveLength(10);
+  test("Issue 70 の候補と Issue 77 の改善用の設定を列挙する", () => {
     const counts = new Map<string, number>();
     for (const name of PLAYING_POLICY_SETTING_NAMES) {
       const { candidate } = PLAYING_POLICY_SETTINGS[name];
@@ -63,6 +62,7 @@ describe("計測する設定の一覧", () => {
       "2b": 2,
       "3": 2,
       "4": 2,
+      "77": 1,
     });
   });
 

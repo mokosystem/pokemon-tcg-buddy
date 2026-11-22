@@ -20,10 +20,12 @@ import {
   type TrialScorer,
   type TrialScoreTieBreak,
 } from "./search-policy.ts";
+import { PRIZE_COUNT } from "./state.ts";
 import { createTurnSequenceSearchPolicy } from "./turn-sequence-search-policy.ts";
 
 /** 計測する設定の名前。設計文書の表と計測スクリプトの引数に使う。 */
 export type PlayingPolicySettingName =
+  | "prize-progress-search"
   | "first-action"
   | "random-action"
   | "playout-win-rate-8"
@@ -78,6 +80,13 @@ const TURN_SEQUENCE_SAMPLES_PER_SEQUENCE = 8;
 const TURN_SEQUENCE_BASE_SAMPLES_PER_CANDIDATE = 8;
 
 const playoutTrialScorer = createPlayoutTrialScorer(createPlayoutActionPolicy);
+
+/** 勝てる試し回しが少ない局面でも、場が空になって早く負ける手より、自分がサイドを取り進める手を選ぶ。 */
+const scorePrizeProgress: TrialScorer = (input) => {
+  const score = playoutTrialScorer(input);
+  const progress = (PRIZE_COUNT - input.state.prizes.length) / PRIZE_COUNT;
+  return { ...score, winRate: (score.winRate + progress) / 2 };
+};
 
 function requireParameter(
   parameters: PlayingPolicyParameters,
@@ -205,6 +214,17 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
   ),
   "playout-win-rate-8": createPlayoutSetting("2", 8, "none"),
   "playout-win-rate-32": createPlayoutSetting("2", 32, "none"),
+  "prize-progress-search": {
+    candidate: "77",
+    createPolicy: (_, parameters, policySeed) =>
+      createOneStepSearch(
+        scorePrizeProgress,
+        requireParameter(parameters, "samplesPerCandidate"),
+        "none",
+        policySeed
+      ),
+    parameters: { samplesPerCandidate: 8 },
+  },
   "random-action": {
     candidate: "1",
     createPolicy: (_, __, policySeed) => createRandomActionPolicy(policySeed),
@@ -227,6 +247,7 @@ export const PLAYING_POLICY_SETTING_NAMES: readonly PlayingPolicySettingName[] =
     "turn-sequence-128",
     "learned-evaluation-500",
     "learned-evaluation-2000",
+    "prize-progress-search",
   ];
 /** 候補 4 の学習用の記録を生成する設定。手を選ばない手順は勝率がほぼ 0 で、勝ちの記録が集まらないため。 */
 export const LEARNING_SAMPLE_GENERATOR_SETTING: PlayingPolicySettingName =
