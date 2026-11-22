@@ -47,6 +47,7 @@ import {
   readRecordedDecks,
   readSeedPurpose,
   readSettingNames,
+  readTrainingGamesOption,
   reserveMeasurementOutputBase,
   runMeasurementWorkers,
   summarizeTally,
@@ -89,11 +90,7 @@ if (cutoffIncludesPreparation && maxMinutes === undefined) {
     "--cutoff-includes-preparation は --max-minutes と併せて渡す"
   );
 }
-const trainingGamesOverride = readIntegerOption(
-  "--training-games",
-  values["training-games"],
-  1
-);
+const trainingGamesOverride = readTrainingGamesOption(values["training-games"]);
 
 /** 区切りを、計測の条件の箇条書きの 1 行にする。 */
 function formatCutoffLine(): string {
@@ -131,7 +128,7 @@ async function prepare(
     ? undefined
     : await prepareLearnedModel({
         deck: { deckCode },
-        fileName: `learned-model-${settingName}-${deckCode}-${trainingGames}.json`,
+        modelName: `learned-model-${settingName}-${deckCode}-${trainingGames}`,
         outputDirectory,
         processCount,
         trainingGames,

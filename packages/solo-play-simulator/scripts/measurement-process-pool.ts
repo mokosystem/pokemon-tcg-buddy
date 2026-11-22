@@ -165,11 +165,15 @@ export interface LearningPreparation {
 /**
  * 候補 4 の準備。学習用の記録を processCount 個のプロセスで集め、親のプロセスで学習して、学習の結果を outputDirectory に
  * JSON で書く(子のプロセスにはパスを渡す。ファイルを読むのは scripts/ だけ)。
+ *
+ * 学習の結果のファイルは <YYYYMMDD-HHMMSS>-<modelName>.json で、既にあるファイルは上書きしない。計測の結果は使った学習の
+ * 結果のパスを持つので、同じ出力のディレクトリで後から学習し直しても、前の計測が指すファイルの中身が変わらないようにする。
  */
 export async function prepareLearnedModel(options: {
   readonly deck: LearningDeck;
   readonly outputDirectory: string;
-  readonly fileName: string;
+  /** 学習の結果のファイルの名前のうち、時刻と拡張子を除いた部分。 */
+  readonly modelName: string;
   readonly processCount: number;
   readonly trainingGames: number;
 }): Promise<LearningPreparation> {
@@ -195,8 +199,7 @@ export async function prepareLearnedModel(options: {
     LEARNING_OPTIONS
   );
   const trainFinishedAt = measureNowEpochMilliseconds();
-  mkdirSync(options.outputDirectory, { recursive: true });
-  const modelPath = join(options.outputDirectory, options.fileName);
+  const modelPath = `${reserveTimestampedJsonBase(options.outputDirectory, options.modelName, new Date())}.json`;
   writeFileSync(modelPath, `${JSON.stringify(model)}\n`);
   return {
     collectMilliseconds: trainStartedAt - collectStartedAt,
@@ -230,26 +233,23 @@ function formatTimestamp(date: Date): string {
 }
 
 /**
- * 出力のパスのうち拡張子を除いた部分(<出力のディレクトリ>/<YYYYMMDD-HHMMSS>-<計測の名前>-<設定の名前>)を now の時刻で決め、
- * その名前の空の .json を作って、後から名前を決める実行が同じパスを選ばないようにする。同じ名前の .json が既にあれば、
- * 末尾に -2、-3、… を付けた、まだ無い名前にする。
+ * <ディレクトリ>/<YYYYMMDD-HHMMSS>-<名前> というパス(拡張子を除いた部分)を now の時刻で決め、その名前の空の .json を作って、
+ * 後から名前を決める実行が同じパスを選ばないようにする。同じ名前の .json が既にあれば、末尾に -2、-3、… を付けた、
+ * まだ無い名前にする。
  *
- * 既にある名前のときに例外を投げて止めないのは、名前を決めるのが計測を終えた後で、止めると終えた計測の結果を捨てることになるため。
+ * 既にある名前のときに例外を投げて止めないのは、名前を決めるのが計測や学習を終えた後で、止めると終えた結果を捨てることになるため。
  */
-export function reserveMeasurementOutputBase(
-  options: {
-    readonly outputDirectory: string;
-    readonly measurementName: string;
-    readonly settingName: string;
-  },
-  now: Date = new Date()
+function reserveTimestampedJsonBase(
+  directory: string,
+  name: string,
+  now: Date
 ): string {
-  mkdirSync(options.outputDirectory, { recursive: true });
-  const name = `${formatTimestamp(now)}-${options.measurementName}-${options.settingName}`;
+  mkdirSync(directory, { recursive: true });
+  const timestampedName = `${formatTimestamp(now)}-${name}`;
   for (let ordinal = 1; ; ordinal += 1) {
     const base = join(
-      options.outputDirectory,
-      ordinal === 1 ? name : `${name}-${ordinal}`
+      directory,
+      ordinal === 1 ? timestampedName : `${timestampedName}-${ordinal}`
     );
     try {
       // 「無ければ作る」を 1 回の操作にする(flag の wx)。あるかを調べてから作ると、調べてから作るまでのあいだに、ほかの実行が
@@ -264,6 +264,25 @@ export function reserveMeasurementOutputBase(
       }
     }
   }
+}
+
+/**
+ * 計測の出力のパスのうち拡張子を除いた部分(<出力のディレクトリ>/<YYYYMMDD-HHMMSS>-<計測の名前>-<設定の名前>)を now の時刻で
+ * 決めて、ほかの実行が同じパスを選ばないようにする(reserveTimestampedJsonBase)。
+ */
+export function reserveMeasurementOutputBase(
+  options: {
+    readonly outputDirectory: string;
+    readonly measurementName: string;
+    readonly settingName: string;
+  },
+  now: Date = new Date()
+): string {
+  return reserveTimestampedJsonBase(
+    options.outputDirectory,
+    `${options.measurementName}-${options.settingName}`,
+    now
+  );
 }
 
 /**
@@ -425,6 +444,22 @@ export function readIntegerOption(
     );
   }
   return parsed;
+}
+
+/**
+ * --training-games に渡された値を、学習の対戦の回数として読む。2 以上の偶数だけを受け付ける。学習の対戦は先攻と後攻を
+ * 渡した回数の半分ずつ回すので、奇数を受け付けると、回した対戦が渡した回数より 1 回少ないのに、出力には渡した回数が残る。
+ */
+export function readTrainingGamesOption(
+  value: string | undefined
+): number | undefined {
+  const trainingGames = readIntegerOption("--training-games", value, 2);
+  if (trainingGames !== undefined && trainingGames % 2 !== 0) {
+    throw new Error(
+      `--training-games には 2 以上の偶数を渡す(${value} は渡せない)`
+    );
+  }
+  return trainingGames;
 }
 
 /** 共通の引数のうち、プロセスの数(既定は CPU の数)と出力のディレクトリ(必ず渡す)を読む。 */

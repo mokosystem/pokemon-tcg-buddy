@@ -108,14 +108,14 @@ async function prepare(settingName: PlayingPolicySettingName) {
   const startedAt = measureNowEpochMilliseconds();
   const before = await prepareLearnedModel({
     deck: { deckCode: CARD_SWAP_SUBJECT.deckCode },
-    fileName: `learned-model-${settingName}-card-swap-before.json`,
+    modelName: `learned-model-${settingName}-card-swap-before`,
     outputDirectory,
     processCount,
     trainingGames,
   });
   const after = await prepareLearnedModel({
     deck: CARD_SWAP_SUBJECT,
-    fileName: `learned-model-${settingName}-card-swap-after.json`,
+    modelName: `learned-model-${settingName}-card-swap-after`,
     outputDirectory,
     processCount,
     trainingGames,

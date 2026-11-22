@@ -10,6 +10,7 @@ import {
   readCommonOptions,
   readIntegerOption,
   readPositiveNumberOption,
+  readTrainingGamesOption,
   reserveMeasurementOutputBase,
   writeMeasurementOutput,
   writeMeasurementOutputAt,
@@ -56,6 +57,15 @@ describe("数の引数の読み取り", () => {
     expect(() => readIntegerOption("--first-trial", "-1", 0)).toThrow(
       "--first-trial"
     );
+  });
+
+  test("学習の対戦の回数は 2 以上の偶数だけを読み、奇数と 0 は例外になる", () => {
+    expect(readTrainingGamesOption(undefined)).toBeUndefined();
+    expect(readTrainingGamesOption("2")).toBe(2);
+    expect(readTrainingGamesOption("500")).toBe(500);
+    for (const value of ["0", "1", "3", "501"]) {
+      expect(() => readTrainingGamesOption(value)).toThrow("--training-games");
+    }
   });
 
   test("プロセスの数は 1 以上の整数だけを読み、数でない文字列は例外になる", () => {

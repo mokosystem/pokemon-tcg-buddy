@@ -8,12 +8,14 @@
  * 「到達の判定の計測」)。
  *
  * bun run print:playing-policy-game-histories -- --setting <設定> [--deck <デッキコード>]…
- *   [--first-trial <番号>] [--trials <数>] [--losses-only] [--training-games <学習の対戦の回数>] --output <ディレクトリ>
+ *   [--first-trial <番号>] [--trials <数>] [--losses-only] [--training-games <学習の対戦の回数>] [--processes <数>]
+ *   --output <ディレクトリ>
  *
  * --deck を省くと、記録済みのデッキすべて。デッキ × 先攻・後攻ごとに、試行 --first-trial(既定 0)から --trials(既定 3)回を回す。
  * --losses-only を付けると、回した対戦のうち負けた対戦だけを書く(回す対戦は変わらない)。
- * --training-games は、measure:playing-policy-win-rates に同じ引数を渡して測ったときに、同じ値を渡す。学習の対戦の回数が
- * 違うと学習の結果が違い、同じ試行でも計測と別の対戦になるため。
+ * --training-games と --processes は、measure:playing-policy-win-rates に同じ引数を渡して測ったときに、同じ値を渡す。
+ * 学習の対戦の回数か、学習の対戦を集めるプロセスの数が違うと学習の結果が違い、同じ試行でも計測と別の対戦になりうるため
+ * (プロセスの数が違うと、集めた記録を学習に渡す順が変わる)。--processes を省くと CPU の数。
  */
 
 import { parseArgs } from "node:util";
@@ -33,6 +35,7 @@ import {
   readIntegerOption,
   readOneSettingName,
   readRecordedDecks,
+  readTrainingGamesOption,
   writeMeasurementOutput,
 } from "./measurement-process-pool.ts";
 
@@ -46,6 +49,7 @@ const { values } = parseArgs({
     "first-trial": { type: "string" },
     "losses-only": { type: "boolean" },
     output: { type: "string" },
+    processes: { type: "string" },
     setting: { type: "string" },
     "training-games": { type: "string" },
     trials: { type: "string" },
@@ -65,7 +69,7 @@ const writesLossesOnly = values["losses-only"] === true;
 /** 候補 4 の設定なら、学習の対戦の回数(--training-games があればその値)。学習の要らない設定は undefined。 */
 const trainingGames = findTrainingGames(
   settingName,
-  readIntegerOption("--training-games", values["training-games"], 1)
+  readTrainingGamesOption(values["training-games"])
 );
 
 function formatGame(
@@ -94,7 +98,7 @@ async function prepareLearnedModelOfDeck(deckCode: string) {
   }
   const preparation = await prepareLearnedModel({
     deck: { deckCode },
-    fileName: `learned-model-${settingName}-${deckCode}-histories.json`,
+    modelName: `learned-model-${settingName}-${deckCode}-histories`,
     outputDirectory,
     processCount,
     trainingGames,
@@ -115,6 +119,7 @@ const reproductionCommand = [
   ...(values["training-games"] === undefined || trainingGames === undefined
     ? []
     : [`--training-games ${trainingGames}`]),
+  ...(values.processes === undefined ? [] : [`--processes ${processCount}`]),
   "--output <ディレクトリ>",
 ].join(" ");
 
@@ -175,6 +180,7 @@ const path = writeMeasurementOutput({
     games,
     measurement: "playing-policy-game-histories",
     playedGameCount,
+    processCount,
     settingName,
     trainingGames,
     trialsPerTurnOrder,
