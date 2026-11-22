@@ -19,7 +19,11 @@ import {
   createLearnedEvaluationTrialScorer,
   type LearnedWinRateModel,
 } from "./learned-win-rate-evaluation.ts";
-import { listAvailableHandActions, performAction } from "./player-actions.ts";
+import {
+  listAvailableActions,
+  listAvailableHandActions,
+  performAction,
+} from "./player-actions.ts";
 import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
 import { createSeededRandom, derivePolicySeed } from "./random.ts";
 import {
@@ -158,6 +162,30 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
       );
     },
     playTurn: (context) => {
+      const energyAbility = listAvailableActions(context, "skipRetreat").find(
+        (action) => {
+          if (action.kind !== "useAbility") {
+            return false;
+          }
+          const card =
+            context.state.listPokemonInPlay()[action.pokemonIndex]?.card;
+          if (card?.record.category !== CardCategory.Pokemon) {
+            return false;
+          }
+          const effect = card.record.abilities.find(
+            (entry) => entry.name === action.abilityName
+          )?.translation;
+          return (
+            effect?.kind === "activatedInPlay" &&
+            effect.effect.steps.some(
+              (step) => step.operation === "attachEnergyFromHand"
+            )
+          );
+        }
+      );
+      if (energyAbility !== undefined) {
+        performAction(context, energyAbility);
+      }
       const energy = chooseEnergyForAttack(context, seed);
       if (energy !== undefined) {
         performAction(context, energy);
