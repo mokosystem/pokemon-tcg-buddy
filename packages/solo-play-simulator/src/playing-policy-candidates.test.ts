@@ -52,14 +52,17 @@ function reduceParameters(
 
 describe("計測する設定の一覧", () => {
   test("盤面を学習するための対戦では、改善用の設定と比較元の設定がそれぞれ指定した手順を使う", () => {
-    expect(selectLearningSampleGenerator("prize-progress-search")).toBe(
-      "playout-prize-tie-break-32"
-    );
+    expect(
+      selectLearningSampleGenerator("prize-progress-search")
+    ).toMatchObject({
+      candidate: "77",
+      parameters: { samplesPerCandidate: 32 },
+    });
     expect(selectLearningSampleGenerator("learned-evaluation-500")).toBe(
-      "playout-prize-tie-break-8"
+      PLAYING_POLICY_SETTINGS["playout-prize-tie-break-8"]
     );
     expect(selectLearningSampleGenerator("learned-evaluation-2000")).toBe(
-      "playout-prize-tie-break-8"
+      PLAYING_POLICY_SETTINGS["playout-prize-tie-break-8"]
     );
   });
 

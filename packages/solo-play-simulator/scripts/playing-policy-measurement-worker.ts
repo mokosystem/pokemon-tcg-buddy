@@ -138,8 +138,7 @@ function collectLearningSamples(
 ): MeasurementWorkerReport {
   const cards = buildMeasuredDeckCards(job.deck);
   const deckCardNames = listDeckCardNames(cards);
-  const generator =
-    PLAYING_POLICY_SETTINGS[selectLearningSampleGenerator(job.settingName)];
+  const generator = selectLearningSampleGenerator(job.settingName);
   const samples: LabeledFeatureSample[] = [];
   const gamesPerTurnOrder = Math.floor(job.trainingGames / 2);
   // 親はプロセスの順で記録をつなぐ。連続した試行を配ると、勾配を足す順番がプロセス数によらない。

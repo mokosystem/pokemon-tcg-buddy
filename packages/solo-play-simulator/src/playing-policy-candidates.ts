@@ -324,13 +324,14 @@ function createOneStepSearch(
 function createPlayoutSetting(
   candidate: string,
   samplesPerCandidate: number,
-  tieBreak: TrialScoreTieBreak
+  tieBreak: TrialScoreTieBreak,
+  scoreTrial: TrialScorer = playoutTrialScorer
 ): PlayingPolicySetting {
   return {
     candidate,
     createPolicy: (_, parameters, policySeed) =>
       createOneStepSearch(
-        playoutTrialScorer,
+        scoreTrial,
         requireParameter(parameters, "samplesPerCandidate"),
         tieBreak,
         policySeed
@@ -492,13 +493,20 @@ export const PLAYING_POLICY_SETTING_NAMES: readonly PlayingPolicySettingName[] =
     "learned-evaluation-2000",
     "prize-progress-search",
   ];
+const prizeProgressLearningGenerator = createPlayoutSetting(
+  "77",
+  32,
+  "prizeDifference",
+  playToDecision
+);
+
 /** 盤面を学習する対戦の手順。比較元の設定は Issue 70 の計測時と同じ手順を使う。 */
 export function selectLearningSampleGenerator(
   settingName: PlayingPolicySettingName
-): PlayingPolicySettingName {
+): PlayingPolicySetting {
   return settingName === "prize-progress-search"
-    ? "playout-prize-tie-break-32"
-    : "playout-prize-tie-break-8";
+    ? prizeProgressLearningGenerator
+    : PLAYING_POLICY_SETTINGS["playout-prize-tie-break-8"];
 }
 
 export function isPlayingPolicySettingName(
