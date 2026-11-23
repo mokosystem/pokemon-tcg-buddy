@@ -333,6 +333,7 @@ export function canEvolvePokemonFromHand(
 ): boolean {
   const { state } = context;
   return (
+    card.evolvesFrom !== undefined &&
     state.hand.includes(card) &&
     (state.canEvolve(target, card) ||
       (state.canEvolveThisTurn(target) &&

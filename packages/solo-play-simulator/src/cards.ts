@@ -2,13 +2,14 @@
  * 対戦で使う 1 枚のカード。カードの記録(card-record-schema.ts)から作る。
  *
  * カードテキストそのものは持たない。骨組みの判定がよく使う属性を記録から写して持ち、
- * 効果の翻訳は record から引く。同じカードは同じ参照を枚数分並べて表す。
+ * 場にある間ずっと働く効果もカードを作るときに記録から取り出す。同じカードは同じ参照を枚数分並べて表す。
  */
 
 import {
   CardCategory,
   type CardFilter,
   type CardRecord,
+  type ContinuousEffect,
   type EnergyProvision,
   EvolutionStage,
   type ExRule,
@@ -21,6 +22,7 @@ export interface Card {
   readonly basicPokemonOfEvolutionLine?: string;
   readonly cardId: string;
   readonly category: CardCategory;
+  readonly continuousEffects: readonly ContinuousEffect[];
   readonly evolvesFrom?: string;
   readonly exRule?: ExRule;
   readonly hasRuleBox: boolean;
@@ -52,11 +54,25 @@ function extractEvolution(
   }
 }
 
+function listContinuousEffectsOfRecord(record: CardRecord): ContinuousEffect[] {
+  if (record.category === CardCategory.Pokemon) {
+    return record.abilities.flatMap(({ translation }) =>
+      translation?.kind === "continuous" ? [translation.continuousEffect] : []
+    );
+  }
+  return "cardEffects" in record
+    ? record.cardEffects.flatMap((effect) =>
+        effect.kind === "continuous" ? [effect.continuousEffect] : []
+      )
+    : [];
+}
+
 /** 記録と、デッキに入っている印刷のカード ID から、対戦で使うカードを作る。 */
 export function buildCardFromRecord(record: CardRecord, cardId: string): Card {
   const common = {
     cardId,
     category: record.category,
+    continuousEffects: listContinuousEffectsOfRecord(record),
     hasRuleBox: false,
     hp: 0,
     isTerastal: false,

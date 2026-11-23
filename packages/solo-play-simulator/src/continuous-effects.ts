@@ -9,7 +9,6 @@ import {
   type Attack,
   CardCategory,
   type CardFilter,
-  type CardRecord,
   type ContinuousEffect,
   type EnergyProvision,
   type PokemonType,
@@ -30,53 +29,6 @@ interface CollectedContinuousEffect {
   /** 特性のポケモン、ポケモンのどうぐ・特殊エネルギーをつけているポケモン。スタジアムは undefined。 */
   readonly holder: PokemonInPlay | undefined;
   readonly sourceCard: Card;
-}
-
-/**
- * 記録ごとの、場にある間ずっと働く効果の一覧。記録は変わらないので、判定のたびに記録を読み直さないよう覚えておく
- * (探索は状態を複製して何度も判定するため)。
- */
-const continuousEffectsByRecord = new WeakMap<
-  CardRecord,
-  { abilities: ContinuousEffect[]; card: ContinuousEffect[] }
->();
-
-function listContinuousEffectsOfRecord(record: CardRecord): {
-  abilities: ContinuousEffect[];
-  card: ContinuousEffect[];
-} {
-  const cached = continuousEffectsByRecord.get(record);
-  if (cached !== undefined) {
-    return cached;
-  }
-  const listed = {
-    abilities:
-      record.category === CardCategory.Pokemon
-        ? record.abilities.flatMap((ability) =>
-            ability.translation?.kind === "continuous"
-              ? [ability.translation.continuousEffect]
-              : []
-          )
-        : [],
-    card:
-      "cardEffects" in record
-        ? record.cardEffects.flatMap((cardEffect) =>
-            cardEffect.kind === "continuous"
-              ? [cardEffect.continuousEffect]
-              : []
-          )
-        : [],
-  };
-  continuousEffectsByRecord.set(record, listed);
-  return listed;
-}
-
-function listCardContinuousEffects(card: Card): ContinuousEffect[] {
-  return listContinuousEffectsOfRecord(card.record).card;
-}
-
-function listAbilityContinuousEffects(card: Card): ContinuousEffect[] {
-  return listContinuousEffectsOfRecord(card.record).abilities;
 }
 
 function appliesTo(
@@ -134,13 +86,7 @@ function collectContinuousEffects(
   const { stadium } = state;
   const collected: CollectedContinuousEffect[] = [];
   if (stadium !== undefined) {
-    collectMet(
-      state,
-      collected,
-      stadium,
-      undefined,
-      listCardContinuousEffects(stadium)
-    );
+    collectMet(state, collected, stadium, undefined, stadium.continuousEffects);
   }
   const stadiumEffects = [...collected];
   const isNegatedBy = (
@@ -153,13 +99,13 @@ function collectContinuousEffects(
         appliesTo(state, entry, pokemon)
     );
   for (const pokemon of state.listPokemonInPlay()) {
-    const abilities = listAbilityContinuousEffects(pokemon.card);
+    const abilities = pokemon.card.continuousEffects;
     if (abilities.length > 0 && !isNegatedBy("negateAbilities", pokemon)) {
       collectMet(state, collected, pokemon.card, pokemon, abilities);
     }
     const { tool } = pokemon;
     if (tool !== undefined) {
-      const toolEffects = listCardContinuousEffects(tool);
+      const toolEffects = tool.continuousEffects;
       if (
         toolEffects.length > 0 &&
         !isNegatedBy("negateToolEffects", pokemon)
@@ -168,13 +114,7 @@ function collectContinuousEffects(
       }
     }
     for (const energy of pokemon.energies) {
-      collectMet(
-        state,
-        collected,
-        energy,
-        pokemon,
-        listCardContinuousEffects(energy)
-      );
+      collectMet(state, collected, energy, pokemon, energy.continuousEffects);
     }
   }
   return collected;
