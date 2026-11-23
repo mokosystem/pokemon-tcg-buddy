@@ -11,20 +11,37 @@
       "damage": {
         "kind": "none"
       },
-      "name": "まっちゃスピン"
+      "name": "まっちゃスピン",
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "branchOnCondition",
+            "condition": {
+              "condition": "discardHasPokemonWithAbilityNamed",
+              "abilityName": "ばけがくれ",
+              "minCount": 6
+            },
+            "stepsWhenMet": [
+              {
+                "operation": "placeDamageCountersOnEachOpponentPokemon",
+                "count": 4
+              }
+            ],
+            "stepsOtherwise": []
+          }
+        ],
+        "useConditions": []
+      }
     }
   ],
-  "battleStyleSoloPlayReviewedOn": "2026-11-21",
+  "battleStyleSoloPlayReviewedOn": "2026-11-23",
   "cardIds": ["050225"],
   "category": "ポケモン",
   "evolvesFrom": "チャデス",
   "excludedEffects": [
     {
       "description": "特性「ばけがくれ」(相手のワザや特性の効果を受けない)。相手の番に起きるのは相手の攻撃のダメージだけで、相手のワザや特性の効果が無いため、働く場面が無い",
-      "reason": "requiresOpponent"
-    },
-    {
-      "description": "ワザ「まっちゃスピン」(トラッシュの「ばけがくれ」のポケモンが 6 枚以上なら、相手のポケモン全員にダメカンを 4 個ずつのせる)。相手のポケモンの数で量が決まる効果は扱いを決めていないため含めない",
       "reason": "requiresOpponent"
     }
   ],
@@ -34,8 +51,21 @@
   "name": "ヤバソチャ",
   "pokemonType": "grass",
   "retreatCost": 1,
-  "rulings": [],
+  "rulings": [
+    {
+      "question": "このワザでのせるダメカンにワザのダメージの増減を適用するか",
+      "interpretation": "ワザの効果でダメカンをのせる",
+      "reflectedIn": "ワザのダメージを持たず、相手の各ポケモンにのせるダメカンを操作として記録した",
+      "source": {
+        "kind": "officialQa",
+        "checkedOn": "2026-11-23",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%BE%E3%81%A3%E3%81%A1%E3%82%83%E3%82%B9%E3%83%94%E3%83%B3&regulation_faq_main_item1=all",
+        "questionSummary": "相手のベンチの悪ポケモンがワザのダメージを受けない状態でも、ワザの効果のダメカンはのると回答"
+      }
+    }
+  ],
   "stage": "1進化",
-  "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-11-21"
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-23",
+  "cardDetailUrl": "https://www.pokemon-card.com/card-search/details.php/card/50225/regu/XY"
 }

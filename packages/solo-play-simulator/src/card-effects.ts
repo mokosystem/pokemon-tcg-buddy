@@ -34,6 +34,7 @@ import {
 } from "./effect-choices.ts";
 import {
   canStartEffect,
+  countHeadsUntilTails,
   findCardEffects,
   markAbilityUsed,
   resolveAbilityTriggers,
@@ -555,7 +556,9 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
     state,
     active,
     usable.attack,
-    energiesToDiscard?.length
+    usable.attack.damage.kind === "perHeadsUntilTails"
+      ? countHeadsUntilTails(state, attackName)
+      : energiesToDiscard?.length
   );
   if (damage !== undefined) {
     addDamageToOpponentField(state, "active", damage, attackName);

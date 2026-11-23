@@ -56,6 +56,23 @@ const POLTCHAGEIST = buildRecordedCard("050224");
 const SHUPPET = buildRecordedCard("050250");
 
 describe("ワザのダメージ", () => {
+  test.each([
+    { bench: [], damage: 60 },
+    { bench: [RALTS, GARDEVOIR], damage: 100 },
+  ])(
+    "フルムーンロンドは両方のベンチを数えて $damage ダメージ",
+    ({ bench, damage }) => {
+      const clefairy = buildRecordedCard("047041");
+      const state = buildState({ active: clefairy, bench });
+      expect(
+        calculateAttackDamage(
+          state,
+          activeOf(state),
+          findAttack(clefairy, "フルムーンロンド")
+        )
+      ).toBe(damage);
+    }
+  );
   test("サンダーコネクトは 60 に自分のベンチポケモンの数×20 を足し、れんけいスローは自分の場のたねポケモンの数×20", () => {
     const state = buildState({
       active: TAPU_KOKO_EX,
@@ -293,7 +310,7 @@ describe("ワザのダメージ", () => {
     });
   });
 
-  test("固定のダメージはそのまま、コインで決まる上乗せは含めず、ダメージの無いワザは undefined", () => {
+  test("固定値、コインによる上乗せの期待値、ダメージのないワザを見積もる", () => {
     const state = buildState({ active: DRAGAPULT });
     expect(
       calculateAttackDamage(
@@ -308,7 +325,7 @@ describe("ワザのダメージ", () => {
         activeOf(state),
         findAttack(KANGASKHAN, "マシンガンコンボ")
       )
-    ).toBe(200);
+    ).toBe(250);
     expect(
       calculateAttackDamage(
         state,

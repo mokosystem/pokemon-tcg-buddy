@@ -1,33 +1,54 @@
 {
   "$schema": "../card-record.schema.json",
-  "battleStyleSoloPlayReviewedOn": "2026-11-21",
-  "cardEffects": [],
-  "cardIds": ["047856", "047899"],
-  "category": "サポート",
-  "excludedEffects": [
+  "battleStyleSoloPlayReviewedOn": "2026-11-23",
+  "cardEffects": [
     {
-      "description": "自分のメガシンカex 1 匹の HP をすべて回復する。回復は計算に含めない",
-      "reason": "healing"
-    },
-    {
-      "description": "回復したポケモンについているエネルギーをすべて手札に戻す。回復に付く効果で、回復を計算に含めないため、エネルギーも戻らない(裁定のデータ)。このカードは使っても何も起きない",
-      "reason": "healing"
-    }
-  ],
-  "name": "ミツルの思いやり",
-  "rulings": [
-    {
-      "interpretation": "起こさない。エネルギーを戻すのは回復したポケモンだけで、回復しなかったポケモンのエネルギーは動かない。回復を含めない計算では回復したポケモンがいないため、エネルギーも戻さない",
-      "question": "回復を計算に含めないとき、回復したポケモンのエネルギーを手札に戻す効果だけを起こすか",
-      "reflectedIn": "効果を翻訳せず、含めなかった効果に書いた(計算の前提に出る)。使うとトラッシュに移るだけになる",
-      "source": {
-        "basis": "同じ書き方(HP をすべて回復し、回復したポケモンのエネルギーを動かす)のサポート「モミ」の公式 Q&A(検索語「モミ」): 効果で回復できないときや、HP が満タンのポケモンについては、ついているエネルギーもトラッシュしないと回答されている。「ミツルの思いやり」の公式 Q&A(検索語「ミツルの思いやり」)は、エネルギーが無いポケモンやエネルギーを戻せないときの回復についての 2 件だけだった。回復を含めないこと自体は、設計文書「扱わないと決めたこと」と Issue 77 の決定事項による",
-        "checkedOn": "2026-11-21",
-        "kind": "noMatchingQa",
-        "searchTerms": ["ミツルの思いやり", "モミ"]
+      "kind": "whenPlayed",
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "healOwnPokemon",
+            "target": {
+              "exRules": ["megaEvolutionEx"]
+            },
+            "amount": "all",
+            "returnHealedPokemonEnergyToHand": true
+          }
+        ],
+        "useConditions": []
       }
     }
   ],
-  "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-11-21"
+  "cardIds": ["047856", "047899"],
+  "category": "サポート",
+  "excludedEffects": [],
+  "name": "ミツルの思いやり",
+  "rulings": [
+    {
+      "question": "エネルギーのついていないメガシンカexを回復できるか",
+      "interpretation": "ダメカンがのっていれば回復できる",
+      "reflectedIn": "対象は回復できるポケモンから選び、エネルギーの枚数を使用条件にしない",
+      "source": {
+        "kind": "officialQa",
+        "checkedOn": "2026-11-23",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%9F%E3%83%84%E3%83%AB%E3%81%AE%E6%80%9D%E3%81%84%E3%82%84%E3%82%8A&regulation_faq_main_item1=all",
+        "questionSummary": "エネルギーのないメガシンカexをこのサポートで回復できるかについて、できると回答"
+      }
+    },
+    {
+      "question": "回復しなかったポケモンのエネルギーも手札に戻るか",
+      "interpretation": "実際に回復した1匹のエネルギーだけをすべて戻す",
+      "reflectedIn": "回復したポケモンについているカードからエネルギーだけを手札に戻す",
+      "source": {
+        "kind": "noMatchingQa",
+        "checkedOn": "2026-11-23",
+        "searchTerms": ["ミツルの思いやり", "モミ"],
+        "basis": "ミツルの思いやりの直接の回答はエネルギーがない場合と戻せない場合の回復について。同じく回復したポケモンのエネルギーを動かす「モミ」の公式Q&Aでは、HPが満タンのポケモンのエネルギーは動かないと回答。https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%83%A2%E3%83%9F&regulation_faq_main_item1=all"
+      }
+    }
+  ],
+  "translationStatus": "translated",
+  "verifiedOn": "2026-11-23",
+  "cardDetailUrl": "https://www.pokemon-card.com/card-search/details.php/card/47856/regu/XY"
 }

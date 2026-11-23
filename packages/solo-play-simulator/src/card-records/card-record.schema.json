@@ -12,6 +12,10 @@
               "type": "string",
               "format": "date"
             },
+            "cardDetailUrl": {
+              "type": "string",
+              "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
+            },
             "cardIds": {
               "type": "array",
               "items": {
@@ -118,6 +122,10 @@
             "battleStyleSoloPlayReviewedOn": {
               "type": "string",
               "format": "date"
+            },
+            "cardDetailUrl": {
+              "type": "string",
+              "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
             },
             "cardIds": {
               "type": "array",
@@ -230,6 +238,10 @@
             "battleStyleSoloPlayReviewedOn": {
               "type": "string",
               "format": "date"
+            },
+            "cardDetailUrl": {
+              "type": "string",
+              "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
             },
             "cardIds": {
               "type": "array",
@@ -350,6 +362,10 @@
           "type": "string",
           "format": "date"
         },
+        "cardDetailUrl": {
+          "type": "string",
+          "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
+        },
         "cardIds": {
           "type": "array",
           "items": {
@@ -419,6 +435,10 @@
         "battleStyleSoloPlayReviewedOn": {
           "type": "string",
           "format": "date"
+        },
+        "cardDetailUrl": {
+          "type": "string",
+          "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
         },
         "cardIds": {
           "type": "array",
@@ -490,6 +510,10 @@
           "type": "string",
           "format": "date"
         },
+        "cardDetailUrl": {
+          "type": "string",
+          "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
+        },
         "cardIds": {
           "type": "array",
           "items": {
@@ -559,6 +583,10 @@
         "battleStyleSoloPlayReviewedOn": {
           "type": "string",
           "format": "date"
+        },
+        "cardDetailUrl": {
+          "type": "string",
+          "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
         },
         "cardIds": {
           "type": "array",
@@ -630,6 +658,10 @@
           "type": "string",
           "format": "date"
         },
+        "cardDetailUrl": {
+          "type": "string",
+          "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
+        },
         "cardIds": {
           "type": "array",
           "items": {
@@ -696,6 +728,10 @@
         "battleStyleSoloPlayReviewedOn": {
           "type": "string",
           "format": "date"
+        },
+        "cardDetailUrl": {
+          "type": "string",
+          "pattern": "^https://www\\.pokemon-card\\.com/card-search/details\\.php/card/"
         },
         "cardIds": {
           "type": "array",
@@ -917,6 +953,24 @@
         {
           "type": "object",
           "properties": {
+            "amount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "kind": {
+              "const": "perHeadsUntilTails"
+            },
+            "unit": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["amount", "kind", "unit"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "kind": {
               "const": "none"
             }
@@ -966,6 +1020,24 @@
     },
     "BasicCondition": {
       "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "abilityName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "condition": {
+              "const": "discardHasPokemonWithAbilityNamed"
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["abilityName", "condition", "minCount"],
+          "additionalProperties": false
+        },
         {
           "type": "object",
           "properties": {
@@ -1184,6 +1256,54 @@
     },
     "BasicOperation": {
       "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "placeDamageCountersOnEachOpponentPokemon"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "const": "all"
+                }
+              ]
+            },
+            "operation": {
+              "const": "healOwnPokemon"
+            },
+            "returnHealedPokemonEnergyToHand": {
+              "const": true
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "const": "all"
+                },
+                {
+                  "$ref": "#/$defs/PokemonInPlayFilter"
+                }
+              ]
+            }
+          },
+          "required": ["amount", "operation", "target"],
+          "additionalProperties": false
+        },
         {
           "type": "object",
           "properties": {
@@ -2349,6 +2469,24 @@
         {
           "type": "object",
           "properties": {
+            "abilityName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "condition": {
+              "const": "discardHasPokemonWithAbilityNamed"
+            },
+            "minCount": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["abilityName", "condition", "minCount"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
             "condition": {
               "const": "selfIsActive"
             }
@@ -2904,6 +3042,16 @@
           "type": "object",
           "properties": {
             "count": {
+              "const": "benchedPokemonOnBothSides"
+            }
+          },
+          "required": ["count"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
               "const": "energyAttachedToOwnPokemon"
             },
             "energyTypes": {
@@ -3124,6 +3272,54 @@
     },
     "EffectStep": {
       "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "operation": {
+              "const": "placeDamageCountersOnEachOpponentPokemon"
+            }
+          },
+          "required": ["count", "operation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "const": "all"
+                }
+              ]
+            },
+            "operation": {
+              "const": "healOwnPokemon"
+            },
+            "returnHealedPokemonEnergyToHand": {
+              "const": true
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "const": "all"
+                },
+                {
+                  "$ref": "#/$defs/PokemonInPlayFilter"
+                }
+              ]
+            }
+          },
+          "required": ["amount", "operation", "target"],
+          "additionalProperties": false
+        },
         {
           "type": "object",
           "properties": {

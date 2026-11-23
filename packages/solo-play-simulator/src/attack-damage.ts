@@ -1,18 +1,22 @@
 /**
  * ワザのダメージを、カードの記録の規則と今の場から求める。ワザを使ったときに相手のバトル場のダメージに足す量になる。
  *
- * 相手のポケモンは属性を持たない(Issue 69 決定事項「相手の側に無いもの」)ため、弱点・抵抗力と相手の側で決まる上乗せは
+ * 相手のポケモンは属性を持たない(Issue 69 決定事項「相手の側に無いもの」)ため、弱点・抵抗力と相手のポケモンの属性で決まる上乗せは
  * 計算しない。記録はそうした上乗せを持たず、含めなかった効果に書いている(docs/solo-play-simulator-design.md
  * 「カードの記録の形」)。自分の側のカードがダメージを増やす効果(場にある間ずっと働く効果と、この番だけ働く効果)は足す。
  */
 
+import { OPPONENT_BENCH_POKEMON_COUNT } from "./battle-style-solo-play-rules.ts";
 import {
   type Attack,
   CardCategory,
   type DamageBonus,
 } from "./card-record-schema.ts";
 import { type Card, matchesCardFilter } from "./cards.ts";
-import { matchesPokemonFilter } from "./conditions.ts";
+import {
+  countDiscardedPokemonWithAbility,
+  matchesPokemonFilter,
+} from "./conditions.ts";
 import {
   countEnergyUnitsOfTypes,
   listEnergyUnits,
@@ -55,6 +59,8 @@ const damageTargetCounters: {
         energy.provision?.kind === "type" ? [energy.provision.type] : []
       )
     ).size,
+  benchedPokemonOnBothSides: (_, state) =>
+    state.bench.length + OPPONENT_BENCH_POKEMON_COUNT,
   cardsInHand: (_, state) => state.hand.length,
   damageCountersOnOwnPokemon: (target, state) =>
     state
@@ -72,13 +78,7 @@ const damageTargetCounters: {
     state.discard.filter((card) => matchesCardFilter(card, target.filter))
       .length,
   discardPokemonWithAbilityName: (target, state) =>
-    state.discard.filter(
-      (card) =>
-        card.record.category === CardCategory.Pokemon &&
-        card.record.abilities.some(
-          (ability) => ability.name === target.abilityName
-        )
-    ).length,
+    countDiscardedPokemonWithAbility(state, target.abilityName),
   energyAttachedToAttackingPokemon: (target, state, attacker) =>
     target.energyTypes === undefined
       ? listEnergyUnits(state, attacker).length
@@ -141,17 +141,21 @@ function sumAttackDamageIncreaseThisTurn(
 
 /**
  * ワザ自身のダメージ(ほかのカードがダメージを増やす効果を足す前)。トラッシュしたエネルギーの枚数で決まる形では、
- * discardedEnergyCount 枚をトラッシュしたときの値。省くと、トラッシュできるエネルギーを全部トラッシュしたときの値。
+ * resolvedCount 枚をトラッシュしたときの値。省くと、トラッシュできるエネルギーを全部トラッシュしたときの値。
  */
 function calculateBaseDamage(
   state: GameState,
   attacker: PokemonInPlay,
   damage: Exclude<Attack["damage"], { kind: "none" }>,
-  discardedEnergyCount: number | undefined
+  resolvedCount: number | undefined
 ): number {
+  if (damage.kind === "perHeadsUntilTails") {
+    // 公平なコインで最初のウラまでのオモテの期待回数は 1。見積もりでは乱数を進めない。
+    return damage.amount + (resolvedCount ?? 1) * damage.unit;
+  }
   if (damage.kind === "perEnergyDiscardedFromOwnPokemon") {
     const count =
-      discardedEnergyCount ??
+      resolvedCount ??
       listOwnEnergiesWorkingAsTypes(state, damage.energyTypes).reduce(
         (total, { energies }) => total + energies.length,
         0
@@ -174,7 +178,7 @@ function calculateBaseDamage(
  * 基本のダメージ(ワザ自身の数値と上乗せ)が 0 なら、ダメージを増やす効果を足さずに 0 で終える
  * (公式 Q&A「サイドン」「ビリリダマ」、検索語「ダメージが0」、2026-09-23 確認: 基本のダメージが 0 になった時点で
  * ダメージの計算を終え、ワザを使うポケモンにかかるダメージを変える効果は計算しない)。
- * discardedEnergyCount は、トラッシュしたエネルギーの枚数でダメージが決まるワザ(メガリザードンXex の「インフェルノX」。
+ * resolvedCount は、コインなら実際に出たオモテの数（省略時は期待値）。エネルギーの枚数で決まるワザ(メガリザードンXex の「インフェルノX」。
  * カードの記録 048353)で、トラッシュすると決めた枚数。省くと、トラッシュできるエネルギーを全部トラッシュしたときの値
  * (使えるワザの最大のダメージの見積もり)を返す。
  */
@@ -182,18 +186,13 @@ export function calculateAttackDamage(
   state: GameState,
   attacker: PokemonInPlay,
   attack: Attack,
-  discardedEnergyCount?: number
+  resolvedCount?: number
 ): number | undefined {
   const { damage } = attack;
   if (damage.kind === "none") {
     return undefined;
   }
-  const base = calculateBaseDamage(
-    state,
-    attacker,
-    damage,
-    discardedEnergyCount
-  );
+  const base = calculateBaseDamage(state, attacker, damage, resolvedCount);
   if (base === 0) {
     return 0;
   }
