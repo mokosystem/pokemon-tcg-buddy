@@ -80,6 +80,10 @@ export type TrialScorer = (input: TrialScoringInput) => TrialScore;
 export type TrialScoreTieBreak = "none" | "prizeDifference";
 
 export interface SearchOptions {
+  /** 探索が番の行動を終えると決めたとき、残っている手を選ぶ。 */
+  readonly chooseBeforeEndingTurn?: (
+    context: EffectContext
+  ) => PlayerAction | undefined;
   /** 実際の場で先に行う手。行動するたびに、新しい場と手札で候補を選び直す。 */
   readonly chooseBeforeSearch?: (
     context: EffectContext
@@ -963,7 +967,9 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
             ),
       options.tieBreak
     );
-    return best.kind === "endTurn" ? undefined : best;
+    return best.kind === "endTurn"
+      ? options.chooseBeforeEndingTurn?.(context)
+      : best;
   };
 
   const chooseSetup = (state: GameState, basics: readonly Card[]) => {

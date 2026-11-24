@@ -8,7 +8,10 @@ import {
   createPlayoutActionPolicy,
   createRandomActionPolicy,
 } from "./action-list-playing-policies.ts";
-import { chooseActiveDraw } from "./active-draw-ability.ts";
+import {
+  chooseActiveDraw,
+  chooseDrawBeforeEndingTurn,
+} from "./active-draw-ability.ts";
 import { calculateAttackDamage } from "./attack-damage.ts";
 import { listUsableAttacksOfActive } from "./card-effects.ts";
 import { CardCategory } from "./card-record-schema.ts";
@@ -450,6 +453,7 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
         };
       };
       const base = createSearchPolicy({
+        chooseBeforeEndingTurn: chooseDrawBeforeEndingTurn,
         chooseBeforeSearch: chooseActiveDraw,
         prefersOptionalDeckSearch: true,
         samplesPerCandidate: requireParameter(
