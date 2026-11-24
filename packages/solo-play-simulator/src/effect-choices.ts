@@ -3,7 +3,7 @@
  * 記法では決めない。選ばれた結果は候補と枚数の範囲に収まっているかを検査し、外れていれば IllegalMove を投げる。
  */
 
-import type { FieldPosition } from "./card-record-schema.ts";
+import type { Effect, FieldPosition } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import { type GameState, IllegalMove, type PokemonInPlay } from "./state.ts";
 
@@ -62,7 +62,11 @@ export interface EffectChoices {
     candidates: readonly PokemonInPlay[]
   ) => PokemonInPlay;
   /** 「のぞむなら」の効果や、使うかを選べるきっかけの効果を起こすか。 */
-  choosesToApplyOptionalEffect: (state: GameState, purpose: string) => boolean;
+  choosesToApplyOptionalEffect: (
+    state: GameState,
+    purpose: string,
+    effect?: Effect
+  ) => boolean;
 }
 
 export interface EffectContext {

@@ -1611,7 +1611,7 @@ export function runEffect(
 ): void {
   if (
     effect.isOptional &&
-    !context.choices.choosesToApplyOptionalEffect(context.state, label)
+    !context.choices.choosesToApplyOptionalEffect(context.state, label, effect)
   ) {
     return;
   }
@@ -1670,7 +1670,11 @@ export function resolveAbilityTriggers(
       translation?.kind === kind &&
       !isAbilityNegated(state, pokemon) &&
       canStartEffect(state, translation.effect, { card, pokemon }, undefined) &&
-      context.choices.choosesToApplyOptionalEffect(state, ability.name)
+      context.choices.choosesToApplyOptionalEffect(
+        state,
+        ability.name,
+        translation.effect
+      )
     ) {
       markAbilityUsed(state, pokemon, ability.name);
       runEffect(context, translation.effect, { card, pokemon }, ability.name);

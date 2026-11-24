@@ -451,6 +451,7 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
       };
       const base = createSearchPolicy({
         chooseBeforeSearch: chooseActiveDraw,
+        prefersOptionalDeckSearch: true,
         samplesPerCandidate: requireParameter(
           parameters,
           "samplesPerCandidate"

@@ -18,7 +18,7 @@ import {
   resolveEndOfTurnTriggers,
   useAttack,
 } from "./card-effects.ts";
-import type { FieldPosition } from "./card-record-schema.ts";
+import type { Effect, FieldPosition } from "./card-record-schema.ts";
 import type { Card } from "./cards.ts";
 import type { UsableAttack } from "./continuous-effects.ts";
 import {
@@ -30,6 +30,7 @@ import {
   type OpponentFieldPositionChoiceRequest,
   type PokemonChoiceRequest,
 } from "./effect-choices.ts";
+import { energiesForNextAttack } from "./energies-for-next-attack.ts";
 import {
   type BattleStyleSoloPlayResumePoint,
   type PlayingPolicy,
@@ -83,6 +84,8 @@ export interface SearchOptions {
   readonly chooseBeforeSearch?: (
     context: EffectContext
   ) => PlayerAction | undefined;
+  /** 費用なしで山札を探せる効果では、手札に加えるカードを比べるところまで進む。 */
+  readonly prefersOptionalDeckSearch?: true;
   /** 候補の手 1 つを何回試して平均するか(設定の「試す回数」)。 */
   readonly samplesPerCandidate: number;
   readonly scoreTrial: TrialScorer;
@@ -192,7 +195,11 @@ function doNothing(): void {
 type ChoiceAnswer =
   | { readonly indices: readonly number[]; readonly kind: "cards" }
   | { readonly indices: readonly number[]; readonly kind: "pokemon" }
-  | { readonly applies: boolean; readonly kind: "optional" }
+  | {
+      readonly applies: boolean;
+      readonly kind: "optional";
+      readonly looksForAttackEnergy?: boolean;
+    }
   | {
       readonly kind: "opponentFieldPosition";
       readonly position: FieldPosition;
@@ -539,11 +546,13 @@ class ScriptedChoices implements EffectChoices {
 /** 探索の各部分が共有する道具(複製と試しを数え、試しの点数を出す)。 */
 class SearchTools {
   readonly statistics: SearchStatistics = { clones: 0, trialScores: 0 };
+  readonly prefersOptionalDeckSearch: boolean;
   readonly searchesEffectChoices: boolean;
   readonly tieBreak: TrialScoreTieBreak;
   private readonly scorer: TrialScorer;
 
   constructor(options: SearchOptions) {
+    this.prefersOptionalDeckSearch = options.prefersOptionalDeckSearch === true;
     this.scorer = options.scoreTrial;
     this.searchesEffectChoices = options.searchesEffectChoices;
     this.tieBreak = options.tieBreak;
@@ -615,6 +624,50 @@ interface ChoiceSearchParameters {
   readonly tools: SearchTools;
 }
 
+function optionsForNextChoice(
+  state: GameState,
+  choice: ChoiceRequest,
+  previous: ChoiceAnswer | undefined,
+  seed: number | undefined
+): ChoiceAnswer[] {
+  const options = listChoiceOptions(state, choice);
+  if (
+    choice.kind !== "cards" ||
+    choice.request.fromDeck !== true ||
+    previous?.kind !== "optional" ||
+    !previous.looksForAttackEnergy ||
+    seed === undefined
+  ) {
+    return options;
+  }
+  const { candidates } = choice.request;
+  const energies = energiesForNextAttack(state, candidates, seed);
+  if (energies.size === 0) {
+    return options;
+  }
+  return options.filter(
+    (option) =>
+      option.kind === "cards" &&
+      option.indices.some((index) => {
+        const card = candidates[index];
+        return card !== undefined && energies.has(card);
+      })
+  );
+}
+
+function optionalHandSearch(state: GameState, effect: Effect | undefined) {
+  const step = effect?.steps[0];
+  if (
+    effect?.steps.length === 1 &&
+    step?.operation === "searchDeckIntoHand" &&
+    state.knownDeckTopCount === 0 &&
+    state.deck.length >
+      step.picks.reduce((total, pick) => total + pick.maxCount, 0)
+  ) {
+    return step;
+  }
+}
+
 /**
  * 行動の中の効果の選択を、候補ごとに再生して試して選ぶ。候補を試すときは、行動の前の状態を複製してそこまでの選択を
  * 同じように再生し、試す選択の直前で見えていないカードを混ぜ直して乱数を差し替える(そこまでの経過はプレイヤーが
@@ -656,7 +709,12 @@ class ChoiceSearch implements EffectChoices {
   }
 
   private choose(state: GameState, choice: ChoiceRequest): ChoiceAnswer {
-    const options = listChoiceOptions(state, choice);
+    const options = optionsForNextChoice(
+      state,
+      choice,
+      this.answers.at(-1),
+      this.parameters.seeds[0]
+    );
     const best =
       options.length > 1
         ? pickBestCandidate(
@@ -715,7 +773,27 @@ class ChoiceSearch implements EffectChoices {
     return chosen;
   }
 
-  choosesToApplyOptionalEffect(state: GameState): boolean {
+  choosesToApplyOptionalEffect(
+    state: GameState,
+    _purpose: string,
+    effect?: Effect
+  ): boolean {
+    const step = this.parameters.tools.prefersOptionalDeckSearch
+      ? optionalHandSearch(state, effect)
+      : undefined;
+    if (step !== undefined) {
+      // 次にカードを選ぶ試しでも、効果を使ったところまで同じ順で再生する。
+      const looksForAttackEnergy =
+        state.attacks.has(state.turn) &&
+        step.picks.length === 1 &&
+        Object.keys(step.picks[0]?.filter ?? {}).length === 0;
+      this.answers.push({
+        applies: true,
+        kind: "optional",
+        looksForAttackEnergy,
+      });
+      return true;
+    }
     return answerOptional(this.choose(state, { kind: "optional" }));
   }
 }
@@ -976,10 +1054,11 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
             state,
             candidates
           ),
-    choosesToApplyOptionalEffect: (state, purpose) =>
+    choosesToApplyOptionalEffect: (state, purpose, effect) =>
       choicesOutsideTurnActions(state).choosesToApplyOptionalEffect(
         state,
-        purpose
+        purpose,
+        effect
       ),
     performTurnAction,
     playTurn: (context) => {
