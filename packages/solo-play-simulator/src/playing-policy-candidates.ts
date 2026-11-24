@@ -15,6 +15,7 @@ import { isEnergy } from "./cards.ts";
 import { listAttackCandidatesWithCosts } from "./continuous-effects.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
 import { advanceBattleStyleSoloPlay, type PlayingPolicy } from "./engine.ts";
+import { playHandAttacker } from "./hand-ability-attack.ts";
 import {
   createLearnedEvaluationTrialScorer,
   type LearnedWinRateModel,
@@ -236,6 +237,7 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
       if (energyAbility !== undefined) {
         performAction(context, energyAbility);
       }
+      playHandAttacker(context, seed);
       const energy = chooseEnergyForAttack(context, seed);
       if (energy !== undefined) {
         performAction(context, energy);

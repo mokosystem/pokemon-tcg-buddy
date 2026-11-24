@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
+  beginOwnTurn,
+  playOpponentTurn,
+} from "./battle-style-solo-play-rules.ts";
+import {
+  benchAt,
+  buildContext,
   buildRecordedCard,
   buildState,
   useAttackNamed,
@@ -65,6 +71,53 @@ describe("今できる行動の一覧", () => {
 
     expect(state.opponentFieldDamage.active).toBe(150);
     expect(state.hand).toEqual(expect.arrayContaining([candy, fire]));
+  });
+
+  test("きぜつ後にメガガルーラexを前に出し、次の番に2枚引いて、エネルギーを使わずに攻撃役へ交代できる", () => {
+    const kangaskhan = buildRecordedCard("047847");
+    const latias = buildRecordedCard("049524");
+    const talonflame = buildRecordedCard("050400");
+    const fire = buildRecordedCard("050746");
+    const state = buildState({
+      active: buildRecordedCard("048351"),
+      bench: [kangaskhan, latias, talonflame],
+      deck: [fire, fire, fire, fire, fire],
+    });
+    const attacker = benchAt(state, 2);
+    attacker.energies.push(fire, fire);
+    state.opponentTurnCount = 2;
+    const context = buildContext(state, {
+      choosePokemonToPromoteAfterKnockOut: (_, candidates) => {
+        expect(candidates.map((pokemon) => pokemon.card)).toEqual([
+          kangaskhan,
+          latias,
+          talonflame,
+        ]);
+        return benchAt(state, 0);
+      },
+    });
+    playOpponentTurn(context);
+    expect(state.active?.card).toBe(kangaskhan);
+    beginOwnTurn(state);
+    const draw = {
+      abilityName: "おつかいダッシュ",
+      kind: "useAbility",
+      pokemonIndex: 0,
+    } as const;
+    expect(listAvailableActions(context)).toContainEqual(draw);
+    const beforeDraw = state.hand.length;
+    performAction(context, draw);
+    expect(state.hand).toHaveLength(beforeDraw + 2);
+    expect(listAvailableActions(context)).not.toContainEqual(draw);
+    const retreat = {
+      benchIndex: state.bench.indexOf(attacker),
+      energiesToDiscard: [],
+      kind: "retreat",
+    } as const;
+    expect(listAvailableRetreatActions(state)).toContainEqual(retreat);
+    performAction(context, retreat);
+    useAttackNamed(context, "かぎづめハント");
+    expect(state.opponentFieldDamage.active).toBe(150);
   });
 
   test("手札の同じカードは 1 つにまとめ、場のポケモンごとに分け、最後は番を終える(エネルギーの無いラルトスはにげられない)", () => {
