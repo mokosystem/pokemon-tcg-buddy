@@ -8,6 +8,7 @@ import {
   createPlayoutActionPolicy,
   createRandomActionPolicy,
 } from "./action-list-playing-policies.ts";
+import { chooseActiveDraw } from "./active-draw-ability.ts";
 import { calculateAttackDamage } from "./attack-damage.ts";
 import { listUsableAttacksOfActive } from "./card-effects.ts";
 import { CardCategory } from "./card-record-schema.ts";
@@ -216,6 +217,10 @@ function createPrizeProgressPlayout(seed: number): PlayingPolicy {
       );
     },
     playTurn: (context) => {
+      const draw = chooseActiveDraw(context);
+      if (draw !== undefined) {
+        performAction(context, draw);
+      }
       const energyAbility = listAvailableAbilityActions(context).find(
         (action) => {
           const card =
@@ -444,12 +449,17 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
           winRate: (7 * outcome.winRate + modelScore.winRate) / 8,
         };
       };
-      const base = createOneStepSearch(
-        scoreWithModel,
-        requireParameter(parameters, "samplesPerCandidate"),
-        "prizeDifference",
-        policySeed
-      );
+      const base = createSearchPolicy({
+        chooseBeforeSearch: chooseActiveDraw,
+        samplesPerCandidate: requireParameter(
+          parameters,
+          "samplesPerCandidate"
+        ),
+        scoreTrial: scoreWithModel,
+        searchesEffectChoices: true,
+        seed: policySeed,
+        tieBreak: "prizeDifference",
+      });
       const trialRandom = createSeededRandom(derivePolicySeed(policySeed));
       return {
         ...base,

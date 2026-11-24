@@ -79,6 +79,10 @@ export type TrialScorer = (input: TrialScoringInput) => TrialScore;
 export type TrialScoreTieBreak = "none" | "prizeDifference";
 
 export interface SearchOptions {
+  /** 実際の場で先に行う手。行動するたびに、新しい場と手札で候補を選び直す。 */
+  readonly chooseBeforeSearch?: (
+    context: EffectContext
+  ) => PlayerAction | undefined;
   /** 候補の手 1 つを何回試して平均するか(設定の「試す回数」)。 */
   readonly samplesPerCandidate: number;
   readonly scoreTrial: TrialScorer;
@@ -981,7 +985,8 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
     playTurn: (context) => {
       choicesForAttack = undefined;
       for (let count = 0; count < MAX_ACTIONS_PER_TURN; count += 1) {
-        const action = chooseTurnAction(context);
+        const action =
+          options.chooseBeforeSearch?.(context) ?? chooseTurnAction(context);
         if (action === undefined) {
           return;
         }
