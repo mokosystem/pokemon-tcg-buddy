@@ -90,6 +90,7 @@ export interface SearchOptions {
   ) => PlayerAction | undefined;
   /** 費用なしで山札を探せる効果では、手札に加えるカードを比べるところまで進む。 */
   readonly prefersOptionalDeckSearch?: true;
+  readonly prepareWinningAttack?: (state: GameState) => number | undefined;
   /** 候補の手 1 つを何回試して平均するか(設定の「試す回数」)。 */
   readonly samplesPerCandidate: number;
   readonly scoreTrial: TrialScorer;
@@ -864,6 +865,7 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
   const benchChosenAtSetup = new WeakMap<GameState, readonly Card[]>();
   /** runBattleStyleSoloPlayGame がワザを使うときの効果の中の選択。chooseAttack で用意する。 */
   let choicesForAttack: EffectChoices | undefined;
+  let preparedAttack: number | undefined;
 
   /** 実際の状態で行動を行うときの効果の中の選択。行動の前の状態から再生して試して選ぶ。 */
   const createChoicesFor = (
@@ -1018,24 +1020,27 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
       const candidates = listUsableAttacksOfActive(context);
       // 候補は使えるワザの一覧の順に試し、点数が同じなら先に並んだ候補(最後に「使わない」)を選ぶ
       const seeds = drawSeeds();
-      const best = pickBestCandidate(
-        [...candidates.keys(), undefined],
-        (index) =>
-          index === undefined
-            ? tools.scoreByTrying(
-                state,
-                doNothing,
-                seeds,
-                continueWithoutAttack
-              )
-            : tools.scoreByTrying(
-                state,
-                useAttackAt(index),
-                seeds,
-                continueFromAttack
-              ),
-        options.tieBreak
-      );
+      const best =
+        preparedAttack ??
+        pickBestCandidate(
+          [...candidates.keys(), undefined],
+          (index) =>
+            index === undefined
+              ? tools.scoreByTrying(
+                  state,
+                  doNothing,
+                  seeds,
+                  continueWithoutAttack
+                )
+              : tools.scoreByTrying(
+                  state,
+                  useAttackAt(index),
+                  seeds,
+                  continueFromAttack
+                ),
+          options.tieBreak
+        );
+      preparedAttack = undefined;
       // ワザを使わないときも、番の終わりの効果の中の選択が問われうるので、候補の先頭から選ぶ選択を用意する
       choicesForAttack =
         best === undefined
@@ -1069,6 +1074,10 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
     performTurnAction,
     playTurn: (context) => {
       choicesForAttack = undefined;
+      preparedAttack = options.prepareWinningAttack?.(context.state);
+      if (preparedAttack !== undefined) {
+        return;
+      }
       for (let count = 0; count < MAX_ACTIONS_PER_TURN; count += 1) {
         const action =
           options.chooseBeforeSearch?.(context) ?? chooseTurnAction(context);

@@ -46,6 +46,7 @@ import {
   PRIZE_COUNT,
 } from "./state.ts";
 import { createTurnSequenceSearchPolicy } from "./turn-sequence-search-policy.ts";
+import { prepareWinningEnergyAttack } from "./winning-energy-attack.ts";
 
 /** 計測する設定の名前。設計文書の表と計測スクリプトの引数に使う。 */
 export type PlayingPolicySettingName =
@@ -456,6 +457,8 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
         chooseBeforeEndingTurn: chooseDrawBeforeEndingTurn,
         chooseBeforeSearch: chooseActiveDraw,
         prefersOptionalDeckSearch: true,
+        prepareWinningAttack: (state) =>
+          prepareWinningEnergyAttack(state, policySeed),
         samplesPerCandidate: requireParameter(
           parameters,
           "samplesPerCandidate"
