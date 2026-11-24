@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { buildRecordedCard, buildState } from "./card-test-support.ts";
+import {
+  buildRecordedCard,
+  buildState,
+  useAttackNamed,
+} from "./card-test-support.ts";
 import { firstCandidateChoices } from "./effect-choices.ts";
 import {
   canRetreatActive,
@@ -28,6 +32,41 @@ function describeAll(state: GameState): string[] {
 }
 
 describe("今できる行動の一覧", () => {
+  test("後攻の最初の番にシアノからエキサイトダイブ、交代、かぎづめハントまで選べる", () => {
+    const cyano = buildRecordedCard("046442");
+    const ignition = buildRecordedCard("049452");
+    const talonflame = buildRecordedCard("050400");
+    const kangaskhan = buildRecordedCard("047847");
+    const candy = buildRecordedCard("050423");
+    const fire = buildRecordedCard("050746");
+    const state = buildState({
+      active: buildRecordedCard("048351"),
+      deck: [kangaskhan, talonflame, candy, fire],
+      hand: [cyano, ignition],
+      turn: 1,
+      wentFirst: false,
+    });
+    const context = { choices: firstCandidateChoices, state };
+    const choose = (action: PlayerAction) => {
+      expect(listAvailableActions(context)).toContainEqual(action);
+      performAction(context, action);
+    };
+
+    choose({ card: cyano, kind: "playTrainer" });
+    choose({ card: kangaskhan, kind: "placeOnBench" });
+    choose({
+      abilityName: "エキサイトダイブ",
+      card: talonflame,
+      kind: "useAbilityFromHand",
+    });
+    choose({ card: ignition, kind: "attachEnergy", targetIndex: 2 });
+    choose({ benchIndex: 1, energiesToDiscard: [], kind: "retreat" });
+    useAttackNamed(context, "かぎづめハント");
+
+    expect(state.opponentFieldDamage.active).toBe(150);
+    expect(state.hand).toEqual(expect.arrayContaining([candy, fire]));
+  });
+
   test("手札の同じカードは 1 つにまとめ、場のポケモンごとに分け、最後は番を終える(エネルギーの無いラルトスはにげられない)", () => {
     const state = buildState({
       active: RALTS,
