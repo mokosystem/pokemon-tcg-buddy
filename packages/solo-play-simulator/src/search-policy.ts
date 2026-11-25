@@ -88,6 +88,11 @@ export interface SearchOptions {
   readonly chooseBeforeSearch?: (
     context: EffectContext
   ) => PlayerAction | undefined;
+  /** 実際の場で比較する行動を選ぶ。次の行動では候補を再び列挙する。 */
+  readonly filterTurnActions?: (
+    context: EffectContext,
+    actions: readonly PlayerAction[]
+  ) => readonly PlayerAction[];
   /** 費用なしで山札を探せる効果では、手札に加えるカードを比べるところまで進む。 */
   readonly prefersOptionalDeckSearch?: true;
   readonly prepareWinningAttack?: (state: GameState) => number | undefined;
@@ -946,7 +951,8 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
     context: EffectContext
   ): PlayerAction | undefined => {
     const { state } = context;
-    const actions = listAvailableActions(context);
+    const legal = listAvailableActions(context);
+    const actions = options.filterTurnActions?.(context, legal) ?? legal;
     if (actions.length === 1) {
       return;
     }

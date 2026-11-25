@@ -45,6 +45,7 @@ import {
   type PokemonInPlay,
   PRIZE_COUNT,
 } from "./state.ts";
+import { deferSwitchBeforeDrawing } from "./switch-before-drawing.ts";
 import { createTurnSequenceSearchPolicy } from "./turn-sequence-search-policy.ts";
 import { prepareWinningEnergyAttack } from "./winning-energy-attack.ts";
 
@@ -456,6 +457,8 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
       const base = createSearchPolicy({
         chooseBeforeEndingTurn: chooseDrawBeforeEndingTurn,
         chooseBeforeSearch: chooseActiveDraw,
+        filterTurnActions: (context, actions) =>
+          deferSwitchBeforeDrawing(context, actions, policySeed),
         prefersOptionalDeckSearch: true,
         prepareWinningAttack: (state) =>
           prepareWinningEnergyAttack(state, policySeed),
