@@ -27,7 +27,11 @@ function basicEnergyType(card: Card): string {
   return card.provision?.kind === "type" ? card.provision.type : "";
 }
 
-function choicesForAttacker(targetIndex: number): EffectChoices {
+function choicesForAttacker(
+  targetIndex: number,
+  transferFromAnotherPokemon = false
+): EffectChoices {
+  let chooseSource = transferFromAnotherPokemon;
   return {
     ...firstCandidateChoices,
     chooseCards(state, request) {
@@ -49,6 +53,13 @@ function choicesForAttacker(targetIndex: number): EffectChoices {
     },
     choosePokemon(state, request) {
       const target = state.listPokemonInPlay()[targetIndex];
+      if (chooseSource) {
+        chooseSource = false;
+        const other = request.candidates.find((pokemon) => pokemon !== target);
+        if (other !== undefined) {
+          return [other];
+        }
+      }
       const candidates = request.candidates.toSorted(
         (a, b) => Number(b === target) - Number(a === target)
       );
@@ -65,7 +76,9 @@ function winningAttackIndex(
   for (const [index, attack] of listUsableAttacksOfActive(context).entries()) {
     if (
       attack.attack.damage.kind !== "fixed" ||
-      attack.attack.effect !== undefined
+      attack.attack.effect?.steps.some(
+        (step) => step.operation !== "searchDeckIntoHand"
+      )
     ) {
       continue;
     }
@@ -145,7 +158,7 @@ function finishWithVisibleEnergy(
   return undefined;
 }
 
-/** 相手の残りサイドが1枚なら、山札で探すエネルギーと手札・トラッシュのエネルギーを同じ攻撃に使って取り切れるかを試す。 */
+/** 相手の残りサイドが1枚なら、手札からつける手とエネルギーを動かす手を合わせてサイドを取り切れるかを試す。 */
 export function prepareWinningEnergyAttack(
   state: GameState,
   seed: number
@@ -154,7 +167,8 @@ export function prepareWinningEnergyAttack(
     return undefined;
   }
   const search = energyTrainer(state, "searchDeckIntoHandAndAttachRest");
-  if (search === undefined) {
+  const transfer = energyTrainer(state, "moveEnergyToAnotherOwnPokemon");
+  if (search === undefined && transfer === undefined) {
     return undefined;
   }
   const start = state.clone(createSeededRandom(seed));
@@ -163,14 +177,20 @@ export function prepareWinningEnergyAttack(
   if (ready !== undefined) {
     return ready;
   }
-  for (const targetIndex of start.listPokemonInPlay().keys()) {
-    const trial = start.clone(createSeededRandom(seed));
-    const choices = choicesForAttacker(targetIndex);
-    performAction({ choices, state: trial }, search);
-    if (finishWithVisibleEnergy(trial, targetIndex, seed) !== undefined) {
-      performAction({ choices, state }, search);
-      // 実際に探すとサイドに必要なエネルギーがある場合もある。手札と場から使える手を選び直す。
-      return finishWithVisibleEnergy(state, targetIndex, seed);
+  for (const trainer of [search, transfer]) {
+    if (trainer === undefined) {
+      continue;
+    }
+    for (const targetIndex of start.listPokemonInPlay().keys()) {
+      const trial = start.clone(createSeededRandom(seed));
+      const chooseTargets = () =>
+        choicesForAttacker(targetIndex, trainer === transfer);
+      performAction({ choices: chooseTargets(), state: trial }, trainer);
+      if (finishWithVisibleEnergy(trial, targetIndex, seed) !== undefined) {
+        performAction({ choices: chooseTargets(), state }, trainer);
+        // 山札を探すとサイドに必要なエネルギーがある場合もある。手札と場から使える手を選び直す。
+        return finishWithVisibleEnergy(state, targetIndex, seed);
+      }
     }
   }
   return undefined;
