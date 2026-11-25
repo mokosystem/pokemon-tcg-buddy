@@ -74,3 +74,35 @@ test("山札を探して雷がすべてサイドにあると分かったら、�
   expect(state.hasRetreated).toBe(false);
   expect(state.hasAttachedEnergy).toBe(false);
 });
+
+test("手札の1枚と別のポケモンのエネルギーを交代先に集め、山札を探すワザで最後の1枚を取る", () => {
+  const fire = buildRecordedCard("050746");
+  const transfer = buildRecordedCard("049354");
+  const state = buildState({
+    active: buildRecordedCard("049694"),
+    bench: [
+      buildRecordedCard("050396"),
+      buildRecordedCard("046248"),
+      buildRecordedCard("050400"),
+    ],
+    deck: [fire, fire, fire],
+    hand: [fire, transfer],
+  });
+  benchAt(state, 0).energies.push(fire);
+  state.prizes.splice(1);
+  state.opponentRemainingPrizeCount = 1;
+  const index = prepareWinningEnergyAttack(state, 17);
+  const context = buildContext(state);
+  const attack =
+    index === undefined ? undefined : listUsableAttacksOfActive(context)[index];
+  expect(attack?.attack.name).toBe("かぎづめハント");
+  expect(activeOf(state).energies).toEqual([fire, fire]);
+  expect(state.discard).toContain(transfer);
+  if (attack === undefined) {
+    throw new Error("準備したワザを使えない");
+  }
+  useAttack(context, attack);
+  expect(state.hand).toEqual([fire, fire]);
+  takePrizesForOpponentFieldDamage(state);
+  expect(state.decision?.reason).toBe("ownPrizesTaken");
+});
