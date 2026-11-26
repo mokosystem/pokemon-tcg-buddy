@@ -459,6 +459,7 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
         chooseBeforeSearch: chooseActiveDraw,
         filterTurnActions: (context, actions) =>
           deferSwitchBeforeDrawing(context, actions, policySeed),
+        prefersDrawAtSwitch: true,
         prefersOptionalDeckSearch: true,
         prepareWinningAttack: (state) =>
           prepareWinningEnergyAttack(state, policySeed),

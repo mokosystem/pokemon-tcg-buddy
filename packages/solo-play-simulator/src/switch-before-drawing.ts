@@ -5,34 +5,12 @@ import { CardCategory } from "./card-record-schema.ts";
 import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
 import { findCardEffects } from "./effect-operations.ts";
 import {
-  type ActionOf,
   listAvailableRetreatActions,
   type PlayerAction,
   performAction,
 } from "./player-actions.ts";
 import { createSeededRandom } from "./random.ts";
-
-function onlySwitches(action: PlayerAction): action is ActionOf<"playTrainer"> {
-  if (
-    action.kind !== "playTrainer" ||
-    action.card.category !== CardCategory.Goods
-  ) {
-    return false;
-  }
-  const effects = findCardEffects(action.card, "whenPlayed");
-  return (
-    effects.length === 1 &&
-    effects.every(({ effect }) => {
-      const [step] = effect.steps;
-      return (
-        !effect.isOptional &&
-        effect.steps.length === 1 &&
-        step?.operation === "switchActiveWithBench" &&
-        step.benchFilter === undefined
-      );
-    })
-  );
-}
+import { onlySwitchesWithBench } from "./switch-goods.ts";
 
 function drawsWithSupporter(action: PlayerAction): boolean {
   return (
@@ -58,7 +36,7 @@ export function deferSwitchBeforeDrawing(
   actions: readonly PlayerAction[],
   seed: number
 ): readonly PlayerAction[] {
-  const item = actions.find(onlySwitches);
+  const item = actions.find(onlySwitchesWithBench);
   const { state } = context;
   const { active } = state;
   if (
@@ -94,5 +72,5 @@ export function deferSwitchBeforeDrawing(
       return actions;
     }
   }
-  return actions.filter((action) => !onlySwitches(action));
+  return actions.filter((action) => !onlySwitchesWithBench(action));
 }

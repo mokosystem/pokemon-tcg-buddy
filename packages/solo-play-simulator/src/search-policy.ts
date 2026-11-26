@@ -1,3 +1,4 @@
+import { onlySwitchesWithBench } from "./switch-goods.ts";
 /**
  * 探索によるプレイングの判断基準。候補の手ごとに、見えていないカードを混ぜ直した複製の上で手を行い、その先を決まった方法で
  * 進めて 1 回の試しの点数を出し、決まった回数の平均がいちばん高い手を選ぶ。先の進め方は試しの点数を出す関数(TrialScorer)
@@ -48,6 +49,7 @@ import {
   type PokemonInPlay,
   type RandomSource,
 } from "./state.ts";
+import { drawsBeforeFreeRetreat } from "./switch-target-draw.ts";
 
 /** 探索が数えた仕事の量。1 回の対戦あたりの複製と試しの回数を記録するために持つ。 */
 export interface SearchStatistics {
@@ -93,6 +95,8 @@ export interface SearchOptions {
     context: EffectContext,
     actions: readonly PlayerAction[]
   ) => readonly PlayerAction[];
+  /** 入れ替えだけのグッズで、引いてから元のバトル場へにげられる交代先を比べる。 */
+  readonly prefersDrawAtSwitch?: true;
   /** 費用なしで山札を探せる効果では、手札に加えるカードを比べるところまで進む。 */
   readonly prefersOptionalDeckSearch?: true;
   readonly prepareWinningAttack?: (state: GameState) => number | undefined;
@@ -626,6 +630,7 @@ class SearchTools {
 
 interface ChoiceSearchParameters {
   readonly action: ReplayableAction;
+  readonly comparesSwitchTargets?: true;
   readonly continuation: TrialContinuation;
   /** 行動の前の状態の新しい複製を返す。乱数も行動の前と同じ続きにする(再生が同じ経過をたどるように)。 */
   readonly createStateBeforeAction: () => GameState;
@@ -736,8 +741,22 @@ class ChoiceSearch implements EffectChoices {
     if (best === undefined) {
       throw new Error("効果の中の選択に、選べる組が無い");
     }
-    this.answers.push(best);
-    return best;
+    const index = best.kind === "pokemon" ? best.indices[0] : undefined;
+    const target =
+      this.parameters.comparesSwitchTargets &&
+      choice.kind === "pokemon" &&
+      index !== undefined
+        ? drawsBeforeFreeRetreat(
+            state,
+            choice.request.candidates,
+            index,
+            this.parameters.seeds[0]
+          )
+        : undefined;
+    const answer: ChoiceAnswer =
+      target === undefined ? best : { indices: [target], kind: "pokemon" };
+    this.answers.push(answer);
+    return answer;
   }
 
   chooseCards(state: GameState, request: CardChoiceRequest): readonly Card[] {
@@ -876,13 +895,15 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
   const createChoicesFor = (
     state: GameState,
     action: ReplayableAction,
-    continuation: TrialContinuation
+    continuation: TrialContinuation,
+    comparesSwitchTargets = false
   ): EffectChoices => {
     if (!options.searchesEffectChoices) {
       return firstCandidateChoices;
     }
     const before = tools.cloneState(state, copyRandom(state.random));
     return new ChoiceSearch({
+      ...(comparesSwitchTargets ? { comparesSwitchTargets: true } : {}),
       action,
       continuation,
       createStateBeforeAction: () =>
@@ -1007,7 +1028,8 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
         choices: createChoicesFor(
           state,
           (actionContext) => performAction(actionContext, action),
-          continueTurnActions
+          continueTurnActions,
+          options.prefersDrawAtSwitch === true && onlySwitchesWithBench(action)
         ),
         state,
       },
