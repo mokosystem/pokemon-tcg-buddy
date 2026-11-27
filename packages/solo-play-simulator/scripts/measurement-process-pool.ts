@@ -390,6 +390,13 @@ export function summarizeTally(tally: BattleStyleSoloPlayTally) {
     games: tally.games,
     meanClonesPerGame: share(tally.totalClones),
     meanGameMilliseconds: share(tally.totalGameMilliseconds),
+    ...(tally.totalContinuationPlayouts === undefined
+      ? {}
+      : {
+          meanContinuationPlayoutsPerGame: share(
+            tally.totalContinuationPlayouts
+          ),
+        }),
     meanTrialScoresPerGame: share(tally.totalTrialScores),
     winningTurnShares: Object.fromEntries(
       Object.entries(tally.winningTurnCounts).map(([turn, count]) => [

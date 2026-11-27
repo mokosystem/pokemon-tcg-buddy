@@ -13,6 +13,7 @@ import {
   chooseDrawBeforeEndingTurn,
 } from "./active-draw-ability.ts";
 import { calculateAttackDamage } from "./attack-damage.ts";
+import { createBestPrizeProgressScorer } from "./best-prize-progress-scorer.ts";
 import { listUsableAttacksOfActive } from "./card-effects.ts";
 import { CardCategory } from "./card-record-schema.ts";
 import { isEnergy } from "./cards.ts";
@@ -35,7 +36,6 @@ import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
 import { createSeededRandom, derivePolicySeed } from "./random.ts";
 import {
   createSearchPolicy,
-  type TrialScore,
   type TrialScorer,
   type TrialScoreTieBreak,
 } from "./search-policy.ts";
@@ -286,26 +286,6 @@ const scoreOneContinuation: TrialScorer = (input) => {
   return { ...score, winRate: (score.winRate + progress) / 2 };
 };
 
-const scorePrizeProgress: TrialScorer = (input) => {
-  let { seed } = input;
-  const trials: TrialScore[] = [];
-  for (let i = 0; i < 3; i += 1) {
-    seed = derivePolicySeed(seed);
-    const trial = input.state.clone(createSeededRandom(seed));
-    trials.push(scoreOneContinuation({ ...input, seed, state: trial }));
-  }
-  const first = scoreOneContinuation(input);
-  const best = [first, ...trials]
-    .sort((left, right) => right.winRate - left.winRate)
-    .slice(0, 2);
-  return {
-    prizeDifference:
-      best.reduce((total, trial) => total + trial.prizeDifference, 0) /
-      best.length,
-    winRate:
-      best.reduce((total, trial) => total + trial.winRate, 0) / best.length,
-  };
-};
 function requireParameter(
   parameters: PlayingPolicyParameters,
   name: keyof PlayingPolicyParameters
@@ -445,6 +425,11 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
         preparation.deckCardNames,
         createPrizeProgressPlayout
       );
+      const scorePrizeProgress = createBestPrizeProgressScorer((input) => {
+        base.statistics.continuationPlayouts =
+          (base.statistics.continuationPlayouts ?? 0) + 1;
+        return scoreOneContinuation(input);
+      });
       const scoreWithModel: TrialScorer = (input) => {
         const copy = input.state.clone(createSeededRandom(input.seed));
         const modelScore = predict({ ...input, state: copy });
@@ -469,8 +454,10 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
         scoreTrial: scoreWithModel,
         searchesEffectChoices: true,
         seed: policySeed,
+        skipOutrankedTrials: true,
         tieBreak: "prizeDifference",
       });
+      base.statistics.continuationPlayouts = 0;
       const trialRandom = createSeededRandom(derivePolicySeed(policySeed));
       return {
         ...base,

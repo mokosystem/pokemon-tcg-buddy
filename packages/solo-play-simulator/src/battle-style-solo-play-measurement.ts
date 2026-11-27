@@ -232,12 +232,15 @@ function runMeasuredTrial(
     observePokemonAction
   );
   const milliseconds = measureNowEpochMilliseconds() - startedAt;
-  const statistics =
+  const statistics: SearchStatistics =
     policy !== undefined && "statistics" in policy
       ? (policy.statistics as SearchStatistics)
       : { clones: 0, trialScores: 0 };
   return {
     cost: {
+      ...(statistics.continuationPlayouts === undefined
+        ? {}
+        : { continuationPlayouts: statistics.continuationPlayouts }),
       clones: statistics.clones,
       milliseconds,
       trialScores: statistics.trialScores,

@@ -25,6 +25,8 @@ export interface BattleStyleSoloPlayTally {
   readonly pokemonActions?: PokemonActionsByOutcome;
   /** 探索が状態を複製した回数の合計(探索でない設定は 0)。 */
   readonly totalClones: number;
+  /** サイドの進みを採点する試し回しの実際の本数。 */
+  readonly totalContinuationPlayouts?: number;
   /** 対戦にかかった時間の合計(ミリ秒。1 プロセスの中で測った値)。 */
   readonly totalGameMilliseconds: number;
   /** 探索が試しの点数を出した回数の合計(探索でない設定は 0)。 */
@@ -37,6 +39,7 @@ export interface BattleStyleSoloPlayTally {
 /** 1 回の対戦にかかった仕事の量。 */
 export interface GameCost {
   readonly clones: number;
+  readonly continuationPlayouts?: number;
   readonly milliseconds: number;
   readonly trialScores: number;
 }
@@ -69,6 +72,12 @@ function addCounts<Key extends string>(
   return sum;
 }
 
+function sumContinuationPlayouts(left?: number, right?: number) {
+  return left === undefined && right === undefined
+    ? {}
+    : { totalContinuationPlayouts: (left ?? 0) + (right ?? 0) };
+}
+
 /** tally に 1 回の対戦の結果を足した新しい集計。 */
 export function addResultToTally(
   tally: BattleStyleSoloPlayTally,
@@ -82,6 +91,10 @@ export function addResultToTally(
     decisionReasonCounts: addCounts(tally.decisionReasonCounts, {
       [result.reason]: 1,
     } as Record<BattleStyleSoloPlayDecisionReason, number>),
+    ...sumContinuationPlayouts(
+      tally.totalContinuationPlayouts,
+      cost.continuationPlayouts
+    ),
     games: tally.games + 1,
     totalClones: tally.totalClones + cost.clones,
     totalGameMilliseconds: tally.totalGameMilliseconds + cost.milliseconds,
@@ -104,6 +117,10 @@ export function mergeTallies(
     decisionReasonCounts: addCounts(
       left.decisionReasonCounts,
       right.decisionReasonCounts
+    ),
+    ...sumContinuationPlayouts(
+      left.totalContinuationPlayouts,
+      right.totalContinuationPlayouts
     ),
     games: left.games + right.games,
     totalClones: left.totalClones + right.totalClones,

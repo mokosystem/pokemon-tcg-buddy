@@ -53,6 +53,8 @@ import {
 export interface SearchStatistics {
   /** 状態を複製した回数。 */
   clones: number;
+  /** 1回の試しの中で、サイドの進みを勝敗まで試し回した本数。数えた設定だけが持つ。 */
+  continuationPlayouts?: number;
   /** 試しの点数を出した回数。 */
   trialScores: number;
 }
@@ -103,6 +105,8 @@ export interface SearchOptions {
   readonly searchesEffectChoices: boolean;
   /** 探索が使う乱数の種。実際の対戦の乱数とは別に持ち、探索が試した回数で実際の対戦の山札の順が変わらないようにする。 */
   readonly seed: number;
+  /** 各試しの勝率の点数が0〜1で、試しを飛ばしても後の種を変えない採点でだけ使う。 */
+  readonly skipOutrankedTrials?: true;
   readonly tieBreak: TrialScoreTieBreak;
 }
 
@@ -148,12 +152,18 @@ export function compareTrialScores(
 /** 候補を並びの順に点数で比べ、いちばん良い候補を返す。点数が同じなら先に並んだ候補を残す。 */
 export function pickBestCandidate<T>(
   candidates: readonly T[],
-  scoreCandidate: (candidate: T) => TrialScore,
+  scoreCandidate: (
+    candidate: T,
+    incumbent: TrialScore | undefined
+  ) => TrialScore | undefined,
   tieBreak: TrialScoreTieBreak
 ): T {
   let best: { candidate: T; score: TrialScore } | undefined;
   for (const candidate of candidates) {
-    const score = scoreCandidate(candidate);
+    const score = scoreCandidate(candidate, best?.score);
+    if (score === undefined) {
+      continue;
+    }
     if (
       best === undefined ||
       compareTrialScores(score, best.score, tieBreak) > 0
@@ -167,14 +177,33 @@ export function pickBestCandidate<T>(
   return best.candidate;
 }
 
-/** 試しの点数の平均。 */
-function averageTrialScores(scores: readonly TrialScore[]): TrialScore {
-  const count = Math.max(scores.length, 1);
-  return {
-    prizeDifference:
-      scores.reduce((total, score) => total + score.prizeDifference, 0) / count,
-    winRate: scores.reduce((total, score) => total + score.winRate, 0) / count,
-  };
+/** すべての種での平均点。残りがすべて満点でも先の候補に届かないときは、その候補を比較から外す。 */
+export function scoreCandidateAcrossSeeds(
+  seeds: readonly number[],
+  scoreSeed: (seed: number) => TrialScore,
+  incumbent?: TrialScore
+): TrialScore | undefined {
+  let winRate = 0;
+  let prizeDifference = 0;
+  let remaining = seeds.length;
+  const count = Math.max(seeds.length, 1);
+  for (const seed of seeds) {
+    const score = scoreSeed(seed);
+    winRate += score.winRate;
+    prizeDifference += score.prizeDifference;
+    remaining -= 1;
+    // 比較で同点とする幅と、残りを一度に足す場合の丸めの差を両方見込む。
+    if (
+      incumbent !== undefined &&
+      (winRate + remaining) / count +
+        EVALUATION_TOLERANCE +
+        count * Number.EPSILON <
+        incumbent.winRate
+    ) {
+      return;
+    }
+  }
+  return { prizeDifference: prizeDifference / count, winRate: winRate / count };
 }
 
 /** 状態に対して行う 1 つの行動。複製した状態にも同じ行動を行えるよう、状態ではなく文脈を受け取る。 */
@@ -558,12 +587,14 @@ class SearchTools {
   readonly statistics: SearchStatistics = { clones: 0, trialScores: 0 };
   readonly prefersOptionalDeckSearch: boolean;
   readonly searchesEffectChoices: boolean;
+  readonly skipOutrankedTrials: boolean;
   readonly tieBreak: TrialScoreTieBreak;
   private readonly scorer: TrialScorer;
 
   constructor(options: SearchOptions) {
     this.prefersOptionalDeckSearch = options.prefersOptionalDeckSearch === true;
     this.scorer = options.scoreTrial;
+    this.skipOutrankedTrials = options.skipOutrankedTrials === true;
     this.searchesEffectChoices = options.searchesEffectChoices;
     this.tieBreak = options.tieBreak;
   }
@@ -600,10 +631,12 @@ class SearchTools {
     state: GameState,
     action: ReplayableAction,
     seeds: readonly number[],
-    continuation: TrialContinuation
-  ): TrialScore {
-    return averageTrialScores(
-      seeds.map((seed) => {
+    continuation: TrialContinuation,
+    incumbent?: TrialScore
+  ): TrialScore | undefined {
+    return scoreCandidateAcrossSeeds(
+      seeds,
+      (seed) => {
         const trial = this.cloneWithRemixedUnseenCards(state, seed);
         action({
           choices: this.searchesEffectChoices
@@ -619,7 +652,8 @@ class SearchTools {
           state: trial,
         });
         return this.scoreTrial(trial, continuation(trial), seed);
-      })
+      },
+      this.skipOutrankedTrials ? incumbent : undefined
     );
   }
 }
@@ -692,11 +726,15 @@ class ChoiceSearch implements EffectChoices {
     this.parameters = parameters;
   }
 
-  private scoreOption(option: ChoiceAnswer): TrialScore {
+  private scoreOption(
+    option: ChoiceAnswer,
+    incumbent?: TrialScore
+  ): TrialScore | undefined {
     const { action, continuation, createStateBeforeAction, seeds, tools } =
       this.parameters;
-    return averageTrialScores(
-      seeds.map((seed) => {
+    return scoreCandidateAcrossSeeds(
+      seeds,
+      (seed) => {
         const replay = createStateBeforeAction();
         action({
           choices: new ScriptedChoices(
@@ -714,7 +752,8 @@ class ChoiceSearch implements EffectChoices {
           state: replay,
         });
         return tools.scoreTrial(replay, continuation(replay), seed);
-      })
+      },
+      tools.skipOutrankedTrials ? incumbent : undefined
     );
   }
 
@@ -729,7 +768,7 @@ class ChoiceSearch implements EffectChoices {
       options.length > 1
         ? pickBestCandidate(
             options,
-            (option) => this.scoreOption(option),
+            (option, incumbent) => this.scoreOption(option, incumbent),
             this.parameters.tools.tieBreak
           )
         : options[0];
@@ -910,7 +949,7 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
     }).flatMap((option) => pickByIndices(candidates, option, "pokemon"));
     return pickBestCandidate(
       distinctCandidates,
-      (candidate) => {
+      (candidate, incumbent) => {
         const benchIndex = state.bench.indexOf(candidate);
         return tools.scoreByTrying(
           state,
@@ -922,7 +961,8 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
             trial.promoteToActive(promoted);
           },
           seeds,
-          () => "ownTurnStart"
+          () => "ownTurnStart",
+          incumbent
         );
       },
       options.tieBreak
@@ -964,14 +1004,21 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
           (action) => action.kind !== "endTurn"
         ),
       ],
-      (action) =>
+      (action, incumbent) =>
         action.kind === "endTurn"
-          ? tools.scoreByTrying(state, doNothing, seeds, continueFromAttack)
+          ? tools.scoreByTrying(
+              state,
+              doNothing,
+              seeds,
+              continueFromAttack,
+              incumbent
+            )
           : tools.scoreByTrying(
               state,
               (trialContext) => performAction(trialContext, action),
               seeds,
-              continueTurnActions
+              continueTurnActions,
+              incumbent
             ),
       options.tieBreak
     );
@@ -985,7 +1032,7 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
     const resumePoint = state.wentFirst ? "ownTurnStart" : "opponentTurn";
     return pickBestCandidate(
       listSetupOptions(basics),
-      (option) =>
+      (option, incumbent) =>
         tools.scoreByTrying(
           state,
           ({ state: trial }) => {
@@ -994,7 +1041,8 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
             trial.placePrizesFromDeck();
           },
           seeds,
-          () => resumePoint
+          () => resumePoint,
+          incumbent
         ),
       options.tieBreak
     );
@@ -1030,19 +1078,21 @@ export function createSearchPolicy(options: SearchOptions): SearchPolicy {
         preparedAttack ??
         pickBestCandidate(
           [...candidates.keys(), undefined],
-          (index) =>
+          (index, incumbent) =>
             index === undefined
               ? tools.scoreByTrying(
                   state,
                   doNothing,
                   seeds,
-                  continueWithoutAttack
+                  continueWithoutAttack,
+                  incumbent
                 )
               : tools.scoreByTrying(
                   state,
                   useAttackAt(index),
                   seeds,
-                  continueFromAttack
+                  continueFromAttack,
+                  incumbent
                 ),
           options.tieBreak
         );

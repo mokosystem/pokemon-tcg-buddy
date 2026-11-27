@@ -155,7 +155,12 @@ describe("数えた数の足し合わせ", () => {
     takenPrizeCount: 3,
   });
   const results = [win(5), loss(6), win(5), win(7), loss(4)];
-  const cost = { clones: 3, milliseconds: 1.5, trialScores: 2 };
+  const cost = {
+    clones: 3,
+    continuationPlayouts: 6,
+    milliseconds: 1.5,
+    trialScores: 2,
+  };
 
   test("集計を 2 つに分けて数えて足した結果は、まとめて数えた結果と同じ", () => {
     const tallyOf = (items: readonly BattleStyleSoloPlayResult[]) =>
@@ -171,6 +176,7 @@ describe("数えた数の足し合わせ", () => {
     expect(whole.winningTurnCounts).toEqual({ "5": 2, "7": 1 });
     expect(whole.decisionReasonCounts.opponentPrizesTaken).toBe(2);
     expect(whole.totalClones).toBe(15);
+    expect(whole.totalContinuationPlayouts).toBe(30);
   });
 
   test("対の数を 2 つに分けて数えて足した結果は、まとめて数えた結果と同じ", () => {
