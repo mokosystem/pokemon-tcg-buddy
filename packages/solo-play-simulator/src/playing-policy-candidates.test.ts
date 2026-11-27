@@ -12,6 +12,7 @@ import {
   PLAYING_POLICY_SETTING_NAMES,
   PLAYING_POLICY_SETTINGS,
   type PlayingPolicyParameters,
+  selectLearningSampleGenerator,
 } from "./playing-policy-candidates.ts";
 import { RECORDED_DECKS, type RecordedDeck } from "./recorded-decks.ts";
 import { runBattleStyleSoloPlayTrial } from "./simulate.ts";
@@ -50,8 +51,22 @@ function reduceParameters(
 }
 
 describe("計測する設定の一覧", () => {
-  test("候補 1 が 2 通り、候補 2〜4 が 2 通りずつ、計 10 の設定がある", () => {
-    expect(PLAYING_POLICY_SETTING_NAMES).toHaveLength(10);
+  test("盤面を学習するための対戦では、改善用の設定と比較元の設定がそれぞれ指定した手順を使う", () => {
+    expect(
+      selectLearningSampleGenerator("prize-progress-search")
+    ).toMatchObject({
+      candidate: "77",
+      parameters: { samplesPerCandidate: 32 },
+    });
+    expect(selectLearningSampleGenerator("learned-evaluation-500")).toBe(
+      PLAYING_POLICY_SETTINGS["playout-prize-tie-break-8"]
+    );
+    expect(selectLearningSampleGenerator("learned-evaluation-2000")).toBe(
+      PLAYING_POLICY_SETTINGS["playout-prize-tie-break-8"]
+    );
+  });
+
+  test("Issue 70 の候補と Issue 77 の改善用の設定を列挙する", () => {
     const counts = new Map<string, number>();
     for (const name of PLAYING_POLICY_SETTING_NAMES) {
       const { candidate } = PLAYING_POLICY_SETTINGS[name];
@@ -63,6 +78,7 @@ describe("計測する設定の一覧", () => {
       "2b": 2,
       "3": 2,
       "4": 2,
+      "77": 1,
     });
   });
 

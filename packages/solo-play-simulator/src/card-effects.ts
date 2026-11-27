@@ -34,6 +34,7 @@ import {
 } from "./effect-choices.ts";
 import {
   canStartEffect,
+  countHeadsUntilTails,
   findCardEffects,
   markAbilityUsed,
   resolveAbilityTriggers,
@@ -333,6 +334,7 @@ export function canEvolvePokemonFromHand(
 ): boolean {
   const { state } = context;
   return (
+    card.evolvesFrom !== undefined &&
     state.hand.includes(card) &&
     (state.canEvolve(target, card) ||
       (state.canEvolveThisTurn(target) &&
@@ -534,6 +536,7 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   if (active === undefined || usable === undefined) {
     throw new IllegalMove(`ワザ ${attackName} は今使えない`);
   }
+  state.observePokemonAction?.("attacks", active.card);
   if (state.attacks.has(state.turn)) {
     state.hasUsedSecondAttack = true;
     state.record(`2 回目のワザ ${attackName}`);
@@ -554,7 +557,9 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
     state,
     active,
     usable.attack,
-    energiesToDiscard?.length
+    usable.attack.damage.kind === "perHeadsUntilTails"
+      ? countHeadsUntilTails(state, attackName)
+      : energiesToDiscard?.length
   );
   if (damage !== undefined) {
     addDamageToOpponentField(state, "active", damage, attackName);

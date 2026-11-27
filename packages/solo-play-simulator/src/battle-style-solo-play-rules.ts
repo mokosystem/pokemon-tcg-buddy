@@ -28,6 +28,8 @@ import type {
 /** 相手の n 回目の番に、自分のバトルポケモンが受けるダメージ。4 回目以降は 300。 */
 const OPPONENT_ATTACK_DAMAGES = [0, 100, 200] as const;
 const OPPONENT_ATTACK_DAMAGE_FROM_FOURTH_TURN = 300;
+/** ポケモンの数を使うカードの計算では、相手のベンチをこの数で数える。ダメージの置き場はベンチに 1 つ。 */
+export const OPPONENT_BENCH_POKEMON_COUNT = 2;
 /**
  * 相手のバトル場のダメージと相手のベンチのダメージを、それぞれ 100 ごとにサイド 1 枚とし、1 つの置き場の 1 回の判定で
  * 取るのは 3 枚まで(docs/solo-play-simulator-design.md「相手の場のダメージとサイド」)。

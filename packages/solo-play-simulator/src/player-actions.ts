@@ -70,7 +70,7 @@ export type PlayerAction =
     }
   | { readonly kind: "endTurn" };
 
-type ActionOf<Kind extends PlayerAction["kind"]> = Extract<
+export type ActionOf<Kind extends PlayerAction["kind"]> = Extract<
   PlayerAction,
   { kind: Kind }
 >;
@@ -141,6 +141,9 @@ function listRetreatPayments(
   active: PokemonInPlay
 ): Card[][] {
   const cost = calculateRetreatCost(state, active);
+  if (cost === 0) {
+    return [[]];
+  }
   const kinds = listDistinctCards(active.energies);
   const payments: Card[][] = [];
   const extend = (kindIndex: number, chosen: Card[]): void => {
@@ -189,11 +192,16 @@ export function canRetreatActive(state: GameState): boolean {
   return listRetreatPaymentsIfAllowed(state).length > 0;
 }
 
-function listRetreatActions(state: GameState): PlayerAction[] {
+export function listAvailableRetreatActions(
+  state: GameState
+): ActionOf<"retreat">[] {
+  if (state.decision !== undefined) {
+    return [];
+  }
   const payments = listRetreatPaymentsIfAllowed(state);
   return state.bench.flatMap((_, benchIndex) =>
     payments.map(
-      (energiesToDiscard): PlayerAction => ({
+      (energiesToDiscard): ActionOf<"retreat"> => ({
         benchIndex,
         energiesToDiscard,
         kind: "retreat",
@@ -202,30 +210,62 @@ function listRetreatActions(state: GameState): PlayerAction[] {
   );
 }
 
-/**
- * 今できる行動の一覧。最後は必ず「番を終える」(endTurn)。手札の同じカードは 1 枚にまとめ、場のポケモンごと・
- * ベンチのポケモンごとに分ける。勝敗が決まった後は、その時点で対戦が終わるので「番を終える」だけを返す。
- */
-export function listAvailableActions(context: EffectContext): PlayerAction[] {
+export function listAvailableAbilityActions(
+  context: EffectContext
+): ActionOf<"useAbility">[] {
   const { state } = context;
   if (state.decision !== undefined) {
-    return [{ kind: "endTurn" }];
+    return [];
   }
-  const inPlay = state.listPokemonInPlay();
-  const actions = listDistinctCards(state.hand).flatMap((card) =>
-    listHandCardActions(context, card, inPlay)
-  );
-  inPlay.forEach((pokemon, pokemonIndex) => {
+  const actions: ActionOf<"useAbility">[] = [];
+  state.listPokemonInPlay().forEach((pokemon, pokemonIndex) => {
     for (const abilityName of listAbilityNames(pokemon.card)) {
       if (canUseAbility(context, pokemon, abilityName)) {
         actions.push({ abilityName, kind: "useAbility", pokemonIndex });
       }
     }
   });
+  return actions;
+}
+
+/** 条件に合う手札のカードから行える手を、手札と場の順で列挙する。 */
+export function listAvailableHandActions(
+  context: EffectContext,
+  accepts?: (card: Card) => boolean
+): PlayerAction[] {
+  const { state } = context;
+  if (state.decision !== undefined) {
+    return [];
+  }
+  const inPlay = state.listPokemonInPlay();
+  return listDistinctCards(state.hand).flatMap((card) =>
+    accepts === undefined || accepts(card)
+      ? listHandCardActions(context, card, inPlay)
+      : []
+  );
+}
+
+/**
+ * 今できる行動の一覧。最後は必ず「番を終える」(endTurn)。手札の同じカードは 1 枚にまとめ、場のポケモンごと・
+ * ベンチのポケモンごとに分ける。勝敗が決まった後は、その時点で対戦が終わるので「番を終える」だけを返す。
+ */
+export function listAvailableActions(
+  context: EffectContext,
+  retreat: "includeRetreat" | "skipRetreat" = "includeRetreat"
+): PlayerAction[] {
+  const { state } = context;
+  if (state.decision !== undefined) {
+    return [{ kind: "endTurn" }];
+  }
+  const actions = listAvailableHandActions(context);
+  actions.push(...listAvailableAbilityActions(context));
   if (canUseStadiumEffect(context)) {
     actions.push({ kind: "useStadiumEffect" });
   }
-  actions.push(...listRetreatActions(state), { kind: "endTurn" });
+  if (retreat === "includeRetreat") {
+    actions.push(...listAvailableRetreatActions(state));
+  }
+  actions.push({ kind: "endTurn" });
   return actions;
 }
 

@@ -39,6 +39,7 @@ export interface LearningDeck {
 export type MeasurementWorkerJob =
   | {
       readonly kind: "measureDeck";
+      readonly collectPokemonActions?: boolean;
       readonly settingName: PlayingPolicySettingName;
       readonly deckCode: string;
       readonly baseSeeds: TurnOrderBaseSeeds;
@@ -65,6 +66,7 @@ export type MeasurementWorkerJob =
     }
   | {
       readonly kind: "collectLearningSamples";
+      readonly settingName: PlayingPolicySettingName;
       readonly deck: LearningDeck;
       /** 学習の対戦の回数。半分を先攻、半分を後攻で回す。 */
       readonly trainingGames: number;

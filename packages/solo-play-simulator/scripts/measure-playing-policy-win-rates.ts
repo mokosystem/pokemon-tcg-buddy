@@ -131,6 +131,7 @@ async function prepare(
         modelName: `learned-model-${settingName}-${deckCode}-${trainingGames}`,
         outputDirectory,
         processCount,
+        settingName,
         trainingGames,
       });
 }
@@ -144,6 +145,7 @@ function buildMeasureDeckJob(
 ): MeasurementWorkerJob {
   return {
     baseSeeds: seeds.baseSeeds,
+    collectPokemonActions: seeds.purpose === "improvement",
     cutoffsEpochMilliseconds: [calculateCutoff(cutoffStartedAt, maxMinutes)],
     deckCode,
     kind: "measureDeck",

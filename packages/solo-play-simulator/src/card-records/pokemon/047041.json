@@ -10,12 +10,19 @@
       "cost": ["psychic", "colorless"],
       "damage": {
         "amount": 20,
-        "kind": "fixed"
+        "kind": "fixed",
+        "bonus": {
+          "kind": "perCount",
+          "target": {
+            "count": "benchedPokemonOnBothSides"
+          },
+          "unit": 20
+        }
       },
       "name": "フルムーンロンド"
     }
   ],
-  "battleStyleSoloPlayReviewedOn": "2026-11-21",
+  "battleStyleSoloPlayReviewedOn": "2026-11-23",
   "cardIds": ["047041", "049521", "049003"],
   "category": "ポケモン",
   "exRule": "pokemonEx",
@@ -23,10 +30,6 @@
     {
       "description": "特性「フェアリーゾーン」(相手の場のドラゴンタイプのポケモンの弱点を変える)",
       "reason": "requiresOpponent"
-    },
-    {
-      "description": "ワザ「フルムーンロンド」の、おたがいのベンチポケモンの数で決まる上乗せ。ダメージは上乗せを除いた 20 で求める",
-      "reason": "damageBonusNotModeled"
     }
   ],
   "hasRuleBox": true,
@@ -38,5 +41,6 @@
   "rulings": [],
   "stage": "たね",
   "translationStatus": "notTranslatable",
-  "verifiedOn": "2026-11-21"
+  "verifiedOn": "2026-11-23",
+  "cardDetailUrl": "https://www.pokemon-card.com/card-search/details.php/card/47041/regu/XY"
 }

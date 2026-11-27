@@ -7,6 +7,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  prepareLearnedModel,
   readCommonOptions,
   readIntegerOption,
   readPositiveNumberOption,
@@ -79,6 +80,25 @@ describe("数の引数の読み取り", () => {
       "--processes"
     );
   });
+});
+
+test("学習の対戦を分けるプロセス数を変えても同じ重みになる", async () => {
+  const outputDirectory = mkdtempSync(join(tmpdir(), "policy-learning-"));
+  try {
+    const options = {
+      deck: { deckCode: "RS3MMy-FuGPRu-MypM2X" },
+      modelName: "process-order",
+      outputDirectory,
+      settingName: "learned-evaluation-500" as const,
+      trainingGames: 8,
+    };
+    const single = await prepareLearnedModel({ ...options, processCount: 1 });
+    const parallel = await prepareLearnedModel({ ...options, processCount: 2 });
+    expect(parallel.sampleCount).toBe(single.sampleCount);
+    expect(parallel.model).toEqual(single.model);
+  } finally {
+    rmSync(outputDirectory, { force: true, recursive: true });
+  }
 });
 
 describe("出力のファイルの名前", () => {

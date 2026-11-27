@@ -23,6 +23,7 @@ import {
   type UsableAttack,
 } from "./continuous-effects.ts";
 import type { EffectChoices, EffectContext } from "./effect-choices.ts";
+import type { ObservePokemonAction } from "./pokemon-action-counts.ts";
 import {
   type BattleStyleSoloPlayDecisionReason,
   type BattleTurn,
@@ -288,10 +289,12 @@ export function continueBattleStyleSoloPlayGame(
  * (docs/solo-play-simulator-design.md「対戦風の一人回し」の番の並び)。
  */
 export function runBattleStyleSoloPlayGame(
-  options: BattleStyleSoloPlayGameOptions
+  options: BattleStyleSoloPlayGameOptions,
+  observePokemonAction?: ObservePokemonAction
 ): BattleStyleSoloPlayResult {
   const { policy } = options;
   const state = new GameState(options.random, options.cards, options.wentFirst);
+  state.observePokemonAction = observePokemonAction;
   const context: EffectContext = { choices: policy, state };
   setupGame(state, policy);
   return continueBattleStyleSoloPlayGame(

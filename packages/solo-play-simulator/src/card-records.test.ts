@@ -802,6 +802,31 @@ describeTranslation("オドリドリex", () => {
 });
 
 describeTranslation("メガガルーラex", () => {
+  test.each([
+    { damage: 200, flips: [0.5] },
+    { damage: 300, flips: [0.49, 0.25, 0.5] },
+  ])(
+    "マシンガンコンボは最初のウラまでの結果で $damage ダメージを与える",
+    ({ flips, damage }) => {
+      const state = buildState({
+        active: KANGASKHAN,
+        random: randomSequence(flips),
+      });
+      const active = activeOf(state);
+      active.energies.push(...repeat(FIRE_ENERGY, 3));
+      const context = buildContext(state);
+      const countBefore = state.uncertainOutcomeCount;
+      const [candidate] = listUsableAttacksOfActive(context);
+      if (!candidate) {
+        throw new Error("マシンガンコンボが選べない");
+      }
+      expect(calculateAttackDamage(state, active, candidate.attack)).toBe(250);
+      expect(state.uncertainOutcomeCount).toBe(countBefore);
+      useAttack(context, candidate);
+      expect(state.opponentFieldDamage.active).toBe(damage);
+      expect(state.uncertainOutcomeCount - countBefore).toBe(flips.length);
+    }
+  );
   test("おつかいダッシュは、バトル場にいれば 2 枚引き、同じ名前の特性は番に 1 回", () => {
     const state = buildState({
       active: KANGASKHAN,
@@ -2055,7 +2080,94 @@ describeTranslation("メガレックウザex", () => {
   });
 });
 
+describeTranslation("ユカリ", () => {
+  test("ダメカンのある自分の超ポケモンから1匹を選び、150回復する", () => {
+    const card = buildRecordedCard("050083");
+    const state = buildState({
+      active: KANGASKHAN,
+      bench: [GARDEVOIR, KIRLIA],
+      hand: [card],
+    });
+    activeOf(state).damage = 160;
+    const context = buildContext(state);
+    expect(canPlayTrainerFromHand(context, card)).toBe(false);
+    benchAt(state, 0).damage = 180;
+    benchAt(state, 1).damage = 30;
+    playTrainerFromHand(context, card);
+    expect(state.listPokemonInPlay().map((p) => p.damage)).toEqual([
+      160, 30, 30,
+    ]);
+  });
+});
+
+describeTranslation("ミツルの思いやり", () => {
+  test("回復したメガシンカexの基本・特殊エネルギーをすべて戻し、どうぐと他のポケモンのエネルギーは残す", () => {
+    const card = buildRecordedCard("047856");
+    const state = buildState({
+      active: KANGASKHAN,
+      bench: [ETHANS_HO_OH],
+      hand: [card],
+    });
+    const target = activeOf(state);
+    target.energies.push(FIRE_ENERGY, TELEPATH_ENERGY);
+    target.tool = BALLOON;
+    const other = benchAt(state, 0);
+    other.damage = 80;
+    other.energies.push(FIRE_ENERGY);
+    const context = buildContext(state);
+    expect(canPlayTrainerFromHand(context, card)).toBe(false);
+    target.damage = 180;
+    playTrainerFromHand(context, card);
+    expect(target.damage).toBe(0);
+    expect(target.energies).toEqual([]);
+    expect(target.tool).toBe(BALLOON);
+    expect(state.hand).toEqual([FIRE_ENERGY, TELEPATH_ENERGY]);
+    expect(other.energies).toEqual([FIRE_ENERGY]);
+    expect(other.damage).toBe(80);
+  });
+  test("エネルギーのないメガシンカexも回復できる", () => {
+    const card = buildRecordedCard("047856");
+    const state = buildState({
+      active: RALTS,
+      bench: [KANGASKHAN],
+      hand: [card],
+    });
+    benchAt(state, 0).damage = 100;
+    playTrainerFromHand(buildContext(state), card);
+    expect(benchAt(state, 0).damage).toBe(0);
+    expect(state.hand).toEqual([]);
+  });
+});
+
+describeTranslation("ヤバソチャ", () => {
+  test.each([
+    { active: 0, bench: 0, count: 5 },
+    { active: 40, bench: 80, count: 6 },
+  ])(
+    "まっちゃスピンでトラッシュに特性のあるポケモンが $count 枚あるときのダメカン",
+    ({ count, active, bench }) => {
+      const state = buildState({
+        active: buildRecordedCard("050225"),
+        discard: [...repeat(SHUPPET, count - 1), POLTCHAGEIST, RALTS],
+      });
+      activeOf(state).energies.push(PSYCHIC_ENERGY);
+      state.increaseAttackDamageThisTurn({ amount: 30, attackerFilter: {} });
+      useAttackNamed(buildContext(state), "まっちゃスピン");
+      expect(state.opponentFieldDamage).toEqual({ active, bench });
+    }
+  );
+});
+
 describeTranslation("ヒビキのホウオウex", () => {
+  test("シャイニングフェザーの後、場の全員を受けたダメージの範囲で50ずつ回復する", () => {
+    const state = buildState({ active: ETHANS_HO_OH, bench: [RALTS, KIRLIA] });
+    activeOf(state).energies.push(...repeat(FIRE_ENERGY, 4));
+    activeOf(state).damage = 90;
+    benchAt(state, 0).damage = 30;
+    useAttackNamed(buildContext(state), "シャイニングフェザー");
+    expect(state.opponentFieldDamage.active).toBe(160);
+    expect(state.listPokemonInPlay().map((p) => p.damage)).toEqual([40, 0, 0]);
+  });
   test("こんじきのほのおは、手札の基本炎エネルギーを 2 枚までベンチの「ヒビキのポケモン」1 匹につけ、このポケモンにつき番に 1 回", () => {
     const state = buildState({
       active: MEGA_RAYQUAZA,

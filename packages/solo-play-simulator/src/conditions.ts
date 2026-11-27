@@ -16,6 +16,17 @@ export interface EffectSource {
   readonly pokemon: PokemonInPlay | undefined;
 }
 
+export function countDiscardedPokemonWithAbility(
+  state: GameState,
+  abilityName: string
+): number {
+  return state.discard.filter(
+    (card) =>
+      card.record.category === CardCategory.Pokemon &&
+      card.record.abilities.some((ability) => ability.name === abilityName)
+  ).length;
+}
+
 export function matchesPokemonFilter(
   state: GameState,
   pokemon: PokemonInPlay,
@@ -71,6 +82,9 @@ const conditionEvaluators: {
     source.pokemon !== undefined &&
     matchesPokemonFilter(state, source.pokemon, condition.filter),
   deckHasCards: (condition, state) => state.deck.length >= condition.minCount,
+  discardHasPokemonWithAbilityNamed: (condition, state) =>
+    countDiscardedPokemonWithAbility(state, condition.abilityName) >=
+    condition.minCount,
   handHasAtMostCards: (condition, state, source) =>
     listHandExcludingOneCopy(state, source.card).length <=
     condition.maxCountExcludingThisCard,

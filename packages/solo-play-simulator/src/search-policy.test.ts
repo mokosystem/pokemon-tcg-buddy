@@ -165,6 +165,45 @@ describe("探索は山札の順とサイドの中身を知らない", () => {
     expect(record(right)).toEqual(values);
   });
 
+  test("山札の上だけを見て選ぶとき、まだ見ていない山札とサイドの配分が試しに影響しない", () => {
+    const gear = buildRecordedCard("049376");
+    // ポケギア3.0（049376）の選択肢になる山札の上7枚は、両方の対戦で同じ。
+    const top = [
+      "049445",
+      "050467",
+      "049463",
+      "049463",
+      "049463",
+      "049463",
+      "049463",
+    ].map(buildRecordedCard);
+    const hidden = ["049714", "049715", "048464", "049694"].map(
+      buildRecordedCard
+    );
+    const observe = (unknown: readonly Card[]) => {
+      const state = buildState({
+        active: buildRecordedCard("049714"),
+        deck: [...top, ...unknown.slice(2)],
+        hand: [gear],
+        random: createSeededRandom(1),
+        turn: 1,
+        wentFirst: true,
+      });
+      state.prizes.splice(0, state.prizes.length, ...unknown.slice(0, 2));
+      const sampled: string[][] = [];
+      const policy = createPolicy(({ state: trial }) => {
+        if (state.knownDeckTopCount === top.length) {
+          sampled.push(namesOf(trial.prizes));
+        }
+        return scoreOf(Number(trial.discard.includes(gear)));
+      });
+      policy.playTurn({ choices: policy, state });
+      expect(sampled.length).toBeGreaterThan(0);
+      return sampled;
+    };
+    expect(observe(hidden)).toEqual(observe([...hidden].reverse()));
+  });
+
   test("探索は実際の対戦の乱数を進めない(ワザを試して選ぶとき)", () => {
     // ドラパルトex(049264)のファントムダイブは炎と超、ジェットヘッドは無色 1 個。基本炎エネルギー(050746)と
     // 基本超エネルギー(049463)をつけて、両方を使える状態にする

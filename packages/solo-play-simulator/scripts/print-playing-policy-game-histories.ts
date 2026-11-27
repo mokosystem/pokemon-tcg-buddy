@@ -13,9 +13,7 @@
  *
  * --deck を省くと、記録済みのデッキすべて。デッキ × 先攻・後攻ごとに、試行 --first-trial(既定 0)から --trials(既定 3)回を回す。
  * --losses-only を付けると、回した対戦のうち負けた対戦だけを書く(回す対戦は変わらない)。
- * --training-games と --processes は、measure:playing-policy-win-rates に同じ引数を渡して測ったときに、同じ値を渡す。
- * 学習の対戦の回数か、学習の対戦を集めるプロセスの数が違うと学習の結果が違い、同じ試行でも計測と別の対戦になりうるため
- * (プロセスの数が違うと、集めた記録を学習に渡す順が変わる)。--processes を省くと CPU の数。
+ * --training-games は計測と同じ値を渡す。学習の記録を試行番号順に結合するので、--processes は変えてよい(既定は CPU の数)。
  */
 
 import { parseArgs } from "node:util";
@@ -91,7 +89,7 @@ function formatGame(
   ].join("\n");
 }
 
-/** 候補 4 の設定なら、デッキの学習の結果を作る。学習の要らない設定は undefined。 */
+/** デッキごとの学習を使う設定なら、学習の結果を作る。 */
 async function prepareLearnedModelOfDeck(deckCode: string) {
   if (trainingGames === undefined) {
     return;
@@ -101,6 +99,7 @@ async function prepareLearnedModelOfDeck(deckCode: string) {
     modelName: `learned-model-${settingName}-${deckCode}-histories`,
     outputDirectory,
     processCount,
+    settingName,
     trainingGames,
   });
   return preparation.model;

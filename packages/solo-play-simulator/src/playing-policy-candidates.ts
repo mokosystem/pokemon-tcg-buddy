@@ -8,22 +8,50 @@ import {
   createPlayoutActionPolicy,
   createRandomActionPolicy,
 } from "./action-list-playing-policies.ts";
-import type { PlayingPolicy } from "./engine.ts";
+import {
+  chooseActiveDraw,
+  chooseDrawBeforeEndingTurn,
+} from "./active-draw-ability.ts";
+import { calculateAttackDamage } from "./attack-damage.ts";
+import { listUsableAttacksOfActive } from "./card-effects.ts";
+import { CardCategory } from "./card-record-schema.ts";
+import { isEnergy } from "./cards.ts";
+import { listAttackCandidatesWithCosts } from "./continuous-effects.ts";
+import { type EffectContext, firstCandidateChoices } from "./effect-choices.ts";
+import { advanceBattleStyleSoloPlay, type PlayingPolicy } from "./engine.ts";
+import { playHandAttacker } from "./hand-ability-attack.ts";
 import {
   createLearnedEvaluationTrialScorer,
   type LearnedWinRateModel,
 } from "./learned-win-rate-evaluation.ts";
+import {
+  type ActionOf,
+  listAvailableAbilityActions,
+  listAvailableHandActions,
+  listAvailableRetreatActions,
+  performAction,
+} from "./player-actions.ts";
 import { createPlayoutTrialScorer } from "./playout-trial-scorers.ts";
-import { derivePolicySeed } from "./random.ts";
+import { createSeededRandom, derivePolicySeed } from "./random.ts";
 import {
   createSearchPolicy,
+  type TrialScore,
   type TrialScorer,
   type TrialScoreTieBreak,
 } from "./search-policy.ts";
+import {
+  type GameState,
+  listUnpaidCost,
+  type PokemonInPlay,
+  PRIZE_COUNT,
+} from "./state.ts";
+import { deferSwitchBeforeDrawing } from "./switch-before-drawing.ts";
 import { createTurnSequenceSearchPolicy } from "./turn-sequence-search-policy.ts";
+import { prepareWinningEnergyAttack } from "./winning-energy-attack.ts";
 
 /** 計測する設定の名前。設計文書の表と計測スクリプトの引数に使う。 */
 export type PlayingPolicySettingName =
+  | "prize-progress-search"
   | "first-action"
   | "random-action"
   | "playout-win-rate-8"
@@ -79,6 +107,205 @@ const TURN_SEQUENCE_BASE_SAMPLES_PER_CANDIDATE = 8;
 
 const playoutTrialScorer = createPlayoutTrialScorer(createPlayoutActionPolicy);
 
+function chooseEnergyForAttack(context: EffectContext, seed: number) {
+  const { state } = context;
+  if (state.active === undefined) {
+    return;
+  }
+  let bestGain = 0;
+  const actions = listAvailableHandActions(context, isEnergy).filter(
+    (action) => action.kind === "attachEnergy"
+  );
+  if (actions.length === 0) {
+    return;
+  }
+  let best: (typeof actions)[number] | undefined;
+  const potentials = state
+    .listPokemonInPlay()
+    .map((pokemon) => estimateAttackPotential(state, pokemon));
+  for (const action of actions) {
+    const trial = state.clone(createSeededRandom(seed));
+    trial.remixUnseenCards();
+    performAction({ choices: context.choices, state: trial }, action);
+    const target = trial.listPokemonInPlay()[action.targetIndex];
+    const before = potentials[action.targetIndex];
+    if (target === undefined || before === undefined) {
+      continue;
+    }
+    const gain =
+      (estimateAttackPotential(trial, target) - before) /
+      (action.targetIndex === 0 ? 1 : 2);
+    if (gain > bestGain) {
+      bestGain = gain;
+      best = action;
+    }
+  }
+  return best;
+}
+function estimateAttackPotential(
+  state: GameState,
+  pokemon: PokemonInPlay
+): number {
+  const { candidates, units } = listAttackCandidatesWithCosts(state, pokemon);
+  return Math.max(
+    0,
+    ...candidates.map(
+      ({ cost, usable }) =>
+        (calculateAttackDamage(state, pokemon, usable.attack) ?? 0) /
+        (1 + listUnpaidCost(cost, units).length) ** 2
+    )
+  );
+}
+
+function chooseRetreatBeforeKnockOut(context: EffectContext, seed: number) {
+  const retreats = listAvailableRetreatActions(context.state);
+  if (retreats.length === 0) {
+    return;
+  }
+  const compare = (retreat?: ActionOf<"retreat">) => {
+    const state = context.state.clone(createSeededRandom(seed));
+    state.remixUnseenCards();
+    const future = createPlayoutActionPolicy(seed);
+    if (retreat) {
+      performAction({ choices: future, state }, retreat);
+    }
+    advanceBattleStyleSoloPlay(
+      { choices: future, state },
+      future,
+      "ownTurnAttack",
+      "ownTurnStart"
+    );
+    return {
+      lost:
+        state.decision !== undefined &&
+        state.decision.reason !== "ownPrizesTaken",
+      opponentRemaining: state.opponentRemainingPrizeCount,
+      ownRemaining: state.prizes.length,
+    };
+  };
+  const stay = compare();
+  if (stay.opponentRemaining === context.state.opponentRemainingPrizeCount) {
+    return;
+  }
+  let best = stay;
+  let chosen: (typeof retreats)[number] | undefined;
+  for (const retreat of retreats) {
+    const result = compare(retreat);
+    if (
+      !result.lost &&
+      result.ownRemaining <= stay.ownRemaining &&
+      result.opponentRemaining > best.opponentRemaining
+    ) {
+      if (
+        result.opponentRemaining === context.state.opponentRemainingPrizeCount
+      ) {
+        return retreat;
+      }
+      best = result;
+      chosen = retreat;
+    }
+  }
+  return chosen;
+}
+
+function createPrizeProgressPlayout(seed: number): PlayingPolicy {
+  const playout = createPlayoutActionPolicy(seed);
+  return {
+    ...playout,
+    choosePokemonToPromoteAfterKnockOut: (state, candidates) => {
+      const most = Math.max(
+        ...candidates.map((pokemon) => pokemon.energies.length)
+      );
+      return playout.choosePokemonToPromoteAfterKnockOut(
+        state,
+        candidates.filter((pokemon) => pokemon.energies.length === most)
+      );
+    },
+    playTurn: (context) => {
+      const draw = chooseActiveDraw(context);
+      if (draw !== undefined) {
+        performAction(context, draw);
+      }
+      const energyAbility = listAvailableAbilityActions(context).find(
+        (action) => {
+          const card =
+            context.state.listPokemonInPlay()[action.pokemonIndex]?.card;
+          if (card?.record.category !== CardCategory.Pokemon) {
+            return false;
+          }
+          const effect = card.record.abilities.find(
+            (entry) => entry.name === action.abilityName
+          )?.translation;
+          return (
+            effect?.kind === "activatedInPlay" &&
+            effect.effect.steps.some(
+              (step) => step.operation === "attachEnergyFromHand"
+            )
+          );
+        }
+      );
+      if (energyAbility !== undefined) {
+        performAction(context, energyAbility);
+      }
+      playHandAttacker(context, seed);
+      const energy = chooseEnergyForAttack(context, seed);
+      if (energy !== undefined) {
+        performAction(context, energy);
+      }
+      const trigger = listAvailableHandActions(
+        context,
+        (card) =>
+          card.record.category === CardCategory.Pokemon &&
+          card.record.abilities.some(
+            (ability) =>
+              ability.translation?.kind === "triggeredWhenPlacedOnBenchFromHand"
+          )
+      ).find((action) => action.kind === "placeOnBench");
+      if (trigger !== undefined) {
+        performAction(context, trigger);
+      }
+      playout.playTurn(context);
+      const retreat = chooseRetreatBeforeKnockOut(context, seed);
+      if (retreat !== undefined) {
+        performAction(context, retreat);
+      }
+    },
+  };
+}
+
+const playToDecision = createPlayoutTrialScorer(createPrizeProgressPlayout);
+
+/** 勝てる試し回しが少ない局面でも、場が空になって早く負ける手より、自分がサイドを取り進める手を選ぶ。 */
+const scoreOneContinuation: TrialScorer = (input) => {
+  const score = playToDecision(input);
+  const damage = input.state.opponentFieldDamage;
+  const partial =
+    score.winRate === 0 && (damage.active > 0 || damage.bench > 0) ? 0.5 : 0;
+  const progress =
+    (PRIZE_COUNT - input.state.prizes.length + partial) / PRIZE_COUNT;
+  return { ...score, winRate: (score.winRate + progress) / 2 };
+};
+
+const scorePrizeProgress: TrialScorer = (input) => {
+  let { seed } = input;
+  const trials: TrialScore[] = [];
+  for (let i = 0; i < 3; i += 1) {
+    seed = derivePolicySeed(seed);
+    const trial = input.state.clone(createSeededRandom(seed));
+    trials.push(scoreOneContinuation({ ...input, seed, state: trial }));
+  }
+  const first = scoreOneContinuation(input);
+  const best = [first, ...trials]
+    .sort((left, right) => right.winRate - left.winRate)
+    .slice(0, 2);
+  return {
+    prizeDifference:
+      best.reduce((total, trial) => total + trial.prizeDifference, 0) /
+      best.length,
+    winRate:
+      best.reduce((total, trial) => total + trial.winRate, 0) / best.length,
+  };
+};
 function requireParameter(
   parameters: PlayingPolicyParameters,
   name: keyof PlayingPolicyParameters
@@ -109,13 +336,14 @@ function createOneStepSearch(
 function createPlayoutSetting(
   candidate: string,
   samplesPerCandidate: number,
-  tieBreak: TrialScoreTieBreak
+  tieBreak: TrialScoreTieBreak,
+  scoreTrial: TrialScorer = playoutTrialScorer
 ): PlayingPolicySetting {
   return {
     candidate,
     createPolicy: (_, parameters, policySeed) =>
       createOneStepSearch(
-        playoutTrialScorer,
+        scoreTrial,
         requireParameter(parameters, "samplesPerCandidate"),
         tieBreak,
         policySeed
@@ -205,6 +433,65 @@ export const PLAYING_POLICY_SETTINGS: Readonly<
   ),
   "playout-win-rate-8": createPlayoutSetting("2", 8, "none"),
   "playout-win-rate-32": createPlayoutSetting("2", 32, "none"),
+  "prize-progress-search": {
+    candidate: "77",
+    createPolicy: (preparation, parameters, policySeed) => {
+      const { learnedModel } = preparation;
+      if (learnedModel === undefined) {
+        throw new Error("学習した場の評価がない");
+      }
+      const predict = createLearnedEvaluationTrialScorer(
+        learnedModel,
+        preparation.deckCardNames,
+        createPrizeProgressPlayout
+      );
+      const scoreWithModel: TrialScorer = (input) => {
+        const copy = input.state.clone(createSeededRandom(input.seed));
+        const modelScore = predict({ ...input, state: copy });
+        const outcome = scorePrizeProgress(input);
+        return {
+          ...outcome,
+          winRate: (7 * outcome.winRate + modelScore.winRate) / 8,
+        };
+      };
+      const base = createSearchPolicy({
+        chooseBeforeEndingTurn: chooseDrawBeforeEndingTurn,
+        chooseBeforeSearch: chooseActiveDraw,
+        filterTurnActions: (context, actions) =>
+          deferSwitchBeforeDrawing(context, actions, policySeed),
+        prefersOptionalDeckSearch: true,
+        prepareWinningAttack: (state) =>
+          prepareWinningEnergyAttack(state, policySeed),
+        samplesPerCandidate: requireParameter(
+          parameters,
+          "samplesPerCandidate"
+        ),
+        scoreTrial: scoreWithModel,
+        searchesEffectChoices: true,
+        seed: policySeed,
+        tieBreak: "prizeDifference",
+      });
+      const trialRandom = createSeededRandom(derivePolicySeed(policySeed));
+      return {
+        ...base,
+        playTurn(context) {
+          base.playTurn(context);
+          if (listUsableAttacksOfActive(context).length > 0) {
+            return;
+          }
+          const energy = chooseEnergyForAttack(
+            { choices: firstCandidateChoices, state: context.state },
+            trialRandom.nextSeed()
+          );
+          if (energy !== undefined) {
+            base.performTurnAction(context, energy);
+            base.playTurn(context);
+          }
+        },
+      };
+    },
+    parameters: { samplesPerCandidate: 64, trainingGamesPerDeck: 500 },
+  },
   "random-action": {
     candidate: "1",
     createPolicy: (_, __, policySeed) => createRandomActionPolicy(policySeed),
@@ -227,10 +514,23 @@ export const PLAYING_POLICY_SETTING_NAMES: readonly PlayingPolicySettingName[] =
     "turn-sequence-128",
     "learned-evaluation-500",
     "learned-evaluation-2000",
+    "prize-progress-search",
   ];
-/** 候補 4 の学習用の記録を生成する設定。手を選ばない手順は勝率がほぼ 0 で、勝ちの記録が集まらないため。 */
-export const LEARNING_SAMPLE_GENERATOR_SETTING: PlayingPolicySettingName =
-  "playout-prize-tie-break-8";
+const prizeProgressLearningGenerator = createPlayoutSetting(
+  "77",
+  32,
+  "prizeDifference",
+  playToDecision
+);
+
+/** 盤面を学習する対戦の手順。比較元の設定は Issue 70 の計測時と同じ手順を使う。 */
+export function selectLearningSampleGenerator(
+  settingName: PlayingPolicySettingName
+): PlayingPolicySetting {
+  return settingName === "prize-progress-search"
+    ? prizeProgressLearningGenerator
+    : PLAYING_POLICY_SETTINGS["playout-prize-tie-break-8"];
+}
 
 export function isPlayingPolicySettingName(
   name: string

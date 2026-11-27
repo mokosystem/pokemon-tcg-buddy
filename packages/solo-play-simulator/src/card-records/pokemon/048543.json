@@ -34,19 +34,25 @@
         "amount": 160,
         "kind": "fixed"
       },
-      "name": "シャイニングフェザー"
+      "name": "シャイニングフェザー",
+      "effect": {
+        "isOptional": false,
+        "steps": [
+          {
+            "operation": "healOwnPokemon",
+            "target": "all",
+            "amount": 50
+          }
+        ],
+        "useConditions": []
+      }
     }
   ],
-  "battleStyleSoloPlayReviewedOn": "2026-11-21",
+  "battleStyleSoloPlayReviewedOn": "2026-11-23",
   "cardIds": ["048543", "047315"],
   "category": "ポケモン",
   "exRule": "pokemonEx",
-  "excludedEffects": [
-    {
-      "description": "ワザ「シャイニングフェザー」の、自分のポケモン全員の HP を回復する効果",
-      "reason": "healing"
-    }
-  ],
+  "excludedEffects": [],
   "hasRuleBox": true,
   "hp": 230,
   "isTerastal": false,
@@ -59,7 +65,7 @@
       "question": "特性「こんじきのほのお」で、手札の基本炎エネルギーを 1 枚だけ選んでつけられるか",
       "reflectedIn": "手札から選ぶ枚数を 1〜maxCount 枚にした(effect-operations.ts の attachEnergyFromHand)",
       "source": {
-        "checkedOn": "2026-11-21",
+        "checkedOn": "2026-11-23",
         "kind": "officialQa",
         "questionSummary": "こんじきのほのおで手札の基本炎エネルギーを 1 枚だけ選んで、ベンチの「ヒビキのポケモン」につけられるか、という質問に、できると回答(関連カードの印刷 047315 は詳細ページを見比べて同じカードテキスト)",
         "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%81%93%E3%82%93%E3%81%98%E3%81%8D%E3%81%AE%E3%81%BB%E3%81%AE%E3%81%8A&regulation_faq_main_item1=all"
@@ -75,9 +81,21 @@
         "kind": "noMatchingQa",
         "searchTerms": ["こんじきのほのお", "ヒビキのポケモン"]
       }
+    },
+    {
+      "question": "ワザで相手にダメージを与えることが、回復の条件か",
+      "interpretation": "回復はダメージの有無にかかわらず働く",
+      "reflectedIn": "ワザのダメージと自分の場全体の回復を別々に処理する",
+      "source": {
+        "kind": "officialQa",
+        "checkedOn": "2026-11-23",
+        "searchUrl": "https://www.pokemon-card.com/rules/faq/search.php?freeword=%E3%82%B7%E3%83%A3%E3%82%A4%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%95%E3%82%A7%E3%82%B6%E3%83%BC&regulation_faq_main_item1=all",
+        "questionSummary": "相手のイワパレスにダメージが通らない場面でも、自分のポケモンは回復できると回答"
+      }
     }
   ],
   "stage": "たね",
   "translationStatus": "translated",
-  "verifiedOn": "2026-11-21"
+  "verifiedOn": "2026-11-23",
+  "cardDetailUrl": "https://www.pokemon-card.com/card-search/details.php/card/48543/regu/XY"
 }

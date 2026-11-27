@@ -30,22 +30,18 @@
     {
       "cost": ["colorless", "colorless", "colorless"],
       "damage": {
+        "kind": "perHeadsUntilTails",
         "amount": 200,
-        "kind": "fixed"
+        "unit": 50
       },
       "name": "マシンガンコンボ"
     }
   ],
-  "battleStyleSoloPlayReviewedOn": "2026-11-21",
+  "battleStyleSoloPlayReviewedOn": "2026-11-23",
   "cardIds": ["047847"],
   "category": "ポケモン",
   "exRule": "megaEvolutionEx",
-  "excludedEffects": [
-    {
-      "description": "ワザ「マシンガンコンボ」の、ウラが出るまでコインを投げてオモテの数×50 を足す上乗せ。ダメージは上乗せを除いた 200 で求める",
-      "reason": "damageBonusNotModeled"
-    }
-  ],
+  "excludedEffects": [],
   "hasRuleBox": true,
   "hp": 300,
   "isTerastal": false,
@@ -55,5 +51,6 @@
   "rulings": [],
   "stage": "たね",
   "translationStatus": "translated",
-  "verifiedOn": "2026-11-21"
+  "verifiedOn": "2026-11-23",
+  "cardDetailUrl": "https://www.pokemon-card.com/card-search/details.php/card/47847/regu/XY"
 }

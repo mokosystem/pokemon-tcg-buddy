@@ -134,6 +134,11 @@ export type PokemonInPlayFilter = InferOutput<typeof PokemonInPlayFilterSchema>;
 
 const basicConditionOptions = [
   strictObject({
+    abilityName: nonEmptyText,
+    condition: literal("discardHasPokemonWithAbilityNamed"),
+    minCount: countFromOne,
+  }),
+  strictObject({
     condition: literal("selfIsActive"),
   }),
   /** このポケモンがベンチにいる(ゾロアークの「よるのぬけみち」、ソルガレオの「サンライズ」)。 */
@@ -278,6 +283,16 @@ const OpponentPositionsSchema = union(
 );
 
 const basicOperationOptions = [
+  strictObject({
+    count: countFromOne,
+    operation: literal("placeDamageCountersOnEachOpponentPokemon"),
+  }),
+  strictObject({
+    amount: union([countFromOne, literal("all")]),
+    operation: literal("healOwnPokemon"),
+    returnHealedPokemonEnergyToHand: optional(literal(true)),
+    target: union([literal("all"), PokemonInPlayFilterSchema]),
+  }),
   strictObject({
     count: DrawCountSchema,
     operation: literal("drawCards"),
@@ -765,6 +780,7 @@ export type ContinuousEffect = InferOutput<typeof ContinuousEffectSchema>;
 
 /** ダメージの上乗せを数える対象。 */
 export const DamageCountTargetSchema = variant("count", [
+  strictObject({ count: literal("benchedPokemonOnBothSides") }),
   /**
    * 自分のポケモン全員についている、いずれかのタイプのエネルギーの数。すべてのタイプとして働くエネルギーは
    * 1 個ぶんを 1 つと数える(公式 Q&A「ストームエメラルダ」: プリズムエネルギー 3 枚で炎と雷の数は 3)。
@@ -833,10 +849,15 @@ export const DamageBonusSchema = variant("kind", [
 export type DamageBonus = InferOutput<typeof DamageBonusSchema>;
 
 /**
- * ワザのダメージ。コイン、相手の側、追加のコストで決まる上乗せは持たず、含めなかった効果に書く。
+ * ワザのダメージ。コインで決まる数は、ワザを実行する際に渡す。
  * ほかのカードがダメージを増やす効果(グッズ、特性)は、そのカードの記録の翻訳に書く。
  */
 export const AttackDamageSchema = variant("kind", [
+  strictObject({
+    amount: countFromZero,
+    kind: literal("perHeadsUntilTails"),
+    unit: countFromOne,
+  }),
   strictObject({ kind: literal("none") }),
   strictObject({
     amount: countFromZero,
@@ -1031,6 +1052,12 @@ const commonRecordEntries = {
    * 見直した日。見直していない記録は持たない。
    */
   battleStyleSoloPlayReviewedOn: optional(pipe(string(), isoDate())),
+  cardDetailUrl: optional(
+    pipe(
+      string(),
+      startsWith("https://www.pokemon-card.com/card-search/details.php/card/")
+    )
+  ),
   /** 印刷のカード ID の並び。先頭が詳細ページを読んだ印刷。 */
   cardIds: pipe(array(pipe(string(), regex(/^[0-9]{6}$/))), minLength(1)),
   excludedEffects: array(ExcludedEffectSchema),

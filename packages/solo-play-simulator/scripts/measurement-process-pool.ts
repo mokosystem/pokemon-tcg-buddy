@@ -120,7 +120,7 @@ const WORKER_SCRIPT_PATH = fileURLToPath(
   new URL("./playing-policy-measurement-worker.ts", import.meta.url)
 );
 
-/** プロセスを processCount 個起こし、i 番目のプロセスに試行の番号 i、i + processCount、… を担当させ、全員の結果を集める。 */
+/** 計測は試行を飛び番で、学習は試行番号順に記録を集めるため連番で分担し、プロセスの順に結果を返す。 */
 export async function runMeasurementWorkers(
   job: MeasurementWorkerJob,
   processCount: number
@@ -170,6 +170,7 @@ export interface LearningPreparation {
  * 結果のパスを持つので、同じ出力のディレクトリで後から学習し直しても、前の計測が指すファイルの中身が変わらないようにする。
  */
 export async function prepareLearnedModel(options: {
+  readonly settingName: PlayingPolicySettingName;
   readonly deck: LearningDeck;
   readonly outputDirectory: string;
   /** 学習の結果のファイルの名前のうち、時刻と拡張子を除いた部分。 */
@@ -183,6 +184,7 @@ export async function prepareLearnedModel(options: {
       baseSeeds: LEARNING_BASE_SEEDS,
       deck: options.deck,
       kind: "collectLearningSamples",
+      settingName: options.settingName,
       trainingGames: options.trainingGames,
     },
     options.processCount

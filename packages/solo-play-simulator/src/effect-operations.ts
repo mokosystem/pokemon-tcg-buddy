@@ -8,6 +8,7 @@ import {
   addDamageToOpponentField,
   decideLossIfNoOwnPokemonInPlay,
   knockOutOwnPokemon,
+  OPPONENT_BENCH_POKEMON_COUNT,
 } from "./battle-style-solo-play-rules.ts";
 import { trimBenchToLimit } from "./bench-limit.ts";
 import {
@@ -72,6 +73,17 @@ function listOwnPokemonMatching(
   return state
     .listPokemonInPlay()
     .filter((pokemon) => matchesPokemonFilter(state, pokemon, filter));
+}
+
+function listHealingTargets(
+  state: GameState,
+  target: "all" | PokemonInPlayFilter
+): PokemonInPlay[] {
+  const candidates =
+    target === "all"
+      ? state.listPokemonInPlay()
+      : listOwnPokemonMatching(state, target);
+  return candidates.filter((pokemon) => pokemon.damage > 0);
 }
 
 /**
@@ -234,6 +246,8 @@ const firstStepTargetChecks: {
     listRareCandyPairs(state).length > 0,
   evolveFromDeck: (_, { state }) =>
     state.deck.length > 0 && listEvolvableBasics(state).length > 0,
+  healOwnPokemon: (step, { state }) =>
+    listHealingTargets(state, step.target).length > 0,
   increaseAttackDamageThisTurn: alwaysHasTarget,
   knockOutSelf: (_, { source }) => source.pokemon !== undefined,
   lookAtDeckTopAndAttachEnergyToOwnPokemon: (step, { state }) =>
@@ -254,6 +268,7 @@ const firstStepTargetChecks: {
   moveEnergyToAnotherOwnPokemon: (step, { state }) =>
     state.listPokemonInPlay().length >= 2 &&
     listPokemonWithEnergyMatching(state, step.energyFilter).length > 0,
+  placeDamageCountersOnEachOpponentPokemon: alwaysHasTarget,
   placeFromDiscardOntoBench: (step, { state }) =>
     countEmptyBenchSlots(state) > 0 &&
     listMatching(state.discard, step.filter).some(isPokemon),
@@ -552,7 +567,7 @@ function lookAtDeckTopAndAttachToSelf(
     listMatching(looked, step.filter).filter(isEnergy),
     { maxCount: step.maxAttachCount, minCount: step.minAttachCount },
     `${label}: 山札の上から見て ${holder.name} につけるエネルギー`,
-    "deck"
+    "deckTop"
   );
   state.attachFromDeckTop(step.lookCount, chosen, holder, step.restPlacement);
 }
@@ -576,7 +591,7 @@ function lookAtDeckTopAndAttachToOwnPokemon(
     ),
     { maxCount: step.maxAttachCount, minCount: step.minAttachCount },
     `${label}: 山札の上から見てつけるエネルギー`,
-    "deck"
+    "deckTop"
   );
   const assignments = chosen.flatMap((energy) => {
     const target = chooseOnePokemon(
@@ -741,14 +756,17 @@ function calculateAttachCount(
   count: AttachCount,
   { context, label }: OperationRun
 ): number {
-  if (count.kind === "fixed") {
-    return count.value;
-  }
+  return count.kind === "fixed"
+    ? count.value
+    : countHeadsUntilTails(context.state, label);
+}
+
+export function countHeadsUntilTails(state: GameState, label: string): number {
   let heads = 0;
-  while (flipsHeads(context.state)) {
+  while (flipsHeads(state)) {
     heads += 1;
   }
-  context.state.record(`${label}: コインのオモテ ${heads} 回`);
+  state.record(`${label}: コインのオモテ ${heads} 回`);
   return heads;
 }
 
@@ -1282,6 +1300,36 @@ const operationRunners: {
   },
   evolveBasicToStage2FromHand: (_, run) => evolveWithRareCandy(run),
   evolveFromDeck: (step, run) => evolveFromDeck(run, step.canContinueToStage2),
+  healOwnPokemon: (step, { context, label }) => {
+    const targets = listHealingTargets(context.state, step.target);
+    const heal = (pokemon: PokemonInPlay) => {
+      const amount =
+        step.amount === "all"
+          ? pokemon.damage
+          : Math.min(step.amount, pokemon.damage);
+      pokemon.damage -= amount;
+      context.state.record(`${label}: ${pokemon.name} の HP を ${amount} 回復`);
+      if (step.returnHealedPokemonEnergyToHand) {
+        for (const energy of [...pokemon.energies]) {
+          context.state.returnAttachedEnergyToHand(pokemon, energy);
+        }
+      }
+    };
+    if (step.target === "all") {
+      for (const pokemon of targets) {
+        heal(pokemon);
+      }
+    } else {
+      const pokemon = chooseOnePokemon(
+        context,
+        targets,
+        `${label}: HP を回復するポケモン`
+      );
+      if (pokemon !== undefined) {
+        heal(pokemon);
+      }
+    }
+  },
   increaseAttackDamageThisTurn: (step, { context, label }) => {
     context.state.increaseAttackDamageThisTurn({
       amount: step.amount,
@@ -1306,7 +1354,7 @@ const operationRunners: {
       listMatching(looked, step.filter),
       { maxCount: step.maxTakeCount, minCount: step.minTakeCount },
       `${label}: 山札の上から見て手札に加えるカード`,
-      "deck"
+      "deckTop"
     );
     context.state.takeFromDeckTop(step.lookCount, chosen, step.restPlacement);
   },
@@ -1346,6 +1394,16 @@ const operationRunners: {
   },
   moveEnergyToAnotherOwnPokemon: (step, run) =>
     moveEnergyBetweenOwnPokemon(run, step),
+  placeDamageCountersOnEachOpponentPokemon: (step, { context, label }) => {
+    const damage = step.count * DAMAGE_PER_COUNTER;
+    addDamageToOpponentField(context.state, "active", damage, label);
+    addDamageToOpponentField(
+      context.state,
+      "bench",
+      OPPONENT_BENCH_POKEMON_COUNT * damage,
+      label
+    );
+  },
   placeFromDiscardOntoBench: (step, run) =>
     placeOntoBenchFrom(run, "discard", step),
   placeHandCardsOnDeckTop: (step, { context, label }) => {
@@ -1553,7 +1611,7 @@ export function runEffect(
 ): void {
   if (
     effect.isOptional &&
-    !context.choices.choosesToApplyOptionalEffect(context.state, label)
+    !context.choices.choosesToApplyOptionalEffect(context.state, label, effect)
   ) {
     return;
   }
@@ -1612,7 +1670,11 @@ export function resolveAbilityTriggers(
       translation?.kind === kind &&
       !isAbilityNegated(state, pokemon) &&
       canStartEffect(state, translation.effect, { card, pokemon }, undefined) &&
-      context.choices.choosesToApplyOptionalEffect(state, ability.name)
+      context.choices.choosesToApplyOptionalEffect(
+        state,
+        ability.name,
+        translation.effect
+      )
     ) {
       markAbilityUsed(state, pokemon, ability.name);
       runEffect(context, translation.effect, { card, pokemon }, ability.name);

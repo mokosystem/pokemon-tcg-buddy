@@ -4,6 +4,10 @@
  */
 
 import type { BattleStyleSoloPlayResult } from "./engine.ts";
+import {
+  mergePokemonActions,
+  type PokemonActionsByOutcome,
+} from "./pokemon-action-counts.ts";
 import type { BattleStyleSoloPlayDecisionReason } from "./state.ts";
 
 /** 標準正規分布の 97.5 % 点。95 % の幅の係数。 */
@@ -18,6 +22,7 @@ export interface BattleStyleSoloPlayTally {
     Record<BattleStyleSoloPlayDecisionReason, number>
   >;
   readonly games: number;
+  readonly pokemonActions?: PokemonActionsByOutcome;
   /** 探索が状態を複製した回数の合計(探索でない設定は 0)。 */
   readonly totalClones: number;
   /** 対戦にかかった時間の合計(ミリ秒。1 プロセスの中で測った値)。 */
@@ -68,10 +73,12 @@ function addCounts<Key extends string>(
 export function addResultToTally(
   tally: BattleStyleSoloPlayTally,
   result: BattleStyleSoloPlayResult,
-  cost: GameCost
+  cost: GameCost,
+  pokemonActions?: PokemonActionsByOutcome
 ): BattleStyleSoloPlayTally {
   const won = result.outcome === "win";
   return {
+    ...mergePokemonActions(tally.pokemonActions, pokemonActions),
     decisionReasonCounts: addCounts(tally.decisionReasonCounts, {
       [result.reason]: 1,
     } as Record<BattleStyleSoloPlayDecisionReason, number>),
@@ -93,6 +100,7 @@ export function mergeTallies(
   right: BattleStyleSoloPlayTally
 ): BattleStyleSoloPlayTally {
   return {
+    ...mergePokemonActions(left.pokemonActions, right.pokemonActions),
     decisionReasonCounts: addCounts(
       left.decisionReasonCounts,
       right.decisionReasonCounts

@@ -111,6 +111,7 @@ async function prepare(settingName: PlayingPolicySettingName) {
     modelName: `learned-model-${settingName}-card-swap-before`,
     outputDirectory,
     processCount,
+    settingName,
     trainingGames,
   });
   const after = await prepareLearnedModel({
@@ -118,6 +119,7 @@ async function prepare(settingName: PlayingPolicySettingName) {
     modelName: `learned-model-${settingName}-card-swap-after`,
     outputDirectory,
     processCount,
+    settingName,
     trainingGames,
   });
   return { after, before, startedAt, trainingGames };
