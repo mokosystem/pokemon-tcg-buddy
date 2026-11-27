@@ -86,7 +86,12 @@ function measureDeck(job: JobOf<"measureDeck">): MeasurementWorkerReport {
       measureNowEpochMilliseconds,
       runUnit: (trialIndex, tally) =>
         runDeckMeasurementUnit(
-          { baseSeeds: job.baseSeeds, deck, measureNowEpochMilliseconds },
+          {
+            baseSeeds: job.baseSeeds,
+            collectPokemonActions: job.collectPokemonActions === true,
+            deck,
+            measureNowEpochMilliseconds,
+          },
           trialIndex,
           tally
         ),

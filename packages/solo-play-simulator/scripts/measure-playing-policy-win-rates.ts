@@ -145,6 +145,7 @@ function buildMeasureDeckJob(
 ): MeasurementWorkerJob {
   return {
     baseSeeds: seeds.baseSeeds,
+    collectPokemonActions: seeds.purpose === "improvement",
     cutoffsEpochMilliseconds: [calculateCutoff(cutoffStartedAt, maxMinutes)],
     deckCode,
     kind: "measureDeck",

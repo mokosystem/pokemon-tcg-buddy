@@ -39,6 +39,7 @@ export interface LearningDeck {
 export type MeasurementWorkerJob =
   | {
       readonly kind: "measureDeck";
+      readonly collectPokemonActions?: boolean;
       readonly settingName: PlayingPolicySettingName;
       readonly deckCode: string;
       readonly baseSeeds: TurnOrderBaseSeeds;

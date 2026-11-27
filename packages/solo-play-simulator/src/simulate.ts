@@ -10,6 +10,7 @@ import {
   type PlayingPolicy,
   runBattleStyleSoloPlayGame,
 } from "./engine.ts";
+import type { ObservePokemonAction } from "./pokemon-action-counts.ts";
 import {
   createSeededRandom,
   derivePolicySeed,
@@ -26,14 +27,18 @@ export interface BattleStyleSoloPlayTrialOptions {
 
 /** 種 trialSeed の対戦を 1 回行う。プレイングの判断基準には、trialSeed からずらした種を渡す。 */
 export function runBattleStyleSoloPlayTrial(
-  options: BattleStyleSoloPlayTrialOptions
+  options: BattleStyleSoloPlayTrialOptions,
+  observePokemonAction?: ObservePokemonAction
 ): BattleStyleSoloPlayResult {
-  return runBattleStyleSoloPlayGame({
-    cards: options.cards,
-    policy: options.createPolicy(derivePolicySeed(options.trialSeed)),
-    random: createSeededRandom(options.trialSeed),
-    wentFirst: options.wentFirst,
-  });
+  return runBattleStyleSoloPlayGame(
+    {
+      cards: options.cards,
+      policy: options.createPolicy(derivePolicySeed(options.trialSeed)),
+      random: createSeededRandom(options.trialSeed),
+      wentFirst: options.wentFirst,
+    },
+    observePokemonAction
+  );
 }
 
 export interface BattleStyleSoloPlaySimulationOptions {

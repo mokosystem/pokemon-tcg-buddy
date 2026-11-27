@@ -536,6 +536,7 @@ export function useAttack(context: EffectContext, chosen: UsableAttack): void {
   if (active === undefined || usable === undefined) {
     throw new IllegalMove(`ワザ ${attackName} は今使えない`);
   }
+  state.observePokemonAction?.("attacks", active.card);
   if (state.attacks.has(state.turn)) {
     state.hasUsedSecondAttack = true;
     state.record(`2 回目のワザ ${attackName}`);

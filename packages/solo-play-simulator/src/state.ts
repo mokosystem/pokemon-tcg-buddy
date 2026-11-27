@@ -22,6 +22,8 @@ import {
   isSupporter,
 } from "./cards.ts";
 
+import type { ObservePokemonAction } from "./pokemon-action-counts.ts";
+
 export const BENCH_LIMIT = 5;
 /**
  * 1 回の番に 1 枚しか使えないトレーナーズの種類。サポートは 1 回の番に 1 枚、スタジアムを出すのは 1 回の番に 1 枚
@@ -337,6 +339,8 @@ export class GameState {
    */
   firstAttackerThisTurn: PokemonInPlay | undefined = undefined;
   readonly events: string[] = [];
+  /** 実際の対戦だけで数える。探索の複製には引き継がない。 */
+  observePokemonAction: ObservePokemonAction | undefined;
   /** 相手のサイドの残り枚数。中身は持たない(docs/solo-play-simulator-design.md「対戦風の一人回し」)。 */
   opponentRemainingPrizeCount = PRIZE_COUNT;
   /**
@@ -686,6 +690,7 @@ export class GameState {
       restPlacement
     )) {
       target.energies.push(energy);
+      this.observePokemonAction?.("energyReceived", target.card);
       this.record(`エネルギー ${energy.name} → ${target.name}(山札の上から)`);
     }
   }
@@ -706,6 +711,7 @@ export class GameState {
     );
     for (const { energy, target } of assignments) {
       target.energies.push(energy);
+      this.observePokemonAction?.("energyReceived", target.card);
       this.record(`エネルギー ${energy.name} → ${target.name}(山札の上から)`);
     }
   }
@@ -945,6 +951,7 @@ export class GameState {
     }
     this.removeFrom(from, card);
     target.energies.push(card);
+    this.observePokemonAction?.("energyReceived", target.card);
     this.record(`エネルギー ${card.name} → ${target.name}${sourceLabel(from)}`);
   }
 
@@ -971,6 +978,7 @@ export class GameState {
     }
     removeCard(from.energies, energy, `${from.name} のエネルギー`);
     to.energies.push(energy);
+    this.observePokemonAction?.("energyReceived", to.card);
     this.record(`エネルギー ${energy.name} を ${from.name} → ${to.name}`);
   }
 

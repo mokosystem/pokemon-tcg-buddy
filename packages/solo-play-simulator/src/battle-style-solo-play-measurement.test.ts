@@ -87,6 +87,7 @@ describe("計測の単位を期限まで回す", () => {
           runDeckMeasurementUnit(
             {
               baseSeeds: { firstPlayer: 11, secondPlayer: 12 },
+              collectPokemonActions: true,
               deck: { cards, createPolicy: () => createFirstActionPolicy() },
               measureNowEpochMilliseconds: () => 0,
             },
@@ -99,6 +100,13 @@ describe("計測の単位を期限まで回す", () => {
     expect(mergeDeckMeasurementTallies(run(0, 2), run(1, 2))).toEqual(whole);
     expect(whole.firstPlayer.games).toBe(6);
     expect(whole.secondPlayer.games).toBe(6);
+    for (const side of [whole.firstPlayer, whole.secondPlayer]) {
+      const actions = side.pokemonActions;
+      expect((actions?.win?.games ?? 0) + (actions?.loss?.games ?? 0)).toBe(
+        side.games
+      );
+      expect(actions?.win?.games ?? 0).toBe(side.wins);
+    }
   });
 });
 

@@ -20,6 +20,10 @@ import {
 } from "./battle-style-solo-play-statistics.ts";
 import type { Card } from "./cards.ts";
 import type { BattleStyleSoloPlayResult, PlayingPolicy } from "./engine.ts";
+import {
+  countPokemonActionsInGame,
+  type ObservePokemonAction,
+} from "./pokemon-action-counts.ts";
 import { deriveTrialSeed } from "./random.ts";
 import type { SearchStatistics } from "./search-policy.ts";
 import { runBattleStyleSoloPlayTrial } from "./simulate.ts";
@@ -210,19 +214,23 @@ function runMeasuredTrial(
   deck: MeasuredDeck,
   trialSeed: number,
   wentFirst: boolean,
-  measureNowEpochMilliseconds: () => number
+  measureNowEpochMilliseconds: () => number,
+  observePokemonAction?: ObservePokemonAction
 ): { readonly cost: GameCost; readonly result: BattleStyleSoloPlayResult } {
   let policy: PlayingPolicy | undefined;
   const startedAt = measureNowEpochMilliseconds();
-  const result = runBattleStyleSoloPlayTrial({
-    cards: deck.cards,
-    createPolicy: (policySeed) => {
-      policy = deck.createPolicy(policySeed);
-      return policy;
+  const result = runBattleStyleSoloPlayTrial(
+    {
+      cards: deck.cards,
+      createPolicy: (policySeed) => {
+        policy = deck.createPolicy(policySeed);
+        return policy;
+      },
+      trialSeed,
+      wentFirst,
     },
-    trialSeed,
-    wentFirst,
-  });
+    observePokemonAction
+  );
   const milliseconds = measureNowEpochMilliseconds() - startedAt;
   const statistics =
     policy !== undefined && "statistics" in policy
@@ -254,6 +262,7 @@ export function runDeckMeasurementUnit(
   options: {
     readonly baseSeeds: TurnOrderBaseSeeds;
     readonly deck: MeasuredDeck;
+    readonly collectPokemonActions?: boolean;
     readonly measureNowEpochMilliseconds: () => number;
   },
   trialIndex: number,
@@ -261,13 +270,22 @@ export function runDeckMeasurementUnit(
 ): DeckMeasurementTally {
   const next = { ...tally };
   for (const [turnOrder, wentFirst] of TURN_ORDERS) {
+    const actions = options.collectPokemonActions
+      ? countPokemonActionsInGame()
+      : undefined;
     const { cost, result } = runMeasuredTrial(
       options.deck,
       deriveTrialSeed(options.baseSeeds[turnOrder], trialIndex),
       wentFirst,
-      options.measureNowEpochMilliseconds
+      options.measureNowEpochMilliseconds,
+      actions?.observe
     );
-    next[turnOrder] = addResultToTally(next[turnOrder], result, cost);
+    next[turnOrder] = addResultToTally(
+      next[turnOrder],
+      result,
+      cost,
+      actions?.byOutcome(result.outcome)
+    );
   }
   return next;
 }
